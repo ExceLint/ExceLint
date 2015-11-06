@@ -13,6 +13,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ParcelCOMShim", "Depends\Pa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "COMWrapper", "COMWrapper\COMWrapper.csproj", "{D9BC52FF-2319-4216-96FD-6F9CF2D05539}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExceLintTests", "ExceLintTests\ExceLintTests.csproj", "{A2140DFC-53AE-46D9-A89E-42A0CBFFA5AF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{D9BC52FF-2319-4216-96FD-6F9CF2D05539}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D9BC52FF-2319-4216-96FD-6F9CF2D05539}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D9BC52FF-2319-4216-96FD-6F9CF2D05539}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A2140DFC-53AE-46D9-A89E-42A0CBFFA5AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2140DFC-53AE-46D9-A89E-42A0CBFFA5AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2140DFC-53AE-46D9-A89E-42A0CBFFA5AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2140DFC-53AE-46D9-A89E-42A0CBFFA5AF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -38,8 +38,11 @@ namespace COMWrapper
             MSDOS = 3
         }
 
-        public Workbook OpenWorkbook(string filename)
+        public Workbook OpenWorkbook(string relpath)
         {
+            // get the absolute path
+            var abspath = System.IO.Path.GetFullPath(relpath);
+
             // we need to disable all alerts, e.g., password prompts, etc.
             _app.DisplayAlerts = false;
 
@@ -48,7 +51,7 @@ namespace COMWrapper
 
             // This call is stupid.  See:
             // http://msdn.microsoft.com/en-us/library/microsoft.office.interop.excel.workbooks.open%28v=office.11%29.aspx
-            _app.Workbooks.Open(filename,                    // FileName (String)
+            _app.Workbooks.Open(abspath,                    // FileName (String)
                                XlUpdateLinks.Yes,           // UpdateLinks (XlUpdateLinks enum)
                                true,                        // ReadOnly (Boolean)
                                Missing.Value,               // Format (int?)
