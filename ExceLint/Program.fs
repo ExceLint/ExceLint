@@ -26,10 +26,13 @@
             let cellDegrees = Array.map (fun cell -> cell, (Degree.getIndegreeForCell cell dag), (Degree.getOutdegreeForCell cell dag)) allCells
 
             printfn "Writing output..."
+            Array.sortBy (fun (_, indeg, outdeg) -> indeg + outdeg) cellDegrees |>
             Array.map (fun (addr: AST.Address, indeg: int, outdeg: int) ->
-                let row = sprintf "%s,%i,%i" (addr.ToString()) indeg outdeg
+                let a1_addr = addr.A1Local()
+                let row = sprintf "\"%s\",%i,%i" a1_addr indeg outdeg
                 outFile.WriteLine(row)
-            ) cellDegrees |> ignore
+            )
+            |> ignore
 
             outFile.Close()
 
