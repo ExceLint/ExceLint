@@ -8,6 +8,7 @@ namespace ExceLintTests
     public class BasicTests
     {
         [TestMethod]
+        [Ignore]    // painfully slow at the moment
         public void canBuildDependenceGraph()
         {
             var app = new Application();

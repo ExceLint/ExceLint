@@ -5,7 +5,7 @@
 
         [<EntryPoint>]
         let main argv = 
-            let filename = argv.[0]
+            let filename = @"..\..\..\ExceLintTests\TestData\7_gradebook_xls.xlsx"
 
             let app = new COMWrapper.Application()
 
@@ -14,7 +14,5 @@
             let dag = workbook.buildDependenceGraph()
 
             printfn "%s" (dag.ToDOT())
-
-            let baz = System.Console.ReadLine()
 
             0

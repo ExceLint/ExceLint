@@ -54,7 +54,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\COMWrapper\COMWrapper.csproj">
+    <ProjectReference Include="..\Depends\COMWrapper\COMWrapper.csproj">
       <Project>{d9bc52ff-2319-4216-96fd-6f9cf2d05539}</Project>
       <Name>COMWrapper</Name>
     </ProjectReference>
