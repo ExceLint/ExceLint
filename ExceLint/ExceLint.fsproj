@@ -47,6 +47,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Degree.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
   </ItemGroup>
@@ -59,6 +60,11 @@
     <ProjectReference Include="..\Depends\Depends\Depends.csproj">
       <Name>Depends</Name>
       <Project>{34fa1bc2-cfd6-44ec-ac0c-dfc62313e4bf}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Depends\parcel\Parcel\ExcelParser.fsproj">
+      <Name>ExcelParser</Name>
+      <Project>{6de2a2b9-c029-4bdb-8992-d16276471d9f}</Project>
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
