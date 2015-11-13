@@ -54,7 +54,7 @@
                              ) (new Map<int,int>([])) cellDegreesGTZero
 
             printfn "Writing output..."
-            let headers = [| "\"cell\",\"indegree\",\"outdegree\",\"combined\",\"pr_indeg\",\"pr_outdeg\",\"pr_combined\",\"indeg_anom\",\"outdeg_anom\",\"combo_anom\"" |]
+            let headers = [| "\"cell\",\"indegree\",\"outdegree\",\"combined\",\"pr_indeg\",\"pr_outdeg\",\"pr_combined\",\"indeg_anom\",\"outdeg_anom\",\"combo_anom\",\"tot_anom\"" |]
             let output = Array.sortBy (fun (_, indeg, outdeg) -> - (indeg + outdeg)) cellDegreesGTZero |>
                          Array.map (fun (addr: AST.Address, indeg: int, outdeg: int) ->
                             let a1_addr = addr.A1Local()
@@ -65,7 +65,8 @@
                             let indeg_anom = indeg_prob < ALPHA
                             let outdeg_anom = outdeg_prob < ALPHA
                             let combo_anom = combo_prob < ALPHA
-                            sprintf "\"%s\",%i,%i,%i,%f,%f,%f,%b,%b,%b" a1_addr indeg outdeg combined indeg_prob outdeg_prob combo_prob indeg_anom outdeg_anom combo_anom
+                            let total_anom = (if indeg_anom then 1 else 0) + (if outdeg_anom then 1 else 0) + (if combo_anom then 1 else 0)
+                            sprintf "\"%s\",%i,%i,%i,%f,%f,%f,%b,%b,%b,%i" a1_addr indeg outdeg combined indeg_prob outdeg_prob combo_prob indeg_anom outdeg_anom combo_anom total_anom
                          )
             Array.map (fun (row: string) -> outFile.WriteLine(row)) (Array.append headers output) |> ignore
 
