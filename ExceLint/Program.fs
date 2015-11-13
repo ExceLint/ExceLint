@@ -55,7 +55,7 @@
 
             printfn "Writing output..."
             let headers = [| "\"cell\",\"indegree\",\"outdegree\",\"combined\",\"pr_indeg\",\"pr_outdeg\",\"pr_combined\",\"indeg_anom\",\"outdeg_anom\",\"combo_anom\"" |]
-            let output = Array.sortBy (fun (_, indeg, outdeg) -> - (indeg + outdeg)) cellDegrees |>
+            let output = Array.sortBy (fun (_, indeg, outdeg) -> - (indeg + outdeg)) cellDegreesGTZero |>
                          Array.map (fun (addr: AST.Address, indeg: int, outdeg: int) ->
                             let a1_addr = addr.A1Local()
                             let combined = indeg + outdeg
