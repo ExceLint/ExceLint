@@ -31,14 +31,14 @@
             printfn "Computing probabilities..."
             // histogram for indegree
             let hist_indeg = Array.fold (fun (m: Map<int,int>) (_, indeg, _) ->
-                                if (m.ContainsKey(indeg)) then
+                                if not (m.ContainsKey(indeg)) then
                                     m.Add(indeg, 1)
                                 else
                                     m.Add(indeg, m.Item(indeg) + 1)
                              ) (new Map<int,int>([])) cellDegreesGTZero
             // histogram for outdegree
             let hist_outdeg = Array.fold (fun (m: Map<int,int>) (_, _, outdeg) ->
-                                if (m.ContainsKey(outdeg)) then
+                                if not (m.ContainsKey(outdeg)) then
                                     m.Add(outdeg, 1)
                                 else
                                     m.Add(outdeg, m.Item(outdeg) + 1)
@@ -47,7 +47,7 @@
             // histogram for combined
             let hist_combo = Array.fold (fun (m: Map<int,int>) (_, indeg, outdeg) ->
                                 let combined = indeg + outdeg
-                                if (m.ContainsKey(combined)) then
+                                if not (m.ContainsKey(combined)) then
                                     m.Add(combined, 1)
                                 else
                                     m.Add(combined, m.Item(combined) + 1)
