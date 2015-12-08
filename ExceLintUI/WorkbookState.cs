@@ -109,8 +109,7 @@ namespace ExceLintUI
                 }
 
                 // TODO: DO WORK HERE
-                KeyValuePair<AST.Address,int>[] scores;
-                throw new NotImplementedException();
+                KeyValuePair<AST.Address,int>[] scores = ExceLint.Analysis.degreeAnalysis(_dag);
 
                 if (_debug_mode)
                 {

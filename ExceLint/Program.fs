@@ -1,8 +1,52 @@
 ﻿namespace ExceLint
     open COMWrapper
     open System.IO
+    open System.Collections.Generic
 
     module Analysis =
+
+        let degreeAnalysis dag =
+            let cellDegrees = Array.map (fun cell -> cell, (Degree.getIndegreeForCell cell dag), (Degree.getOutdegreeForCell cell dag)) (dag.allCells())
+            let cellDegreesGTZero = Array.filter (fun (_, indeg, outdeg) -> (indeg + outdeg) > 0) cellDegrees
+            let totalCells = System.Convert.ToDouble(cellDegreesGTZero.Length)
+
+            // histogram for indegree
+            let hist_indeg = Array.fold (fun (m: Map<int,int>) (_, indeg, _) ->
+                                if not (m.ContainsKey(indeg)) then
+                                    m.Add(indeg, 1)
+                                else
+                                    m.Add(indeg, m.Item(indeg) + 1)
+                             ) (new Map<int,int>([])) cellDegreesGTZero
+            // histogram for outdegree
+            let hist_outdeg = Array.fold (fun (m: Map<int,int>) (_, _, outdeg) ->
+                                if not (m.ContainsKey(outdeg)) then
+                                    m.Add(outdeg, 1)
+                                else
+                                    m.Add(outdeg, m.Item(outdeg) + 1)
+                              ) (new Map<int,int>([])) cellDegreesGTZero
+
+            // histogram for combined
+            let hist_combo = Array.fold (fun (m: Map<int,int>) (_, indeg, outdeg) ->
+                                let combined = indeg + outdeg
+                                if not (m.ContainsKey(combined)) then
+                                    m.Add(combined, 1)
+                                else
+                                    m.Add(combined, m.Item(combined) + 1)
+                             ) (new Map<int,int>([])) cellDegreesGTZero
+
+            let sorted = Array.sortBy (fun (addr, indeg, outdeg) ->
+                                let combo = indeg + outdeg
+                                let prIndeg = hist_indeg.[indeg]
+                                let prOutdeg = hist_outdeg.[outdeg]
+                                let prCombo = hist_combo.[combo]
+                                prIndeg * prOutdeg * prCombo
+                            ) cellDegreesGTZero
+
+            let output = sorted
+                            |> Array.map (fun (addr, _, _) -> addr)
+                            |> Array.mapi (fun i addr -> new KeyValuePair<AST.Address,int>(addr,i))
+
+            output
 
         [<EntryPoint>]
         let main argv = 
@@ -22,9 +66,7 @@
             let dag = workbook.buildDependenceGraph()
 
             printfn "Computing indegree and outdegree..."
-            let allCells = dag.allCells()
-
-            let cellDegrees = Array.map (fun cell -> cell, (Degree.getIndegreeForCell cell dag), (Degree.getOutdegreeForCell cell dag)) allCells
+            let cellDegrees = Array.map (fun cell -> cell, (Degree.getIndegreeForCell cell dag), (Degree.getOutdegreeForCell cell dag)) (dag.allCells())
             let cellDegreesGTZero = Array.filter (fun (_, indeg, outdeg) -> (indeg + outdeg) > 0) cellDegrees
             let totalCells = System.Convert.ToDouble(cellDegreesGTZero.Length)
 
@@ -52,6 +94,16 @@
                                 else
                                     m.Add(combined, m.Item(combined) + 1)
                              ) (new Map<int,int>([])) cellDegreesGTZero
+
+            let sorted = Array.sortBy (fun (addr, indeg, outdeg) ->
+                                let combo = indeg + outdeg
+                                let prIndeg = hist_indeg.[indeg]
+                                let prOutdeg = hist_outdeg.[outdeg]
+                                let prCombo = hist_combo.[combo]
+                                - (prIndeg * prOutdeg * prCombo)
+                            ) cellDegreesGTZero
+                            |> Array.map (fun (addr, _, _) -> addr)
+                            |> Array.mapi (fun i addr -> new KeyValuePair<AST.Address,int>(addr,i))
 
             printfn "Writing output..."
             let headers = [| "\"cell\",\"indegree\",\"outdegree\",\"combined\",\"pr_indeg\",\"pr_outdeg\",\"pr_combined\",\"indeg_anom\",\"outdeg_anom\",\"combo_anom\",\"tot_anom\"" |]
