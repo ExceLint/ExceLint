@@ -9,16 +9,65 @@ namespace ExceLintUI
     public partial class ExceLintRibbon
     {
         Dictionary<Excel.Workbook, WorkbookState> wbstates = new Dictionary<Excel.Workbook, WorkbookState>();
-        WorkbookState current_workbook;
+        WorkbookState currentWorkbook;
 
-        private void SetUIState(WorkbookState wbs)
+        #region BUTTON_HANDLERS
+        private void AnalyzeButton_Click(object sender, RibbonControlEventArgs e)
         {
-            this.MarkAsOKButton.Enabled = wbs.MarkAsOK_Enabled;
-            this.FixErrorButton.Enabled = wbs.FixError_Enabled;
-            this.StartOverButton.Enabled = wbs.ClearColoringButton_Enabled;
-            this.AnalyzeButton.Enabled = wbs.Analyze_Enabled;
+            // check for debug easter egg
+            if ((System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Alt) > 0)
+            {
+                currentWorkbook.DebugMode = true;
+            }
+
+            var prop = getProportion(this.SensitivityTextBox.Text, this.SensitivityTextBox.Label);
+            if (prop == FSharpOption<double>.None)
+            {
+                return;
+            }
+            else
+            {
+                currentWorkbook.toolProportion = prop.Value;
+                try
+                {
+                    currentWorkbook.analyze(WorkbookState.MAX_DURATION_IN_MS);
+                    currentWorkbook.flag();
+                    setUIState(currentWorkbook);
+                }
+                catch (Parcel.ParseException ex)
+                {
+                    System.Windows.Forms.Clipboard.SetText(ex.Message);
+                    System.Windows.Forms.MessageBox.Show("Could not parse the formula string:\n" + ex.Message);
+                    return;
+                }
+                catch (System.OutOfMemoryException ex)
+                {
+                    System.Windows.Forms.MessageBox.Show("Insufficient memory to perform analysis.");
+                    return;
+                }
+            }
+        }
+        
+        private void FixErrorButton_Click(object sender, RibbonControlEventArgs e)
+        {
+            currentWorkbook.fixError(setUIState);
         }
 
+        private void MarkAsOKButton_Click(object sender, RibbonControlEventArgs e)
+        {
+            currentWorkbook.markAsOK();
+            setUIState(currentWorkbook);
+        }
+
+        private void StartOverButton_Click(object sender, RibbonControlEventArgs e)
+        {
+            currentWorkbook.resetTool();
+            setUIState(currentWorkbook);
+        }
+
+        #endregion BUTTON_HANDLERS
+
+        #region EVENTS
         private void SetUIStateNoWorkbooks()
         {
             this.MarkAsOKButton.Enabled = false;
@@ -39,7 +88,7 @@ namespace ExceLintUI
 
             // sometimes the default blank workbook opens *before* the CheckCell
             // add-in is loaded so we have to handle sheet state specially.
-            if (current_workbook == null)
+            if (currentWorkbook == null)
             {
                 var wb = Globals.ThisAddIn.Application.ActiveWorkbook;
                 if (wb == null)
@@ -68,15 +117,15 @@ namespace ExceLintUI
             {
                 WorkbookOpen(workbook);
             }
-            current_workbook = wbstates[workbook];
-            SetUIState(current_workbook);
+            currentWorkbook = wbstates[workbook];
+            setUIState(currentWorkbook);
         }
 
         // This even it called when Excel sends an opened workbook
         // to the background
         private void WorkbookDeactivated(Excel.Workbook workbook)
         {
-            current_workbook = null;
+            currentWorkbook = null;
             // WorkbookBeforeClose event does not fire for default workbooks
             // containing no data
             var wbs = new List<Excel.Workbook>();
@@ -103,7 +152,9 @@ namespace ExceLintUI
                 SetUIStateNoWorkbooks();
             }
         }
+        #endregion EVENTS
 
+        #region UTILITY_FUNCTIONS
         private static FSharpOption<double> getProportion(string input, string label)
         {
             var errormsg = label + " must be a value between 0 and 100";
@@ -125,5 +176,17 @@ namespace ExceLintUI
 
             return FSharpOption<double>.Some(significance);
         }
+
+        private void setUIState(WorkbookState wbs)
+        {
+            this.MarkAsOKButton.Enabled = wbs.MarkAsOK_Enabled;
+            this.FixErrorButton.Enabled = wbs.FixError_Enabled;
+            this.StartOverButton.Enabled = wbs.ClearColoringButton_Enabled;
+            this.AnalyzeButton.Enabled = wbs.Analyze_Enabled;
+        }
+
+
+
+        #endregion UTILITY_FUNCTIONS
     }
 }

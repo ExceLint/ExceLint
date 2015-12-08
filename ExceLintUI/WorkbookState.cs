@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using Microsoft.Office.Tools.Excel;
 using Excel = Microsoft.Office.Interop.Excel;
 using Depends;
 
@@ -45,7 +43,7 @@ namespace ExceLintUI
             _colors = new Dictionary<AST.Address, CellColor>();
         }
 
-        public double ToolSignificance
+        public double toolProportion
         {
             get { return _tool_significance; }
             set { _tool_significance = value; }
@@ -80,7 +78,7 @@ namespace ExceLintUI
             set { _debug_mode = value; }
         }
 
-        public void Analyze(long max_duration_in_ms)
+        public void analyze(long max_duration_in_ms)
         {
             var sw = new System.Diagnostics.Stopwatch();
             sw.Start();
@@ -90,11 +88,10 @@ namespace ExceLintUI
                 // Disable screen updating during analysis to speed things up
                 _app.ScreenUpdating = false;
 
-                // Build dependency graph (modifies data)
+                // Build dependency graph
                 try
                 {
                     _dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
-                    var num_input_cells = _dag.numberOfInputCells();
                 }
                 catch (Parcel.ParseException e)
                 {
@@ -140,7 +137,7 @@ namespace ExceLintUI
             }
         }
 
-        private void ActivateAndCenterOn(AST.Address cell, Excel.Application app)
+        private void activateAndCenterOn(AST.Address cell, Excel.Application app)
         {
             // go to worksheet
             RibbonHelper.GetWorksheetByName(cell.A1Worksheet(), _workbook.Worksheets).Activate();
@@ -160,7 +157,7 @@ namespace ExceLintUI
 
         }
 
-        public void Flag()
+        public void flag()
         {
             //filter known_good
             _flaggable = _flaggable.Where(kvp => !_known_good.Contains(kvp.Key));
@@ -177,7 +174,7 @@ namespace ExceLintUI
             if (_flagged_cell == null)
             {
                 System.Windows.Forms.MessageBox.Show("No bugs remain.");
-                ResetTool();
+                resetTool();
             }
             else
             {
@@ -200,14 +197,14 @@ namespace ExceLintUI
                 _tool_highlights.Add(_flagged_cell);
 
                 // go to highlighted cell
-                ActivateAndCenterOn(_flagged_cell, _app);
+                activateAndCenterOn(_flagged_cell, _app);
 
                 // enable auditing buttons
-                SetTool(active: true);
+                setTool(active: true);
             }
         }
 
-        private void RestoreOutputColors()
+        private void restoreOutputColors()
         {
             if (_workbook != null)
             {
@@ -222,14 +219,14 @@ namespace ExceLintUI
             _output_highlights.Clear();
         }
 
-        public void ResetTool()
+        public void resetTool()
         {
-            RestoreOutputColors();
+            restoreOutputColors();
             _known_good.Clear();
-            SetTool(active: false);
+            setTool(active: false);
         }
 
-        private void SetTool(bool active)
+        private void setTool(bool active)
         {
             _button_MarkAsOK_enabled = active;
             _button_FixError_enabled = active;
@@ -237,7 +234,7 @@ namespace ExceLintUI
             _button_Analyze_enabled = !active;
         }
 
-        internal void MarkAsOK()
+        internal void markAsOK()
         {
             // the user told us that the cell was OK
             _known_good.Add(_flagged_cell);
@@ -247,13 +244,13 @@ namespace ExceLintUI
             cell.Interior.Color = GREEN;
 
             // restore output colors
-            RestoreOutputColors();
+            restoreOutputColors();
 
             // flag another value
-            Flag();
+            flag();
         }
 
-        internal void FixError(Action<WorkbookState> setUIState)
+        internal void fixError(Action<WorkbookState> setUIState)
         {
             var cell = ParcelCOMShim.Address.GetCOMObject(_flagged_cell, _app);
             // this callback gets run when the user clicks "OK"
@@ -267,9 +264,9 @@ namespace ExceLintUI
                 try
                 {
                     // when a user fixes something, we need to re-run the analysis
-                    Analyze(MAX_DURATION_IN_MS);
+                    analyze(MAX_DURATION_IN_MS);
                     // and flag again
-                    Flag();
+                    flag();
                     // and then set the UI state
                     setUIState(this);
                 }
@@ -291,7 +288,7 @@ namespace ExceLintUI
             fixform.Show();
 
             // restore output colors
-            RestoreOutputColors();
+            restoreOutputColors();
         }
     }
 }

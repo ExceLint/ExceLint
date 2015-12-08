@@ -38,11 +38,11 @@
             this.tab2 = this.Factory.CreateRibbonTab();
             this.CheckCellGroup = this.Factory.CreateRibbonGroup();
             this.box1 = this.Factory.CreateRibbonBox();
-            this.SensitivityTextBox = this.Factory.CreateRibbonEditBox();
             this.AnalyzeButton = this.Factory.CreateRibbonButton();
             this.MarkAsOKButton = this.Factory.CreateRibbonButton();
             this.FixErrorButton = this.Factory.CreateRibbonButton();
             this.StartOverButton = this.Factory.CreateRibbonButton();
+            this.SensitivityTextBox = this.Factory.CreateRibbonEditBox();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -75,13 +75,6 @@
             this.box1.Items.Add(this.StartOverButton);
             this.box1.Name = "box1";
             // 
-            // SensitivityTextBox
-            // 
-            this.SensitivityTextBox.Label = "% to Audit";
-            this.SensitivityTextBox.Name = "SensitivityTextBox";
-            this.SensitivityTextBox.SizeString = "100.0";
-            this.SensitivityTextBox.Text = "5.0";
-            // 
             // AnalyzeButton
             // 
             this.AnalyzeButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
@@ -89,6 +82,7 @@
             this.AnalyzeButton.Label = "Analyze";
             this.AnalyzeButton.Name = "AnalyzeButton";
             this.AnalyzeButton.ShowImage = true;
+            this.AnalyzeButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.AnalyzeButton_Click);
             // 
             // MarkAsOKButton
             // 
@@ -97,6 +91,7 @@
             this.MarkAsOKButton.Label = "Mark as OK";
             this.MarkAsOKButton.Name = "MarkAsOKButton";
             this.MarkAsOKButton.ShowImage = true;
+            this.MarkAsOKButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.MarkAsOKButton_Click);
             // 
             // FixErrorButton
             // 
@@ -105,6 +100,7 @@
             this.FixErrorButton.Label = "Fix Error";
             this.FixErrorButton.Name = "FixErrorButton";
             this.FixErrorButton.ShowImage = true;
+            this.FixErrorButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.FixErrorButton_Click);
             // 
             // StartOverButton
             // 
@@ -113,6 +109,14 @@
             this.StartOverButton.Label = "Start Over";
             this.StartOverButton.Name = "StartOverButton";
             this.StartOverButton.ShowImage = true;
+            this.StartOverButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.StartOverButton_Click);
+            // 
+            // SensitivityTextBox
+            // 
+            this.SensitivityTextBox.Label = "% to Audit";
+            this.SensitivityTextBox.Name = "SensitivityTextBox";
+            this.SensitivityTextBox.SizeString = "100.0";
+            this.SensitivityTextBox.Text = "5.0";
             // 
             // ExceLintRibbon
             // 

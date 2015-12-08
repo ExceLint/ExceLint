@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Depends;
-using Excel = Microsoft.Office.Interop.Excel;
-using OptString = Microsoft.FSharp.Core.FSharpOption<string>;
+﻿using Excel = Microsoft.Office.Interop.Excel;
 
 namespace ExceLintUI
 {
