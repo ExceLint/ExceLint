@@ -4,6 +4,78 @@
     open System.Collections.Generic
 
     module Analysis =
+        // a C#-friendly configuration object that is also pure/fluent
+        type FeatureConf private (userConf: Map<string,bool>) =
+            let _defaults = Map.ofSeq [
+                ("indegree", false);
+                ("combineddegree", false);
+                ("outdegree", false);
+            ]
+            let _config = Map.fold (fun acc key value -> Map.add key value acc) _defaults userConf
+
+            let _features = Map.ofSeq [
+                ("indegree", fun (cell)(dag) -> if _config.["indegree"] then (Degree.getIndegreeForCell(cell)(dag)) else 0);
+                ("combineddegree", fun (cell)(dag) -> if _config.["combineddegree"] then (Degree.getIndegreeForCell(cell)(dag) + Degree.getOutdegreeForCell(cell)(dag)) else 0);
+                ("outdegree", fun (cell)(dag) -> if _config.["outdegree"] then (Degree.getOutdegreeForCell(cell)(dag)) else 0);
+            ]
+
+            new() = FeatureConf(Map.empty)
+
+            // fluent constructors
+            member self.enableInDegree() : FeatureConf =
+                FeatureConf(_config.Add("indegree", true))
+            member self.enableOutDegree() : FeatureConf =
+                FeatureConf(_config.Add("outdegree", true))
+            member self.enableCombinedDegree() : FeatureConf =
+                FeatureConf(_config.Add("combineddegree", true))
+
+            // getters
+            member self.Feature
+                with get(name) = _features.[name]
+            member self.Features
+                with get() = _features |> Map.toArray |> Array.map fst
+
+        // a C#-friendly error model constructor
+        type ErrorModel(config: FeatureConf, dag: Depends.DAG) =
+            let _feature_counts =
+                let allCells = dag.allCells()
+
+                // train model
+                config.Features |>
+                Array.map (fun fname ->
+                    // get feature lambda
+                    let feature = config.Feature(fname)
+
+                    // count
+                    let map = Array.fold (fun (m: Map<int,int>) cell ->
+                                    let indeg = feature cell dag
+                                    if not (m.ContainsKey(indeg)) then
+                                        m.Add(indeg, 1)
+                                    else
+                                        m.Add(indeg, m.Item(indeg) + 1)
+                                ) (new Map<int,int>([])) allCells
+                    fname, map
+                )
+
+            let _total = dag.allCells().Length
+
+            // this method must be C#-friendly (no currying)
+            member self.analyze() =
+                let allCells = dag.allCells()
+
+                // run analysis for each cell
+                Array.map (fun cell ->
+                    Array.fold (fun score fname ->
+                        // get feature lambda
+                        let feature = config.Feature(fname)
+
+                        // get 
+//                        _feature_counts.[fname]
+
+                        failwith "not done"
+                    ) 0 (config.Features)
+                ) allCells
+                
 
         let degreeAnalysis dag =
             let cellDegrees = Array.map (fun cell -> cell, (Degree.getIndegreeForCell cell dag), (Degree.getOutdegreeForCell cell dag)) (dag.allCells())
@@ -39,7 +111,7 @@
                                 let prIndeg = hist_indeg.[indeg]
                                 let prOutdeg = hist_outdeg.[outdeg]
                                 let prCombo = hist_combo.[combo]
-                                prIndeg * prOutdeg * prCombo
+                                prIndeg + prOutdeg + prCombo
                             ) cellDegreesGTZero
 
             let output = sorted
