@@ -3,9 +3,11 @@
     open System.IO
     open System.Collections.Generic
 
+
     module Analysis =
         // a C#-friendly configuration object that is also pure/fluent
         type FeatureConf private (userConf: Map<string,bool>) =
+            let _base = Feature.BaseFeature.run 
             let _defaults = Map.ofSeq [
                 ("indegree", false);
                 ("combineddegree", false);
@@ -14,9 +16,9 @@
             let _config = Map.fold (fun acc key value -> Map.add key value acc) _defaults userConf
 
             let _features = Map.ofSeq [
-                ("indegree", fun (cell)(dag) -> if _config.["indegree"] then (Degree.getIndegreeForCell(cell)(dag)) else 0);
-                ("combineddegree", fun (cell)(dag) -> if _config.["combineddegree"] then (Degree.getIndegreeForCell(cell)(dag) + Degree.getOutdegreeForCell(cell)(dag)) else 0);
-                ("outdegree", fun (cell)(dag) -> if _config.["outdegree"] then (Degree.getOutdegreeForCell(cell)(dag)) else 0);
+                ("indegree", fun (cell)(dag) -> if _config.["indegree"] then Degree.InDegree.run cell dag else _base cell dag);
+                ("combineddegree", fun (cell)(dag) -> if _config.["combineddegree"] then (Degree.InDegree.run cell dag + Degree.OutDegree.run cell dag) else _base cell dag);
+                ("outdegree", fun (cell)(dag) -> if _config.["outdegree"] then Degree.OutDegree.run cell dag else _base cell dag);
             ]
 
             new() = FeatureConf(Map.empty)
@@ -78,7 +80,7 @@
                 
 
         let degreeAnalysis dag =
-            let cellDegrees = Array.map (fun cell -> cell, (Degree.getIndegreeForCell cell dag), (Degree.getOutdegreeForCell cell dag)) (dag.allCells())
+            let cellDegrees = Array.map (fun cell -> cell, (Degree.InDegree.run cell dag), (Degree.OutDegree.run cell dag)) (dag.allCells())
             let cellDegreesGTZero = Array.filter (fun (_, indeg, outdeg) -> (indeg + outdeg) > 0) cellDegrees
             let totalCells = System.Convert.ToDouble(cellDegreesGTZero.Length)
 
@@ -138,7 +140,7 @@
             let dag = workbook.buildDependenceGraph()
 
             printfn "Computing indegree and outdegree..."
-            let cellDegrees = Array.map (fun cell -> cell, (Degree.getIndegreeForCell cell dag), (Degree.getOutdegreeForCell cell dag)) (dag.allCells())
+            let cellDegrees = Array.map (fun cell -> cell, (Degree.InDegree.run cell dag), (Degree.OutDegree.run cell dag)) (dag.allCells())
             let cellDegreesGTZero = Array.filter (fun (_, indeg, outdeg) -> (indeg + outdeg) > 0) cellDegrees
             let totalCells = System.Convert.ToDouble(cellDegreesGTZero.Length)
 
