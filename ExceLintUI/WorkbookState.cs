@@ -19,12 +19,12 @@ namespace ExceLintUI
 
         private Excel.Application _app;
         private Excel.Workbook _workbook;
-        private double _tool_significance = 0.95;
+        private double _tool_proportion = 0.95;
         private Dictionary<AST.Address, CellColor> _colors;
         private HashSet<AST.Address> _tool_highlights = new HashSet<AST.Address>();
         private HashSet<AST.Address> _output_highlights = new HashSet<AST.Address>();
         private HashSet<AST.Address> _known_good = new HashSet<AST.Address>();
-        private IEnumerable<KeyValuePair<AST.Address, int>> _flaggable;
+        private IEnumerable<KeyValuePair<AST.Address, double>> _flaggable;
         private AST.Address _flagged_cell;
         private DAG _dag;
         private bool _debug_mode = false;
@@ -45,8 +45,8 @@ namespace ExceLintUI
 
         public double toolProportion
         {
-            get { return _tool_significance; }
-            set { _tool_significance = value; }
+            get { return _tool_proportion; }
+            set { _tool_proportion = value; }
         }
 
         public bool Analyze_Enabled
@@ -104,12 +104,17 @@ namespace ExceLintUI
                 {
                     System.Windows.Forms.MessageBox.Show("This spreadsheet contains no vector-input functions.");
                     _app.ScreenUpdating = true;
-                    _flaggable = new KeyValuePair<AST.Address, int>[0];
+                    _flaggable = new KeyValuePair<AST.Address, double>[0];
                     return;
                 }
 
                 // TODO: DO WORK HERE
-                KeyValuePair<AST.Address,int>[] scores = ExceLint.Analysis.degreeAnalysis(_dag);
+                var config = new ExceLint.Analysis.FeatureConf()
+                    .enableCombinedDegree()
+                    .enableInDegree()
+                    .enableOutDegree();
+                var model = new ExceLint.Analysis.ErrorModel(config, _dag, 0.05);
+                KeyValuePair<AST.Address, double>[] scores = model.rankWithScore();
 
                 if (_debug_mode)
                 {
@@ -118,16 +123,13 @@ namespace ExceLintUI
                     System.Windows.Forms.Clipboard.SetText(score_str);
                 }
 
-                List<KeyValuePair<AST.Address, int>> high_scores = new List<KeyValuePair<AST.Address, int>>();
-
                 // calculate cutoff idnex
-                int thresh = scores.Length - Convert.ToInt32(scores.Length * _tool_significance);
-
+                int thresh = scores.Length - Convert.ToInt32(scores.Length * _tool_proportion);
 
                 // filter out cells that are...
                 _flaggable = scores.Where(pair => pair.Value >= scores[thresh].Value)   // below threshold
                                    .Where(pair => !_known_good.Contains(pair.Key))      // known to be good
-                                   .Where(pair => pair.Value != 0).ToArray();           // score == 0
+                                   .Where(pair => pair.Value != 0.0).ToArray();         // score == 0
 
                 // Enable screen updating when we're done
                 _app.ScreenUpdating = true;

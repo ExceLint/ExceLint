@@ -47,8 +47,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="BasicStats.fs" />
     <Compile Include="Feature.fs" />
     <Compile Include="Degree.fs" />
+    <Compile Include="Analysis.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
   </ItemGroup>

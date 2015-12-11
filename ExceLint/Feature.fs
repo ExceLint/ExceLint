@@ -1,4 +1,4 @@
-﻿module Feature
+module Feature
 
     open COMWrapper
     open Depends
