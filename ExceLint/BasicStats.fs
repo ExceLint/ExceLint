@@ -35,6 +35,6 @@
 
             match idx_opt with
             // if an index is found, take the one before
-            | Some i -> xs'.[i - 1]
+            | Some i -> if i = 0 then xs'.[0] else xs'.[i - 1]
             // if an index is not found, take the max element
             | None   -> xs'.[xs'.Length - 1]

@@ -1,4 +1,6 @@
 ﻿namespace ExceLint
+    open System.Collections.Generic
+
     module Analysis =
 
         // a C#-friendly configuration object that is also pure/fluent
@@ -34,11 +36,11 @@
                 with get() = _features |> Map.toArray |> Array.map fst
 
         // a C#-friendly error model constructor
-        type ErrorModel(config: FeatureConf, dag: Depends.DAG) =
-            let _feature_data =
+        type ErrorModel(config: FeatureConf, dag: Depends.DAG, alpha: double) =
+            // train model on construction
+            let _data =
                 let allCells = dag.allCells()
 
-                // train model
                 config.Features |>
                 Array.map (fun fname ->
                     // get feature lambda
@@ -47,10 +49,48 @@
                     // run feature on every cell
                     let fvals = Array.map (fun cell -> feature cell dag) allCells
                     fname, fvals
-                )
+                ) |>
+                Map.ofArray
 
-            let _total = dag.allCells().Length
+            /// <summary>Analyzes the given cell using all of the configured features and produces a score.</summary>
+            /// <param name="cell">the address of a formula cell</param>
+            /// <returns>a score</returns>
+            member self.score(cell: AST.Address) : double =
+                // get feature scores
+                let fs = Array.map (fun fname ->
+                            // get feature lambda
+                            let f = config.Feature fname
 
-            // this method must be C#-friendly (no currying)
-            member self.analyze(cell: AST.Address) =
-                failwith "not implemented"
+                            // get feature value for this cell
+                            let t = f cell dag
+
+                            // determine probability
+                            let p = BasicStats.cdf t _data.[fname]
+
+                            // do test
+                            if p < alpha then 1.0 else 0.0
+                         ) (config.Features)
+
+                // combine scores
+                Array.sum fs
+
+            /// <summary>Ranks all the cells in the workbook by their anomalousness.</summary>
+            /// <returns>an AST.Address[] ranked from most to least anomalous</returns>
+            member self.rank() : AST.Address[] =
+                // get all cells
+                dag.allCells() |>
+
+                // rank by analysis score (rev to sort from high to low)
+                Array.sortBy (self.score) |> Array.rev
+
+            /// <summary>Ranks all the cells in the workbook by their anomalousness.</summary>
+            /// <returns>an KeyValuePair<AST.Address,int>[] of (address,score) ranked from most to least anomalous</returns>
+            member self.rankWithScore() : KeyValuePair<AST.Address,double>[] =
+                // get all cells
+                dag.allCells() |>
+
+                // get scores
+                Array.map (fun c -> new KeyValuePair<AST.Address,double>(c, self.score c)) |>
+
+                // rank
+                Array.sortBy (fun (pair: KeyValuePair<AST.Address, double>) -> -pair.Value)
