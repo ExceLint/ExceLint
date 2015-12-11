@@ -196,6 +196,7 @@
       <DesignTime>True</DesignTime>
     </Compile>
     <None Include="ExceLintUI_1_TemporaryKey.pfx" />
+    <None Include="ExceLintUI_2_TemporaryKey.pfx" />
     <None Include="ExceLintUI_TemporaryKey.pfx" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -248,10 +249,10 @@
     <SignManifests>true</SignManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestKeyFile>ExceLintUI_1_TemporaryKey.pfx</ManifestKeyFile>
+    <ManifestKeyFile>ExceLintUI_2_TemporaryKey.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>5DF56471C595B50D4C7E38D6B431FCD451B2B599</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>CEE375FA1F1AECEC4ED972C0323B0754AB61751A</ManifestCertificateThumbprint>
   </PropertyGroup>
   <!-- Include the build rules for a C# project. -->
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

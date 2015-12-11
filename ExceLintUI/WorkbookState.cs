@@ -109,7 +109,12 @@ namespace ExceLintUI
                 }
 
                 // TODO: DO WORK HERE
-                KeyValuePair<AST.Address,int>[] scores = ExceLint.Analysis.degreeAnalysis(_dag);
+                var config = new ExceLint.Analysis.FeatureConf()
+                    .enableCombinedDegree()
+                    .enableInDegree()
+                    .enableOutDegree();
+                var model = new ExceLint.Analysis.ErrorModel(config, _dag);
+                KeyValuePair<AST.Address, int>[] scores = model.analyze();
 
                 if (_debug_mode)
                 {
