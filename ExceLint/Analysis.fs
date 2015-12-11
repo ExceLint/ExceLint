@@ -67,8 +67,8 @@
                             // determine probability
                             let p = BasicStats.cdf t _data.[fname]
 
-                            // do test
-                            if p < alpha then 1.0 else 0.0
+                            // do two-tailed test
+                            if p < (alpha / 2.0) || p > (1.0 - (alpha / 2.0)) then 1.0 else 0.0
                          ) (config.Features)
 
                 // combine scores
