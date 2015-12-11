@@ -39,7 +39,7 @@
         type ErrorModel(config: FeatureConf, dag: Depends.DAG, alpha: double) =
             // train model on construction
             let _data =
-                let allCells = dag.allCells()
+                let allFormulaCells = dag.getAllFormulaAddrs()
 
                 config.Features |>
                 Array.map (fun fname ->
@@ -47,7 +47,7 @@
                     let feature = config.Feature(fname)
 
                     // run feature on every cell
-                    let fvals = Array.map (fun cell -> feature cell dag) allCells
+                    let fvals = Array.map (fun cell -> feature cell dag) allFormulaCells
                     fname, fvals
                 ) |>
                 Map.ofArray
@@ -56,6 +56,10 @@
             /// <param name="cell">the address of a formula cell</param>
             /// <returns>a score</returns>
             member self.score(cell: AST.Address) : double =
+                let a1 = cell.A1Local()
+                if a1 = "E26" then
+                    printfn "hey"
+
                 // get feature scores
                 let fs = Array.map (fun fname ->
                             // get feature lambda
@@ -68,7 +72,7 @@
                             let p = BasicStats.cdf t _data.[fname]
 
                             // do two-tailed test
-                            if p < (alpha / 2.0) || p > (1.0 - (alpha / 2.0)) then 1.0 else 0.0
+                            if p > (1.0 - alpha) then 1.0 else 0.0
                          ) (config.Features)
 
                 // combine scores
@@ -77,8 +81,8 @@
             /// <summary>Ranks all the cells in the workbook by their anomalousness.</summary>
             /// <returns>an AST.Address[] ranked from most to least anomalous</returns>
             member self.rank() : AST.Address[] =
-                // get all cells
-                dag.allCells() |>
+                // get all formula cells
+                dag.getAllFormulaAddrs() |>
 
                 // rank by analysis score (rev to sort from high to low)
                 Array.sortBy (self.score) |> Array.rev
@@ -87,7 +91,7 @@
             /// <returns>an KeyValuePair<AST.Address,int>[] of (address,score) ranked from most to least anomalous</returns>
             member self.rankWithScore() : KeyValuePair<AST.Address,double>[] =
                 // get all cells
-                dag.allCells() |>
+                dag.getAllFormulaAddrs() |>
 
                 // get scores
                 Array.map (fun c -> new KeyValuePair<AST.Address,double>(c, self.score c)) |>
