@@ -4,7 +4,6 @@
     open Feature
 
     type InDegree() = 
-
          inherit BaseFeature()
          /// <summary>Gets the number of inputs referenced by fAddr.</summary>
          /// <param name="fAddr">the address of a formula cell</param>
@@ -29,9 +28,7 @@
                 else
                     0.0
 
-
     type OutDegree() =
-
         inherit BaseFeature()
 
             /// <summary>Gets the number of formulas that reference a cell.</summary>
