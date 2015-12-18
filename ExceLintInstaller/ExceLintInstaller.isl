@@ -345,6 +345,7 @@
 		<row><td>ExceLint.Primary_Output</td><td>{5B53343E-6089-45CD-8884-F2F74AF4D660}</td><td>INSTALLDIR</td><td>2</td><td/><td>excelint.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ExceLintUI.Primary_output</td><td>{C9B11AF0-CE8B-4D19-BAAA-D60F110CCB9B}</td><td>INSTALLDIR</td><td>2</td><td/><td>excelintui.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ExcelParser.Primary_Output</td><td>{C33892B9-CF92-4705-977F-0CB0972F1B1E}</td><td>INSTALLDIR</td><td>2</td><td/><td>excelparser.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ISX_DEFAULTCOMPONENT</td><td>{96890DD4-BA85-4946-9202-A495D0D84155}</td><td>INSTALLDIR</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ParcelCOMShim.Primary_Output</td><td>{555F43FF-0BC2-4EA6-95E9-F15694B1803A}</td><td>INSTALLDIR</td><td>2</td><td/><td>parcelcomshim.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 	</table>
 
@@ -1059,6 +1060,7 @@
 		<row><td>INSTALLDIR</td><td>ExceLint.Primary_Output</td></row>
 		<row><td>INSTALLDIR</td><td>ExceLintUI.Primary_output</td></row>
 		<row><td>INSTALLDIR</td><td>ExcelParser.Primary_Output</td></row>
+		<row><td>INSTALLDIR</td><td>ISX_DEFAULTCOMPONENT</td></row>
 		<row><td>INSTALLDIR</td><td>ParcelCOMShim.Primary_Output</td></row>
 	</table>
 
@@ -1147,10 +1149,11 @@
 		<row><td>DATABASEDIR</td><td>ISYourDataBaseDir</td><td>.</td><td/><td>0</td><td/></row>
 		<row><td>DesktopFolder</td><td>TARGETDIR</td><td>.:Desktop</td><td/><td>3</td><td/></row>
 		<row><td>EXCELINT</td><td>PLASMA___UMASS</td><td>ExceLint</td><td/><td>0</td><td/></row>
+		<row><td>EXCELINT1</td><td>PLASMAUMASS</td><td>ExceLint</td><td/><td>0</td><td/></row>
 		<row><td>FavoritesFolder</td><td>TARGETDIR</td><td>.:FAVORI~1|Favorites</td><td/><td>0</td><td/></row>
 		<row><td>FontsFolder</td><td>TARGETDIR</td><td>.:Fonts</td><td/><td>0</td><td/></row>
 		<row><td>GlobalAssemblyCache</td><td>TARGETDIR</td><td>.:Global~1|GlobalAssemblyCache</td><td/><td>0</td><td/></row>
-		<row><td>INSTALLDIR</td><td>EXCELINT</td><td>.</td><td/><td>0</td><td/></row>
+		<row><td>INSTALLDIR</td><td>EXCELINT1</td><td>.</td><td/><td>0</td><td/></row>
 		<row><td>ISCommonFilesFolder</td><td>CommonFilesFolder</td><td>Instal~1|InstallShield</td><td/><td>0</td><td/></row>
 		<row><td>ISMyCompanyDir</td><td>ProgramFilesFolder</td><td>MYCOMP~1|My Company Name</td><td/><td>0</td><td/></row>
 		<row><td>ISMyProductDir</td><td>ISMyCompanyDir</td><td>MYPROD~1|My Product Name</td><td/><td>0</td><td/></row>
@@ -1159,6 +1162,7 @@
 		<row><td>MY_PRODUCT_NAME</td><td>PLASMA___UMASS</td><td>MYPROD~1|My Product Name</td><td/><td>0</td><td/></row>
 		<row><td>MyPicturesFolder</td><td>TARGETDIR</td><td>.:MyPict~1|MyPictures</td><td/><td>0</td><td/></row>
 		<row><td>NetHoodFolder</td><td>TARGETDIR</td><td>.:NetHood</td><td/><td>0</td><td/></row>
+		<row><td>PLASMAUMASS</td><td>ProgramFilesFolder</td><td>PLASMA~1|PLASMAUMass</td><td/><td>0</td><td/></row>
 		<row><td>PLASMA___UMASS</td><td>ProgramFilesFolder</td><td>PLASMA~1|PLASMA @ UMass</td><td/><td>0</td><td/></row>
 		<row><td>PersonalFolder</td><td>TARGETDIR</td><td>.:Personal</td><td/><td>0</td><td/></row>
 		<row><td>PrimaryVolumePath</td><td>TARGETDIR</td><td>.:Primar~1|PrimaryVolumePath</td><td/><td>0</td><td/></row>
@@ -1875,6 +1879,7 @@
 		<row><td>AlwaysInstall</td><td>ExceLint.Primary_Output</td></row>
 		<row><td>AlwaysInstall</td><td>ExceLintUI.Primary_output</td></row>
 		<row><td>AlwaysInstall</td><td>ExcelParser.Primary_Output</td></row>
+		<row><td>AlwaysInstall</td><td>ISX_DEFAULTCOMPONENT</td></row>
 		<row><td>AlwaysInstall</td><td>ParcelCOMShim.Primary_Output</td></row>
 	</table>
 
@@ -1893,7 +1898,9 @@
 		<row><td>comwrapper.primary_output</td><td>COMWrapper.Primary_output</td><td>COMWrapper.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;COMWrapper&gt;|Built</td><td>3</td><td/></row>
 		<row><td>depends.primary_output</td><td>Depends.Primary_output</td><td>Depends.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;Depends&gt;|Built</td><td>3</td><td/></row>
 		<row><td>excelint.primary_output</td><td>ExceLint.Primary_Output</td><td>ExceLint.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLint&gt;|Built</td><td>3</td><td/></row>
+		<row><td>excelintui.dll.manifest</td><td>ISX_DEFAULTCOMPONENT</td><td>EXCELI~1.MAN|ExceLintUI.dll.manifest</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\ExceLintUI.dll.manifest</td><td>1</td><td/></row>
 		<row><td>excelintui.primary_output</td><td>ExceLintUI.Primary_output</td><td>ExceLintUI.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLintUI&gt;|Built</td><td>3</td><td/></row>
+		<row><td>excelintui.vsto</td><td>ISX_DEFAULTCOMPONENT</td><td>EXCELI~1.VST|ExceLintUI.vsto</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\ExceLintUI.vsto</td><td>1</td><td/></row>
 		<row><td>excelparser.primary_output</td><td>ExcelParser.Primary_Output</td><td>ExcelParser.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExcelParser&gt;|Built</td><td>3</td><td/></row>
 		<row><td>parcelcomshim.primary_output</td><td>ParcelCOMShim.Primary_Output</td><td>ParcelCOMShim.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ParcelCOMShim&gt;|Built</td><td>3</td><td/></row>
 	</table>
@@ -1911,6 +1918,8 @@
 	<table name="ISAssistantTag">
 		<col key="yes" def="s72">Tag</col>
 		<col def="S255">Data</col>
+		<row><td>PROJECT_ASSISTANT_DEFAULT_FEATURE</td><td>AlwaysInstall</td></row>
+		<row><td>RegistryPageEnabled</td><td>Yes</td></row>
 	</table>
 
 	<table name="ISBillBoard">
@@ -2042,6 +2051,7 @@
 		<row><td>ExceLint.Primary_Output</td><td/><td/><td>_81C7DC3D_1617_4452_8B32_5A190FE22650_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ExceLintUI.Primary_output</td><td/><td/><td>_12292C3E_2280_49E6_808A_218AF2B84FDC_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ExcelParser.Primary_Output</td><td/><td/><td>_03E07CAD_6FFE_4C5C_8D72_956C20464C50_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ISX_DEFAULTCOMPONENT</td><td/><td/><td>_0B3A78C7_4F95_4C07_8108_E58B4A20AF8E_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ParcelCOMShim.Primary_Output</td><td/><td/><td>_EACC0388_06CA_444E_8872_3FC5B1A9DC34_FILTER</td><td/><td/><td/><td/></row>
 	</table>
 
@@ -2605,6 +2615,7 @@
 		<col def="I2">Order</col>
 		<col def="I2">ISSetupLocation</col>
 		<col def="S255">ISReleaseFlags</col>
+		<row><td>_38BDF52F_4E17_4045_ADDA_9FFCB2269620_</td><td>Visual Studio 2010 Tools for Office Runtime.prq</td><td/><td/><td/></row>
 	</table>
 
 	<table name="ISSetupType">
@@ -3988,7 +3999,7 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>ISTheme</td><td>InstallShield Blue.theme</td></row>
 		<row><td>ISUSLock</td><td>{DC6C8571-A755-4E24-B180-DFB10F85A077}</td></row>
 		<row><td>ISUSSignature</td><td>{852DCDC1-156C-4BC3-8B56-F8B40367B9B5}</td></row>
-		<row><td>ISVisitedViews</td><td>viewAssistant,viewObjects,viewRelease,viewAppFiles</td></row>
+		<row><td>ISVisitedViews</td><td>viewAssistant,viewObjects,viewRelease,viewAppFiles,viewProject</td></row>
 		<row><td>Limited</td><td>1</td></row>
 		<row><td>LockPermissionMode</td><td>1</td></row>
 		<row><td>MsiExecCmdLineOptions</td><td/></row>
@@ -4293,7 +4304,6 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<col key="yes" def="s72">Property</col>
 		<col def="L0">Value</col>
 		<col def="S255">ISComments</col>
-		<row><td>ALLUSERS</td><td>1</td><td/></row>
 		<row><td>ARPINSTALLLOCATION</td><td/><td/></row>
 		<row><td>ARPPRODUCTICON</td><td>ARPPRODUCTICON.exe</td><td/></row>
 		<row><td>ARPSIZE</td><td/><td/></row>
@@ -4431,6 +4441,10 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<col def="S0">Value</col>
 		<col def="s72">Component_</col>
 		<col def="I4">ISAttributes</col>
+		<row><td>Registry1</td><td>1</td><td>Software\Microsoft\Office\Excel\Addins\PLASMAUMass.ExcelAddIn</td><td>Description</td><td>ExceLint Add-In</td><td>ISX_DEFAULTCOMPONENT</td><td>0</td></row>
+		<row><td>Registry2</td><td>1</td><td>Software\Microsoft\Office\Excel\Addins\PLASMAUMass.ExcelAddIn</td><td>FriendlyName</td><td>ExceLint Add-In</td><td>ISX_DEFAULTCOMPONENT</td><td>0</td></row>
+		<row><td>Registry3</td><td>1</td><td>Software\Microsoft\Office\Excel\Addins\PLASMAUMass.ExcelAddIn</td><td>LoadBehavior</td><td>#3</td><td>ISX_DEFAULTCOMPONENT</td><td>0</td></row>
+		<row><td>Registry4</td><td>1</td><td>Software\Microsoft\Office\Excel\Addins\PLASMAUMass.ExcelAddIn</td><td>Manifest</td><td>file:///[INSTALLDIR]ExceLintUI.vsto|vstolocal</td><td>ISX_DEFAULTCOMPONENT</td><td>0</td></row>
 	</table>
 
 	<table name="RemoveFile">
