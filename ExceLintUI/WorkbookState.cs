@@ -83,12 +83,26 @@ namespace ExceLintUI
             // Disable screen updating during analysis to speed things up
             _app.ScreenUpdating = false;
 
+            // build DAG
             var dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
 
-            
+            // get cursor location
+            var cursor = _app.Selection;
+            AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, _app.ActiveWorkbook);
+            var cursorStr = "(" + cursorAddr.X + "," + cursorAddr.Y + ")";  // for sanity-preservation purposes
+
+            // find all sources for 
+            var sourceVects = ExceLint.Vector.transitiveSourceVectors(cursorAddr, dag);
+
+            // make string
+            string[] sourceVectStrings = sourceVects.Select(vect => vect.ToString()).ToArray();
+            var sourceVectsString = String.Join("\n", sourceVectStrings);
 
             // Enable screen updating when we're done
             _app.ScreenUpdating = true;
+
+            System.Windows.Forms.MessageBox.Show("From: " + cursorStr + "\n\n" + sourceVectsString);
+
         }
 
         public void analyze(long max_duration_in_ms)
