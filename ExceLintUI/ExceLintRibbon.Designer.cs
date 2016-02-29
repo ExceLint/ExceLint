@@ -43,6 +43,7 @@
             this.FixErrorButton = this.Factory.CreateRibbonButton();
             this.StartOverButton = this.Factory.CreateRibbonButton();
             this.SensitivityTextBox = this.Factory.CreateRibbonEditBox();
+            this.button1 = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -73,6 +74,7 @@
             this.box1.Items.Add(this.MarkAsOKButton);
             this.box1.Items.Add(this.FixErrorButton);
             this.box1.Items.Add(this.StartOverButton);
+            this.box1.Items.Add(this.button1);
             this.box1.Name = "box1";
             // 
             // AnalyzeButton
@@ -118,6 +120,15 @@
             this.SensitivityTextBox.SizeString = "100.0";
             this.SensitivityTextBox.Text = "5.0";
             // 
+            // button1
+            // 
+            this.button1.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.button1.Image = global::ExceLintUI.Properties.Resources.pain;
+            this.button1.Label = "Test";
+            this.button1.Name = "button1";
+            this.button1.ShowImage = true;
+            this.button1.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button1_Click);
+            // 
             // ExceLintRibbon
             // 
             this.Name = "ExceLintRibbon";
@@ -148,6 +159,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton FixErrorButton;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton StartOverButton;
         internal Microsoft.Office.Tools.Ribbon.RibbonEditBox SensitivityTextBox;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton button1;
     }
 
     partial class ThisRibbonCollection

@@ -50,6 +50,7 @@
     <Compile Include="BasicStats.fs" />
     <Compile Include="Feature.fs" />
     <Compile Include="Degree.fs" />
+    <Compile Include="Vector.fs" />
     <Compile Include="Analysis.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />

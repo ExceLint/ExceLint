@@ -188,5 +188,10 @@ namespace ExceLintUI
 
 
         #endregion UTILITY_FUNCTIONS
+
+        private void button1_Click(object sender, RibbonControlEventArgs e)
+        {
+            currentWorkbook.test();
+        }
     }
 }

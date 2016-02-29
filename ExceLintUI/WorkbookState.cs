@@ -78,6 +78,19 @@ namespace ExceLintUI
             set { _debug_mode = value; }
         }
 
+        public void test()
+        {
+            // Disable screen updating during analysis to speed things up
+            _app.ScreenUpdating = false;
+
+            var dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
+
+            
+
+            // Enable screen updating when we're done
+            _app.ScreenUpdating = true;
+        }
+
         public void analyze(long max_duration_in_ms)
         {
             var sw = new System.Diagnostics.Stopwatch();

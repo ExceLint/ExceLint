@@ -3,38 +3,50 @@
 open COMWrapper
 open Depends
 open Feature
+open System
 
 type AbsoluteVector = (int*int)*(int*int)
 type OriginVector = (int*int)
 
+let private vector(sink: AST.Address)(source: AST.Address) : AbsoluteVector =
+    let sinkXY = (sink.X, sink.Y)
+    let sourceXY = (source.X, source.Y)
+    (sinkXY, sourceXY)
+
+let private rebaseVector(absVect: AbsoluteVector) : OriginVector =
+    let ((x1,y1),(x2,y2)) = absVect
+    (x2-x1, y2-y1)
+
+let private L2Norm(origVect: OriginVector) : double =
+    let (x,y) = origVect
+    Math.Sqrt(
+        Math.Pow(System.Convert.ToDouble(x),2.0) +
+        Math.Pow(System.Convert.ToDouble(y),2.0)
+    )
+
+let private L2NormSum(origVects: OriginVector[]) : double =
+    origVects |> Array.map L2Norm |> Array.sum
+
+let transitiveVectors(cell: AST.Address)(dag : DAG) : AbsoluteVector[] =
+    let rec tVect(sinkO: AST.Address option)(source: AST.Address) : AbsoluteVector list =
+        let vlist = match sinkO with
+                    | Some sink -> [vector sink source]
+                    | None -> []
+
+        if (dag.isFormula source) then
+            // find all of the inputs for source
+            let sources' = dag.getFormulaSingleCellInputs source |> List.ofSeq
+            // recursively call this function
+            vlist @ (List.map (fun source' -> tVect (Some source) source') sources' |> List.concat)
+        else
+            vlist
+    
+    tVect None cell |> List.toArray
+
 type OriginStructureVector() = 
     inherit BaseFeature()
 
-    static member vector(fromCell: AST.Address)(toCell: AST.Address) : AbsoluteVector =
-        failwith "not implemented"
-
-    static member rebaseVector(absVect: AbsoluteVector) : OriginVector =
-        failwith "not implemented"
-
-    static member vectorSum(origVects: OriginVector[]) : double =
-        failwith "not implemented"
-
     static member run cell (dag : DAG) = 
-        let fStr = dag.getFormulaAtAddress cell
-
-        // get all referents of the formula
-        let refs = dag.getFormulaSingleCellInputs cell |> Array.ofSeq
-
-        // for every referent, get its vector
-        let vectors = Array.map (fun r -> OriginStructureVector.vector cell r) refs
-
-        // rebase vectors to origin
-        let vectors' = Array.map OriginStructureVector.rebaseVector vectors
-
-        // recursive procedure:
-        // if no children, compute summary statistic (vector sum)
-        // else recurse and compute summary statistics for children
-
         failwith "not implemented"
 
 type RelativeStructureVector() = 
