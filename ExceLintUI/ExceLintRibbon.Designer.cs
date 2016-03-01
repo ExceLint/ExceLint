@@ -38,12 +38,14 @@
             this.tab2 = this.Factory.CreateRibbonTab();
             this.CheckCellGroup = this.Factory.CreateRibbonGroup();
             this.box1 = this.Factory.CreateRibbonBox();
+            this.SensitivityTextBox = this.Factory.CreateRibbonEditBox();
             this.AnalyzeButton = this.Factory.CreateRibbonButton();
             this.MarkAsOKButton = this.Factory.CreateRibbonButton();
             this.FixErrorButton = this.Factory.CreateRibbonButton();
             this.StartOverButton = this.Factory.CreateRibbonButton();
-            this.SensitivityTextBox = this.Factory.CreateRibbonEditBox();
             this.button1 = this.Factory.CreateRibbonButton();
+            this.button2 = this.Factory.CreateRibbonButton();
+            this.button3 = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -75,7 +77,16 @@
             this.box1.Items.Add(this.FixErrorButton);
             this.box1.Items.Add(this.StartOverButton);
             this.box1.Items.Add(this.button1);
+            this.box1.Items.Add(this.button3);
+            this.box1.Items.Add(this.button2);
             this.box1.Name = "box1";
+            // 
+            // SensitivityTextBox
+            // 
+            this.SensitivityTextBox.Label = "% to Audit";
+            this.SensitivityTextBox.Name = "SensitivityTextBox";
+            this.SensitivityTextBox.SizeString = "100.0";
+            this.SensitivityTextBox.Text = "5.0";
             // 
             // AnalyzeButton
             // 
@@ -113,21 +124,32 @@
             this.StartOverButton.ShowImage = true;
             this.StartOverButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.StartOverButton_Click);
             // 
-            // SensitivityTextBox
-            // 
-            this.SensitivityTextBox.Label = "% to Audit";
-            this.SensitivityTextBox.Name = "SensitivityTextBox";
-            this.SensitivityTextBox.SizeString = "100.0";
-            this.SensitivityTextBox.Text = "5.0";
-            // 
             // button1
             // 
             this.button1.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
             this.button1.Image = global::ExceLintUI.Properties.Resources.pain;
-            this.button1.Label = "Test";
+            this.button1.Label = "Vectors";
             this.button1.Name = "button1";
             this.button1.ShowImage = true;
             this.button1.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button1_Click);
+            // 
+            // button2
+            // 
+            this.button2.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.button2.Image = global::ExceLintUI.Properties.Resources.pain;
+            this.button2.Label = "L2Sum";
+            this.button2.Name = "button2";
+            this.button2.ShowImage = true;
+            this.button2.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button2_Click);
+            // 
+            // button3
+            // 
+            this.button3.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.button3.Image = global::ExceLintUI.Properties.Resources.pain;
+            this.button3.Label = "RelVectors";
+            this.button3.Name = "button3";
+            this.button3.ShowImage = true;
+            this.button3.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button3_Click);
             // 
             // ExceLintRibbon
             // 
@@ -160,6 +182,8 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton StartOverButton;
         internal Microsoft.Office.Tools.Ribbon.RibbonEditBox SensitivityTextBox;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton button1;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton button2;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton button3;
     }
 
     partial class ThisRibbonCollection

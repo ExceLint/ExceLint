@@ -47,8 +47,7 @@
         let private L2NormOVSum(vs: OriginVector[]) : double =
             vs |> Array.map L2NormOV |> Array.sum
 
-        // parameters in tupled form for C# compat
-        let transitiveFormulaVectors(cell: AST.Address, dag : DAG) : AbsoluteVector[] =
+        let transitiveFormulaVectors(cell: AST.Address)(dag : DAG) : AbsoluteVector[] =
             let rec tVect(sinkO: AST.Address option)(source: AST.Address) : AbsoluteVector list =
                 let vlist = match sinkO with
                             | Some sink -> [vector sink source]
@@ -69,17 +68,18 @@
     
             tVect None cell |> List.toArray
 
+        let transitiveFormulaRelativeVectors(cell: AST.Address)(dag: DAG) : OriginVector[] =
+            transitiveFormulaVectors cell dag |>
+            Array.map (fun v -> rebaseVector v dag)
+
         type FormulaRelativeL2NormSum() = 
             inherit BaseFeature()
 
-            static member run cell (dag : DAG) : double = 
-                let formulaRelativeVects =
-                    transitiveFormulaVectors(cell, dag) |>
-                    Array.map (fun v -> rebaseVector v dag)
-                L2NormOVSum formulaRelativeVects
+            static member run(cell: AST.Address)(dag : DAG) : double = 
+                L2NormOVSum (transitiveFormulaRelativeVectors cell dag)
 
         type FormulaRelativeAngleSum() = 
             inherit BaseFeature()
 
-            static member run cell (dag : DAG) = 
+            static member run(cell: AST.Address)(dag : DAG) = 
                 failwith "not implemented"

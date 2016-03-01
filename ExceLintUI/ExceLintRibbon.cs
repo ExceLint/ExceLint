@@ -191,7 +191,17 @@ namespace ExceLintUI
 
         private void button1_Click(object sender, RibbonControlEventArgs e)
         {
-            currentWorkbook.test();
+            currentWorkbook.getVectors();
+        }
+
+        private void button2_Click(object sender, RibbonControlEventArgs e)
+        {
+            currentWorkbook.getL2NormSum();
+        }
+
+        private void button3_Click(object sender, RibbonControlEventArgs e)
+        {
+            currentWorkbook.getRelativeVectors();
         }
     }
 }
