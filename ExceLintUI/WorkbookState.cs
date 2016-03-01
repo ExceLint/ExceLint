@@ -92,7 +92,7 @@ namespace ExceLintUI
             var cursorStr = "(" + cursorAddr.X + "," + cursorAddr.Y + ")";  // for sanity-preservation purposes
 
             // find all sources for 
-            var sourceVects = ExceLint.Vector.transitiveSourceVectors(cursorAddr, dag);
+            var sourceVects = ExceLint.Vector.transitiveFormulaVectors(cursorAddr, dag);
 
             // make string
             string[] sourceVectStrings = sourceVects.Select(vect => vect.ToString()).ToArray();

@@ -5,29 +5,50 @@
     open System
 
     module Vector =
-        type AbsoluteVector = (int*int)*(int*int)
-        type OriginVector = (int*int)
+        type Path = string
+        type X = int    // i.e., column displacement
+        type Y = int    // i.e., row displacement
+        type Z = int    // i.e., worksheet displacement (0 if same sheet, 1 if different)
+        type AbsoluteVector = (X*Y*Path)*(X*Y*Path)
+        // the origin is defined as x = 0, y = 0, z = 0 if first sheet in the workbook else 1
+        type OriginVector = (X*Y*Z)
 
         let private vector(sink: AST.Address)(source: AST.Address) : AbsoluteVector =
-            let sinkXY = (sink.X, sink.Y)
-            let sourceXY = (source.X, source.Y)
-            (sinkXY, sourceXY)
+            let sinkXYP = (sink.X, sink.Y, sink.Path)
+            let sourceXYP = (source.X, source.Y, source.Path)
+            (sinkXYP, sourceXYP)
 
-        let private rebaseVector(absVect: AbsoluteVector) : OriginVector =
-            let ((x1,y1),(x2,y2)) = absVect
-            (x2-x1, y2-y1)
+        let private originPath(dag: DAG) : Path =
+            dag.getWorkbookPath()
 
-        let private L2Norm(origVect: OriginVector) : double =
-            let (x,y) = origVect
+        let private pathDiff(p: Path)(dag: DAG) : int =
+            if p = (originPath dag) then 1 else 0
+
+        let private rebaseVector(absVect: AbsoluteVector)(dag: DAG) : OriginVector =
+            let ((x1,y1,p1),(x2,y2,p2)) = absVect
+            (x2-x1, y2-y1, (pathDiff p2 dag)-(pathDiff p1 dag))
+
+        let private L2Norm(X: double[]) : double =
             Math.Sqrt(
-                Math.Pow(System.Convert.ToDouble(x),2.0) +
-                Math.Pow(System.Convert.ToDouble(y),2.0)
+                Array.sumBy (fun x -> Math.Pow(x, 2.0)) X
             )
 
-        let private L2NormSum(origVects: OriginVector[]) : double =
-            origVects |> Array.map L2Norm |> Array.sum
+        let private originVectorToRealVector(v: OriginVector) : double[] =
+            let (x,y,z) = v
+            [|
+                System.Convert.ToDouble(x);
+                System.Convert.ToDouble(y);
+                System.Convert.ToDouble(z);
+            |]
 
-        let transitiveSourceVectors(cell: AST.Address, dag : DAG) : AbsoluteVector[] =
+        let private L2NormOV(v: OriginVector) : double =
+            L2Norm(originVectorToRealVector(v))
+
+        let private L2NormOVSum(vs: OriginVector[]) : double =
+            vs |> Array.map L2NormOV |> Array.sum
+
+        // parameters in tupled form for C# compat
+        let transitiveFormulaVectors(cell: AST.Address, dag : DAG) : AbsoluteVector[] =
             let rec tVect(sinkO: AST.Address option)(source: AST.Address) : AbsoluteVector list =
                 let vlist = match sinkO with
                             | Some sink -> [vector sink source]
@@ -48,13 +69,16 @@
     
             tVect None cell |> List.toArray
 
-        type OriginStructureVector() = 
+        type FormulaRelativeL2NormSum() = 
             inherit BaseFeature()
 
-            static member run cell (dag : DAG) = 
-                failwith "not implemented"
+            static member run cell (dag : DAG) : double = 
+                let formulaRelativeVects =
+                    transitiveFormulaVectors(cell, dag) |>
+                    Array.map (fun v -> rebaseVector v dag)
+                L2NormOVSum formulaRelativeVects
 
-        type RelativeStructureVector() = 
+        type FormulaRelativeAngleSum() = 
             inherit BaseFeature()
 
             static member run cell (dag : DAG) = 
