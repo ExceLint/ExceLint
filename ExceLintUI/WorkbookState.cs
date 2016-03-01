@@ -154,17 +154,17 @@ namespace ExceLintUI
             System.Windows.Forms.MessageBox.Show(cursorStr + " = " + l2ns);
         }
 
-        public void analyze(long max_duration_in_ms)
+        public void analyze(long max_duration_in_ms, ExceLint.Analysis.FeatureConf config)
         {
             var sw = new System.Diagnostics.Stopwatch();
             sw.Start();
 
             using (var pb = new ProgBar())
             {
-                // Disable screen updating during analysis to speed things up
+                // disable screen updating during analysis to speed things up
                 _app.ScreenUpdating = false;
 
-                // Build dependency graph
+                // build data dependence graph
                 try
                 {
                     _dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
@@ -176,6 +176,7 @@ namespace ExceLintUI
                     throw e;
                 }
 
+                // sanity check
                 if (_dag.terminalInputVectors().Length == 0)
                 {
                     System.Windows.Forms.MessageBox.Show("This spreadsheet contains no vector-input functions.");
@@ -184,14 +185,11 @@ namespace ExceLintUI
                     return;
                 }
 
-                // TODO: DO WORK HERE
-                var config = new ExceLint.Analysis.FeatureConf()
-                    .enableCombinedDegree()
-                    .enableInDegree()
-                    .enableOutDegree();
+                // run analysis
                 var model = new ExceLint.Analysis.ErrorModel(config, _dag, 0.05);
                 KeyValuePair<AST.Address, double>[] scores = model.rankWithScore();
 
+                // debug output
                 if (_debug_mode)
                 {
                     var score_str = String.Join("\n", scores.Take(10).Select(score => score.Key.A1FullyQualified() + " -> " + score.Value.ToString()));
@@ -327,7 +325,7 @@ namespace ExceLintUI
             flag();
         }
 
-        internal void fixError(Action<WorkbookState> setUIState)
+        internal void fixError(Action<WorkbookState> setUIState, ExceLint.Analysis.FeatureConf config)
         {
             var cell = ParcelCOMShim.Address.GetCOMObject(_flagged_cell, _app);
             // this callback gets run when the user clicks "OK"
@@ -341,7 +339,7 @@ namespace ExceLintUI
                 try
                 {
                     // when a user fixes something, we need to re-run the analysis
-                    analyze(MAX_DURATION_IN_MS);
+                    analyze(MAX_DURATION_IN_MS, config);
                     // and flag again
                     flag();
                     // and then set the UI state

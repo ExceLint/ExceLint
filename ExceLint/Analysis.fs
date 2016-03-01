@@ -10,6 +10,7 @@
                 ("indegree", false);
                 ("combineddegree", false);
                 ("outdegree", false);
+                ("relL2normsum", false);
             ]
             let _config = Map.fold (fun acc key value -> Map.add key value acc) _defaults userConf
 
@@ -17,6 +18,7 @@
                 ("indegree", fun (cell)(dag) -> if _config.["indegree"] then Degree.InDegree.run cell dag else _base cell dag);
                 ("combineddegree", fun (cell)(dag) -> if _config.["combineddegree"] then (Degree.InDegree.run cell dag + Degree.OutDegree.run cell dag) else _base cell dag);
                 ("outdegree", fun (cell)(dag) -> if _config.["outdegree"] then Degree.OutDegree.run cell dag else _base cell dag);
+                ("relL2normsum", fun (cell)(dag) -> if _config.["relL2normsum"] then Vector.FormulaRelativeL2NormSum.run cell dag else _base cell dag);
             ]
 
             new() = FeatureConf(Map.empty)
@@ -28,6 +30,8 @@
                 FeatureConf(_config.Add("outdegree", true))
             member self.enableCombinedDegree() : FeatureConf =
                 FeatureConf(_config.Add("combineddegree", true))
+            member self.enableFormulaRelativeL2NormSum() : FeatureConf =
+                FeatureConf(_config.Add("relL2normsum", true))
 
             // getters
             member self.Feature
@@ -56,10 +60,6 @@
             /// <param name="cell">the address of a formula cell</param>
             /// <returns>a score</returns>
             member self.score(cell: AST.Address) : double =
-                let a1 = cell.A1Local()
-                if a1 = "E26" then
-                    printfn "hey"
-
                 // get feature scores
                 let fs = Array.map (fun fname ->
                             // get feature lambda

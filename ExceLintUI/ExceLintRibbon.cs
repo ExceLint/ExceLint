@@ -30,7 +30,7 @@ namespace ExceLintUI
                 currentWorkbook.toolProportion = prop.Value;
                 try
                 {
-                    currentWorkbook.analyze(WorkbookState.MAX_DURATION_IN_MS);
+                    currentWorkbook.analyze(WorkbookState.MAX_DURATION_IN_MS, getConfig());
                     currentWorkbook.flag();
                     setUIState(currentWorkbook);
                 }
@@ -50,7 +50,7 @@ namespace ExceLintUI
         
         private void FixErrorButton_Click(object sender, RibbonControlEventArgs e)
         {
-            currentWorkbook.fixError(setUIState);
+            currentWorkbook.fixError(setUIState, getConfig());
         }
 
         private void MarkAsOKButton_Click(object sender, RibbonControlEventArgs e)
@@ -63,6 +63,21 @@ namespace ExceLintUI
         {
             currentWorkbook.resetTool();
             setUIState(currentWorkbook);
+        }
+
+        private void button1_Click(object sender, RibbonControlEventArgs e)
+        {
+            currentWorkbook.getVectors();
+        }
+
+        private void button2_Click(object sender, RibbonControlEventArgs e)
+        {
+            currentWorkbook.getL2NormSum();
+        }
+
+        private void button3_Click(object sender, RibbonControlEventArgs e)
+        {
+            currentWorkbook.getRelativeVectors();
         }
 
         #endregion BUTTON_HANDLERS
@@ -157,24 +172,24 @@ namespace ExceLintUI
         #region UTILITY_FUNCTIONS
         private static FSharpOption<double> getProportion(string input, string label)
         {
-            var errormsg = label + " must be a value between 0 and 100";
-            var significance = 0.95;
+            var errormsg = label + " must be a value between 0 and 100.";
 
             try
             {
-                significance = (100.0 - Double.Parse(input)) / 100.0;
+                double prop = Double.Parse(input) / 100.0;
+
+                if (prop <= 0 || prop > 100)
+                {
+                    System.Windows.Forms.MessageBox.Show(errormsg);
+                }
+
+                return FSharpOption<double>.Some(prop);
             }
             catch
             {
                 System.Windows.Forms.MessageBox.Show(errormsg);
+                return FSharpOption<double>.None;
             }
-
-            if (significance < 0 || significance > 100)
-            {
-                System.Windows.Forms.MessageBox.Show(errormsg);
-            }
-
-            return FSharpOption<double>.Some(significance);
         }
 
         private void setUIState(WorkbookState wbs)
@@ -185,23 +200,18 @@ namespace ExceLintUI
             this.AnalyzeButton.Enabled = wbs.Analyze_Enabled;
         }
 
-
-
         #endregion UTILITY_FUNCTIONS
 
-        private void button1_Click(object sender, RibbonControlEventArgs e)
+        public ExceLint.Analysis.FeatureConf getConfig()
         {
-            currentWorkbook.getVectors();
-        }
+            var c = new ExceLint.Analysis.FeatureConf();
 
-        private void button2_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.getL2NormSum();
-        }
+            if (this.inDegree.Checked) { c.enableInDegree(); }
+            if (this.outDegree.Checked) { c.enableOutDegree(); }
+            if (this.combinedDegree.Checked) { c.enableCombinedDegree(); }
+            if (this.relVectL2NormSum.Checked) { c.enableFormulaRelativeL2NormSum(); }
 
-        private void button3_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.getRelativeVectors();
+            return c;
         }
     }
 }
