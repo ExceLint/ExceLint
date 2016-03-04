@@ -365,5 +365,11 @@ namespace ExceLintUI
             // restore output colors
             restoreOutputColors();
         }
+
+        public string ToDOT()
+        {
+            var dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
+            return dag.ToDOT();
+        }
     }
 }

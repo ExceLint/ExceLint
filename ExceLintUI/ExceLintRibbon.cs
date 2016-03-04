@@ -213,5 +213,12 @@ namespace ExceLintUI
 
             return c;
         }
+
+        private void ToDOT_Click(object sender, RibbonControlEventArgs e)
+        {
+            var graphviz = currentWorkbook.ToDOT();
+            System.Windows.Clipboard.SetText(graphviz);
+            System.Windows.Forms.MessageBox.Show("Done. Graph is in the clipboard.");
+        }
     }
 }

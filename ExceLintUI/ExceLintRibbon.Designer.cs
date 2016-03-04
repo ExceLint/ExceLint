@@ -39,18 +39,19 @@
             this.CheckCellGroup = this.Factory.CreateRibbonGroup();
             this.box1 = this.Factory.CreateRibbonBox();
             this.SensitivityTextBox = this.Factory.CreateRibbonEditBox();
-            this.AnalyzeButton = this.Factory.CreateRibbonButton();
-            this.MarkAsOKButton = this.Factory.CreateRibbonButton();
-            this.FixErrorButton = this.Factory.CreateRibbonButton();
-            this.StartOverButton = this.Factory.CreateRibbonButton();
-            this.button1 = this.Factory.CreateRibbonButton();
-            this.button2 = this.Factory.CreateRibbonButton();
-            this.button3 = this.Factory.CreateRibbonButton();
             this.separator1 = this.Factory.CreateRibbonSeparator();
             this.inDegree = this.Factory.CreateRibbonCheckBox();
             this.outDegree = this.Factory.CreateRibbonCheckBox();
             this.combinedDegree = this.Factory.CreateRibbonCheckBox();
             this.relVectL2NormSum = this.Factory.CreateRibbonCheckBox();
+            this.AnalyzeButton = this.Factory.CreateRibbonButton();
+            this.MarkAsOKButton = this.Factory.CreateRibbonButton();
+            this.FixErrorButton = this.Factory.CreateRibbonButton();
+            this.StartOverButton = this.Factory.CreateRibbonButton();
+            this.button1 = this.Factory.CreateRibbonButton();
+            this.button3 = this.Factory.CreateRibbonButton();
+            this.button2 = this.Factory.CreateRibbonButton();
+            this.ToDOT = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -89,6 +90,7 @@
             this.box1.Items.Add(this.button1);
             this.box1.Items.Add(this.button3);
             this.box1.Items.Add(this.button2);
+            this.box1.Items.Add(this.ToDOT);
             this.box1.Name = "box1";
             // 
             // SensitivityTextBox
@@ -97,6 +99,30 @@
             this.SensitivityTextBox.Name = "SensitivityTextBox";
             this.SensitivityTextBox.SizeString = "100.0";
             this.SensitivityTextBox.Text = "5.0";
+            // 
+            // separator1
+            // 
+            this.separator1.Name = "separator1";
+            // 
+            // inDegree
+            // 
+            this.inDegree.Label = "In-Degree";
+            this.inDegree.Name = "inDegree";
+            // 
+            // outDegree
+            // 
+            this.outDegree.Label = "Out-Degree";
+            this.outDegree.Name = "outDegree";
+            // 
+            // combinedDegree
+            // 
+            this.combinedDegree.Label = "Both-Degree";
+            this.combinedDegree.Name = "combinedDegree";
+            // 
+            // relVectL2NormSum
+            // 
+            this.relVectL2NormSum.Label = "RelVectL2NormSum";
+            this.relVectL2NormSum.Name = "relVectL2NormSum";
             // 
             // AnalyzeButton
             // 
@@ -143,15 +169,6 @@
             this.button1.ShowImage = true;
             this.button1.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button1_Click);
             // 
-            // button2
-            // 
-            this.button2.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.button2.Image = global::ExceLintUI.Properties.Resources.pain;
-            this.button2.Label = "L2Sum";
-            this.button2.Name = "button2";
-            this.button2.ShowImage = true;
-            this.button2.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button2_Click);
-            // 
             // button3
             // 
             this.button3.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
@@ -161,29 +178,23 @@
             this.button3.ShowImage = true;
             this.button3.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button3_Click);
             // 
-            // separator1
+            // button2
             // 
-            this.separator1.Name = "separator1";
+            this.button2.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.button2.Image = global::ExceLintUI.Properties.Resources.pain;
+            this.button2.Label = "L2Sum";
+            this.button2.Name = "button2";
+            this.button2.ShowImage = true;
+            this.button2.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button2_Click);
             // 
-            // inDegree
+            // ToDOT
             // 
-            this.inDegree.Label = "In-Degree";
-            this.inDegree.Name = "inDegree";
-            // 
-            // outDegree
-            // 
-            this.outDegree.Label = "Out-Degree";
-            this.outDegree.Name = "outDegree";
-            // 
-            // combinedDegree
-            // 
-            this.combinedDegree.Label = "Both-Degree";
-            this.combinedDegree.Name = "combinedDegree";
-            // 
-            // relVectL2NormSum
-            // 
-            this.relVectL2NormSum.Label = "RelVectL2NormSum";
-            this.relVectL2NormSum.Name = "relVectL2NormSum";
+            this.ToDOT.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.ToDOT.Image = global::ExceLintUI.Properties.Resources.graph;
+            this.ToDOT.Label = "ToDOT";
+            this.ToDOT.Name = "ToDOT";
+            this.ToDOT.ShowImage = true;
+            this.ToDOT.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ToDOT_Click);
             // 
             // ExceLintRibbon
             // 
@@ -223,6 +234,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox outDegree;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox combinedDegree;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox relVectL2NormSum;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton ToDOT;
     }
 
     partial class ThisRibbonCollection
