@@ -40,7 +40,9 @@
                 with get() = _features |> Map.toArray |> Array.map fst
 
         // a C#-friendly error model constructor
-        type ErrorModel(config: FeatureConf, dag: Depends.DAG, alpha: double) =
+        type ErrorModel(cdebug: FeatureConf, dag: Depends.DAG, alpha: double) =
+            let config = (new FeatureConf()).enableFormulaRelativeL2NormSum()
+
             // train model on construction
             let _data =
                 let allFormulaCells = dag.getAllFormulaAddrs()
@@ -56,10 +58,25 @@
                 ) |>
                 Map.ofArray
 
+            // TODO: DEBUGGING: HARDCODED
+            let dataarr = _data.["relL2normsum"] |> Array.sort
+
+            let ftable = Array.fold (fun (acc: Map<double,int>)(elem: double) ->
+                            if (acc.ContainsKey(elem)) then
+                                acc.Add(elem, acc.[elem] + 1)
+                            else
+                                acc.Add(elem, 1)
+                            ) (Map.empty) dataarr 
+//                            |> Map.toArray |> Array.sortBy (fun (key,value) -> value)
+
+
+
             /// <summary>Analyzes the given cell using all of the configured features and produces a score.</summary>
             /// <param name="cell">the address of a formula cell</param>
             /// <returns>a score</returns>
             member self.score(cell: AST.Address) : double =
+                
+
                 // get feature scores
                 let fs = Array.map (fun fname ->
                             // get feature lambda
@@ -68,11 +85,13 @@
                             // get feature value for this cell
                             let t = f cell dag
 
+                            t
+
                             // determine probability
-                            let p = BasicStats.cdf t _data.[fname]
+//                            let p = BasicStats.cdf t _data.[fname]
 
                             // do two-tailed test
-                            if p > (1.0 - alpha) then 1.0 else 0.0
+//                            if p > (1.0 - alpha) then 1.0 else 0.0
                          ) (config.Features)
 
                 // combine scores
@@ -81,20 +100,25 @@
             /// <summary>Ranks all the cells in the workbook by their anomalousness.</summary>
             /// <returns>an AST.Address[] ranked from most to least anomalous</returns>
             member self.rank() : AST.Address[] =
-                // get all formula cells
-                dag.getAllFormulaAddrs() |>
-
                 // rank by analysis score (rev to sort from high to low)
-                Array.sortBy (self.score) |> Array.rev
+                let ranks = Array.sortBy (fun addr ->
+                                let score = self.score(addr)
+                                let freq = ftable.[score]
+                                freq
+                            ) (dag.getAllFormulaAddrs())
+
+                ranks
 
             /// <summary>Ranks all the cells in the workbook by their anomalousness.</summary>
             /// <returns>an KeyValuePair<AST.Address,int>[] of (address,score) ranked from most to least anomalous</returns>
-            member self.rankWithScore() : KeyValuePair<AST.Address,double>[] =
+            member self.rankWithScore() : KeyValuePair<AST.Address,int>[] =
                 // get all cells
-                dag.getAllFormulaAddrs() |>
+                let output = dag.getAllFormulaAddrs() |>
 
-                // get scores
-                Array.map (fun c -> new KeyValuePair<AST.Address,double>(c, self.score c)) |>
+                    // get scores
+                    Array.map (fun c -> new KeyValuePair<AST.Address, int>(c, ftable.[self.score c])) |>
 
-                // rank
-                Array.sortBy (fun (pair: KeyValuePair<AST.Address, double>) -> -pair.Value)
+                    // rank
+                    Array.sortBy (fun (pair: KeyValuePair<AST.Address, int>) -> pair.Value)
+
+                output

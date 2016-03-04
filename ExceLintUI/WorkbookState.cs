@@ -26,7 +26,7 @@ namespace ExceLintUI
         private HashSet<AST.Address> _tool_highlights = new HashSet<AST.Address>();
         private HashSet<AST.Address> _output_highlights = new HashSet<AST.Address>();
         private HashSet<AST.Address> _known_good = new HashSet<AST.Address>();
-        private IEnumerable<KeyValuePair<AST.Address, double>> _flaggable;
+        private KeyValuePair<AST.Address, int>[] _flaggable;
         private AST.Address _flagged_cell;
         private DAG _dag;
         private bool _debug_mode = false;
@@ -181,13 +181,13 @@ namespace ExceLintUI
                 {
                     System.Windows.Forms.MessageBox.Show("This spreadsheet contains no vector-input functions.");
                     _app.ScreenUpdating = true;
-                    _flaggable = new KeyValuePair<AST.Address, double>[0];
+                    _flaggable = new KeyValuePair<AST.Address, int>[0];
                     return;
                 }
 
                 // run analysis
                 var model = new ExceLint.Analysis.ErrorModel(config, _dag, 0.05);
-                KeyValuePair<AST.Address, double>[] scores = model.rankWithScore();
+                KeyValuePair<AST.Address, int>[] scores = model.rankWithScore();
 
                 // debug output
                 if (_debug_mode)
@@ -197,13 +197,16 @@ namespace ExceLintUI
                     System.Windows.Forms.Clipboard.SetText(score_str);
                 }
 
+                _flaggable = scores;
+
                 // calculate cutoff idnex
                 int thresh = scores.Length - Convert.ToInt32(scores.Length * _tool_proportion);
 
                 // filter out cells that are...
-                _flaggable = scores.Where(pair => pair.Value >= scores[thresh].Value)   // below threshold
-                                   .Where(pair => !_known_good.Contains(pair.Key))      // known to be good
-                                   .Where(pair => pair.Value != 0.0).ToArray();         // score == 0
+                //_flaggable = scores.Where(pair => pair.Value >= scores[thresh].Value)   // below threshold
+                //                   .Where(pair => !_known_good.Contains(pair.Key))      // known to be good
+                //                   .Where(pair => pair.Value != 0).ToArray()            // score == 0
+                //                   .Select(pair => new KeyValuePair<AST.Address, double>(pair.Key, System.Convert.ToInt32(pair.Value)));
 
                 // Enable screen updating when we're done
                 _app.ScreenUpdating = true;
@@ -235,7 +238,7 @@ namespace ExceLintUI
         public void flag()
         {
             //filter known_good
-            _flaggable = _flaggable.Where(kvp => !_known_good.Contains(kvp.Key));
+            _flaggable = _flaggable.Where(kvp => !_known_good.Contains(kvp.Key)).ToArray();
             if (_flaggable.Count() != 0)
             {
                 // get TreeNode corresponding to most unusual score
