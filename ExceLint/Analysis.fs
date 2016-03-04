@@ -10,7 +10,8 @@
                 ("indegree", false);
                 ("combineddegree", false);
                 ("outdegree", false);
-                ("relL2normsum", false);
+                ("vRelL2normsum", false);
+                ("dRelL2normsum", false);
             ]
             let _config = Map.fold (fun acc key value -> Map.add key value acc) _defaults userConf
 
@@ -18,7 +19,8 @@
                 ("indegree", fun (cell)(dag) -> if _config.["indegree"] then Degree.InDegree.run cell dag else _base cell dag);
                 ("combineddegree", fun (cell)(dag) -> if _config.["combineddegree"] then (Degree.InDegree.run cell dag + Degree.OutDegree.run cell dag) else _base cell dag);
                 ("outdegree", fun (cell)(dag) -> if _config.["outdegree"] then Degree.OutDegree.run cell dag else _base cell dag);
-                ("relL2normsum", fun (cell)(dag) -> if _config.["relL2normsum"] then Vector.FormulaRelativeL2NormSum.run cell dag else _base cell dag);
+                ("vRelL2normsum", fun (cell)(dag) -> if _config.["vRelL2normsum"] then Vector.FormulaRelativeL2NormSum.run cell dag else _base cell dag);
+                ("dRelL2normsum", fun (cell)(dag) -> if _config.["dRelL2normsum"] then Vector.DataRelativeL2NormSum.run cell dag else _base cell dag);
             ]
 
             new() = FeatureConf(Map.empty)
@@ -31,21 +33,29 @@
             member self.enableCombinedDegree() : FeatureConf =
                 FeatureConf(_config.Add("combineddegree", true))
             member self.enableFormulaRelativeL2NormSum() : FeatureConf =
-                FeatureConf(_config.Add("relL2normsum", true))
+                FeatureConf(_config.Add("vRelL2normsum", true))
+            member self.enableDataRelativeL2NormSum() : FeatureConf =
+                FeatureConf(_config.Add("dRelL2normsum", true))
 
             // getters
             member self.Feature
                 with get(name) = _features.[name]
             member self.Features
-                with get() = _features |> Map.toArray |> Array.map fst
+                with get() : string[] = 
+                    _config |>
+                        Map.toArray |>
+                        Array.choose (fun (feature,enabled) ->
+                                        if enabled then
+                                            Some feature
+                                        else None)
 
         // a C#-friendly error model constructor
         type ErrorModel(cdebug: FeatureConf, dag: Depends.DAG, alpha: double) =
-            let config = (new FeatureConf()).enableFormulaRelativeL2NormSum()
+            let config = (new FeatureConf()).enableFormulaRelativeL2NormSum().enableDataRelativeL2NormSum()
 
             // train model on construction
-            let _data =
-                let allFormulaCells = dag.getAllFormulaAddrs()
+            let _data: Map<string,double[]> =
+                let allCells = dag.allCells()
 
                 config.Features |>
                 Array.map (fun fname ->
@@ -53,72 +63,74 @@
                     let feature = config.Feature(fname)
 
                     // run feature on every cell
-                    let fvals = Array.map (fun cell -> feature cell dag) allFormulaCells
+                    let fvals = Array.map (fun cell -> feature cell dag) allCells
                     fname, fvals
                 ) |>
                 Map.ofArray
 
-            // TODO: DEBUGGING: HARDCODED
-            let dataarr = _data.["relL2normsum"] |> Array.sort
-
-            let ftable = Array.fold (fun (acc: Map<double,int>)(elem: double) ->
-                            if (acc.ContainsKey(elem)) then
-                                acc.Add(elem, acc.[elem] + 1)
-                            else
-                                acc.Add(elem, 1)
-                            ) (Map.empty) dataarr 
-//                            |> Map.toArray |> Array.sortBy (fun (key,value) -> value)
-
-
+            // a 3D frequency table: (featurename, score, count)
+            let ftables: Map<string,Map<double,int>> =
+                Array.fold (fun (oacc: Map<string,Map<double,int>>)(fname: string) ->
+                    let imap = Array.fold (fun (iacc: Map<double,int>)(elem: double) ->
+                                    if (iacc.ContainsKey(elem)) then
+                                        iacc.Add(elem, iacc.[elem] + 1)
+                                    else
+                                        iacc.Add(elem, 1)
+                                ) (Map.empty) (_data.[fname]) 
+                    oacc.Add(fname, imap)
+                ) (Map.empty) (config.Features)
 
             /// <summary>Analyzes the given cell using all of the configured features and produces a score.</summary>
             /// <param name="cell">the address of a formula cell</param>
             /// <returns>a score</returns>
-            member self.score(cell: AST.Address) : double =
-                
+            member self.score(cell: AST.Address)(fname: string) : double =
+                // get feature by name
+                let f = config.Feature fname
 
-                // get feature scores
-                let fs = Array.map (fun fname ->
-                            // get feature lambda
-                            let f = config.Feature fname
+                // get feature value for this cell
+                f cell dag
 
-                            // get feature value for this cell
-                            let t = f cell dag
-
-                            t
-
-                            // determine probability
-//                            let p = BasicStats.cdf t _data.[fname]
-
-                            // do two-tailed test
-//                            if p > (1.0 - alpha) then 1.0 else 0.0
-                         ) (config.Features)
-
-                // combine scores
-                Array.sum fs
-
-            /// <summary>Ranks all the cells in the workbook by their anomalousness.</summary>
-            /// <returns>an AST.Address[] ranked from most to least anomalous</returns>
-            member self.rank() : AST.Address[] =
-                // rank by analysis score (rev to sort from high to low)
-                let ranks = Array.sortBy (fun addr ->
-                                let score = self.score(addr)
-                                let freq = ftable.[score]
-                                freq
-                            ) (dag.getAllFormulaAddrs())
-
-                ranks
+            member private self.rankByFeature(fname: string)(dag: Depends.DAG) : Map<AST.Address,int> =
+                Array.map (fun c ->
+                    let score = self.score c fname
+                    let ftable = ftables.[fname]
+                    c, ftable.[score]
+                ) (dag.allCells()) |>
+                Array.sortBy (fun (c,freq) -> freq) |>
+                Array.mapi (fun i (c,s) -> c,i )
+                |> Map.ofArray
 
             /// <summary>Ranks all the cells in the workbook by their anomalousness.</summary>
             /// <returns>an KeyValuePair<AST.Address,int>[] of (address,score) ranked from most to least anomalous</returns>
-            member self.rankWithScore() : KeyValuePair<AST.Address,int>[] =
-                // get all cells
-                let output = dag.getAllFormulaAddrs() |>
+            member self.rankWithScore() : KeyValuePair<AST.Address,double>[] =
+                // get the number of features
+                let fsize = double(config.Features.Length)
 
-                    // get scores
-                    Array.map (fun c -> new KeyValuePair<AST.Address, int>(c, ftable.[self.score c])) |>
+                // get per-feature rank for every cell
+                let ranks = Array.map (fun fname -> self.rankByFeature fname dag) (config.Features)
 
-                    // rank
-                    Array.sortBy (fun (pair: KeyValuePair<AST.Address, int>) -> pair.Value)
+                let debug_ranks = Array.map (fun cell ->
+                                    let rs = Array.map (fun (ranking: Map<AST.Address,int>) ->
+                                                if (ranking.ContainsKey cell) then
+                                                    ranking.[cell]
+                                                else
+                                                    0
+                                             ) ranks
+                                    cell, rs
+                                  ) (dag.allCells())
+                                  |> Array.sortBy (fun (cell, rs) -> double(Array.sum rs) / fsize)
 
-                output
+                // compute and return average rank for each cell
+                Array.map (fun (c: AST.Address) ->
+                    let crank: int = Array.sumBy (
+                                        fun (ranking: Map<AST.Address,int>) ->
+                                            // TODO: FIX: this is a dirty hack
+                                            // because one of my cells is missing (WTF?!)
+                                            if (ranking.ContainsKey c) then
+                                                ranking.[c]
+                                            else
+                                                0
+                                     ) ranks
+                    let avgrank = double(crank) / fsize
+                    new KeyValuePair<AST.Address, double>(c, avgrank)
+                ) (dag.allCells())

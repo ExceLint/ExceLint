@@ -26,7 +26,7 @@ namespace ExceLintUI
         private HashSet<AST.Address> _tool_highlights = new HashSet<AST.Address>();
         private HashSet<AST.Address> _output_highlights = new HashSet<AST.Address>();
         private HashSet<AST.Address> _known_good = new HashSet<AST.Address>();
-        private KeyValuePair<AST.Address, int>[] _flaggable;
+        private KeyValuePair<AST.Address, double>[] _flaggable;
         private AST.Address _flagged_cell;
         private DAG _dag;
         private bool _debug_mode = false;
@@ -181,13 +181,13 @@ namespace ExceLintUI
                 {
                     System.Windows.Forms.MessageBox.Show("This spreadsheet contains no vector-input functions.");
                     _app.ScreenUpdating = true;
-                    _flaggable = new KeyValuePair<AST.Address, int>[0];
+                    _flaggable = new KeyValuePair<AST.Address, double>[0];
                     return;
                 }
 
                 // run analysis
                 var model = new ExceLint.Analysis.ErrorModel(config, _dag, 0.05);
-                KeyValuePair<AST.Address, int>[] scores = model.rankWithScore();
+                KeyValuePair<AST.Address, double>[] scores = model.rankWithScore();
 
                 // debug output
                 if (_debug_mode)
@@ -199,7 +199,7 @@ namespace ExceLintUI
 
                 _flaggable = scores;
 
-                // calculate cutoff idnex
+                // calculate cutoff index
                 int thresh = scores.Length - Convert.ToInt32(scores.Length * _tool_proportion);
 
                 // filter out cells that are...
