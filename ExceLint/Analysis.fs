@@ -56,8 +56,7 @@
                                         else None)
 
         // a C#-friendly error model constructor
-        type ErrorModel(cdebug: FeatureConf, dag: Depends.DAG, alpha: double) =
-            let config = (new FeatureConf()).enableFormulaRelativeL2NormSum().enableDataRelativeL2NormSum()
+        type ErrorModel(config: FeatureConf, dag: Depends.DAG, alpha: double) =
 
             // train model on construction
             let _data: Dict<string,double[]> =

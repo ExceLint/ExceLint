@@ -206,10 +206,11 @@ namespace ExceLintUI
         {
             var c = new ExceLint.Analysis.FeatureConf();
 
-            if (this.inDegree.Checked) { c.enableInDegree(); }
-            if (this.outDegree.Checked) { c.enableOutDegree(); }
-            if (this.combinedDegree.Checked) { c.enableCombinedDegree(); }
-            if (this.relVectL2NormSum.Checked) { c.enableFormulaRelativeL2NormSum(); }
+            if (this.inDegree.Checked) { c = c.enableInDegree(); }
+            if (this.outDegree.Checked) { c = c.enableOutDegree(); }
+            if (this.combinedDegree.Checked) { c = c.enableCombinedDegree(); }
+            if (this.inVectors.Checked) { c = c.enableFormulaRelativeL2NormSum(); }
+            if (this.outVectors.Checked) { c = c.enableDataRelativeL2NormSum(); }
 
             return c;
         }

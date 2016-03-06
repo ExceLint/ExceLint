@@ -38,12 +38,6 @@
             this.tab2 = this.Factory.CreateRibbonTab();
             this.CheckCellGroup = this.Factory.CreateRibbonGroup();
             this.box1 = this.Factory.CreateRibbonBox();
-            this.SensitivityTextBox = this.Factory.CreateRibbonEditBox();
-            this.separator1 = this.Factory.CreateRibbonSeparator();
-            this.inDegree = this.Factory.CreateRibbonCheckBox();
-            this.outDegree = this.Factory.CreateRibbonCheckBox();
-            this.combinedDegree = this.Factory.CreateRibbonCheckBox();
-            this.relVectL2NormSum = this.Factory.CreateRibbonCheckBox();
             this.AnalyzeButton = this.Factory.CreateRibbonButton();
             this.MarkAsOKButton = this.Factory.CreateRibbonButton();
             this.FixErrorButton = this.Factory.CreateRibbonButton();
@@ -52,6 +46,13 @@
             this.button3 = this.Factory.CreateRibbonButton();
             this.button2 = this.Factory.CreateRibbonButton();
             this.ToDOT = this.Factory.CreateRibbonButton();
+            this.SensitivityTextBox = this.Factory.CreateRibbonEditBox();
+            this.separator1 = this.Factory.CreateRibbonSeparator();
+            this.inDegree = this.Factory.CreateRibbonCheckBox();
+            this.outDegree = this.Factory.CreateRibbonCheckBox();
+            this.combinedDegree = this.Factory.CreateRibbonCheckBox();
+            this.inVectors = this.Factory.CreateRibbonCheckBox();
+            this.outVectors = this.Factory.CreateRibbonCheckBox();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -78,7 +79,8 @@
             this.CheckCellGroup.Items.Add(this.inDegree);
             this.CheckCellGroup.Items.Add(this.outDegree);
             this.CheckCellGroup.Items.Add(this.combinedDegree);
-            this.CheckCellGroup.Items.Add(this.relVectL2NormSum);
+            this.CheckCellGroup.Items.Add(this.inVectors);
+            this.CheckCellGroup.Items.Add(this.outVectors);
             this.CheckCellGroup.Name = "CheckCellGroup";
             // 
             // box1
@@ -92,37 +94,6 @@
             this.box1.Items.Add(this.button2);
             this.box1.Items.Add(this.ToDOT);
             this.box1.Name = "box1";
-            // 
-            // SensitivityTextBox
-            // 
-            this.SensitivityTextBox.Label = "% to Audit";
-            this.SensitivityTextBox.Name = "SensitivityTextBox";
-            this.SensitivityTextBox.SizeString = "100.0";
-            this.SensitivityTextBox.Text = "5.0";
-            // 
-            // separator1
-            // 
-            this.separator1.Name = "separator1";
-            // 
-            // inDegree
-            // 
-            this.inDegree.Label = "In-Degree";
-            this.inDegree.Name = "inDegree";
-            // 
-            // outDegree
-            // 
-            this.outDegree.Label = "Out-Degree";
-            this.outDegree.Name = "outDegree";
-            // 
-            // combinedDegree
-            // 
-            this.combinedDegree.Label = "Both-Degree";
-            this.combinedDegree.Name = "combinedDegree";
-            // 
-            // relVectL2NormSum
-            // 
-            this.relVectL2NormSum.Label = "RelVectL2NormSum";
-            this.relVectL2NormSum.Name = "relVectL2NormSum";
             // 
             // AnalyzeButton
             // 
@@ -196,6 +167,44 @@
             this.ToDOT.ShowImage = true;
             this.ToDOT.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ToDOT_Click);
             // 
+            // SensitivityTextBox
+            // 
+            this.SensitivityTextBox.Label = "% to Audit";
+            this.SensitivityTextBox.Name = "SensitivityTextBox";
+            this.SensitivityTextBox.SizeString = "100.0";
+            this.SensitivityTextBox.Text = "5.0";
+            // 
+            // separator1
+            // 
+            this.separator1.Name = "separator1";
+            // 
+            // inDegree
+            // 
+            this.inDegree.Label = "In-Degree";
+            this.inDegree.Name = "inDegree";
+            // 
+            // outDegree
+            // 
+            this.outDegree.Label = "Out-Degree";
+            this.outDegree.Name = "outDegree";
+            // 
+            // combinedDegree
+            // 
+            this.combinedDegree.Label = "Both-Degree";
+            this.combinedDegree.Name = "combinedDegree";
+            // 
+            // relVectL2NormSum
+            // 
+            this.inVectors.Checked = true;
+            this.inVectors.Label = "In-Vectors";
+            this.inVectors.Name = "relVectL2NormSum";
+            // 
+            // dataVectL2NormSum
+            // 
+            this.outVectors.Checked = true;
+            this.outVectors.Label = "Out-Vectors";
+            this.outVectors.Name = "dataVectL2NormSum";
+            // 
             // ExceLintRibbon
             // 
             this.Name = "ExceLintRibbon";
@@ -233,8 +242,9 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox inDegree;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox outDegree;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox combinedDegree;
-        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox relVectL2NormSum;
+        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox inVectors;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton ToDOT;
+        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox outVectors;
     }
 
     partial class ThisRibbonCollection
