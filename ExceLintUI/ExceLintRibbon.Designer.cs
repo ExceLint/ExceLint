@@ -53,6 +53,8 @@
             this.combinedDegree = this.Factory.CreateRibbonCheckBox();
             this.inVectors = this.Factory.CreateRibbonCheckBox();
             this.outVectors = this.Factory.CreateRibbonCheckBox();
+            this.inVectorsAbs = this.Factory.CreateRibbonCheckBox();
+            this.outVectorsAbs = this.Factory.CreateRibbonCheckBox();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -81,6 +83,8 @@
             this.CheckCellGroup.Items.Add(this.combinedDegree);
             this.CheckCellGroup.Items.Add(this.inVectors);
             this.CheckCellGroup.Items.Add(this.outVectors);
+            this.CheckCellGroup.Items.Add(this.inVectorsAbs);
+            this.CheckCellGroup.Items.Add(this.outVectorsAbs);
             this.CheckCellGroup.Name = "CheckCellGroup";
             // 
             // box1
@@ -193,17 +197,29 @@
             this.combinedDegree.Label = "Both-Degree";
             this.combinedDegree.Name = "combinedDegree";
             // 
-            // relVectL2NormSum
+            // inVectors
             // 
             this.inVectors.Checked = true;
             this.inVectors.Label = "In-Vectors";
-            this.inVectors.Name = "relVectL2NormSum";
+            this.inVectors.Name = "inVectors";
             // 
-            // dataVectL2NormSum
+            // outVectors
             // 
             this.outVectors.Checked = true;
             this.outVectors.Label = "Out-Vectors";
-            this.outVectors.Name = "dataVectL2NormSum";
+            this.outVectors.Name = "outVectors";
+            // 
+            // inVectorsAbs
+            // 
+            this.inVectorsAbs.Checked = true;
+            this.inVectorsAbs.Label = "In-Vectors (Abs)";
+            this.inVectorsAbs.Name = "inVectorsAbs";
+            // 
+            // outVectorsAbs
+            // 
+            this.outVectorsAbs.Checked = true;
+            this.outVectorsAbs.Label = "Out-Vectors (Abs)";
+            this.outVectorsAbs.Name = "outVectorsAbs";
             // 
             // ExceLintRibbon
             // 
@@ -245,6 +261,8 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox inVectors;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton ToDOT;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox outVectors;
+        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox inVectorsAbs;
+        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox outVectorsAbs;
     }
 
     partial class ThisRibbonCollection

@@ -18,6 +18,8 @@
                 ("outdegree", false);
                 ("vRelL2normsum", false);
                 ("dRelL2normsum", false);
+                ("vAbsL2normsum", false);
+                ("dAbsL2normsum", false);
             ]
             let _config = Map.fold (fun acc key value -> Map.add key value acc) _defaults userConf
 
@@ -27,6 +29,8 @@
                 ("outdegree", fun (cell)(dag) -> if _config.["outdegree"] then Degree.OutDegree.run cell dag else _base cell dag);
                 ("vRelL2normsum", fun (cell)(dag) -> if _config.["vRelL2normsum"] then Vector.FormulaRelativeL2NormSum.run cell dag else _base cell dag);
                 ("dRelL2normsum", fun (cell)(dag) -> if _config.["dRelL2normsum"] then Vector.DataRelativeL2NormSum.run cell dag else _base cell dag);
+                ("vAbsL2normsum", fun (cell)(dag) -> if _config.["vAbsL2normsum"] then Vector.FormulaAbsoluteL2NormSum.run cell dag else _base cell dag);
+                ("dAbsL2normsum", fun (cell)(dag) -> if _config.["dAbsL2normsum"] then Vector.DataAbsoluteL2NormSum.run cell dag else _base cell dag);
             ]
 
             new() = FeatureConf(Map.empty)
@@ -42,6 +46,10 @@
                 FeatureConf(_config.Add("vRelL2normsum", true))
             member self.enableDataRelativeL2NormSum() : FeatureConf =
                 FeatureConf(_config.Add("dRelL2normsum", true))
+            member self.enableFormulaAbsoluteL2NormSum() : FeatureConf =
+                FeatureConf(_config.Add("vAbsL2normsum", true))
+            member self.enableDataAbsoluteL2NormSum() : FeatureConf =
+                FeatureConf(_config.Add("dAbsL2normsum", true))
 
             // getters
             member self.Feature
