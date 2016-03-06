@@ -14,20 +14,25 @@
         // the vector, relative to a basis
         type BasisVector = (X*Y*Z)
 
+        let private fullPath(addr: AST.Address) : string =
+            // portably create full path from components
+            System.IO.Path.Combine([|addr.Path; addr.WorkbookName; addr.WorksheetName|])
+
         let private vector(tail: AST.Address)(head: AST.Address) : AbsoluteVector =
-            let tailXYP = (tail.X, tail.Y, tail.Path)
-            let headXYP = (head.X, head.Y, head.Path)
+            let tailXYP = (tail.X, tail.Y, fullPath tail)
+            let headXYP = (head.X, head.Y, fullPath head)
             (tailXYP, headXYP)
 
         let private originPath(dag: DAG) : Path =
-            dag.getWorkbookPath()
+            System.IO.Path.Combine(dag.getWorkbookPath(), dag.getWorksheetNames().[0]);
 
         let private vectorPathDiff(p1: Path)(p2: Path) : int =
             if p1 <> p2 then 1 else 0
 
         // the origin is defined as x = 0, y = 0, z = 0 if first sheet in the workbook else 1
         let private pathDiff(p: Path)(dag: DAG) : int =
-            if p = (originPath dag) then 1 else 0
+            let op = originPath dag
+            if p <> op then 1 else 0
 
         // represent the position of the head of the vector relative to the tail, (x1,y1,z1)
         let private rebaseVectorToTail(absVect: AbsoluteVector)(dag: DAG) : BasisVector =
@@ -37,7 +42,8 @@
         // represent the position of the the head of the vector relative to the origin, (0,0,0)
         let private rebaseVectorToOrigin(absVect: AbsoluteVector)(dag: DAG) : BasisVector =
             let (_,(x2,y2,p2)) = absVect
-            (x2, y2, pathDiff p2 dag)
+            let v = (x2, y2, pathDiff p2 dag)
+            v
 
         let private L2Norm(X: double[]) : double =
             Math.Sqrt(
