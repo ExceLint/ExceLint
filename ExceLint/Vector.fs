@@ -74,11 +74,15 @@
                             | Some source -> [vector sink source]
                             | None -> []
 
-                // find all of the output that use sink
-                let outAddrs = dag.getFormulasThatRefCell sink |> Array.toList
+                // find all of the formulas that use sink
+                let outAddrs = dag.getFormulasThatRefCell sink
+                                |> Array.toList
+                let outAddrs2 = Array.map (dag.getFormulasThatRefVector) (dag.getVectorsThatRefCell sink)
+                                |> Array.concat |> Array.toList
+                let allFrm = outAddrs @ outAddrs2 |> List.distinct
 
                 // recursively call this function
-                vlist @ (List.map (fun sink' -> tdVect (Some sink) sink') outAddrs |> List.concat)
+                vlist @ (List.map (fun sink' -> tdVect (Some sink) sink') allFrm |> List.concat)
 
             tdVect None dCell |> List.toArray
 
@@ -101,5 +105,5 @@
             inherit BaseFeature()
 
             // dCell is the address of data here
-            static member run(dCell: AST.Address)(dag : DAG) = 
+            static member run(dCell: AST.Address)(dag : DAG) : double = 
                 L2NormOVSum (transitiveDataRelativeVectors dCell dag)

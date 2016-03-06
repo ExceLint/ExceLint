@@ -1,7 +1,13 @@
 ﻿namespace ExceLint
     open System.Collections.Generic
+    open System.Collections
 
     module Analysis =
+
+        // we're using C# Dictionary instead of F# map
+        // for debugging (it's inspectable) and speed purposes
+        type Dict<'a,'b> = Dictionary<'a,'b>
+        let adict(a: seq<('a*'b)>) = new Dict<'a,'b>(a |> dict)
 
         // a C#-friendly configuration object that is also pure/fluent
         type FeatureConf private (userConf: Map<string,bool>) =
@@ -54,31 +60,31 @@
             let config = (new FeatureConf()).enableFormulaRelativeL2NormSum().enableDataRelativeL2NormSum()
 
             // train model on construction
-            let _data: Map<string,double[]> =
-                let allCells = dag.allCells()
-
+            let _data: Dict<string,double[]> =
                 config.Features |>
                 Array.map (fun fname ->
                     // get feature lambda
-                    let feature = config.Feature(fname)
+                    let feature = config.Feature fname
 
                     // run feature on every cell
-                    let fvals = Array.map (fun cell -> feature cell dag) allCells
+                    let fvals = dag.allCells() |>
+                                Array.map (fun cell -> feature cell dag) 
                     fname, fvals
-                ) |>
-                Map.ofArray
+                ) |> adict
 
-            // a 3D frequency table: (featurename, score, count)
-            let ftables: Map<string,Map<double,int>> =
-                Array.fold (fun (oacc: Map<string,Map<double,int>>)(fname: string) ->
-                    let imap = Array.fold (fun (iacc: Map<double,int>)(elem: double) ->
-                                    if (iacc.ContainsKey(elem)) then
-                                        iacc.Add(elem, iacc.[elem] + 1)
-                                    else
-                                        iacc.Add(elem, 1)
-                                ) (Map.empty) (_data.[fname]) 
-                    oacc.Add(fname, imap)
-                ) (Map.empty) (config.Features)
+            // a 3D frequency table: (featurename, score) -> freq
+            let ftable: Dict<string*double,int> =
+                let d = new Dict<string*double,int>()
+                Array.iter (fun fname ->
+                    Array.iter (fun score ->
+                        if d.ContainsKey (fname,score) then
+                            let freq = d.[(fname,score)]
+                            d.[(fname,score)] <- freq + 1
+                        else
+                            d.Add((fname,score), 1)
+                    ) (_data.[fname])
+                ) (config.Features)
+                d
 
             /// <summary>Analyzes the given cell using all of the configured features and produces a score.</summary>
             /// <param name="cell">the address of a formula cell</param>
@@ -90,15 +96,42 @@
                 // get feature value for this cell
                 f cell dag
 
-            member private self.rankByFeature(fname: string)(dag: Depends.DAG) : Map<AST.Address,int> =
-                Array.map (fun c ->
-                    let score = self.score c fname
-                    let ftable = ftables.[fname]
-                    c, ftable.[score]
-                ) (dag.allCells()) |>
-                Array.sortBy (fun (c,freq) -> freq) |>
-                Array.mapi (fun i (c,s) -> c,i )
-                |> Map.ofArray
+            member private self.rankByFeature(fname: string)(dag: Depends.DAG) : (AST.Address*int)[] =
+                // sort by least common
+                let sorted = Array.map (fun addr ->
+                                 let score = self.score addr fname
+                                 let freq = ftable.[(fname,score)]
+                                 addr, freq
+                             ) (dag.allCells()) |>
+                             Array.sortBy (fun (addr,freq) -> freq)
+                // return the address and its rank
+                sorted |> Array.mapi (fun i (addr,freq) -> addr,i )
+
+            member private self.rankAllFeatures(dag: Depends.DAG) : Dict<AST.Address,int[]> =
+                // get per-feature rank for every cell
+                let d = new Dict<AST.Address,int[]>()
+
+                Array.iteri (fun i fname ->
+                    let ranks = self.rankByFeature fname dag
+                    Array.iter (fun (addr,rank) ->
+                        if d.ContainsKey addr then
+                            let arr = d.[addr]
+                            arr.[i] <- rank
+                            d.[addr] <- arr
+                        else
+                            let arr = Array.zeroCreate(config.Features.Length)
+                            arr.[i] <- rank
+                            d.Add(addr, arr)
+                    ) ranks
+                ) (config.Features)
+                d
+
+            member private self.sumFeatureRanks(ranks: Dict<AST.Address,int[]>) : KeyValuePair<AST.Address,double>[] =
+                Seq.map (fun (kvp: KeyValuePair<AST.Address,int[]>) ->
+                    new KeyValuePair<AST.Address,double>(kvp.Key, double(Array.sum (kvp.Value)))
+                ) ranks
+                |> Seq.toArray
+                |> Array.sortBy (fun kvp -> kvp.Value)
 
             /// <summary>Ranks all the cells in the workbook by their anomalousness.</summary>
             /// <returns>an KeyValuePair<AST.Address,int>[] of (address,score) ranked from most to least anomalous</returns>
@@ -106,31 +139,5 @@
                 // get the number of features
                 let fsize = double(config.Features.Length)
 
-                // get per-feature rank for every cell
-                let ranks = Array.map (fun fname -> self.rankByFeature fname dag) (config.Features)
-
-                let debug_ranks = Array.map (fun cell ->
-                                    let rs = Array.map (fun (ranking: Map<AST.Address,int>) ->
-                                                if (ranking.ContainsKey cell) then
-                                                    ranking.[cell]
-                                                else
-                                                    0
-                                             ) ranks
-                                    cell, rs
-                                  ) (dag.allCells())
-                                  |> Array.sortBy (fun (cell, rs) -> double(Array.sum rs) / fsize)
-
-                // compute and return average rank for each cell
-                Array.map (fun (c: AST.Address) ->
-                    let crank: int = Array.sumBy (
-                                        fun (ranking: Map<AST.Address,int>) ->
-                                            // TODO: FIX: this is a dirty hack
-                                            // because one of my cells is missing (WTF?!)
-                                            if (ranking.ContainsKey c) then
-                                                ranking.[c]
-                                            else
-                                                0
-                                     ) ranks
-                    let avgrank = double(crank) / fsize
-                    new KeyValuePair<AST.Address, double>(c, avgrank)
-                ) (dag.allCells())
+                // find per-feature ranks for every cell in the DAG and compute total rank
+                self.sumFeatureRanks (self.rankAllFeatures dag)
