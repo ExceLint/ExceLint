@@ -87,7 +87,7 @@ namespace ExceLintUI
             _app.ScreenUpdating = false;
 
             // build DAG
-            var dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
+            _dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
 
             // get cursor location
             var cursor = _app.Selection;
@@ -99,8 +99,9 @@ namespace ExceLintUI
             //KeyValuePair<AST.Address, double>[] scores = model.rankWithScore();
 
             var output = model.inspectSelectorFor(cursorAddr, Scope.Selector.SameColumn);
-            
+
             // make string
+            string[] outputStrings = output.Select(oline => oline.Key.ToString() + " -> " + );
             //string[] sourceVectStrings = sourceVects.Select(vect => vect.ToString()).ToArray();
             //var sourceVectsString = String.Join("\n", sourceVectStrings);
 
