@@ -20,9 +20,6 @@ EndProject
 Project("{6141683F-8A12-4E36-9623-2EB02B2C2303}") = "ExceLintInstaller", "ExceLintInstaller\ExceLintInstaller.isproj", "{F29A6DB9-788B-40A9-84DC-31E63953AA38}"
 EndProject
 Global
-	GlobalSection(Performance) = preSolution
-		HasPerformanceSessions = true
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		CD_ROM|Any CPU = CD_ROM|Any CPU
 		Debug|Any CPU = Debug|Any CPU

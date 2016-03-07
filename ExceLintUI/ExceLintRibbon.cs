@@ -226,5 +226,10 @@ namespace ExceLintUI
             System.Windows.Clipboard.SetText(graphviz);
             System.Windows.Forms.MessageBox.Show("Done. Graph is in the clipboard.");
         }
+
+        private void colSelect_Click(object sender, RibbonControlEventArgs e)
+        {
+            currentWorkbook.getColSelected(getConfig());
+        }
     }
 }

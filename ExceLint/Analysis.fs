@@ -190,7 +190,6 @@
                 // get the number of features
                 let fsize = double(config.Features.Length)
 
-                // 
                 // find per-feature ranks for every cell in the DAG and compute total rank
                 let theRankings = Array.map (fun scope ->
                                       self.rankAllFeatures dag scope
@@ -199,3 +198,37 @@
                 let mergedRankings = self.mergeRanks theRankings dag
 
                 self.sumFeatureRanks mergedRankings
+
+            member self.inspectSelectorFor(addr: AST.Address, sel: Scope.Selector) : KeyValuePair<AST.Address,(string*double)[]>[] =
+                let sID = sel.id addr
+
+                let d = new Dict<AST.Address,(string*double) list>()
+
+                Seq.iter (fun (kvp: KeyValuePair<string,(AST.Address*double)[]>) ->
+                    let fname: string = kvp.Key
+                    let scores: (AST.Address*double)[] = kvp.Value
+
+                    let valid_scores =
+                        Array.choose (fun (addr2,score) ->
+                            if Scope.SameColumn.id addr2 = sID then
+                                Some (addr2,score)
+                            else
+                                None
+                        ) scores
+
+                    Array.iter (fun (addr2,score) ->
+                        if d.ContainsKey addr2 then
+                            d.[addr2] <- (fname,score) :: d.[addr2]
+                        else
+                            d.Add(addr2, [(fname,score)])
+                    ) valid_scores
+                ) _data
+
+                let debug = Seq.map (fun (kvp: KeyValuePair<AST.Address,(string*double) list>) ->
+                                        let addr2: AST.Address = kvp.Key
+                                        let scores: (string*double)[] = kvp.Value |> List.toArray
+
+                                        new KeyValuePair<AST.Address,(string*double)[]>(addr2, scores)
+                                     ) d
+
+                debug |> Seq.toArray

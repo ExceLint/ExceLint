@@ -1,5 +1,18 @@
 ﻿module Scope
+//    type SelectID(col: int option, row: int option, path: string option) =
+//        member self.ToString() =
+//            match col with
+//            | Some(c) -> "Column " + c.ToString() + " in " + path.Value
+//            | None ->
+//                match row with
+//                | Some(r) -> "Row " + r.ToString() + " in " + path.Value
+//                | None ->
+//                    match path with
+//                    | Some(p) -> "All cells in " + p
+//                    | None -> "All cells"
+
     type SelectID = (int option*int option*string option)
+    
     type Selector =
     | AllCells
     | SameColumn

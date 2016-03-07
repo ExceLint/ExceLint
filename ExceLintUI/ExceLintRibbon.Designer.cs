@@ -38,6 +38,14 @@
             this.tab2 = this.Factory.CreateRibbonTab();
             this.CheckCellGroup = this.Factory.CreateRibbonGroup();
             this.box1 = this.Factory.CreateRibbonBox();
+            this.AnalyzeButton = this.Factory.CreateRibbonButton();
+            this.MarkAsOKButton = this.Factory.CreateRibbonButton();
+            this.FixErrorButton = this.Factory.CreateRibbonButton();
+            this.StartOverButton = this.Factory.CreateRibbonButton();
+            this.button1 = this.Factory.CreateRibbonButton();
+            this.button3 = this.Factory.CreateRibbonButton();
+            this.button2 = this.Factory.CreateRibbonButton();
+            this.ToDOT = this.Factory.CreateRibbonButton();
             this.SensitivityTextBox = this.Factory.CreateRibbonEditBox();
             this.separator1 = this.Factory.CreateRibbonSeparator();
             this.inDegree = this.Factory.CreateRibbonCheckBox();
@@ -51,14 +59,7 @@
             this.allCellsFreq = this.Factory.CreateRibbonCheckBox();
             this.columnCellsFreq = this.Factory.CreateRibbonCheckBox();
             this.rowCellsFreq = this.Factory.CreateRibbonCheckBox();
-            this.AnalyzeButton = this.Factory.CreateRibbonButton();
-            this.MarkAsOKButton = this.Factory.CreateRibbonButton();
-            this.FixErrorButton = this.Factory.CreateRibbonButton();
-            this.StartOverButton = this.Factory.CreateRibbonButton();
-            this.button1 = this.Factory.CreateRibbonButton();
-            this.button3 = this.Factory.CreateRibbonButton();
-            this.button2 = this.Factory.CreateRibbonButton();
-            this.ToDOT = this.Factory.CreateRibbonButton();
+            this.colSelect = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -104,78 +105,9 @@
             this.box1.Items.Add(this.button1);
             this.box1.Items.Add(this.button3);
             this.box1.Items.Add(this.button2);
+            this.box1.Items.Add(this.colSelect);
             this.box1.Items.Add(this.ToDOT);
             this.box1.Name = "box1";
-            // 
-            // SensitivityTextBox
-            // 
-            this.SensitivityTextBox.Label = "% to Audit";
-            this.SensitivityTextBox.Name = "SensitivityTextBox";
-            this.SensitivityTextBox.SizeString = "100.0";
-            this.SensitivityTextBox.Text = "5.0";
-            // 
-            // separator1
-            // 
-            this.separator1.Name = "separator1";
-            // 
-            // inDegree
-            // 
-            this.inDegree.Label = "In-Degree";
-            this.inDegree.Name = "inDegree";
-            // 
-            // outDegree
-            // 
-            this.outDegree.Label = "Out-Degree";
-            this.outDegree.Name = "outDegree";
-            // 
-            // combinedDegree
-            // 
-            this.combinedDegree.Label = "Both-Degree";
-            this.combinedDegree.Name = "combinedDegree";
-            // 
-            // inVectors
-            // 
-            this.inVectors.Checked = true;
-            this.inVectors.Label = "In-Vectors";
-            this.inVectors.Name = "inVectors";
-            // 
-            // outVectors
-            // 
-            this.outVectors.Checked = true;
-            this.outVectors.Label = "Out-Vectors";
-            this.outVectors.Name = "outVectors";
-            // 
-            // inVectorsAbs
-            // 
-            this.inVectorsAbs.Checked = true;
-            this.inVectorsAbs.Label = "In-Vectors (Abs)";
-            this.inVectorsAbs.Name = "inVectorsAbs";
-            // 
-            // outVectorsAbs
-            // 
-            this.outVectorsAbs.Checked = true;
-            this.outVectorsAbs.Label = "Out-Vectors (Abs)";
-            this.outVectorsAbs.Name = "outVectorsAbs";
-            // 
-            // separator2
-            // 
-            this.separator2.Name = "separator2";
-            // 
-            // allCellsFreq
-            // 
-            this.allCellsFreq.Checked = true;
-            this.allCellsFreq.Label = "All Cells Freq.";
-            this.allCellsFreq.Name = "allCellsFreq";
-            // 
-            // columnCellsFreq
-            // 
-            this.columnCellsFreq.Label = "Column Cells Freq";
-            this.columnCellsFreq.Name = "columnCellsFreq";
-            // 
-            // rowCellsFreq
-            // 
-            this.rowCellsFreq.Label = "Row Cells Freq";
-            this.rowCellsFreq.Name = "rowCellsFreq";
             // 
             // AnalyzeButton
             // 
@@ -249,6 +181,85 @@
             this.ToDOT.ShowImage = true;
             this.ToDOT.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ToDOT_Click);
             // 
+            // SensitivityTextBox
+            // 
+            this.SensitivityTextBox.Label = "% to Audit";
+            this.SensitivityTextBox.Name = "SensitivityTextBox";
+            this.SensitivityTextBox.SizeString = "100.0";
+            this.SensitivityTextBox.Text = "5.0";
+            // 
+            // separator1
+            // 
+            this.separator1.Name = "separator1";
+            // 
+            // inDegree
+            // 
+            this.inDegree.Label = "In-Degree";
+            this.inDegree.Name = "inDegree";
+            // 
+            // outDegree
+            // 
+            this.outDegree.Label = "Out-Degree";
+            this.outDegree.Name = "outDegree";
+            // 
+            // combinedDegree
+            // 
+            this.combinedDegree.Label = "Both-Degree";
+            this.combinedDegree.Name = "combinedDegree";
+            // 
+            // inVectors
+            // 
+            this.inVectors.Checked = true;
+            this.inVectors.Label = "In-Vectors";
+            this.inVectors.Name = "inVectors";
+            // 
+            // outVectors
+            // 
+            this.outVectors.Checked = true;
+            this.outVectors.Label = "Out-Vectors";
+            this.outVectors.Name = "outVectors";
+            // 
+            // inVectorsAbs
+            // 
+            this.inVectorsAbs.Checked = true;
+            this.inVectorsAbs.Label = "In-Vectors (Abs)";
+            this.inVectorsAbs.Name = "inVectorsAbs";
+            // 
+            // outVectorsAbs
+            // 
+            this.outVectorsAbs.Checked = true;
+            this.outVectorsAbs.Label = "Out-Vectors (Abs)";
+            this.outVectorsAbs.Name = "outVectorsAbs";
+            // 
+            // separator2
+            // 
+            this.separator2.Name = "separator2";
+            // 
+            // allCellsFreq
+            // 
+            this.allCellsFreq.Checked = true;
+            this.allCellsFreq.Label = "All Cells Freq.";
+            this.allCellsFreq.Name = "allCellsFreq";
+            // 
+            // columnCellsFreq
+            // 
+            this.columnCellsFreq.Label = "Column Cells Freq";
+            this.columnCellsFreq.Name = "columnCellsFreq";
+            // 
+            // rowCellsFreq
+            // 
+            this.rowCellsFreq.Label = "Row Cells Freq";
+            this.rowCellsFreq.Name = "rowCellsFreq";
+            // 
+            // colSelect
+            // 
+            this.colSelect.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.colSelect.Image = global::ExceLintUI.Properties.Resources.pain;
+            this.colSelect.Label = "ColSel";
+            this.colSelect.Name = "colSelect";
+            this.colSelect.ShowImage = true;
+            this.colSelect.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.colSelect_Click);
+            // 
             // ExceLintRibbon
             // 
             this.Name = "ExceLintRibbon";
@@ -295,6 +306,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox allCellsFreq;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox columnCellsFreq;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox rowCellsFreq;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton colSelect;
     }
 
     partial class ThisRibbonCollection
