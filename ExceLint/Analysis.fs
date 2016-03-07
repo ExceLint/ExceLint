@@ -196,4 +196,6 @@
                                       self.rankAllFeatures dag scope
                                   ) (config.EnabledScopes)
 
-                self.sumFeatureRanks (self.mergeRanks theRankings dag)
+                let mergedRankings = self.mergeRanks theRankings dag
+
+                self.sumFeatureRanks mergedRankings
