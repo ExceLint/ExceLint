@@ -17,6 +17,7 @@ namespace ExceLintUI
         public readonly static bool IGNORE_PARSE_ERRORS = true;
         public readonly static bool USE_WEIGHTS = true;
         public readonly static bool CONSIDER_ALL_OUTPUTS = true;
+        public readonly static string CACHEDIRPATH = System.IO.Path.GetTempPath();
         #endregion CONSTANTS
 
         private Excel.Application _app;
@@ -167,7 +168,7 @@ namespace ExceLintUI
                 // build data dependence graph
                 try
                 {
-                    _dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
+                    _dag = DAG.DAGFromCache(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, CACHEDIRPATH);
                 }
                 catch (Parcel.ParseException e)
                 {
