@@ -168,7 +168,8 @@ namespace ExceLintUI
                 // build data dependence graph
                 try
                 {
-                    _dag = DAG.DAGFromCache(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, CACHEDIRPATH);
+                    //_dag = DAG.DAGFromCache(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, CACHEDIRPATH);
+                    _dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
                 }
                 catch (Parcel.ParseException e)
                 {
