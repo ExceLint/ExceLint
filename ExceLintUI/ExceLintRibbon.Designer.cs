@@ -45,6 +45,7 @@
             this.button1 = this.Factory.CreateRibbonButton();
             this.button3 = this.Factory.CreateRibbonButton();
             this.button2 = this.Factory.CreateRibbonButton();
+            this.colSelect = this.Factory.CreateRibbonButton();
             this.ToDOT = this.Factory.CreateRibbonButton();
             this.SensitivityTextBox = this.Factory.CreateRibbonEditBox();
             this.separator1 = this.Factory.CreateRibbonSeparator();
@@ -59,7 +60,7 @@
             this.allCellsFreq = this.Factory.CreateRibbonCheckBox();
             this.columnCellsFreq = this.Factory.CreateRibbonCheckBox();
             this.rowCellsFreq = this.Factory.CreateRibbonCheckBox();
-            this.colSelect = this.Factory.CreateRibbonButton();
+            this.rowSelected = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -106,6 +107,7 @@
             this.box1.Items.Add(this.button3);
             this.box1.Items.Add(this.button2);
             this.box1.Items.Add(this.colSelect);
+            this.box1.Items.Add(this.rowSelected);
             this.box1.Items.Add(this.ToDOT);
             this.box1.Name = "box1";
             // 
@@ -171,6 +173,15 @@
             this.button2.Name = "button2";
             this.button2.ShowImage = true;
             this.button2.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button2_Click);
+            // 
+            // colSelect
+            // 
+            this.colSelect.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.colSelect.Image = global::ExceLintUI.Properties.Resources.pain;
+            this.colSelect.Label = "ColSel";
+            this.colSelect.Name = "colSelect";
+            this.colSelect.ShowImage = true;
+            this.colSelect.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.colSelect_Click);
             // 
             // ToDOT
             // 
@@ -251,14 +262,14 @@
             this.rowCellsFreq.Label = "Row Cells Freq";
             this.rowCellsFreq.Name = "rowCellsFreq";
             // 
-            // colSelect
+            // rowSelected
             // 
-            this.colSelect.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.colSelect.Image = global::ExceLintUI.Properties.Resources.pain;
-            this.colSelect.Label = "ColSel";
-            this.colSelect.Name = "colSelect";
-            this.colSelect.ShowImage = true;
-            this.colSelect.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.colSelect_Click);
+            this.rowSelected.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.rowSelected.Image = global::ExceLintUI.Properties.Resources.pain;
+            this.rowSelected.Label = "RowSel";
+            this.rowSelected.Name = "rowSelected";
+            this.rowSelected.ShowImage = true;
+            this.rowSelected.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.rowSelected_Click);
             // 
             // ExceLintRibbon
             // 
@@ -307,6 +318,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox columnCellsFreq;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox rowCellsFreq;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton colSelect;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton rowSelected;
     }
 
     partial class ThisRibbonCollection

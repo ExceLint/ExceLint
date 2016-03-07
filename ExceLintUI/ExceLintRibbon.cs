@@ -229,7 +229,12 @@ namespace ExceLintUI
 
         private void colSelect_Click(object sender, RibbonControlEventArgs e)
         {
-            currentWorkbook.getColSelected(getConfig());
+            currentWorkbook.getSelected(getConfig(), Scope.Selector.SameColumn);
+        }
+
+        private void rowSelected_Click(object sender, RibbonControlEventArgs e)
+        {
+            currentWorkbook.getSelected(getConfig(), Scope.Selector.SameRow);
         }
     }
 }

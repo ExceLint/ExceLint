@@ -81,7 +81,7 @@ namespace ExceLintUI
             set { _debug_mode = value; }
         }
 
-        public void getColSelected(ExceLint.Analysis.FeatureConf config)
+        public void getSelected(ExceLint.Analysis.FeatureConf config, Scope.Selector sel)
         {
             // Disable screen updating during analysis to speed things up
             _app.ScreenUpdating = false;
@@ -98,17 +98,23 @@ namespace ExceLintUI
             var model = new ExceLint.Analysis.ErrorModel(config, _dag, 0.05);
             //KeyValuePair<AST.Address, double>[] scores = model.rankWithScore();
 
-            var output = model.inspectSelectorFor(cursorAddr, Scope.Selector.SameColumn);
+            var output = model.inspectSelectorFor(cursorAddr, sel);
 
-            // make string
-            string[] outputStrings = output.Select(oline => oline.Key.ToString() + " -> " + );
-            //string[] sourceVectStrings = sourceVects.Select(vect => vect.ToString()).ToArray();
-            //var sourceVectsString = String.Join("\n", sourceVectStrings);
+            // make output string
+            string[] outputStrings = output.SelectMany(kvp => prettyPrintSelectScores(kvp)).ToArray();
 
             // Enable screen updating when we're done
             _app.ScreenUpdating = true;
 
-            System.Windows.Forms.MessageBox.Show(output.ToString());
+            System.Windows.Forms.MessageBox.Show(cursorStr + "\n\n" + String.Join("\n", outputStrings));
+        }
+
+        private string[] prettyPrintSelectScores(KeyValuePair<AST.Address, Tuple<string,double>[]> addrScores)
+        {
+            var addr = addrScores.Key;
+            var scores = addrScores.Value;
+
+            return scores.Select(tup => addr + " -> " + tup.Item1 + ": " + tup.Item2).ToArray();
         }
 
         public void getVectors()
