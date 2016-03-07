@@ -213,6 +213,9 @@ namespace ExceLintUI
             if (this.outVectors.Checked) { c = c.enableDataRelativeL2NormSum(); }
             if (this.inVectorsAbs.Checked) { c = c.enableFormulaAbsoluteL2NormSum(); }
             if (this.outVectorsAbs.Checked) { c = c.enableDataAbsoluteL2NormSum(); }
+            if (this.allCellsFreq.Checked) { c = c.analyzeRelativeToAllCells(); }
+            if (this.columnCellsFreq.Checked) { c = c.analyzeRelativeToColumns(); }
+            if (this.rowCellsFreq.Checked) { c = c.analyzeRelativeToRows(); }
 
             return c;
         }

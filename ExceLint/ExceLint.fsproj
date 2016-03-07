@@ -48,6 +48,7 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="BasicStats.fs" />
+    <Compile Include="Scope.fs" />
     <Compile Include="Feature.fs" />
     <Compile Include="Degree.fs" />
     <Compile Include="Vector.fs" />
