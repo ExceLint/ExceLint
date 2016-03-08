@@ -65,19 +65,46 @@ namespace ExceLintUI
             setUIState(currentWorkbook);
         }
 
-        private void button1_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.getVectors();
-        }
-
         private void button2_Click(object sender, RibbonControlEventArgs e)
         {
             currentWorkbook.getL2NormSum();
         }
 
+        private void ToDOT_Click(object sender, RibbonControlEventArgs e)
+        {
+            var graphviz = currentWorkbook.ToDOT();
+            System.Windows.Clipboard.SetText(graphviz);
+            System.Windows.Forms.MessageBox.Show("Done. Graph is in the clipboard.");
+        }
+
+        private void colSelect_Click(object sender, RibbonControlEventArgs e)
+        {
+            currentWorkbook.getSelected(getConfig(), Scope.Selector.SameColumn);
+        }
+
+        private void rowSelected_Click(object sender, RibbonControlEventArgs e)
+        {
+            currentWorkbook.getSelected(getConfig(), Scope.Selector.SameRow);
+        }
+
+        private void button1_Click(object sender, RibbonControlEventArgs e)
+        {
+            currentWorkbook.getFormulaRelVectors();
+        }
+
         private void button3_Click(object sender, RibbonControlEventArgs e)
         {
-            currentWorkbook.getRelativeVectors();
+            currentWorkbook.getDataRelVectors();
+        }
+
+        private void FrmAbsVect_Click(object sender, RibbonControlEventArgs e)
+        {
+            currentWorkbook.getFormulaAbsVectors();
+        }
+
+        private void DataAbsVect_Click(object sender, RibbonControlEventArgs e)
+        {
+            currentWorkbook.getDataAbsVectors();
         }
 
         #endregion BUTTON_HANDLERS
@@ -218,23 +245,6 @@ namespace ExceLintUI
             if (this.rowCellsFreq.Checked) { c = c.analyzeRelativeToRows(); }
 
             return c;
-        }
-
-        private void ToDOT_Click(object sender, RibbonControlEventArgs e)
-        {
-            var graphviz = currentWorkbook.ToDOT();
-            System.Windows.Clipboard.SetText(graphviz);
-            System.Windows.Forms.MessageBox.Show("Done. Graph is in the clipboard.");
-        }
-
-        private void colSelect_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.getSelected(getConfig(), Scope.Selector.SameColumn);
-        }
-
-        private void rowSelected_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.getSelected(getConfig(), Scope.Selector.SameRow);
         }
     }
 }

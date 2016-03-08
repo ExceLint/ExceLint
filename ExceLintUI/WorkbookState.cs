@@ -4,7 +4,7 @@ using System.Linq;
 using Excel = Microsoft.Office.Interop.Excel;
 using Depends;
 using AbsoluteVector = System.Tuple<System.Tuple<int, int, string>, System.Tuple<int, int, string>>;
-using OriginVector = System.Tuple<int, int, int>;
+using BasisVector = System.Tuple<int, int, int>;
 
 namespace ExceLintUI
 {
@@ -120,7 +120,9 @@ namespace ExceLintUI
             return scores.Select(tup => addr + " -> " + tup.Item1 + ": " + tup.Item2).ToArray();
         }
 
-        public void getVectors()
+        delegate BasisVector[] VectorSelector(AST.Address addr, DAG dag);
+
+        public void getVectors(VectorSelector f)
         {
             // Disable screen updating during analysis to speed things up
             _app.ScreenUpdating = false;
@@ -137,7 +139,7 @@ namespace ExceLintUI
             var cursorStr = "(" + cursorAddr.X + "," + cursorAddr.Y + ")";  // for sanity-preservation purposes
 
             // find all sources for formula under the cursor
-            AbsoluteVector[] sourceVects = ExceLint.Vector.transitiveFormulaVectors(cursorAddr, _dag);
+            BasisVector[] sourceVects = f(cursorAddr, _dag);
 
             // make string
             string[] sourceVectStrings = sourceVects.Select(vect => vect.ToString()).ToArray();
@@ -149,33 +151,30 @@ namespace ExceLintUI
             System.Windows.Forms.MessageBox.Show("From: " + cursorStr + "\n\n" + sourceVectsString);
         }
 
-        public void getRelativeVectors()
+        
+
+        public void getFormulaRelVectors()
         {
-            // Disable screen updating during analysis to speed things up
-            _app.ScreenUpdating = false;
+            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.transitiveFormulaRelativeVectors(addr, dag);
+            getVectors(f);
+        }
 
-            // build DAG
-            if (_dag == null)
-            {
-                _dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
-            }
+        public void getFormulaAbsVectors()
+        {
+            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.transitiveFormulaOriginVectors(addr, dag);
+            getVectors(f);
+        }
 
-            // get cursor location
-            var cursor = _app.Selection;
-            AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, _app.ActiveWorkbook);
-            var cursorStr = "(" + cursorAddr.X + "," + cursorAddr.Y + ")";  // for sanity-preservation purposes
+        public void getDataRelVectors()
+        {
+            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.transitiveDataRelativeVectors(addr, dag);
+            getVectors(f);
+        }
 
-            // find all sources for formula under the cursor
-            OriginVector[] sourceVects = ExceLint.Vector.transitiveFormulaRelativeVectors(cursorAddr, _dag);
-
-            // make string
-            string[] sourceVectStrings = sourceVects.Select(vect => vect.ToString()).ToArray();
-            var sourceVectsString = String.Join("\n", sourceVectStrings);
-
-            // Enable screen updating when we're done
-            _app.ScreenUpdating = true;
-
-            System.Windows.Forms.MessageBox.Show("From: " + cursorStr + "\n\n" + sourceVectsString);
+        public void getDataAbsVectors()
+        {
+            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.transitiveDataOriginVectors(addr, dag);
+            getVectors(f);
         }
 
         public void getL2NormSum()
