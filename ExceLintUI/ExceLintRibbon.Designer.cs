@@ -225,7 +225,7 @@
             // 
             this.button1.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
             this.button1.Image = global::ExceLintUI.Properties.Resources.pain;
-            this.button1.Label = "FrmRelVect";
+            this.button1.Label = "InFromFrm (Rel)";
             this.button1.Name = "button1";
             this.button1.ShowImage = true;
             this.button1.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button1_Click);
@@ -234,7 +234,7 @@
             // 
             this.button3.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
             this.button3.Image = global::ExceLintUI.Properties.Resources.pain;
-            this.button3.Label = "DataRelVect";
+            this.button3.Label = "OutFromData (Rel)";
             this.button3.Name = "button3";
             this.button3.ShowImage = true;
             this.button3.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button3_Click);
@@ -279,7 +279,7 @@
             // 
             this.FrmAbsVect.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
             this.FrmAbsVect.Image = global::ExceLintUI.Properties.Resources.pain;
-            this.FrmAbsVect.Label = "FrmAbsVect";
+            this.FrmAbsVect.Label = "InFromFrm (Abs)";
             this.FrmAbsVect.Name = "FrmAbsVect";
             this.FrmAbsVect.ShowImage = true;
             this.FrmAbsVect.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.FrmAbsVect_Click);
@@ -288,7 +288,7 @@
             // 
             this.DataAbsVect.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
             this.DataAbsVect.Image = global::ExceLintUI.Properties.Resources.pain;
-            this.DataAbsVect.Label = "DataAbsVect";
+            this.DataAbsVect.Label = "OutFromData (Abs)";
             this.DataAbsVect.Name = "DataAbsVect";
             this.DataAbsVect.ShowImage = true;
             this.DataAbsVect.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.DataAbsVect_Click);

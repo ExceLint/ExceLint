@@ -89,22 +89,53 @@ namespace ExceLintUI
 
         private void button1_Click(object sender, RibbonControlEventArgs e)
         {
-            currentWorkbook.getFormulaRelVectors();
+            // if the user holds down Option, get absolute vectors
+            if ((System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Alt) > 0)
+            {
+                currentWorkbook.getRawFormulaVectors();
+            } else
+            {
+                currentWorkbook.getFormulaRelVectors();
+            }
         }
 
         private void button3_Click(object sender, RibbonControlEventArgs e)
         {
-            currentWorkbook.getDataRelVectors();
+            // if the user holds down Option, get absolute vectors
+            if ((System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Alt) > 0)
+            {
+                currentWorkbook.getRawDataVectors();
+            }
+            else
+            {
+                currentWorkbook.getDataRelVectors();
+            }
         }
 
         private void FrmAbsVect_Click(object sender, RibbonControlEventArgs e)
         {
-            currentWorkbook.getFormulaAbsVectors();
+            // if the user holds down Option, get absolute vectors
+            if ((System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Alt) > 0)
+            {
+                currentWorkbook.getRawFormulaVectors();
+            }
+            else
+            {
+                currentWorkbook.getFormulaAbsVectors();
+            }
         }
 
         private void DataAbsVect_Click(object sender, RibbonControlEventArgs e)
         {
-            currentWorkbook.getDataAbsVectors();
+            // if the user holds down Option, get absolute vectors
+            if ((System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Alt) > 0)
+            {
+                currentWorkbook.getRawDataVectors();
+            }
+            else
+            {
+                currentWorkbook.getDataAbsVectors();
+            }
         }
 
         #endregion BUTTON_HANDLERS
