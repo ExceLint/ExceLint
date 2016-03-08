@@ -171,6 +171,37 @@
                 |> Seq.toArray
                 |> Array.sortBy (fun kvp -> kvp.Value)
 
+            // sum the count of the appropriate feature bin of every feature
+            // for the given address
+            member private self.sumFeatureCounts(addr: AST.Address)(sel: Scope.Selector) : int =
+                Array.sumBy (fun fname -> 
+                    // get feature
+                    let feature = config.EnabledFeatures fname
+                    // get selector ID
+                    let sID = sel.id addr
+                    // get feature score
+                    let fscore = feature addr dag
+                    // get score count
+                    ftable.[(fname,sID,fscore)]
+                ) (config.Features)
+
+            member self.rankByFeatureSum() : KeyValuePair<AST.Address,double>[] =
+                // get sums for every address
+                // and for every enabled scope
+                let addrSums: (AST.Address*int)[] =
+                    Array.map (fun addr ->
+                        let sum = Array.sumBy (fun sel ->
+                                        self.sumFeatureCounts addr Scope.Selector.AllCells
+                                  ) (config.EnabledScopes)
+                        addr, sum
+                    ) (dag.allCells())
+
+                // rank by sum (smallest first)
+                let rankedAddrs: (AST.Address*int)[] = Array.sortBy (fun (addr,sum) -> sum) addrSums
+
+                // return KeyValuePairs
+                Array.map (fun (addr,sum) -> new KeyValuePair<AST.Address,double>(addr,double sum)) rankedAddrs
+
             member private self.mergeRanks(multiRanks: Dict<AST.Address,int[]>[])(dag: Depends.DAG) : Dict<AST.Address,int[]> =
                 let d = new Dict<AST.Address, int[]>()
 

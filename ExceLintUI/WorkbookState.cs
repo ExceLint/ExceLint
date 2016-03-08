@@ -205,7 +205,46 @@ namespace ExceLintUI
                 try
                 {
                     //_dag = DAG.DAGFromCache(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, CACHEDIRPATH);
-                    _dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
+                    if (_dag == null)
+                    {
+                        _dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
+                    }
+
+                    // sanity check
+                    if (_dag.terminalInputVectors().Length == 0)
+                    {
+                        System.Windows.Forms.MessageBox.Show("This spreadsheet contains no vector-input functions.");
+                        _app.ScreenUpdating = true;
+                        _flaggable = new KeyValuePair<AST.Address, double>[0];
+                        return;
+                    }
+
+                    // run analysis
+                    var model = new ExceLint.Analysis.ErrorModel(config, _dag, 0.05);
+                    //KeyValuePair<AST.Address, double>[] scores = model.rankWithScore();
+                    KeyValuePair<AST.Address, double>[] scores = model.rankByFeatureSum();
+
+                    // debug output
+                    if (_debug_mode)
+                    {
+                        var score_str = String.Join("\n", scores.Take(10).Select(score => score.Key.A1FullyQualified() + " -> " + score.Value.ToString()));
+                        System.Windows.Forms.MessageBox.Show(score_str);
+                        System.Windows.Forms.Clipboard.SetText(score_str);
+                    }
+
+                    _flaggable = scores;
+
+                    // calculate cutoff index
+                    int thresh = scores.Length - Convert.ToInt32(scores.Length * _tool_proportion);
+
+                    // filter out cells that are...
+                    //_flaggable = scores.Where(pair => pair.Value >= scores[thresh].Value)   // below threshold
+                    //                   .Where(pair => !_known_good.Contains(pair.Key))      // known to be good
+                    //                   .Where(pair => pair.Value != 0).ToArray()            // score == 0
+                    //                   .Select(pair => new KeyValuePair<AST.Address, double>(pair.Key, System.Convert.ToInt32(pair.Value)));
+
+                    // Enable screen updating when we're done
+                    _app.ScreenUpdating = true;
                 }
                 catch (Parcel.ParseException e)
                 {
@@ -213,41 +252,6 @@ namespace ExceLintUI
                     _app.ScreenUpdating = true;
                     throw e;
                 }
-
-                // sanity check
-                if (_dag.terminalInputVectors().Length == 0)
-                {
-                    System.Windows.Forms.MessageBox.Show("This spreadsheet contains no vector-input functions.");
-                    _app.ScreenUpdating = true;
-                    _flaggable = new KeyValuePair<AST.Address, double>[0];
-                    return;
-                }
-
-                // run analysis
-                var model = new ExceLint.Analysis.ErrorModel(config, _dag, 0.05);
-                KeyValuePair<AST.Address, double>[] scores = model.rankWithScore();
-
-                // debug output
-                if (_debug_mode)
-                {
-                    var score_str = String.Join("\n", scores.Take(10).Select(score => score.Key.A1FullyQualified() + " -> " + score.Value.ToString()));
-                    System.Windows.Forms.MessageBox.Show(score_str);
-                    System.Windows.Forms.Clipboard.SetText(score_str);
-                }
-
-                _flaggable = scores;
-
-                // calculate cutoff index
-                int thresh = scores.Length - Convert.ToInt32(scores.Length * _tool_proportion);
-
-                // filter out cells that are...
-                //_flaggable = scores.Where(pair => pair.Value >= scores[thresh].Value)   // below threshold
-                //                   .Where(pair => !_known_good.Contains(pair.Key))      // known to be good
-                //                   .Where(pair => pair.Value != 0).ToArray()            // score == 0
-                //                   .Select(pair => new KeyValuePair<AST.Address, double>(pair.Key, System.Convert.ToInt32(pair.Value)));
-
-                // Enable screen updating when we're done
-                _app.ScreenUpdating = true;
 
                 sw.Stop();
             }
