@@ -241,7 +241,7 @@
 
                     let valid_scores =
                         Array.choose (fun (addr2,score) ->
-                            if Scope.SameColumn.id addr2 = sID then
+                            if sel.id addr2 = sID then
                                 Some (addr2,score)
                             else
                                 None
