@@ -120,9 +120,9 @@ namespace ExceLintUI
             return scores.Select(tup => addr + " -> " + tup.Item1 + ": " + tup.Item2).ToArray();
         }
 
-        delegate BasisVector[] VectorSelector(AST.Address addr, DAG dag);
+        private delegate BasisVector[] VectorSelector(AST.Address addr, DAG dag);
 
-        public void getVectors(VectorSelector f)
+        private void getVectors(VectorSelector f)
         {
             // Disable screen updating during analysis to speed things up
             _app.ScreenUpdating = false;
@@ -150,8 +150,6 @@ namespace ExceLintUI
 
             System.Windows.Forms.MessageBox.Show("From: " + cursorStr + "\n\n" + sourceVectsString);
         }
-
-        
 
         public void getFormulaRelVectors()
         {
