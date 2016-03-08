@@ -87,7 +87,10 @@ namespace ExceLintUI
             _app.ScreenUpdating = false;
 
             // build DAG
-            _dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
+            if (_dag == null)
+            {
+                _dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
+            }
 
             // get cursor location
             var cursor = _app.Selection;
@@ -123,7 +126,10 @@ namespace ExceLintUI
             _app.ScreenUpdating = false;
 
             // build DAG
-            var dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
+            if (_dag == null)
+            {
+                _dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
+            }
 
             // get cursor location
             var cursor = _app.Selection;
@@ -131,7 +137,7 @@ namespace ExceLintUI
             var cursorStr = "(" + cursorAddr.X + "," + cursorAddr.Y + ")";  // for sanity-preservation purposes
 
             // find all sources for formula under the cursor
-            AbsoluteVector[] sourceVects = ExceLint.Vector.transitiveFormulaVectors(cursorAddr, dag);
+            AbsoluteVector[] sourceVects = ExceLint.Vector.transitiveFormulaVectors(cursorAddr, _dag);
 
             // make string
             string[] sourceVectStrings = sourceVects.Select(vect => vect.ToString()).ToArray();
@@ -149,7 +155,10 @@ namespace ExceLintUI
             _app.ScreenUpdating = false;
 
             // build DAG
-            var dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
+            if (_dag == null)
+            {
+                _dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
+            }
 
             // get cursor location
             var cursor = _app.Selection;
@@ -157,7 +166,7 @@ namespace ExceLintUI
             var cursorStr = "(" + cursorAddr.X + "," + cursorAddr.Y + ")";  // for sanity-preservation purposes
 
             // find all sources for formula under the cursor
-            OriginVector[] sourceVects = ExceLint.Vector.transitiveFormulaRelativeVectors(cursorAddr, dag);
+            OriginVector[] sourceVects = ExceLint.Vector.transitiveFormulaRelativeVectors(cursorAddr, _dag);
 
             // make string
             string[] sourceVectStrings = sourceVects.Select(vect => vect.ToString()).ToArray();
@@ -175,7 +184,10 @@ namespace ExceLintUI
             _app.ScreenUpdating = false;
 
             // build DAG
-            var dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
+            if (_dag == null)
+            {
+                _dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
+            }
 
             // get cursor location
             var cursor = _app.Selection;
@@ -183,7 +195,7 @@ namespace ExceLintUI
             var cursorStr = "(" + cursorAddr.X + "," + cursorAddr.Y + ")";  // for sanity-preservation purposes
 
             // find all sources for formula under the cursor
-            double l2ns = ExceLint.Vector.FormulaRelativeL2NormSum.run(cursorAddr, dag);
+            double l2ns = ExceLint.Vector.FormulaRelativeL2NormSum.run(cursorAddr, _dag);
 
             // Enable screen updating when we're done
             _app.ScreenUpdating = true;
