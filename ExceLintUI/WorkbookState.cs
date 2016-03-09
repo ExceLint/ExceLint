@@ -183,37 +183,37 @@ namespace ExceLintUI
 
         public void getFormulaRelVectors()
         {
-            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.transitiveFormulaRelativeVectors(addr, dag);
+            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, true, true);
             getVectors(f);
         }
 
         public void getFormulaAbsVectors()
         {
-            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.transitiveFormulaOriginVectors(addr, dag);
+            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, true, false);
             getVectors(f);
         }
 
         public void getDataRelVectors()
         {
-            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.transitiveDataRelativeVectors(addr, dag);
+            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, false, true);
             getVectors(f);
         }
 
         public void getDataAbsVectors()
         {
-            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.transitiveDataOriginVectors(addr, dag);
+            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, false, false);
             getVectors(f);
         }
 
         public void getRawFormulaVectors()
         {
-            AbsVectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.transitiveFormulaVectors(addr, dag);
+            AbsVectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.formulaVectors(addr, dag);
             getRawVectors(f);
         }
 
         public void getRawDataVectors()
         {
-            AbsVectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.transitiveDataVectors(addr, dag);
+            AbsVectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.dataVectors(addr, dag);
             getRawVectors(f);
         }
 

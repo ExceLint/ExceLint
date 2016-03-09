@@ -64,12 +64,18 @@
         let private L2NormBVSum(vs: BasisVector[]) : double =
             vs |> Array.map L2NormBV |> Array.sum
 
-        let transitiveFormulaVectors(fCell: AST.Address)(dag : DAG) : AbsoluteVector[] =
-            let rec tfVect(sinkO: AST.Address option)(source: AST.Address) : AbsoluteVector list =
+        let transitiveFormulaVectors(fCell: AST.Address)(dag : DAG)(depth: int option) : AbsoluteVector[] =
+            let rec tfVect(sinkO: AST.Address option)(source: AST.Address)(depth: int option) : AbsoluteVector list =
                 let vlist = match sinkO with
                             | Some sink -> [vector sink source]
                             | None -> []
 
+                match depth with
+                | Some(0) -> vlist
+                | Some(d) -> tfVect_b source (Some(d-1)) vlist
+                | None -> tfVect_b source None vlist
+
+            and tfVect_b(source: AST.Address)(nextDepth: int option)(vlist: AbsoluteVector list) : AbsoluteVector list =
                 if (dag.isFormula source) then
                     // find all of the inputs for source
                     let sources_single = dag.getFormulaSingleCellInputs source |> List.ofSeq
@@ -79,80 +85,108 @@
                                             List.concat
                     let sources' = sources_single @ sources_vector
                     // recursively call this function
-                    vlist @ (List.map (fun source' -> tfVect (Some source) source') sources' |> List.concat)
+                    vlist @ (List.map (fun source' -> tfVect (Some source) source' nextDepth) sources' |> List.concat)
                 else
                     vlist
     
-            tfVect None fCell |> List.toArray
+            tfVect None fCell depth |> List.toArray
 
-        let transitiveDataVectors(dCell: AST.Address)(dag : DAG) : AbsoluteVector[] =
-            let rec tdVect(source0: AST.Address option)(sink: AST.Address) : AbsoluteVector list =
-                let vlist = match source0 with
+        let formulaVectors(fCell: AST.Address)(dag : DAG) : AbsoluteVector[] =
+            transitiveFormulaVectors fCell dag (Some 1)
+
+        let transitiveDataVectors(dCell: AST.Address)(dag : DAG)(depth: int option) : AbsoluteVector[] =
+            let rec tdVect(sourceO: AST.Address option)(sink: AST.Address)(depth: int option) : AbsoluteVector list =
+                let vlist = match sourceO with
                             | Some source -> [vector sink source]
                             | None -> []
 
-                // find all of the formulas that use sink
-                let outAddrs = dag.getFormulasThatRefCell sink
-                                |> Array.toList
-                let outAddrs2 = Array.map (dag.getFormulasThatRefVector) (dag.getVectorsThatRefCell sink)
-                                |> Array.concat |> Array.toList
-                let allFrm = outAddrs @ outAddrs2 |> List.distinct
+                match depth with
+                | Some(0) -> vlist
+                | Some(d) -> tdVect_b sink (Some(d-1)) vlist
+                | None -> tdVect_b sink None vlist
 
-                // recursively call this function
-                vlist @ (List.map (fun sink' -> tdVect (Some sink) sink') allFrm |> List.concat)
+            and tdVect_b(sink: AST.Address)(nextDepth: int option)(vlist: AbsoluteVector list) : AbsoluteVector list =
+                    // find all of the formulas that use sink
+                    let outAddrs = dag.getFormulasThatRefCell sink
+                                    |> Array.toList
+                    let outAddrs2 = Array.map (dag.getFormulasThatRefVector) (dag.getVectorsThatRefCell sink)
+                                    |> Array.concat |> Array.toList
+                    let allFrm = outAddrs @ outAddrs2 |> List.distinct
 
-            tdVect None dCell |> List.toArray
+                    // recursively call this function
+                    vlist @ (List.map (fun sink' -> tdVect (Some sink) sink' nextDepth) allFrm |> List.concat)
 
-        // the transitive set of vectors, starting at a given formula cell,
-        // all relative to their tails
-        let transitiveFormulaRelativeVectors(fCell: AST.Address)(dag: DAG) : BasisVector[] =
-            transitiveFormulaVectors fCell dag |>
-            Array.map (fun v -> rebaseVectorToTail v dag)
+            tdVect None dCell depth |> List.toArray
 
-        // the transitive set of vectors, starting at a given data cell,
-        // all relative to their tails
-        let transitiveDataRelativeVectors(dCell: AST.Address)(dag: DAG) : BasisVector[] =
-            transitiveDataVectors dCell dag |>
-            Array.map (fun v -> rebaseVectorToTail v dag)
+        let dataVectors(dCell: AST.Address)(dag : DAG) : AbsoluteVector[] =
+            transitiveDataVectors dCell dag (Some 1)
 
-        // the transitive set of vectors, starting at a given formula cell,
-        // all relative to the origin
-        let transitiveFormulaOriginVectors(fCell: AST.Address)(dag: DAG) : BasisVector[] =
-            transitiveFormulaVectors fCell dag |>
-            Array.map (fun v -> rebaseVectorToOrigin v dag)
+        let getVectors(cell: AST.Address)(dag: DAG)(transitive: bool)(isForm: bool)(isRel: bool) : BasisVector[] =
+            let depth = if transitive then None else (Some 1)
+            let vectors =
+                if isForm then
+                    transitiveFormulaVectors
+                else
+                    transitiveDataVectors
+            let rebase =
+                if isRel then
+                    Array.map (fun v -> rebaseVectorToTail v dag)
+                else
+                    Array.map (fun v -> rebaseVectorToOrigin v dag)
+            rebase (vectors cell dag depth)
 
-        // the transitive set of vectors, starting at a given data cell,
-        // all relative to the origin
-        let transitiveDataOriginVectors(fCell: AST.Address)(dag: DAG) : BasisVector[] =
-            transitiveDataVectors fCell dag |>
-            Array.map (fun v -> rebaseVectorToOrigin v dag)
+        type TransitiveFormulaRelativeL2NormSum() = 
+            inherit BaseFeature()
+
+            // fCell is the address of a formula here
+            static member run(cell: AST.Address)(dag : DAG) : double = 
+                L2NormBVSum (getVectors cell dag (*transitive*) true (*isForm*) true (*isRel*) true)
+
+        type TransitiveDataRelativeL2NormSum() = 
+            inherit BaseFeature()
+
+            // dCell is the address of a data cell here
+            static member run(cell: AST.Address)(dag : DAG) : double = 
+                L2NormBVSum (getVectors cell dag (*transitive*) true (*isForm*) false (*isRel*) true)
+
+        type TransitiveFormulaAbsoluteL2NormSum() =
+            inherit BaseFeature()
+
+            // fCell is the address of a formula here
+            static member run(cell: AST.Address)(dag: DAG) : double =
+                L2NormBVSum (getVectors cell dag (*transitive*) true (*isForm*) true (*isRel*) false)
+
+        type TransitiveDataAbsoluteL2NormSum() =
+            inherit BaseFeature()
+
+            // dCell is the address of a data cell here
+            static member run(cell: AST.Address)(dag: DAG) : double =
+                L2NormBVSum (getVectors cell dag (*transitive*) true (*isForm*) false (*isRel*) false)
 
         type FormulaRelativeL2NormSum() = 
             inherit BaseFeature()
 
             // fCell is the address of a formula here
-            static member run(fCell: AST.Address)(dag : DAG) : double = 
-                L2NormBVSum (transitiveFormulaRelativeVectors fCell dag)
+            static member run(cell: AST.Address)(dag : DAG) : double = 
+                L2NormBVSum (getVectors cell dag (*transitive*) false (*isForm*) true (*isRel*) true)
 
         type DataRelativeL2NormSum() = 
             inherit BaseFeature()
 
             // dCell is the address of a data cell here
-            static member run(dCell: AST.Address)(dag : DAG) : double = 
-                L2NormBVSum (transitiveDataRelativeVectors dCell dag)
+            static member run(cell: AST.Address)(dag : DAG) : double = 
+                L2NormBVSum (getVectors cell dag (*transitive*) false (*isForm*) false (*isRel*) true)
 
         type FormulaAbsoluteL2NormSum() =
             inherit BaseFeature()
 
             // fCell is the address of a formula here
-            static member run(fCell: AST.Address)(dag: DAG) : double =
-                let vs = transitiveFormulaOriginVectors fCell dag
-                L2NormBVSum vs
+            static member run(cell: AST.Address)(dag: DAG) : double =
+                L2NormBVSum (getVectors cell dag (*transitive*) false (*isForm*) true (*isRel*) false)
 
         type DataAbsoluteL2NormSum() =
             inherit BaseFeature()
 
             // dCell is the address of a data cell here
-            static member run(dCell: AST.Address)(dag: DAG) : double =
-                let vs = transitiveDataOriginVectors dCell dag
-                L2NormBVSum vs
+            static member run(cell: AST.Address)(dag: DAG) : double =
+                L2NormBVSum (getVectors cell dag (*transitive*) false (*isForm*) false (*isRel*) false)

@@ -6,7 +6,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>a62bca5a-eb55-46ed-a49a-fdb34771b605</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <RootNamespace>ExceLint</RootNamespace>
     <AssemblyName>ExceLint</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
@@ -53,7 +53,6 @@
     <Compile Include="Degree.fs" />
     <Compile Include="Vector.fs" />
     <Compile Include="Analysis.fs" />
-    <Compile Include="Program.fs" />
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
