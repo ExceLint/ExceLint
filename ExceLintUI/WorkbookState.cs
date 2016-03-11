@@ -22,7 +22,7 @@ namespace ExceLintUI
 
         private Excel.Application _app;
         private Excel.Workbook _workbook;
-        private double _tool_proportion = 0.95;
+        private double _tool_proportion = 0.05;
         private Dictionary<AST.Address, CellColor> _colors;
         private HashSet<AST.Address> _tool_highlights = new HashSet<AST.Address>();
         private HashSet<AST.Address> _output_highlights = new HashSet<AST.Address>();
@@ -290,13 +290,10 @@ namespace ExceLintUI
                     _flaggable = scores;
 
                     // calculate cutoff index
-                    int thresh = scores.Length - Convert.ToInt32(scores.Length * _tool_proportion);
+                    int thresh = Convert.ToInt32(scores.Length * _tool_proportion);
 
-                    // filter out cells that are...
-                    //_flaggable = scores.Where(pair => pair.Value >= scores[thresh].Value)   // below threshold
-                    //                   .Where(pair => !_known_good.Contains(pair.Key))      // known to be good
-                    //                   .Where(pair => pair.Value != 0).ToArray()            // score == 0
-                    //                   .Select(pair => new KeyValuePair<AST.Address, double>(pair.Key, System.Convert.ToInt32(pair.Value)));
+                    // slice result array by cutoff
+                    _flaggable = scores.Take(thresh).ToArray();
 
                     // Re-enable alerts
                     _app.DisplayAlerts = true;
