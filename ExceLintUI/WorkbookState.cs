@@ -249,6 +249,10 @@ namespace ExceLintUI
 
             using (var pb = new ProgBar())
             {
+                // create progress delegate
+                ProgressBarIncrementer incr = () => pb.IncrementProgress();
+                var p = new Progress(incr);
+
                 // disable screen updating during analysis to speed things up
                 _app.ScreenUpdating = false;
 
@@ -262,7 +266,7 @@ namespace ExceLintUI
                     //_dag = DAG.DAGFromCache(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, CACHEDIRPATH);
                     if (_dag == null)
                     {
-                        _dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
+                        _dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, p);
                     }
 
                     // sanity check

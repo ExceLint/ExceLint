@@ -168,7 +168,9 @@
     <Compile Include="ExceLintRibbon.Designer.cs">
       <DependentUpon>ExceLintRibbon.cs</DependentUpon>
     </Compile>
-    <Compile Include="ProgBar.cs" />
+    <Compile Include="ProgBar.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="ProgBar.Designer.cs">
       <DependentUpon>ProgBar.cs</DependentUpon>
     </Compile>
