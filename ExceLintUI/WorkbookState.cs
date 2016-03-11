@@ -252,6 +252,10 @@ namespace ExceLintUI
                 // disable screen updating during analysis to speed things up
                 _app.ScreenUpdating = false;
 
+                // Also disable alerts; e.g., Excel thinks that compute-bound plugins
+                // are deadlocked and alerts the user.  ExceLint really is just compute-bound.
+                _app.DisplayAlerts = false;
+
                 // build data dependence graph
                 try
                 {
@@ -293,6 +297,9 @@ namespace ExceLintUI
                     //                   .Where(pair => !_known_good.Contains(pair.Key))      // known to be good
                     //                   .Where(pair => pair.Value != 0).ToArray()            // score == 0
                     //                   .Select(pair => new KeyValuePair<AST.Address, double>(pair.Key, System.Convert.ToInt32(pair.Value)));
+
+                    // Re-enable alerts
+                    _app.DisplayAlerts = true;
 
                     // Enable screen updating when we're done
                     _app.ScreenUpdating = true;
