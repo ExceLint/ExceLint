@@ -279,14 +279,6 @@ namespace ExceLintUI
                     //KeyValuePair<AST.Address, double>[] scores = model.rankWithScore();
                     KeyValuePair<AST.Address, double>[] scores = model.rankByFeatureSum();
 
-                    // debug output
-                    if (_debug_mode)
-                    {
-                        var score_str = String.Join("\n", scores.Take(10).Select(score => score.Key.A1FullyQualified() + " -> " + score.Value.ToString()));
-                        System.Windows.Forms.MessageBox.Show(score_str);
-                        System.Windows.Forms.Clipboard.SetText(score_str);
-                    }
-
                     _flaggable = scores;
 
                     // calculate cutoff index
@@ -294,6 +286,14 @@ namespace ExceLintUI
 
                     // slice result array by cutoff
                     _flaggable = scores.Take(thresh).ToArray();
+
+                    // debug output
+                    if (_debug_mode)
+                    {
+                        var score_str = String.Join("\n", _flaggable.Select(score => score.Key.A1FullyQualified() + " -> " + score.Value.ToString()));
+                        System.Windows.Forms.MessageBox.Show(score_str);
+                        System.Windows.Forms.Clipboard.SetText(score_str);
+                    }
 
                     // Re-enable alerts
                     _app.DisplayAlerts = true;
