@@ -158,6 +158,8 @@ namespace ExceLintUI
             Globals.ThisAddIn.Application.WorkbookActivate += WorkbookActivated;
             Globals.ThisAddIn.Application.WorkbookDeactivate += WorkbookDeactivated;
             Globals.ThisAddIn.Application.WorkbookBeforeClose += WorkbookClose;
+            Globals.ThisAddIn.Application.SheetChange += SheetChange;
+            Globals.ThisAddIn.Application.WorkbookAfterSave += WorkbookAfterSave;
 
             // sometimes the default blank workbook opens *before* the CheckCell
             // add-in is loaded so we have to handle sheet state specially.
@@ -172,6 +174,11 @@ namespace ExceLintUI
                 WorkbookOpen(wb);
                 WorkbookActivated(wb);
             }
+        }
+
+        private void WorkbookAfterSave(Excel.Workbook Wb, bool Success)
+        {
+            currentWorkbook.SerializeDAG();
         }
 
         // This event is called when Excel opens a workbook
@@ -224,6 +231,13 @@ namespace ExceLintUI
             {
                 SetUIStateNoWorkbooks();
             }
+        }
+
+        private void SheetChange(object worksheet, Excel.Range target)
+        {
+            currentWorkbook.DAGChanged();
+            currentWorkbook.resetTool();
+            setUIState(currentWorkbook);
         }
         #endregion EVENTS
 

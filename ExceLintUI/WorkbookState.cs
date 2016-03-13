@@ -31,6 +31,7 @@ namespace ExceLintUI
         private AST.Address _flagged_cell;
         private DAG _dag;
         private bool _debug_mode = false;
+        private bool _dag_changed = false;
 
         #region BUTTON_STATE
         private bool _button_Analyze_enabled = true;
@@ -44,6 +45,11 @@ namespace ExceLintUI
             _app = app;
             _workbook = workbook;
             _colors = new Dictionary<AST.Address, CellColor>();
+        }
+
+        public void DAGChanged()
+        {
+            _dag_changed = true;
         }
 
         public double toolProportion
@@ -87,10 +93,7 @@ namespace ExceLintUI
             _app.ScreenUpdating = false;
 
             // build DAG
-            if (_dag == null)
-            {
-                _dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
-            }
+            UpdateDAG();
 
             // get cursor location
             var cursor = _app.Selection;
@@ -129,10 +132,7 @@ namespace ExceLintUI
             _app.ScreenUpdating = false;
 
             // build DAG
-            if (_dag == null)
-            {
-                _dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
-            }
+            UpdateDAG();
 
             // get cursor location
             var cursor = _app.Selection;
@@ -158,10 +158,7 @@ namespace ExceLintUI
             _app.ScreenUpdating = false;
 
             // build DAG
-            if (_dag == null)
-            {
-                _dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
-            }
+            UpdateDAG();
 
             // get cursor location
             var cursor = _app.Selection;
@@ -179,6 +176,15 @@ namespace ExceLintUI
             _app.ScreenUpdating = true;
 
             System.Windows.Forms.MessageBox.Show("From: " + cursorStr + "\n\n" + sourceVectsString);
+        }
+
+        internal void SerializeDAG()
+        {
+            if (_dag == null)
+            {
+                UpdateDAG();
+            }
+            _dag.SerializeToDirectory(CACHEDIRPATH);
         }
 
         public void getFormulaRelVectors()
@@ -223,10 +229,7 @@ namespace ExceLintUI
             _app.ScreenUpdating = false;
 
             // build DAG
-            if (_dag == null)
-            {
-                _dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
-            }
+            UpdateDAG();
 
             // get cursor location
             var cursor = _app.Selection;
@@ -242,78 +245,88 @@ namespace ExceLintUI
             System.Windows.Forms.MessageBox.Show(cursorStr + " = " + l2ns);
         }
 
-        public void analyze(long max_duration_in_ms, ExceLint.Analysis.FeatureConf config)
+        private void UpdateDAG()
         {
-            var sw = new System.Diagnostics.Stopwatch();
-            sw.Start();
-
             using (var pb = new ProgBar())
             {
                 // create progress delegate
                 ProgressBarIncrementer incr = () => pb.IncrementProgress();
                 var p = new Progress(incr);
 
-                // disable screen updating during analysis to speed things up
-                _app.ScreenUpdating = false;
-
-                // Also disable alerts; e.g., Excel thinks that compute-bound plugins
-                // are deadlocked and alerts the user.  ExceLint really is just compute-bound.
-                _app.DisplayAlerts = false;
-
-                // build data dependence graph
-                try
+                if (_dag == null)
                 {
-                    //_dag = DAG.DAGFromCache(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, CACHEDIRPATH);
-                    if (_dag == null)
-                    {
-                        _dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, p);
-                    }
-
-                    // sanity check
-                    if (_dag.terminalInputVectors().Length == 0)
-                    {
-                        System.Windows.Forms.MessageBox.Show("This spreadsheet contains no vector-input functions.");
-                        _app.ScreenUpdating = true;
-                        _flaggable = new KeyValuePair<AST.Address, double>[0];
-                        return;
-                    }
-
-                    // run analysis
-                    var model = new ExceLint.Analysis.ErrorModel(config, _dag, 0.05);
-                    //KeyValuePair<AST.Address, double>[] scores = model.rankWithScore();
-                    KeyValuePair<AST.Address, double>[] scores = model.rankByFeatureSum();
-
-                    _flaggable = scores;
-
-                    // calculate cutoff index
-                    int thresh = Convert.ToInt32(scores.Length * _tool_proportion);
-
-                    // slice result array by cutoff
-                    _flaggable = scores.Take(thresh).ToArray();
-
-                    // debug output
-                    if (_debug_mode)
-                    {
-                        var score_str = String.Join("\n", _flaggable.Select(score => score.Key.A1FullyQualified() + " -> " + score.Value.ToString()));
-                        System.Windows.Forms.MessageBox.Show(score_str);
-                        System.Windows.Forms.Clipboard.SetText(score_str);
-                    }
-
-                    // Re-enable alerts
-                    _app.DisplayAlerts = true;
-
-                    // Enable screen updating when we're done
-                    _app.ScreenUpdating = true;
+                    _dag = DAG.DAGFromCache(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, CACHEDIRPATH, p);
                 }
-                catch (Parcel.ParseException e)
+                else if (_dag_changed)
                 {
-                    // cleanup UI and then rethrow
-                    _app.ScreenUpdating = true;
-                    throw e;
+                    _dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, p);
+                    _dag_changed = false;
+                    resetTool();
                 }
-
-                sw.Stop();
             }
+        }
+
+        public void analyze(long max_duration_in_ms, ExceLint.Analysis.FeatureConf config)
+        {
+            var sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
+
+            // disable screen updating during analysis to speed things up
+            _app.ScreenUpdating = false;
+
+            // Also disable alerts; e.g., Excel thinks that compute-bound plugins
+            // are deadlocked and alerts the user.  ExceLint really is just compute-bound.
+            _app.DisplayAlerts = false;
+
+            // build data dependence graph
+            try
+            {
+                UpdateDAG();
+
+                // sanity check
+                if (_dag.terminalInputVectors().Length == 0)
+                {
+                    System.Windows.Forms.MessageBox.Show("This spreadsheet contains no vector-input functions.");
+                    _app.ScreenUpdating = true;
+                    _flaggable = new KeyValuePair<AST.Address, double>[0];
+                    return;
+                }
+
+                // run analysis
+                var model = new ExceLint.Analysis.ErrorModel(config, _dag, 0.05);
+                //KeyValuePair<AST.Address, double>[] scores = model.rankWithScore();
+                KeyValuePair<AST.Address, double>[] scores = model.rankByFeatureSum();
+
+                _flaggable = scores;
+
+                // calculate cutoff index
+                int thresh = Convert.ToInt32(scores.Length * _tool_proportion);
+
+                // slice result array by cutoff
+                _flaggable = scores.Take(thresh).ToArray();
+
+                // debug output
+                if (_debug_mode)
+                {
+                    var score_str = String.Join("\n", _flaggable.Select(score => score.Key.A1FullyQualified() + " -> " + score.Value.ToString()));
+                    System.Windows.Forms.MessageBox.Show(score_str);
+                    System.Windows.Forms.Clipboard.SetText(score_str);
+                }
+
+                // Re-enable alerts
+                _app.DisplayAlerts = true;
+
+                // Enable screen updating when we're done
+                _app.ScreenUpdating = true;
+            }
+            catch (Parcel.ParseException e)
+            {
+                // cleanup UI and then rethrow
+                _app.ScreenUpdating = true;
+                throw e;
+            }
+
+            sw.Stop();
         }
 
         private void activateAndCenterOn(AST.Address cell, Excel.Application app)
