@@ -3,5 +3,13 @@ module Feature
     open COMWrapper
     open Depends
 
+    type ConfigKind =
+    | Feature
+    | Scope
+
+    type Capability = { enabled : bool; kind: ConfigKind; runner: AST.Address -> Depends.DAG -> double; }
+
     type BaseFeature() =
-        static member run (cell: AST.Address) (dag: DAG): double = 0.0
+        static member run (cell: AST.Address) (dag: DAG): double = failwith "Feature must provide run method."
+        static member capability : string*Capability = failwith "Feature must provide capability."
+        static member name : string = failwith "Feature must provide name."

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Excel = Microsoft.Office.Interop.Excel;
 using Depends;
-using AbsoluteVector = System.Tuple<System.Tuple<int, int, string>, System.Tuple<int, int, string>>;
-using BasisVector = System.Tuple<int, int, int>;
+using FullyQualifiedVector = ExceLint.Vector.FullyQualifiedVector;
+using RelativeVector = System.Tuple<int, int, int>;
 
 namespace ExceLintUI
 {
@@ -123,8 +123,8 @@ namespace ExceLintUI
             return scores.Select(tup => addr + " -> " + tup.Item1 + ": " + tup.Item2).ToArray();
         }
 
-        private delegate BasisVector[] VectorSelector(AST.Address addr, DAG dag);
-        private delegate AbsoluteVector[] AbsVectorSelector(AST.Address addr, DAG dag);
+        private delegate RelativeVector[] VectorSelector(AST.Address addr, DAG dag);
+        private delegate FullyQualifiedVector[] AbsVectorSelector(AST.Address addr, DAG dag);
 
         private void getRawVectors(AbsVectorSelector f)
         {
@@ -140,7 +140,7 @@ namespace ExceLintUI
             var cursorStr = "(" + cursorAddr.X + "," + cursorAddr.Y + ")";  // for sanity-preservation purposes
 
             // find all sources for formula under the cursor
-            AbsoluteVector[] sourceVects = f(cursorAddr, _dag);
+            FullyQualifiedVector[] sourceVects = f(cursorAddr, _dag);
 
             // make string
             string[] sourceVectStrings = sourceVects.Select(vect => vect.ToString()).ToArray();
@@ -166,7 +166,7 @@ namespace ExceLintUI
             var cursorStr = "(" + cursorAddr.X + "," + cursorAddr.Y + ")";  // for sanity-preservation purposes
 
             // find all sources for formula under the cursor
-            BasisVector[] sourceVects = f(cursorAddr, _dag);
+            RelativeVector[] sourceVects = f(cursorAddr, _dag);
 
             // make string
             string[] sourceVectStrings = sourceVects.Select(vect => vect.ToString()).ToArray();
@@ -189,37 +189,37 @@ namespace ExceLintUI
 
         public void getFormulaRelVectors()
         {
-            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, true, true);
+            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, true, true, true);
             getVectors(f);
         }
 
         public void getFormulaAbsVectors()
         {
-            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, true, false);
+            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, true, false, true);
             getVectors(f);
         }
 
         public void getDataRelVectors()
         {
-            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, false, true);
+            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, false, true, true);
             getVectors(f);
         }
 
         public void getDataAbsVectors()
         {
-            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, false, false);
+            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, false, false, true);
             getVectors(f);
         }
 
         public void getRawFormulaVectors()
         {
-            AbsVectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.formulaVectors(addr, dag);
+            AbsVectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.inputVectors(addr, dag, true);
             getRawVectors(f);
         }
 
         public void getRawDataVectors()
         {
-            AbsVectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.dataVectors(addr, dag);
+            AbsVectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.outputVectors(addr, dag, true);
             getRawVectors(f);
         }
 
@@ -237,7 +237,7 @@ namespace ExceLintUI
             var cursorStr = "(" + cursorAddr.X + "," + cursorAddr.Y + ")";  // for sanity-preservation purposes
 
             // find all sources for formula under the cursor
-            double l2ns = ExceLint.Vector.FormulaRelativeL2NormSum.run(cursorAddr, _dag);
+            double l2ns = ExceLint.Vector.DeepInputVectorRelativeL2NormSum.run(cursorAddr, _dag);
 
             // Enable screen updating when we're done
             _app.ScreenUpdating = true;

@@ -8,60 +8,139 @@
         type Dict<'a,'b> = Dictionary<'a,'b>
         let adict(a: seq<('a*'b)>) = new Dict<'a,'b>(a |> dict)
 
-        type ConfigKind =
-            | Feature
-            | Scope
+        type RunnerMap = Map<string, AST.Address -> Depends.DAG -> double>
 
         // a C#-friendly configuration object that is also pure/fluent
-        type FeatureConf private (userConf: Map<string,(bool*ConfigKind)>) =
+        type FeatureConf private (userConf: Map<string,Feature.Capability>) =
             let _base = Feature.BaseFeature.run 
-            let _defaults = Map.ofSeq [
-                ("indegree", (false, ConfigKind.Feature));
-                ("combineddegree", (false, ConfigKind.Feature));
-                ("outdegree", (false, ConfigKind.Feature));
-                ("vRelL2normsum", (false, ConfigKind.Feature));
-                ("dRelL2normsum", (false, ConfigKind.Feature));
-                ("vAbsL2normsum", (false, ConfigKind.Feature));
-                ("dAbsL2normsum", (false, ConfigKind.Feature));
-                ("allCells", (false, ConfigKind.Scope));
-                ("columns", (false, ConfigKind.Scope));
-                ("rows", (false, ConfigKind.Scope));
-            ]
-            let _config = Map.fold (fun acc key value -> Map.add key value acc) _defaults userConf
 
-            let _features = Map.ofSeq [
-                ("indegree", fun (cell)(dag) -> if fst _config.["indegree"] then Degree.InDegree.run cell dag else _base cell dag);
-                ("combineddegree", fun (cell)(dag) -> if fst _config.["combineddegree"] then (Degree.InDegree.run cell dag + Degree.OutDegree.run cell dag) else _base cell dag);
-                ("outdegree", fun (cell)(dag) -> if fst _config.["outdegree"] then Degree.OutDegree.run cell dag else _base cell dag);
-                ("vRelL2normsum", fun (cell)(dag) -> if fst _config.["vRelL2normsum"] then Vector.ShallowInputVectorRelativeL2NormSum.run cell dag else _base cell dag);
-                ("dRelL2normsum", fun (cell)(dag) -> if fst _config.["dRelL2normsum"] then Vector.ShallowOutputVectorRelativeL2NormSum.run cell dag else _base cell dag);
-                ("vAbsL2normsum", fun (cell)(dag) -> if fst _config.["vAbsL2normsum"] then Vector.ShallowInputVectorAbsoluteL2NormSum.run cell dag else _base cell dag);
-                ("dAbsL2normsum", fun (cell)(dag) -> if fst _config.["dAbsL2normsum"] then Vector.ShallowOutputVectorAbsoluteL2NormSum.run cell dag else _base cell dag);
-            ]
+            let _capabilities : Map<string,Feature.Capability> =
+                [   Degree.InDegree.capability;
+                    Degree.OutDegree.capability;
+                    Degree.CombinedDegree.capability;
+                    Vector.DeepInputVectorRelativeL2NormSum.capability;
+                    Vector.DeepOutputVectorRelativeL2NormSum.capability;
+                    Vector.DeepInputVectorAbsoluteL2NormSum.capability;
+                    Vector.DeepOutputVectorAbsoluteL2NormSum.capability;
+                    Vector.DeepInputVectorMixedL2NormSum.capability;
+                    Vector.DeepOutputVectorMixedL2NormSum.capability
+                    Vector.ShallowInputVectorRelativeL2NormSum.capability;
+                    Vector.ShallowOutputVectorRelativeL2NormSum.capability;
+                    Vector.ShallowInputVectorAbsoluteL2NormSum.capability;
+                    Vector.ShallowOutputVectorAbsoluteL2NormSum.capability;
+                    Vector.ShallowInputVectorMixedL2NormSum.capability;
+                    Vector.ShallowOutputVectorMixedL2NormSum.capability
+                ] |> Map.ofList
+
+            let nop(cell: AST.Address)(dag: Depends.DAG) : double = 0.0
+
+            let _config = Map.fold (fun (acc: Map<string,Feature.Capability>)(fname: string)(cap: Feature.Capability) ->
+                            let cap' : Feature.Capability =
+                                {   enabled = cap.enabled;
+                                    kind = cap.kind;
+                                    runner = if cap.enabled then cap.runner else nop
+                                }
+                            Map.add fname cap acc
+                          ) _capabilities userConf
+
+            let _features : RunnerMap = Map.map (fun (fname: string)(cap: Feature.Capability) -> cap.runner) _config
 
             new() = FeatureConf(Map.empty)
 
             // fluent constructors
             member self.enableInDegree() : FeatureConf =
-                FeatureConf(_config.Add("indegree", (true, ConfigKind.Feature)))
+                FeatureConf(
+                    let (name,cap) = Degree.InDegree.capability
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
             member self.enableOutDegree() : FeatureConf =
-                FeatureConf(_config.Add("outdegree", (true, ConfigKind.Feature)))
+                FeatureConf(
+                    let (name,cap) = Degree.OutDegree.capability
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
             member self.enableCombinedDegree() : FeatureConf =
-                FeatureConf(_config.Add("combineddegree", (true, ConfigKind.Feature)))
-            member self.enableFormulaRelativeL2NormSum() : FeatureConf =
-                FeatureConf(_config.Add("vRelL2normsum", (true, ConfigKind.Feature)))
-            member self.enableDataRelativeL2NormSum() : FeatureConf =
-                FeatureConf(_config.Add("dRelL2normsum", (true, ConfigKind.Feature)))
-            member self.enableFormulaAbsoluteL2NormSum() : FeatureConf =
-                FeatureConf(_config.Add("vAbsL2normsum", (true, ConfigKind.Feature)))
-            member self.enableDataAbsoluteL2NormSum() : FeatureConf =
-                FeatureConf(_config.Add("dAbsL2normsum", (true, ConfigKind.Feature)))
+                FeatureConf(
+                    let (name,cap) = Degree.CombinedDegree.capability
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            member self.enableDeepInputVectorRelativeL2NormSum() : FeatureConf =
+                FeatureConf(
+                    let (name,cap) = Vector.DeepInputVectorRelativeL2NormSum.capability
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            member self.enableDeepOutputVectorRelativeL2NormSum() : FeatureConf =
+                FeatureConf(
+                    let (name,cap) = Vector.DeepOutputVectorRelativeL2NormSum.capability
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            member self.enableDeepInputVectorAbsoluteL2NormSum() : FeatureConf =
+                FeatureConf(
+                    let (name,cap) = Vector.DeepInputVectorAbsoluteL2NormSum.capability
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            member self.enableDeepOutputVectorAbsoluteL2NormSum() : FeatureConf =
+                FeatureConf(
+                    let (name,cap) = Vector.DeepOutputVectorAbsoluteL2NormSum.capability
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            member self.enableDeepInputVectorMixedL2NormSum() : FeatureConf =
+                FeatureConf(
+                    let (name,cap) = Vector.DeepInputVectorMixedL2NormSum.capability
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            member self.enableDeepOutputVectorMixedL2NormSum() : FeatureConf =
+                FeatureConf(
+                    let (name,cap) = Vector.DeepOutputVectorMixedL2NormSum.capability
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            member self.enableShallowInputVectorRelativeL2NormSum() : FeatureConf =
+                FeatureConf(
+                    let (name,cap) = Vector.ShallowInputVectorRelativeL2NormSum.capability
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            member self.enableShallowOutputVectorRelativeL2NormSum() : FeatureConf =
+                FeatureConf(
+                    let (name,cap) = Vector.ShallowOutputVectorRelativeL2NormSum.capability
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            member self.enableShallowInputVectorAbsoluteL2NormSum() : FeatureConf =
+                FeatureConf(
+                    let (name,cap) = Vector.ShallowInputVectorAbsoluteL2NormSum.capability
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            member self.enableShallowOutputVectorAbsoluteL2NormSum() : FeatureConf =
+                FeatureConf(
+                    let (name,cap) = Vector.ShallowOutputVectorAbsoluteL2NormSum.capability
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            member self.enableShallowInputVectorMixedL2NormSum() : FeatureConf =
+                FeatureConf(
+                    let (name,cap) = Vector.ShallowInputVectorMixedL2NormSum.capability
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            member self.enableShallowOutputVectorMixedL2NormSum() : FeatureConf =
+                FeatureConf(
+                    let (name,cap) = Vector.ShallowOutputVectorMixedL2NormSum.capability
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
             member self.analyzeRelativeToAllCells() : FeatureConf =
-                FeatureConf(_config.Add("allCells", (true, ConfigKind.Scope)))
+                FeatureConf(
+                    let name = "ScopeAllCells"
+                    let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Scope; runner = nop}
+                    _config.Add(name, cap)
+                )
             member self.analyzeRelativeToColumns() : FeatureConf =
-                FeatureConf(_config.Add("columns", (true, ConfigKind.Scope)))
+                FeatureConf(
+                    let name = "ScopeColumns"
+                    let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Scope; runner = nop}
+                    _config.Add(name, cap)
+                )
             member self.analyzeRelativeToRows() : FeatureConf =
-                FeatureConf(_config.Add("rows", (true, ConfigKind.Scope)))
+                FeatureConf(
+                    let name = "ScopeRows"
+                    let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Scope; runner = nop}
+                    _config.Add(name, cap)
+                )
 
             // getters
             member self.EnabledFeatures
@@ -70,16 +149,16 @@
                 with get() : string[] = 
                     _config |>
                         Map.toArray |>
-                        Array.choose (fun (confname,(enabled,ckind)) ->
-                                        if enabled && ckind = ConfigKind.Feature then
-                                            Some confname
+                        Array.choose (fun (fname,cap) ->
+                                        if cap.enabled && cap.kind = Feature.ConfigKind.Feature then
+                                            Some fname
                                         else None)
             member self.EnabledScopes
                 with get() : Scope.Selector[] =
                     _config |>
                         Map.toArray |>
-                        Array.choose (fun (confname,(enabled,ckind)) ->
-                                        if enabled && ckind = ConfigKind.Scope then
+                        Array.choose (fun (confname,cap) ->
+                                        if cap.enabled && cap.kind = Feature.ConfigKind.Scope then
                                             match confname with
                                             | "allCells" -> Some Scope.AllCells
                                             | "columns" -> Some Scope.SameColumn

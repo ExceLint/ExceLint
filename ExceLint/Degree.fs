@@ -43,3 +43,9 @@
                     ) (dag.getVectorsThatRefCell cell) |> Array.concat
 
                 System.Convert.ToDouble(referencingFormulas.Length + formulasThatRefRanges.Length)
+
+    type CombinedDegree() =
+        inherit BaseFeature()
+
+            static member run cell (dag: DAG) =
+                InDegree.run cell dag + OutDegree.run cell dag
