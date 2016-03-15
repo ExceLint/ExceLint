@@ -38,7 +38,7 @@
                         | AST.AddressMode.Absolute -> Abs(head.Y)
                         | AST.AddressMode.Relative -> Rel(head.Y)
                 let headXYP = (X, Y, fullPath head)
-                failwith "nope"
+                MixedFQVector(tailXYP, headXYP)
             else
                 let headXYP = (head.X, head.Y, fullPath head)
                 AbsoluteFQVector(tailXYP, headXYP)
