@@ -167,7 +167,7 @@
                                         else None)
 
         // a C#-friendly error model constructor
-        type ErrorModel(config: FeatureConf, dag: Depends.DAG, alpha: double) =
+        type ErrorModel(config: FeatureConf, dag: Depends.DAG, alpha: double, progress: Depends.Progress) =
 
             // train model on construction
             // a score table: featurename -> (address, score)
@@ -179,6 +179,7 @@
 
                     let fvals =
                         Array.map (fun cell ->
+                            progress.IncrementCounter()
                             cell, feature cell dag
                         ) (dag.allCells())
                     
@@ -197,6 +198,7 @@
                                 d.[(fname,sID,score)] <- freq + 1
                             else
                                 d.Add((fname,sID,score), 1)
+                            progress.IncrementCounter()
                         ) (_data.[fname])
                     ) (Scope.Selector.Kinds)
                 ) (config.Features)

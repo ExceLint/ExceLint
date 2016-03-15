@@ -5,6 +5,7 @@ using Excel = Microsoft.Office.Interop.Excel;
 using Depends;
 using FullyQualifiedVector = ExceLint.Vector.FullyQualifiedVector;
 using RelativeVector = System.Tuple<int, int, int>;
+using Score = System.Collections.Generic.KeyValuePair<AST.Address, double>;
 
 namespace ExceLintUI
 {
@@ -20,6 +21,7 @@ namespace ExceLintUI
         public readonly static string CACHEDIRPATH = System.IO.Path.GetTempPath();
         #endregion CONSTANTS
 
+        #region DATASTRUCTURES
         private Excel.Application _app;
         private Excel.Workbook _workbook;
         private double _tool_proportion = 0.05;
@@ -27,11 +29,17 @@ namespace ExceLintUI
         private HashSet<AST.Address> _tool_highlights = new HashSet<AST.Address>();
         private HashSet<AST.Address> _output_highlights = new HashSet<AST.Address>();
         private HashSet<AST.Address> _known_good = new HashSet<AST.Address>();
-        private KeyValuePair<AST.Address, double>[] _flaggable;
+        private Score[] _flaggable;
         private AST.Address _flagged_cell;
         private DAG _dag;
         private bool _debug_mode = false;
         private bool _dag_changed = false;
+        private struct Analysis
+        {
+            public Score[] scores;
+            public bool ranOK;
+        }
+        #endregion DATASTRUCTURES
 
         #region BUTTON_STATE
         private bool _button_Analyze_enabled = true;
@@ -92,17 +100,21 @@ namespace ExceLintUI
             // Disable screen updating during analysis to speed things up
             _app.ScreenUpdating = false;
 
-            // build DAG
-            UpdateDAG();
-
             // get cursor location
             var cursor = _app.Selection;
             AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, _app.ActiveWorkbook);
             var cursorStr = "(" + cursorAddr.X + "," + cursorAddr.Y + ")";  // for sanity-preservation purposes
 
-            // find all sources for formula under the cursor
-            var model = new ExceLint.Analysis.ErrorModel(config, _dag, 0.05);
-            //KeyValuePair<AST.Address, double>[] scores = model.rankWithScore();
+            // build DAG
+            UpdateDAG();
+
+            Func<Progress, ExceLint.Analysis.ErrorModel> f = (Progress p) =>
+             {
+                // find all vectors for formula under the cursor
+                return new ExceLint.Analysis.ErrorModel(config, _dag, 0.05, p);
+             };
+
+            var model = buildDAGAndDoStuff(f, 3);
 
             var output = model.inspectSelectorFor(cursorAddr, sel);
 
@@ -115,7 +127,7 @@ namespace ExceLintUI
             System.Windows.Forms.MessageBox.Show(cursorStr + "\n\n" + String.Join("\n", outputStrings));
         }
 
-        private string[] prettyPrintSelectScores(KeyValuePair<AST.Address, Tuple<string,double>[]> addrScores)
+        private string[] prettyPrintSelectScores(KeyValuePair<AST.Address, Tuple<string, double>[]> addrScores)
         {
             var addr = addrScores.Key;
             var scores = addrScores.Value;
@@ -245,24 +257,38 @@ namespace ExceLintUI
             System.Windows.Forms.MessageBox.Show(cursorStr + " = " + l2ns);
         }
 
-        private void UpdateDAG()
+        // this lets us reuse the progressbar for other work
+        private T buildDAGAndDoStuff<T>(Func<Progress,T> doStuff, long workMultiplier)
         {
             using (var pb = new ProgBar())
             {
                 // create progress delegate
                 ProgressBarIncrementer incr = () => pb.IncrementProgress();
-                var p = new Progress(incr);
+                var p = new Progress(incr, workMultiplier);
 
-                if (_dag == null)
-                {
-                    _dag = DAG.DAGFromCache(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, CACHEDIRPATH, p);
-                }
-                else if (_dag_changed)
-                {
-                    _dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, p);
-                    _dag_changed = false;
-                    resetTool();
-                }
+                RefreshDAG(p);
+
+                return doStuff(p);
+            }
+        }
+
+        private void UpdateDAG()
+        {
+            Func<Progress,int> f = (Progress p) => 1;
+            buildDAGAndDoStuff(f, 1L);
+        }
+
+        private void RefreshDAG(Progress p)
+        {
+            if (_dag == null)
+            {
+                _dag = DAG.DAGFromCache(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, CACHEDIRPATH, p);
+            }
+            else if (_dag_changed)
+            {
+                _dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, p);
+                _dag_changed = false;
+                resetTool();
             }
         }
 
@@ -283,27 +309,36 @@ namespace ExceLintUI
             {
                 UpdateDAG();
 
-                // sanity check
-                if (_dag.terminalInputVectors().Length == 0)
+                Func<Progress, Analysis> f = (Progress p) =>
                 {
-                    System.Windows.Forms.MessageBox.Show("This spreadsheet contains no vector-input functions.");
-                    _app.ScreenUpdating = true;
-                    _flaggable = new KeyValuePair<AST.Address, double>[0];
+                    // sanity check
+                    if (_dag.terminalInputVectors().Length == 0)
+                    {
+                        System.Windows.Forms.MessageBox.Show("This spreadsheet contains no vector-input functions.");
+                        _app.ScreenUpdating = true;
+                        _flaggable = new KeyValuePair<AST.Address, double>[0];
+                        return new Analysis { scores = null, ranOK = false };
+                    } else
+                    {
+                        // run analysis
+                        var model = new ExceLint.Analysis.ErrorModel(config, _dag, 0.05, p);
+                        Score[] scores = model.rankByFeatureSum();
+                        return new Analysis { scores = scores, ranOK = true };
+                    }
+                };
+
+                var analysis = buildDAGAndDoStuff(f, 3);
+
+                if (!analysis.ranOK)
+                {
                     return;
                 }
 
-                // run analysis
-                var model = new ExceLint.Analysis.ErrorModel(config, _dag, 0.05);
-                //KeyValuePair<AST.Address, double>[] scores = model.rankWithScore();
-                KeyValuePair<AST.Address, double>[] scores = model.rankByFeatureSum();
-
-                _flaggable = scores;
-
                 // calculate cutoff index
-                int thresh = Convert.ToInt32(scores.Length * _tool_proportion);
+                int thresh = Convert.ToInt32(analysis.scores.Length * _tool_proportion);
 
-                // slice result array by cutoff
-                _flaggable = scores.Take(thresh).ToArray();
+                // slice result array by cutoff and assign to _flaggable
+                _flaggable = analysis.scores.Take(thresh).ToArray();
 
                 // debug output
                 if (_debug_mode)
