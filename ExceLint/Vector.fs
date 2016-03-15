@@ -16,13 +16,14 @@
         | Rel of int
 
         // the vector, relative to an origin
+        type public Coordinates = (X*Y*Path)
         type public RelativeVector = (X*Y*Z)
         type public MixedVector = (VectorComponent*VectorComponent*Path)
 
         // the first component is the tail (start) and the second is the head (end)
         type public FullyQualifiedVector =
-        | MixedFQVector of (X*Y*Path)*MixedVector
-        | AbsoluteFQVector of (X*Y*Path)*(X*Y*Path)
+        | MixedFQVector of Coordinates*MixedVector
+        | AbsoluteFQVector of Coordinates*(X*Y*Path)
 
         let private fullPath(addr: AST.Address) : string =
             // portably create full path from components
