@@ -14,6 +14,10 @@
         type public VectorComponent =
         | Abs of int
         | Rel of int
+            member self.ToString() : string =
+                match self with
+                | Abs(i) -> "Abs(" + i.ToString() + ")"
+                | Rel(i) -> "Rel(" + i.ToString() + ")"
 
         // the vector, relative to an origin
         type public Coordinates = (X*Y*Path)
@@ -23,7 +27,11 @@
         // the first component is the tail (start) and the second is the head (end)
         type public FullyQualifiedVector =
         | MixedFQVector of Coordinates*MixedVector
-        | AbsoluteFQVector of Coordinates*(X*Y*Path)
+        | AbsoluteFQVector of Coordinates*Coordinates
+            member self.ToString() : string =
+                match self with
+                | MixedFQVector(tail,head) -> tail.ToString() + " -> " + head.ToString()
+                | AbsoluteFQVector(tail,head) -> tail.ToString() + " -> " + head.ToString()
 
         let private fullPath(addr: AST.Address) : string =
             // portably create full path from components

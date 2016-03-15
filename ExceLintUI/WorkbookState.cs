@@ -312,9 +312,9 @@ namespace ExceLintUI
                 Func<Progress, Analysis> f = (Progress p) =>
                 {
                     // sanity check
-                    if (_dag.terminalInputVectors().Length == 0)
+                    if (_dag.getAllFormulaAddrs().Length == 0)
                     {
-                        System.Windows.Forms.MessageBox.Show("This spreadsheet contains no vector-input functions.");
+                        System.Windows.Forms.MessageBox.Show("This spreadsheet contains no formulas.");
                         _app.ScreenUpdating = true;
                         _flaggable = new KeyValuePair<AST.Address, double>[0];
                         return new Analysis { scores = null, ranOK = false };
