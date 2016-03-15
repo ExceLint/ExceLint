@@ -174,56 +174,56 @@
                     Array.map (fun v -> relativeToOrigin v dag)
             rebase (vectors cell dag depth isMixed)
 
-        type RelativeTransitiveInputL2NormSum() = 
+        type DeepInputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
 
             // fCell is the address of a formula here
             static member run(cell: AST.Address)(dag : DAG) : double = 
                 L2NormBVSum (getVectors cell dag (*transitive*) true (*isForm*) true (*isRel*) true (*isMixed*) false)
 
-        type TransitiveDataRelativeL2NormSum() = 
+        type DeepOutputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
 
             // dCell is the address of a data cell here
             static member run(cell: AST.Address)(dag : DAG) : double = 
                 L2NormBVSum (getVectors cell dag (*transitive*) true (*isForm*) false (*isRel*) true (*isMixed*) false)
 
-        type TransitiveFormulaAbsoluteL2NormSum() =
+        type DeepInputVectorAbsoluteL2NormSum() =
             inherit BaseFeature()
 
             // fCell is the address of a formula here
             static member run(cell: AST.Address)(dag: DAG) : double =
                 L2NormBVSum (getVectors cell dag (*transitive*) true (*isForm*) true (*isRel*) false (*isMixed*) false)
 
-        type TransitiveDataAbsoluteL2NormSum() =
+        type DeepOutputVectorAbsoluteL2NormSum() =
             inherit BaseFeature()
 
             // dCell is the address of a data cell here
             static member run(cell: AST.Address)(dag: DAG) : double =
                 L2NormBVSum (getVectors cell dag (*transitive*) true (*isForm*) false (*isRel*) false (*isMixed*) false)
 
-        type FormulaRelativeL2NormSum() = 
+        type ShallowInputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
 
             // fCell is the address of a formula here
             static member run(cell: AST.Address)(dag : DAG) : double = 
                 L2NormBVSum (getVectors cell dag (*transitive*) false (*isForm*) true (*isRel*) true (*isMixed*) false)
 
-        type DataRelativeL2NormSum() = 
+        type ShallowOutputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
 
             // dCell is the address of a data cell here
             static member run(cell: AST.Address)(dag : DAG) : double = 
                 L2NormBVSum (getVectors cell dag (*transitive*) false (*isForm*) false (*isRel*) true (*isMixed*) false)
 
-        type FormulaAbsoluteL2NormSum() =
+        type ShallowInputVectorAbsoluteL2NormSum() =
             inherit BaseFeature()
 
             // fCell is the address of a formula here
             static member run(cell: AST.Address)(dag: DAG) : double =
                 L2NormBVSum (getVectors cell dag (*transitive*) false (*isForm*) true (*isRel*) false (*isMixed*) false)
 
-        type DataAbsoluteL2NormSum() =
+        type ShallowOutputVectorAbsoluteL2NormSum() =
             inherit BaseFeature()
 
             // dCell is the address of a data cell here

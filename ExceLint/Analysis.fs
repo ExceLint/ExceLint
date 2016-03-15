@@ -33,10 +33,10 @@
                 ("indegree", fun (cell)(dag) -> if fst _config.["indegree"] then Degree.InDegree.run cell dag else _base cell dag);
                 ("combineddegree", fun (cell)(dag) -> if fst _config.["combineddegree"] then (Degree.InDegree.run cell dag + Degree.OutDegree.run cell dag) else _base cell dag);
                 ("outdegree", fun (cell)(dag) -> if fst _config.["outdegree"] then Degree.OutDegree.run cell dag else _base cell dag);
-                ("vRelL2normsum", fun (cell)(dag) -> if fst _config.["vRelL2normsum"] then Vector.FormulaRelativeL2NormSum.run cell dag else _base cell dag);
-                ("dRelL2normsum", fun (cell)(dag) -> if fst _config.["dRelL2normsum"] then Vector.DataRelativeL2NormSum.run cell dag else _base cell dag);
-                ("vAbsL2normsum", fun (cell)(dag) -> if fst _config.["vAbsL2normsum"] then Vector.FormulaAbsoluteL2NormSum.run cell dag else _base cell dag);
-                ("dAbsL2normsum", fun (cell)(dag) -> if fst _config.["dAbsL2normsum"] then Vector.DataAbsoluteL2NormSum.run cell dag else _base cell dag);
+                ("vRelL2normsum", fun (cell)(dag) -> if fst _config.["vRelL2normsum"] then Vector.ShallowInputVectorRelativeL2NormSum.run cell dag else _base cell dag);
+                ("dRelL2normsum", fun (cell)(dag) -> if fst _config.["dRelL2normsum"] then Vector.ShallowOutputVectorRelativeL2NormSum.run cell dag else _base cell dag);
+                ("vAbsL2normsum", fun (cell)(dag) -> if fst _config.["vAbsL2normsum"] then Vector.ShallowInputVectorAbsoluteL2NormSum.run cell dag else _base cell dag);
+                ("dAbsL2normsum", fun (cell)(dag) -> if fst _config.["dAbsL2normsum"] then Vector.ShallowOutputVectorAbsoluteL2NormSum.run cell dag else _base cell dag);
             ]
 
             new() = FeatureConf(Map.empty)
