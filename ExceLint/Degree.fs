@@ -28,6 +28,10 @@
                 else
                     0.0
 
+            static member capability : string*Capability =
+                (typeof<InDegree>.Name,
+                    { enabled = false; kind = ConfigKind.Feature; runner = InDegree.run } )
+
     type OutDegree() =
         inherit BaseFeature()
 
@@ -44,8 +48,16 @@
 
                 System.Convert.ToDouble(referencingFormulas.Length + formulasThatRefRanges.Length)
 
+            static member capability : string*Capability =
+                (typeof<OutDegree>.Name,
+                    { enabled = false; kind = ConfigKind.Feature; runner = InDegree.run } )
+
     type CombinedDegree() =
         inherit BaseFeature()
 
             static member run cell (dag: DAG) =
                 InDegree.run cell dag + OutDegree.run cell dag
+
+            static member capability : string*Capability =
+                (typeof<CombinedDegree>.Name,
+                    { enabled = false; kind = ConfigKind.Feature; runner = InDegree.run } )

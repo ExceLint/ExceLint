@@ -182,7 +182,6 @@
             static member capability : string*Capability =
                 (typeof<DeepInputVectorRelativeL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepInputVectorRelativeL2NormSum.run } )
-            static member name : string = typeof<DeepInputVectorRelativeL2NormSum>.Name;
 
         type DeepOutputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
@@ -191,7 +190,6 @@
             static member capability : string*Capability =
                 (typeof<DeepOutputVectorRelativeL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepOutputVectorRelativeL2NormSum.run } )
-            static member name : string = typeof<DeepOutputVectorRelativeL2NormSum>.Name;
 
         type DeepInputVectorAbsoluteL2NormSum() =
             inherit BaseFeature()
@@ -200,7 +198,6 @@
             static member capability : string*Capability =
                 (typeof<DeepInputVectorAbsoluteL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepInputVectorAbsoluteL2NormSum.run } )
-            static member name : string = typeof<DeepInputVectorAbsoluteL2NormSum>.Name;
 
         type DeepOutputVectorAbsoluteL2NormSum() =
             inherit BaseFeature()
@@ -209,7 +206,6 @@
             static member capability : string*Capability =
                 (typeof<DeepOutputVectorAbsoluteL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepOutputVectorAbsoluteL2NormSum.run } )
-            static member name : string = typeof<DeepOutputVectorAbsoluteL2NormSum>.Name;
 
         type ShallowInputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
@@ -218,7 +214,6 @@
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorRelativeL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorRelativeL2NormSum.run } )
-            static member name : string = typeof<ShallowInputVectorRelativeL2NormSum>.Name;
 
         type ShallowOutputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
@@ -227,7 +222,6 @@
             static member capability : string*Capability =
                 (typeof<ShallowOutputVectorRelativeL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowOutputVectorRelativeL2NormSum.run } )
-            static member name : string = typeof<ShallowOutputVectorRelativeL2NormSum>.Name;
 
         type ShallowInputVectorAbsoluteL2NormSum() =
             inherit BaseFeature()
@@ -236,7 +230,6 @@
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorAbsoluteL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorAbsoluteL2NormSum.run } )
-            static member name : string = typeof<ShallowInputVectorAbsoluteL2NormSum>.Name;
 
         type ShallowOutputVectorAbsoluteL2NormSum() =
             inherit BaseFeature()
@@ -245,7 +238,6 @@
             static member capability : string*Capability =
                 (typeof<ShallowOutputVectorAbsoluteL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowOutputVectorAbsoluteL2NormSum.run } )
-            static member name : string = typeof<ShallowOutputVectorAbsoluteL2NormSum>.Name;
 
         type ShallowInputVectorMixedL2NormSum() =
             inherit BaseFeature()
@@ -254,7 +246,6 @@
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorMixedL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedL2NormSum.run } )
-            static member name : string = typeof<ShallowInputVectorMixedL2NormSum>.Name;
 
         type ShallowOutputVectorMixedL2NormSum() =
             inherit BaseFeature()
@@ -263,7 +254,6 @@
             static member capability : string*Capability =
                 (typeof<ShallowOutputVectorMixedL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowOutputVectorMixedL2NormSum.run } )
-            static member name : string = typeof<ShallowOutputVectorMixedL2NormSum>.Name;
 
         type DeepInputVectorMixedL2NormSum() =
             inherit BaseFeature()
@@ -272,7 +262,6 @@
             static member capability : string*Capability =
                 (typeof<DeepInputVectorMixedL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepInputVectorMixedL2NormSum.run } )
-            static member name : string = typeof<DeepInputVectorMixedL2NormSum>.Name;
 
         type DeepOutputVectorMixedL2NormSum() =
             inherit BaseFeature()
@@ -281,4 +270,3 @@
             static member capability : string*Capability =
                 (typeof<DeepOutputVectorMixedL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepOutputVectorMixedL2NormSum.run } )
-            static member name : string = typeof<DeepOutputVectorMixedL2NormSum>.Name;

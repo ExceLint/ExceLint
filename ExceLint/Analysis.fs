@@ -160,9 +160,9 @@
                         Array.choose (fun (confname,cap) ->
                                         if cap.enabled && cap.kind = Feature.ConfigKind.Scope then
                                             match confname with
-                                            | "allCells" -> Some Scope.AllCells
-                                            | "columns" -> Some Scope.SameColumn
-                                            | "rows" -> Some Scope.SameRow
+                                            | "ScopeAllCells" -> Some Scope.AllCells
+                                            | "ScopeColumns" -> Some Scope.SameColumn
+                                            | "ScopeRows" -> Some Scope.SameRow
                                             | _ -> failwith "Unknown scope selector."
                                         else None)
 

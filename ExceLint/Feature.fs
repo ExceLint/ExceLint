@@ -12,4 +12,3 @@ module Feature
     type BaseFeature() =
         static member run (cell: AST.Address) (dag: DAG): double = failwith "Feature must provide run method."
         static member capability : string*Capability = failwith "Feature must provide capability."
-        static member name : string = failwith "Feature must provide name."
