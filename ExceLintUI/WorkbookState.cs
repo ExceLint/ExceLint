@@ -341,22 +341,36 @@ namespace ExceLintUI
                     return;
                 }
 
-                // calculate cutoff index
-                //int thresh = Convert.ToInt32(analysis.scores.Length * _tool_proportion);
-
                 // assign scores to _flaggable
                 _flaggable = analysis.scores;
 
                 // debug output
                 if (_debug_mode)
                 {
-                    var score_str = String.Join("\n", _flaggable.Select(score => score.Key.A1FullyQualified() + " -> " + score.Value.ToString()));
-                    if (score_str == "")
+                    // calculate min/max heat map intensity
+                    var max_intensity = analysis.scores[0].Value;
+                    var min_intensity = analysis.scores[analysis.scores.Length - 1].Value;
+
+                    // paint cells
+                    foreach (Score s in analysis.scores)
                     {
-                        score_str = "empty";
+                        // get score value
+                        var sVal = s.Value;
+
+                        // compute intensity
+                        var intensity = Convert.ToDouble(sVal - min_intensity) / Convert.ToDouble(max_intensity - min_intensity);
+
+                        // make it some shade of blue
+                        paintRed(s.Key, intensity);
                     }
-                    System.Windows.Forms.MessageBox.Show(score_str);
-                    System.Windows.Forms.Clipboard.SetText(score_str);
+
+                    //var score_str = String.Join("\n", _flaggable.Select(score => score.Key.A1FullyQualified() + " -> " + score.Value.ToString()));
+                    //if (score_str == "")
+                    //{
+                    //    score_str = "empty";
+                    //}
+                    //System.Windows.Forms.MessageBox.Show(score_str);
+                    //System.Windows.Forms.Clipboard.SetText(score_str);
                 }
 
                 // Re-enable alerts
@@ -421,11 +435,7 @@ namespace ExceLintUI
 
                 // save old color
                 var cc = new CellColor(com.Interior.ColorIndex, com.Interior.Color);
-                if (_colors.ContainsKey(_flagged_cell))
-                {
-                    _colors[_flagged_cell] = cc;
-                }
-                else
+                if (!_colors.ContainsKey(_flagged_cell))
                 {
                     _colors.Add(_flagged_cell, cc);
                 }
@@ -442,6 +452,27 @@ namespace ExceLintUI
             }
         }
 
+        private void paintRed(AST.Address cell, double intensity)
+        {
+            // get cell COM object
+            var com = ParcelCOMShim.Address.GetCOMObject(cell, _app);
+
+            // save old color
+            var cc = new CellColor(com.Interior.ColorIndex, com.Interior.Color);
+            if (!_colors.ContainsKey(cell))
+            {
+                _colors.Add(cell, cc);
+            }
+
+            // highlight cell
+            byte A = System.Drawing.Color.Red.A;
+            byte R = System.Drawing.Color.Red.R;
+            byte G = Convert.ToByte((1.0 - intensity) * 255);
+            byte B = Convert.ToByte((1.0 - intensity) * 255);
+            var c = System.Drawing.Color.FromArgb(A, R, G, B);
+            com.Interior.Color = c;
+        }
+
         private void restoreOutputColors()
         {
             if (_workbook != null)
@@ -455,6 +486,7 @@ namespace ExceLintUI
                 _colors.Clear();
             }
             _output_highlights.Clear();
+            _colors.Clear();
         }
 
         public void resetTool()
