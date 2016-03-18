@@ -20,14 +20,16 @@ namespace ExceLintUI
                 currentWorkbook.DebugMode = true;
             }
 
-            var prop = getProportion(this.SensitivityTextBox.Text, this.SensitivityTextBox.Label);
-            if (prop == FSharpOption<double>.None)
+            var prop = getPercent(this.proportionTextBox.Text, this.proportionTextBox.Label);
+            var sig = getPercent(this.significanceTextBox.Text, this.significanceTextBox.Label);
+            if (prop == FSharpOption<double>.None || sig == FSharpOption<double>.None)
             {
                 return;
             }
             else
             {
                 currentWorkbook.toolProportion = prop.Value;
+                currentWorkbook.toolSignificance = sig.Value;
                 try
                 {
                     currentWorkbook.analyze(WorkbookState.MAX_DURATION_IN_MS, getConfig());
@@ -242,7 +244,7 @@ namespace ExceLintUI
         #endregion EVENTS
 
         #region UTILITY_FUNCTIONS
-        private static FSharpOption<double> getProportion(string input, string label)
+        private static FSharpOption<double> getPercent(string input, string label)
         {
             var errormsg = label + " must be a value between 0 and 100.";
 

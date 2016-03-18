@@ -25,6 +25,7 @@ namespace ExceLintUI
         private Excel.Application _app;
         private Excel.Workbook _workbook;
         private double _tool_proportion = 0.05;
+        private double _tool_significance = 0.05;
         private Dictionary<AST.Address, CellColor> _colors;
         private HashSet<AST.Address> _tool_highlights = new HashSet<AST.Address>();
         private HashSet<AST.Address> _output_highlights = new HashSet<AST.Address>();
@@ -64,6 +65,12 @@ namespace ExceLintUI
         {
             get { return _tool_proportion; }
             set { _tool_proportion = value; }
+        }
+
+        public double toolSignificance
+        {
+            get { return _tool_significance; }
+            set { _tool_significance = value; }
         }
 
         public bool Analyze_Enabled
@@ -111,7 +118,7 @@ namespace ExceLintUI
             Func<Progress, ExceLint.Analysis.ErrorModel> f = (Progress p) =>
              {
                 // find all vectors for formula under the cursor
-                return new ExceLint.Analysis.ErrorModel(config, _dag, 0.05, p);
+                return new ExceLint.Analysis.ErrorModel(config, _dag, _tool_significance, p);
              };
 
             var model = buildDAGAndDoStuff(f, 3);
