@@ -167,9 +167,9 @@
                 )
 
             // getters
-            member self.EnabledFeatures
+            member self.FeatureByName
                 with get(name) = _features.[name]
-            member self.Features
+            member self.EnabledFeatures
                 with get() : string[] = 
                     _config |>
                         Map.toArray |>
@@ -196,10 +196,10 @@
             // train model on construction
             // a score table: featurename -> (address, score)
             let _data: Dict<string,(AST.Address*double)[]> =
-                config.Features |>
+                config.EnabledFeatures |>
                 Array.map (fun fname ->
                     // get feature lambda
-                    let feature = config.EnabledFeatures fname
+                    let feature = config.FeatureByName fname
 
                     let fvals =
                         Array.map (fun cell ->
@@ -225,7 +225,7 @@
                             progress.IncrementCounter()
                         ) (_data.[fname])
                     ) (Scope.Selector.Kinds)
-                ) (config.Features)
+                ) (config.EnabledFeatures)
                 d
 
             /// <summary>Analyzes the given cell using all of the configured features and produces a score.</summary>
@@ -233,7 +233,7 @@
             /// <returns>a score</returns>
             member self.score(cell: AST.Address)(fname: string) : double =
                 // get feature by name
-                let f = config.EnabledFeatures fname
+                let f = config.FeatureByName fname
 
                 // get feature value for this cell
                 f cell dag
@@ -262,11 +262,11 @@
                             arr.[i] <- rank
                             d.[addr] <- arr
                         else
-                            let arr = Array.zeroCreate(config.Features.Length)
+                            let arr = Array.zeroCreate(config.EnabledFeatures.Length)
                             arr.[i] <- rank
                             d.Add(addr, arr)
                     ) ranks
-                ) (config.Features)
+                ) (config.EnabledFeatures)
                 d
 
             member private self.sumFeatureRanks(ranks: Dict<AST.Address,int[]>) : KeyValuePair<AST.Address,double>[] =
@@ -281,14 +281,14 @@
             member private self.sumFeatureCounts(addr: AST.Address)(sel: Scope.Selector) : int =
                 Array.sumBy (fun fname -> 
                     // get feature
-                    let feature = config.EnabledFeatures fname
+                    let feature = config.FeatureByName fname
                     // get selector ID
                     let sID = sel.id addr
                     // get feature score
                     let fscore = feature addr dag
                     // get score count
                     ftable.[(fname,sID,fscore)]
-                ) (config.Features)
+                ) (config.EnabledFeatures)
 
             member self.rankByFeatureSum() : KeyValuePair<AST.Address,double>[] =
                 // get sums for every address
@@ -324,7 +324,7 @@
             /// <returns>an KeyValuePair<AST.Address,int>[] of (address,score) ranked from most to least anomalous</returns>
             member self.rankWithScore() : KeyValuePair<AST.Address,double>[] =
                 // get the number of features
-                let fsize = double(config.Features.Length)
+                let fsize = double(config.EnabledFeatures.Length)
 
                 // find per-feature ranks for every cell in the DAG and compute total rank
                 let theRankings = Array.map (fun scope ->
@@ -334,6 +334,15 @@
                 let mergedRankings = self.mergeRanks theRankings dag
 
                 self.sumFeatureRanks mergedRankings
+
+            member self.getSignificanceCutoff : int =
+                // round to integer
+                int (
+                    // get total number of counts
+                    double (dag.allCells().Length * config.EnabledFeatures.Length * config.EnabledScopes.Length)
+                    // times signficance
+                    * alpha
+                )
 
             member self.inspectSelectorFor(addr: AST.Address, sel: Scope.Selector) : KeyValuePair<AST.Address,(string*double)[]>[] =
                 let sID = sel.id addr
