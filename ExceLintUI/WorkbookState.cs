@@ -38,7 +38,6 @@ namespace ExceLintUI
         {
             public Score[] scores;
             public bool ranOK;
-            public int sigCutoff;
         }
         #endregion DATASTRUCTURES
 
@@ -318,14 +317,13 @@ namespace ExceLintUI
                         System.Windows.Forms.MessageBox.Show("This spreadsheet contains no formulas.");
                         _app.ScreenUpdating = true;
                         _flaggable = new KeyValuePair<AST.Address, double>[0];
-                        return new Analysis { scores = null, ranOK = false, sigCutoff = 0 };
+                        return new Analysis { scores = null, ranOK = false };
                     } else
                     {
                         // run analysis
                         var model = new ExceLint.Analysis.ErrorModel(config, _dag, 0.05, p);
                         Score[] scores = model.rankByFeatureSum();
-                        var cutoff = model.getSignificanceCutoff;
-                        return new Analysis { scores = scores, ranOK = true, sigCutoff = cutoff };
+                        return new Analysis { scores = scores, ranOK = true };
                     }
                 };
 
@@ -337,13 +335,7 @@ namespace ExceLintUI
                 }
 
                 // calculate cutoff index
-                int propcutoff = Convert.ToInt32(analysis.scores.Length * _tool_proportion);
-
-                // signficance cutoff index
-                int sigcutoff = analysis.sigCutoff;
-
-                // take the smaller of the two
-                int thresh = Math.Min(propcutoff, sigcutoff);
+                int thresh = Convert.ToInt32(analysis.scores.Length * _tool_proportion);
 
                 // slice result array by cutoff and assign to _flaggable
                 _flaggable = analysis.scores.Take(thresh).ToArray();

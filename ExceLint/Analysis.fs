@@ -269,7 +269,7 @@
                 ) (config.EnabledFeatures)
                 d
 
-            member private self.sumFeatureRanks(ranks: Dict<AST.Address,int[]>) : KeyValuePair<AST.Address,double>[] =
+            member private self.sumFeatureRanksAndSort(ranks: Dict<AST.Address,int[]>) : KeyValuePair<AST.Address,double>[] =
                 Seq.map (fun (kvp: KeyValuePair<AST.Address,int[]>) ->
                     new KeyValuePair<AST.Address,double>(kvp.Key, double(Array.sum (kvp.Value)))
                 ) ranks
@@ -320,6 +320,29 @@
 
                 d
 
+            /// <summary>
+            /// Finds the maxmimum significance height
+            /// </summary>
+            /// <returns>maxmimum significance height count (an int)</returns>
+            member private self.getSignificanceCutoff : int =
+                // round to integer
+                int (
+                    // get total number of counts
+                    double (dag.allCells().Length * config.EnabledFeatures.Length * config.EnabledScopes.Length)
+                    // times signficance
+                    * alpha
+                )
+
+            member private self.cutRankBySignificance(ranking: KeyValuePair<AST.Address,double>[]): KeyValuePair<AST.Address,double>[] =
+                let cutoff = self.getSignificanceCutoff
+
+                Array.fold (fun (acc: KeyValuePair<AST.Address,double> list)(score: KeyValuePair<AST.Address,double>) ->
+                    if score.Value > double cutoff then
+                        acc
+                    else
+                        score :: acc
+                ) (List.empty) ranking |> List.rev |> List.toArray
+
             /// <summary>Ranks all the cells in the workbook by their anomalousness.</summary>
             /// <returns>an KeyValuePair<AST.Address,int>[] of (address,score) ranked from most to least anomalous</returns>
             member self.rankWithScore() : KeyValuePair<AST.Address,double>[] =
@@ -333,16 +356,11 @@
 
                 let mergedRankings = self.mergeRanks theRankings dag
 
-                self.sumFeatureRanks mergedRankings
+                let totalOrder = self.sumFeatureRanksAndSort mergedRankings
 
-            member self.getSignificanceCutoff : int =
-                // round to integer
-                int (
-                    // get total number of counts
-                    double (dag.allCells().Length * config.EnabledFeatures.Length * config.EnabledScopes.Length)
-                    // times signficance
-                    * alpha
-                )
+                let winners = self.cutRankBySignificance totalOrder
+
+                winners
 
             member self.inspectSelectorFor(addr: AST.Address, sel: Scope.Selector) : KeyValuePair<AST.Address,(string*double)[]>[] =
                 let sID = sel.id addr
