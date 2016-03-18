@@ -59,6 +59,10 @@
             this.outVectors = this.Factory.CreateRibbonCheckBox();
             this.inVectorsAbs = this.Factory.CreateRibbonCheckBox();
             this.outVectorsAbs = this.Factory.CreateRibbonCheckBox();
+            this.ProximityAbove = this.Factory.CreateRibbonCheckBox();
+            this.ProximityBelow = this.Factory.CreateRibbonCheckBox();
+            this.ProximityLeft = this.Factory.CreateRibbonCheckBox();
+            this.ProximityRight = this.Factory.CreateRibbonCheckBox();
             this.separator2 = this.Factory.CreateRibbonSeparator();
             this.allCellsFreq = this.Factory.CreateRibbonCheckBox();
             this.columnCellsFreq = this.Factory.CreateRibbonCheckBox();
@@ -93,6 +97,10 @@
             this.CheckCellGroup.Items.Add(this.outVectors);
             this.CheckCellGroup.Items.Add(this.inVectorsAbs);
             this.CheckCellGroup.Items.Add(this.outVectorsAbs);
+            this.CheckCellGroup.Items.Add(this.ProximityAbove);
+            this.CheckCellGroup.Items.Add(this.ProximityBelow);
+            this.CheckCellGroup.Items.Add(this.ProximityLeft);
+            this.CheckCellGroup.Items.Add(this.ProximityRight);
             this.CheckCellGroup.Items.Add(this.separator2);
             this.CheckCellGroup.Items.Add(this.allCellsFreq);
             this.CheckCellGroup.Items.Add(this.columnCellsFreq);
@@ -252,24 +260,44 @@
             // inVectors
             // 
             this.inVectors.Checked = true;
-            this.inVectors.Label = "In-Vectors";
+            this.inVectors.Label = "In-Vectors (mix; sh)";
             this.inVectors.Name = "inVectors";
             // 
             // outVectors
             // 
             this.outVectors.Checked = true;
-            this.outVectors.Label = "Out-Vectors";
+            this.outVectors.Label = "Out-Vectors (mix; sh)";
             this.outVectors.Name = "outVectors";
             // 
             // inVectorsAbs
             // 
-            this.inVectorsAbs.Label = "In-Vectors (Abs)";
+            this.inVectorsAbs.Label = "In-Vectors (abs; sh)";
             this.inVectorsAbs.Name = "inVectorsAbs";
             // 
             // outVectorsAbs
             // 
-            this.outVectorsAbs.Label = "Out-Vectors (Abs)";
+            this.outVectorsAbs.Label = "Out-Vectors (abs; sh)";
             this.outVectorsAbs.Name = "outVectorsAbs";
+            // 
+            // ProximityAbove
+            // 
+            this.ProximityAbove.Label = "Above";
+            this.ProximityAbove.Name = "ProximityAbove";
+            // 
+            // ProximityBelow
+            // 
+            this.ProximityBelow.Label = "Below";
+            this.ProximityBelow.Name = "ProximityBelow";
+            // 
+            // ProximityLeft
+            // 
+            this.ProximityLeft.Label = "Left";
+            this.ProximityLeft.Name = "ProximityLeft";
+            // 
+            // ProximityRight
+            // 
+            this.ProximityRight.Label = "Right";
+            this.ProximityRight.Name = "ProximityRight";
             // 
             // separator2
             // 
@@ -341,6 +369,10 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton rowSelected;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton FrmAbsVect;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton DataAbsVect;
+        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox ProximityAbove;
+        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox ProximityBelow;
+        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox ProximityLeft;
+        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox ProximityRight;
     }
 
     partial class ThisRibbonCollection

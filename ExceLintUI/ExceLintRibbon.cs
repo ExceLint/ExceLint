@@ -281,10 +281,17 @@ namespace ExceLintUI
             if (this.inDegree.Checked) { c = c.enableInDegree(); }
             if (this.outDegree.Checked) { c = c.enableOutDegree(); }
             if (this.combinedDegree.Checked) { c = c.enableCombinedDegree(); }
+
             if (this.inVectors.Checked) { c = c.enableShallowInputVectorMixedL2NormSum(); }
             if (this.outVectors.Checked) { c = c.enableShallowOutputVectorMixedL2NormSum(); }
             if (this.inVectorsAbs.Checked) { c = c.enableShallowInputVectorAbsoluteL2NormSum(); }
             if (this.outVectorsAbs.Checked) { c = c.enableShallowOutputVectorAbsoluteL2NormSum(); }
+
+            if (this.ProximityAbove.Checked) { c = c.enableProximityAbove(); }
+            if (this.ProximityBelow.Checked) { c = c.enableProximityBelow(); }
+            if (this.ProximityLeft.Checked) { c = c.enableProximityLeft(); }
+            if (this.ProximityRight.Checked) { c = c.enableProximityRight(); }
+
             if (this.allCellsFreq.Checked) { c = c.analyzeRelativeToAllCells(); }
             if (this.columnCellsFreq.Checked) { c = c.analyzeRelativeToColumns(); }
             if (this.rowCellsFreq.Checked) { c = c.analyzeRelativeToRows(); }

@@ -29,7 +29,11 @@
                     Vector.ShallowInputVectorAbsoluteL2NormSum.capability;
                     Vector.ShallowOutputVectorAbsoluteL2NormSum.capability;
                     Vector.ShallowInputVectorMixedL2NormSum.capability;
-                    Vector.ShallowOutputVectorMixedL2NormSum.capability
+                    Vector.ShallowOutputVectorMixedL2NormSum.capability;
+                    Proximity.Above.capability;
+                    Proximity.Below.capability;
+                    Proximity.Left.capability;
+                    Proximity.Right.capability
                 ] |> Map.ofList
 
             let nop(cell: AST.Address)(dag: Depends.DAG) : double = 0.0
@@ -121,6 +125,26 @@
             member self.enableShallowOutputVectorMixedL2NormSum() : FeatureConf =
                 FeatureConf(
                     let (name,cap) = Vector.ShallowOutputVectorMixedL2NormSum.capability
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            member self.enableProximityAbove() : FeatureConf =
+                FeatureConf(
+                    let (name,cap) = Proximity.Above.capability
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            member self.enableProximityBelow() : FeatureConf =
+                FeatureConf(
+                    let (name,cap) = Proximity.Below.capability
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            member self.enableProximityLeft() : FeatureConf =
+                FeatureConf(
+                    let (name,cap) = Proximity.Left.capability
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            member self.enableProximityRight() : FeatureConf =
+                FeatureConf(
+                    let (name,cap) = Proximity.Right.capability
                     _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
                 )
             member self.analyzeRelativeToAllCells() : FeatureConf =
