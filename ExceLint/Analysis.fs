@@ -305,7 +305,11 @@
                 let rankedAddrs: (AST.Address*int)[] = Array.sortBy (fun (addr,sum) -> sum) addrSums
 
                 // return KeyValuePairs
-                Array.map (fun (addr,sum) -> new KeyValuePair<AST.Address,double>(addr,double sum)) rankedAddrs
+                let totalOrder = Array.map (fun (addr,sum) -> new KeyValuePair<AST.Address,double>(addr,double sum)) rankedAddrs
+
+                let winners = self.cutRankBySignificance totalOrder
+
+                winners
 
             member private self.mergeRanks(multiRanks: Dict<AST.Address,int[]>[])(dag: Depends.DAG) : Dict<AST.Address,int[]> =
                 let d = new Dict<AST.Address, int[]>()
@@ -356,11 +360,7 @@
 
                 let mergedRankings = self.mergeRanks theRankings dag
 
-                let totalOrder = self.sumFeatureRanksAndSort mergedRankings
-
-                let winners = self.cutRankBySignificance totalOrder
-
-                winners
+                self.sumFeatureRanksAndSort mergedRankings
 
             member self.inspectSelectorFor(addr: AST.Address, sel: Scope.Selector) : KeyValuePair<AST.Address,(string*double)[]>[] =
                 let sID = sel.id addr
