@@ -24,7 +24,7 @@ namespace ExceLintUI
         #region DATASTRUCTURES
         private Excel.Application _app;
         private Excel.Workbook _workbook;
-        private double _tool_proportion = 0.05;
+        //private double _tool_proportion = 0.05;
         private double _tool_significance = 0.05;
         private Dictionary<AST.Address, CellColor> _colors;
         private HashSet<AST.Address> _tool_highlights = new HashSet<AST.Address>();
@@ -61,11 +61,11 @@ namespace ExceLintUI
             _dag_changed = true;
         }
 
-        public double toolProportion
-        {
-            get { return _tool_proportion; }
-            set { _tool_proportion = value; }
-        }
+        //public double toolProportion
+        //{
+        //    get { return _tool_proportion; }
+        //    set { _tool_proportion = value; }
+        //}
 
         public double toolSignificance
         {
@@ -342,10 +342,10 @@ namespace ExceLintUI
                 }
 
                 // calculate cutoff index
-                int thresh = Convert.ToInt32(analysis.scores.Length * _tool_proportion);
+                //int thresh = Convert.ToInt32(analysis.scores.Length * _tool_proportion);
 
-                // slice result array by cutoff and assign to _flaggable
-                _flaggable = analysis.scores.Take(thresh).ToArray();
+                // assign scores to _flaggable
+                _flaggable = analysis.scores;
 
                 // debug output
                 if (_debug_mode)

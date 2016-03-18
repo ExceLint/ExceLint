@@ -50,7 +50,6 @@
             this.colSelect = this.Factory.CreateRibbonButton();
             this.rowSelected = this.Factory.CreateRibbonButton();
             this.ToDOT = this.Factory.CreateRibbonButton();
-            this.proportionTextBox = this.Factory.CreateRibbonEditBox();
             this.significanceTextBox = this.Factory.CreateRibbonEditBox();
             this.separator1 = this.Factory.CreateRibbonSeparator();
             this.inDegree = this.Factory.CreateRibbonCheckBox();
@@ -89,7 +88,6 @@
             // CheckCellGroup
             // 
             this.CheckCellGroup.Items.Add(this.box1);
-            this.CheckCellGroup.Items.Add(this.proportionTextBox);
             this.CheckCellGroup.Items.Add(this.significanceTextBox);
             this.CheckCellGroup.Items.Add(this.separator1);
             this.CheckCellGroup.Items.Add(this.inDegree);
@@ -233,13 +231,6 @@
             this.ToDOT.ShowImage = true;
             this.ToDOT.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ToDOT_Click);
             // 
-            // proportionTextBox
-            // 
-            this.proportionTextBox.Label = "Max Prop.";
-            this.proportionTextBox.Name = "proportionTextBox";
-            this.proportionTextBox.SizeString = "100.0";
-            this.proportionTextBox.Text = "5.0";
-            // 
             // significanceTextBox
             // 
             this.significanceTextBox.Label = "Sig. Thresh.";
@@ -357,7 +348,6 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton MarkAsOKButton;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton FixErrorButton;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton StartOverButton;
-        internal Microsoft.Office.Tools.Ribbon.RibbonEditBox proportionTextBox;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton button1;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton button2;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton button3;

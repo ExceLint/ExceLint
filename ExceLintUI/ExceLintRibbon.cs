@@ -20,15 +20,15 @@ namespace ExceLintUI
                 currentWorkbook.DebugMode = true;
             }
 
-            var prop = getPercent(this.proportionTextBox.Text, this.proportionTextBox.Label);
+            //var prop = getPercent(this.proportionTextBox.Text, this.proportionTextBox.Label);
             var sig = getPercent(this.significanceTextBox.Text, this.significanceTextBox.Label);
-            if (prop == FSharpOption<double>.None || sig == FSharpOption<double>.None)
+            if (sig == FSharpOption<double>.None)
             {
                 return;
             }
             else
             {
-                currentWorkbook.toolProportion = prop.Value;
+                //currentWorkbook.toolProportion = prop.Value;
                 currentWorkbook.toolSignificance = sig.Value;
                 try
                 {
