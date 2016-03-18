@@ -328,7 +328,7 @@ namespace ExceLintUI
                     } else
                     {
                         // run analysis
-                        var model = new ExceLint.Analysis.ErrorModel(config, _dag, 0.05, p);
+                        var model = new ExceLint.Analysis.ErrorModel(config, _dag, _tool_significance, p);
                         Score[] scores = model.rankByFeatureSum();
                         return new Analysis { scores = scores, ranOK = true };
                     }
