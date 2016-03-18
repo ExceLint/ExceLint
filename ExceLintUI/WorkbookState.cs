@@ -351,6 +351,10 @@ namespace ExceLintUI
                 if (_debug_mode)
                 {
                     var score_str = String.Join("\n", _flaggable.Select(score => score.Key.A1FullyQualified() + " -> " + score.Value.ToString()));
+                    if (score_str == null)
+                    {
+                        score_str = "";
+                    }
                     System.Windows.Forms.MessageBox.Show(score_str);
                     System.Windows.Forms.Clipboard.SetText(score_str);
                 }
