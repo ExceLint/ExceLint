@@ -1,6 +1,7 @@
 ﻿namespace ExceLint
     open System.Collections.Generic
     open System.Collections
+    open System
 
     module Analysis =
         // we're using C# Dictionary instead of F# map
@@ -328,7 +329,7 @@
             /// Finds the maxmimum significance height
             /// </summary>
             /// <returns>maxmimum significance height count (an int)</returns>
-            member private self.getSignificanceCutoff : int =
+            member self.getSignificanceCutoff : int =
                 // round to integer
                 int (
                     // get total number of counts
@@ -340,12 +341,18 @@
             member private self.cutRankBySignificance(ranking: KeyValuePair<AST.Address,double>[]): KeyValuePair<AST.Address,double>[] =
                 let cutoff = self.getSignificanceCutoff
 
-                Array.fold (fun (acc: KeyValuePair<AST.Address,double> list)(score: KeyValuePair<AST.Address,double>) ->
-                    if score.Value > double cutoff then
-                        acc
-                    else
-                        score :: acc
-                ) (List.empty) ranking |> List.rev |> List.toArray
+                let cutrank = Array.fold (fun (acc: KeyValuePair<AST.Address,double> list)(score: KeyValuePair<AST.Address,double>) ->
+                                    if score.Value > double cutoff then
+                                        acc
+                                    else
+                                        score :: acc
+                                ) (List.empty) ranking |> List.rev |> List.toArray
+
+                let rank_nums = Array.map (fun (kvp: KeyValuePair<AST.Address,double>) -> int(kvp.Value)) cutrank
+
+                let dderiv_idx = self.dderiv(rank_nums)
+
+                cutrank.[0..dderiv_idx]
 
             /// <summary>Ranks all the cells in the workbook by their anomalousness.</summary>
             /// <returns>an KeyValuePair<AST.Address,int>[] of (address,score) ranked from most to least anomalous</returns>
@@ -395,3 +402,42 @@
                                      ) d
 
                 debug |> Seq.toArray
+
+            (*
+            import fileinput
+
+            def dderiv(y):
+               anglemin = 1
+               angleminindex = 0
+               ymin = 0
+               for index in range(0,len(y)-2):
+                   angle = y[index] + y[index+2] - 2 * y[index+1]
+                   # print (y[index],y[index+1],y[index+2])
+                   # assume evenly spaced
+                   # print angle
+                   if (angle < anglemin):
+                       anglemin = angle
+                       angleminindex = index
+                       ymin = y[index]
+               return (angleminindex+1, ymin)
+
+            list = []
+
+            for line in fileinput.input():
+               line = line.rstrip('\r\n')
+               val = float(line)
+               list.append(val)
+               pass
+
+            print dderiv(list)
+            *)
+
+            member self.dderiv(y: int[]) : int =
+                let mutable anglemin = 1
+                let mutable angleminindex = 0
+                for index in 0..(y.Length - 3) do
+                    let angle = y.[index] + y.[index + 2] - 2 * y.[index + 1]
+                    if angle < anglemin then
+                        anglemin <- angle
+                        angleminindex <- index
+                angleminindex

@@ -39,6 +39,7 @@ namespace ExceLintUI
         {
             public Score[] scores;
             public bool ranOK;
+            public int cutoff;
         }
         #endregion DATASTRUCTURES
 
@@ -324,13 +325,14 @@ namespace ExceLintUI
                         System.Windows.Forms.MessageBox.Show("This spreadsheet contains no formulas.");
                         _app.ScreenUpdating = true;
                         _flaggable = new KeyValuePair<AST.Address, double>[0];
-                        return new Analysis { scores = null, ranOK = false };
+                        return new Analysis { scores = null, ranOK = false, cutoff = 0 };
                     } else
                     {
                         // run analysis
                         var model = new ExceLint.Analysis.ErrorModel(config, _dag, _tool_significance, p);
                         Score[] scores = model.rankByFeatureSum();
-                        return new Analysis { scores = scores, ranOK = true };
+                        int cutoff = model.getSignificanceCutoff;
+                        return new Analysis { scores = scores, ranOK = true, cutoff = cutoff };
                     }
                 };
 
@@ -347,30 +349,35 @@ namespace ExceLintUI
                 // debug output
                 if (_debug_mode)
                 {
-                    // calculate min/max heat map intensity
-                    var max_intensity = analysis.scores[0].Value;
-                    var min_intensity = analysis.scores[analysis.scores.Length - 1].Value;
+                    //// calculate min/max heat map intensity
+                    //var max_intensity = analysis.scores[0].Value;
+                    //var min_intensity = analysis.scores[analysis.scores.Length - 1].Value;
 
-                    // paint cells
-                    foreach (Score s in analysis.scores)
-                    {
-                        // get score value
-                        var sVal = s.Value;
-
-                        // compute intensity
-                        var intensity = Convert.ToDouble(sVal - min_intensity) / Convert.ToDouble(max_intensity - min_intensity);
-
-                        // make it some shade of blue
-                        paintRed(s.Key, intensity);
-                    }
-
-                    //var score_str = String.Join("\n", _flaggable.Select(score => score.Key.A1FullyQualified() + " -> " + score.Value.ToString()));
-                    //if (score_str == "")
+                    //// paint cells
+                    //foreach (Score s in analysis.scores)
                     //{
-                    //    score_str = "empty";
+                    //    // get score value
+                    //    var sVal = s.Value;
+
+                    //    // compute intensity
+                    //    var intensity = Convert.ToDouble(sVal - min_intensity) / Convert.ToDouble(max_intensity - min_intensity);
+
+                    //    // make it some shade of blue
+                    //    paintRed(s.Key, intensity);
                     //}
-                    //System.Windows.Forms.MessageBox.Show(score_str);
-                    //System.Windows.Forms.Clipboard.SetText(score_str);
+
+                    System.Windows.Forms.MessageBox.Show("About to compute total ranking.");
+
+                    var cutoff_str = "Cutoff for p = " + _tool_significance + ": " + analysis.cutoff +"\n";
+                    var score_str = String.Join(",", _flaggable.Select(score => score.Value.ToString()));
+                    //var score_str = String.Join("\n", _flaggable.Select(score => score.Key.A1FullyQualified() + " -> " + score.Value.ToString()));
+                    if (score_str == "")
+                    {
+                        score_str = "empty";
+                    }
+                    System.Windows.Forms.MessageBox.Show(cutoff_str + score_str);
+                    System.Windows.Forms.Clipboard.SetText(cutoff_str + score_str);
+                    
                 }
 
                 // Re-enable alerts
