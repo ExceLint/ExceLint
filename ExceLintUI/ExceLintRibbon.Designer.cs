@@ -166,6 +166,7 @@
             this.button1.Label = "Input (rel)";
             this.button1.Name = "button1";
             this.button1.ShowImage = true;
+            this.button1.Visible = false;
             this.button1.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button1_Click);
             // 
             // FrmAbsVect
@@ -175,6 +176,7 @@
             this.FrmAbsVect.Label = "Input (abs)";
             this.FrmAbsVect.Name = "FrmAbsVect";
             this.FrmAbsVect.ShowImage = true;
+            this.FrmAbsVect.Visible = false;
             this.FrmAbsVect.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.FrmAbsVect_Click);
             // 
             // button3
@@ -184,6 +186,7 @@
             this.button3.Label = "Output (rel)";
             this.button3.Name = "button3";
             this.button3.ShowImage = true;
+            this.button3.Visible = false;
             this.button3.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button3_Click);
             // 
             // DataAbsVect
@@ -193,6 +196,7 @@
             this.DataAbsVect.Label = "Output (abs)";
             this.DataAbsVect.Name = "DataAbsVect";
             this.DataAbsVect.ShowImage = true;
+            this.DataAbsVect.Visible = false;
             this.DataAbsVect.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.DataAbsVect_Click);
             // 
             // button2
@@ -202,6 +206,7 @@
             this.button2.Label = "L2Sum";
             this.button2.Name = "button2";
             this.button2.ShowImage = true;
+            this.button2.Visible = false;
             this.button2.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button2_Click);
             // 
             // colSelect
@@ -211,6 +216,7 @@
             this.colSelect.Label = "ColSel";
             this.colSelect.Name = "colSelect";
             this.colSelect.ShowImage = true;
+            this.colSelect.Visible = false;
             this.colSelect.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.colSelect_Click);
             // 
             // rowSelected
@@ -220,6 +226,7 @@
             this.rowSelected.Label = "RowSel";
             this.rowSelected.Name = "rowSelected";
             this.rowSelected.ShowImage = true;
+            this.rowSelected.Visible = false;
             this.rowSelected.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.rowSelected_Click);
             // 
             // ToDOT
@@ -229,6 +236,7 @@
             this.ToDOT.Label = "ToDOT";
             this.ToDOT.Name = "ToDOT";
             this.ToDOT.ShowImage = true;
+            this.ToDOT.Visible = false;
             this.ToDOT.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ToDOT_Click);
             // 
             // significanceTextBox
@@ -246,57 +254,68 @@
             // 
             this.inDegree.Label = "In-Degree";
             this.inDegree.Name = "inDegree";
+            this.inDegree.Visible = false;
             // 
             // outDegree
             // 
             this.outDegree.Label = "Out-Degree";
             this.outDegree.Name = "outDegree";
+            this.outDegree.Visible = false;
             // 
             // combinedDegree
             // 
             this.combinedDegree.Label = "Both-Degree";
             this.combinedDegree.Name = "combinedDegree";
+            this.combinedDegree.Visible = false;
             // 
             // inVectors
             // 
             this.inVectors.Checked = true;
             this.inVectors.Label = "In-Vectors (mix; sh)";
             this.inVectors.Name = "inVectors";
+            this.inVectors.Visible = false;
             // 
             // outVectors
             // 
             this.outVectors.Label = "Out-Vectors (mix; sh)";
             this.outVectors.Name = "outVectors";
+            this.outVectors.Visible = false;
             // 
             // inVectorsAbs
             // 
             this.inVectorsAbs.Label = "In-Vectors (abs; sh)";
             this.inVectorsAbs.Name = "inVectorsAbs";
+            this.inVectorsAbs.Visible = false;
             // 
             // outVectorsAbs
             // 
             this.outVectorsAbs.Label = "Out-Vectors (abs; sh)";
             this.outVectorsAbs.Name = "outVectorsAbs";
+            this.outVectorsAbs.Visible = false;
             // 
             // ProximityAbove
             // 
             this.ProximityAbove.Label = "Above";
             this.ProximityAbove.Name = "ProximityAbove";
+            this.ProximityAbove.Visible = false;
             // 
             // ProximityBelow
             // 
             this.ProximityBelow.Label = "Below";
             this.ProximityBelow.Name = "ProximityBelow";
+            this.ProximityBelow.Visible = false;
             // 
             // ProximityLeft
             // 
             this.ProximityLeft.Label = "Left";
             this.ProximityLeft.Name = "ProximityLeft";
+            this.ProximityLeft.Visible = false;
             // 
             // ProximityRight
             // 
             this.ProximityRight.Label = "Right";
             this.ProximityRight.Name = "ProximityRight";
+            this.ProximityRight.Visible = false;
             // 
             // separator2
             // 
