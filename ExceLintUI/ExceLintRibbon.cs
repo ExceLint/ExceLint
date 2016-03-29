@@ -276,9 +276,9 @@ namespace ExceLintUI
 
         #endregion UTILITY_FUNCTIONS
 
-        public ExceLint.Analysis.FeatureConf getConfig()
+        public ExceLint.FeatureConf getConfig()
         {
-            var c = new ExceLint.Analysis.FeatureConf();
+            var c = new ExceLint.FeatureConf();
 
             if (this.inDegree.Checked) { c = c.enableInDegree(); }
             if (this.outDegree.Checked) { c = c.enableOutDegree(); }

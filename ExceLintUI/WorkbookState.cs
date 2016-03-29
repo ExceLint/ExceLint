@@ -103,7 +103,7 @@ namespace ExceLintUI
             set { _debug_mode = value; }
         }
 
-        public void getSelected(ExceLint.Analysis.FeatureConf config, Scope.Selector sel)
+        public void getSelected(ExceLint.FeatureConf config, Scope.Selector sel)
         {
             // Disable screen updating during analysis to speed things up
             _app.ScreenUpdating = false;
@@ -116,10 +116,10 @@ namespace ExceLintUI
             // build DAG
             UpdateDAG();
 
-            Func<Progress, ExceLint.Analysis.ErrorModel> f = (Progress p) =>
+            Func<Progress, ExceLint.ErrorModel> f = (Progress p) =>
              {
                 // find all vectors for formula under the cursor
-                return new ExceLint.Analysis.ErrorModel(config, _dag, _tool_significance, p);
+                return new ExceLint.ErrorModel(config, _dag, _tool_significance, p);
              };
 
             var model = buildDAGAndDoStuff(f, 3);
@@ -300,7 +300,7 @@ namespace ExceLintUI
             }
         }
 
-        public void analyze(long max_duration_in_ms, ExceLint.Analysis.FeatureConf config)
+        public void analyze(long max_duration_in_ms, ExceLint.FeatureConf config)
         {
             var sw = new System.Diagnostics.Stopwatch();
             sw.Start();
@@ -329,7 +329,7 @@ namespace ExceLintUI
                     } else
                     {
                         // run analysis
-                        var model = new ExceLint.Analysis.ErrorModel(config, _dag, _tool_significance, p);
+                        var model = new ExceLint.ErrorModel(config, _dag, _tool_significance, p);
                         Score[] scores = model.rankByFeatureSum();
                         int cutoff = model.getSignificanceCutoff;
                         return new Analysis { scores = scores, ranOK = true, cutoff = cutoff };
@@ -531,7 +531,7 @@ namespace ExceLintUI
             flag();
         }
 
-        internal void fixError(Action<WorkbookState> setUIState, ExceLint.Analysis.FeatureConf config)
+        internal void fixError(Action<WorkbookState> setUIState, ExceLint.FeatureConf config)
         {
             var cell = ParcelCOMShim.Address.GetCOMObject(_flagged_cell, _app);
             // this callback gets run when the user clicks "OK"
