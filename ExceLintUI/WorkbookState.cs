@@ -375,15 +375,13 @@ namespace ExceLintUI
                 // debug output
                 if (_debug_mode && _flaggable.Length > 0)
                 {
-                    var cutoff_str = "Cutoff for p = " + _tool_significance + ": " + analysis.cutoff + "\n";
-                    var score_str = String.Join(",", _flaggable.Select(score => score.Value.ToString()));
-                    //var score_str = String.Join("\n", _flaggable.Select(score => score.Key.A1FullyQualified() + " -> " + score.Value.ToString()));
+                    var score_str = String.Join("\n", _flaggable.Select(score => score.Key.A1FullyQualified() + " -> " + score.Value.ToString()));
                     if (score_str == "")
                     {
                         score_str = "empty";
                     }
-                    System.Windows.Forms.MessageBox.Show(cutoff_str + score_str);
-                    System.Windows.Forms.Clipboard.SetText(cutoff_str + score_str);
+                    System.Windows.Forms.MessageBox.Show(score_str);
+                    System.Windows.Forms.Clipboard.SetText(score_str);
                 }
 
                 // Re-enable alerts
