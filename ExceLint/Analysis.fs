@@ -3,7 +3,6 @@
     open System.Collections
     open System
     open ConfUtils
-    open PerfUtils.TimedLambda
 
         type ScoreTable = Dict<string,(AST.Address*double)[]>
         type FreqTable = Dict<string*Scope.SelectID*double,int>
@@ -168,13 +167,13 @@
                 winners
 
             // get scores for each feature: featurename -> (address, score)[]
-            let _scores,_score_time = runMillis runEnabledFeatures ()
+            let (_scores: ScoreTable,_score_time: int64) = PerfUtils.runMillis runEnabledFeatures ()
 
             // build frequency table: (featurename, selector, score) -> freq
-            let _ftable,_ftable_time = runMillis buildFrequencyTable _scores
+            let _ftable,_ftable_time = PerfUtils.runMillis buildFrequencyTable _scores
 
             // rank
-            let _ranking,_ranking_time = runMillis rank _ftable
+            let _ranking,_ranking_time = PerfUtils.runMillis rank _ftable
 
             member self.ScoreTimeInMilliseconds : int64 = _score_time
 

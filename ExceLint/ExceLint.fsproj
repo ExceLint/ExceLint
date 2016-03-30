@@ -54,6 +54,7 @@
     <Compile Include="Vector.fs" />
     <Compile Include="Proximity.fs" />
     <Compile Include="FeatureConf.fs" />
+    <Compile Include="PerfUtils.fs" />
     <Compile Include="Analysis.fs" />
     <None Include="App.config" />
   </ItemGroup>
@@ -71,11 +72,6 @@
     <ProjectReference Include="..\Depends\parcel\Parcel\ExcelParser.fsproj">
       <Name>ExcelParser</Name>
       <Project>{6de2a2b9-c029-4bdb-8992-d16276471d9f}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\PerfUtils\PerfUtils.fsproj">
-      <Name>PerfUtils</Name>
-      <Project>{2844c4d5-2553-43da-a876-354f19d8cc85}</Project>
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
