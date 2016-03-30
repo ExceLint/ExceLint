@@ -168,10 +168,10 @@
                 winners
 
             // get scores for each feature: featurename -> (address, score)[]
-            let _data,_score_time = runMillis runEnabledFeatures ()
+            let _scores,_score_time = runMillis runEnabledFeatures ()
 
             // build frequency table: (featurename, selector, score) -> freq
-            let _ftable,_ftable_time = runMillis buildFrequencyTable _data
+            let _ftable,_ftable_time = runMillis buildFrequencyTable _scores
 
             // rank
             let _ranking,_ranking_time = runMillis rank _ftable
@@ -181,6 +181,12 @@
             member self.FrequencyTableTimeInMilliseconds : int64 = _ftable_time
 
             member self.RankingTimeInMilliseconds : int64 = _ranking_time
+
+            member self.NumCells : int = dag.allCells().Length
+
+            member self.NumScoreEntries : int = Array.fold (fun acc (pairs: (AST.Address*double)[]) -> acc + pairs.Length) 0 (_scores.Values |> Seq.toArray)
+
+            member self.NumFreqEntries : int = _ftable.Count
 
             member self.rankByFeatureSum() : Ranking = _ranking
 
