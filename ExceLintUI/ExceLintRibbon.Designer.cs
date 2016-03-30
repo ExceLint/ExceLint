@@ -34,6 +34,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ExceLintRibbon));
             this.tab1 = this.Factory.CreateRibbonTab();
             this.tab2 = this.Factory.CreateRibbonTab();
             this.CheckCellGroup = this.Factory.CreateRibbonGroup();
@@ -69,6 +70,7 @@
             this.rowCellsFreq = this.Factory.CreateRibbonCheckBox();
             this.separator3 = this.Factory.CreateRibbonSeparator();
             this.DebugOutput = this.Factory.CreateRibbonCheckBox();
+            this.showHeatmap = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -117,6 +119,7 @@
             this.box1.Items.Add(this.MarkAsOKButton);
             this.box1.Items.Add(this.FixErrorButton);
             this.box1.Items.Add(this.StartOverButton);
+            this.box1.Items.Add(this.showHeatmap);
             this.box1.Items.Add(this.button1);
             this.box1.Items.Add(this.FrmAbsVect);
             this.box1.Items.Add(this.button3);
@@ -352,6 +355,15 @@
             this.DebugOutput.Label = "Show Debug Output";
             this.DebugOutput.Name = "DebugOutput";
             // 
+            // showHeatmap
+            // 
+            this.showHeatmap.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.showHeatmap.Image = ((System.Drawing.Image)(resources.GetObject("showHeatmap.Image")));
+            this.showHeatmap.Label = "Heat Map";
+            this.showHeatmap.Name = "showHeatmap";
+            this.showHeatmap.ShowImage = true;
+            this.showHeatmap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.showHeatmap_Click);
+            // 
             // ExceLintRibbon
             // 
             this.Name = "ExceLintRibbon";
@@ -408,6 +420,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonEditBox significanceTextBox;
         internal Microsoft.Office.Tools.Ribbon.RibbonSeparator separator3;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox DebugOutput;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton showHeatmap;
     }
 
     partial class ThisRibbonCollection

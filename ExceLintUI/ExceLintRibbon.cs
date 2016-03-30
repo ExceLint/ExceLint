@@ -14,12 +14,6 @@ namespace ExceLintUI
         #region BUTTON_HANDLERS
         private void AnalyzeButton_Click(object sender, RibbonControlEventArgs e)
         {
-            //// check for debug keypress
-            //if ((System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Alt) > 0)
-            //{
-            //    currentWorkbook.DebugMode = true;
-            //}
-
             // check for debug checkbox
             currentWorkbook.DebugMode = this.DebugOutput.Checked;
 
@@ -30,11 +24,10 @@ namespace ExceLintUI
             }
             else
             {
-                //currentWorkbook.toolProportion = prop.Value;
                 currentWorkbook.toolSignificance = sig.Value;
                 try
                 {
-                    currentWorkbook.analyze(WorkbookState.MAX_DURATION_IN_MS, getConfig());
+                    currentWorkbook.analyze(WorkbookState.MAX_DURATION_IN_MS, getConfig(), useHeatMap: false);
                     currentWorkbook.flag();
                     setUIState(currentWorkbook);
                 }
@@ -139,6 +132,38 @@ namespace ExceLintUI
             else
             {
                 currentWorkbook.getDataAbsVectors();
+            }
+        }
+
+        private void showHeatmap_Click(object sender, RibbonControlEventArgs e)
+        {
+            // check for debug checkbox
+            currentWorkbook.DebugMode = this.DebugOutput.Checked;
+
+            var sig = getPercent(this.significanceTextBox.Text, this.significanceTextBox.Label);
+            if (sig == FSharpOption<double>.None)
+            {
+                return;
+            }
+            else
+            {
+                currentWorkbook.toolSignificance = sig.Value;
+                try
+                {
+                    currentWorkbook.analyze(WorkbookState.MAX_DURATION_IN_MS, getConfig(), useHeatMap: true);
+                    setUIState(currentWorkbook);
+                }
+                catch (Parcel.ParseException ex)
+                {
+                    System.Windows.Forms.Clipboard.SetText(ex.Message);
+                    System.Windows.Forms.MessageBox.Show("Could not parse the formula string:\n" + ex.Message);
+                    return;
+                }
+                catch (System.OutOfMemoryException ex)
+                {
+                    System.Windows.Forms.MessageBox.Show("Insufficient memory to perform analysis.");
+                    return;
+                }
             }
         }
 
@@ -276,8 +301,6 @@ namespace ExceLintUI
             this.AnalyzeButton.Enabled = wbs.Analyze_Enabled;
         }
 
-        #endregion UTILITY_FUNCTIONS
-
         public ExceLint.FeatureConf getConfig()
         {
             var c = new ExceLint.FeatureConf();
@@ -302,5 +325,7 @@ namespace ExceLintUI
 
             return c;
         }
+    
+        #endregion UTILITY_FUNCTIONS
     }
 }

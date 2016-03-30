@@ -300,7 +300,7 @@ namespace ExceLintUI
             }
         }
 
-        public void analyze(long max_duration_in_ms, ExceLint.FeatureConf config)
+        public void analyze(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean useHeatMap)
         {
             var sw = new System.Diagnostics.Stopwatch();
             sw.Start();
@@ -346,8 +346,7 @@ namespace ExceLintUI
                 // assign scores to _flaggable
                 _flaggable = analysis.scores;
 
-                // debug output
-                if (_debug_mode && _flaggable.Length > 0)
+                if (_flaggable.Length > 0 && useHeatMap)
                 {
                     // calculate min/max heat map intensity
                     var min_score = analysis.scores[0].Value;
@@ -370,18 +369,21 @@ namespace ExceLintUI
                         paintRed(s.Key, intensity);
                     }
 
-                    //System.Windows.Forms.MessageBox.Show("About to compute total ranking.");
+                    setClearOnly();
+                }
 
-                    //var cutoff_str = "Cutoff for p = " + _tool_significance + ": " + analysis.cutoff +"\n";
-                    //var score_str = String.Join(",", _flaggable.Select(score => score.Value.ToString()));
-                    ////var score_str = String.Join("\n", _flaggable.Select(score => score.Key.A1FullyQualified() + " -> " + score.Value.ToString()));
-                    //if (score_str == "")
-                    //{
-                    //    score_str = "empty";
-                    //}
-                    //System.Windows.Forms.MessageBox.Show(cutoff_str + score_str);
-                    //System.Windows.Forms.Clipboard.SetText(cutoff_str + score_str);
-
+                // debug output
+                if (_debug_mode && _flaggable.Length > 0)
+                {
+                    var cutoff_str = "Cutoff for p = " + _tool_significance + ": " + analysis.cutoff + "\n";
+                    var score_str = String.Join(",", _flaggable.Select(score => score.Value.ToString()));
+                    //var score_str = String.Join("\n", _flaggable.Select(score => score.Key.A1FullyQualified() + " -> " + score.Value.ToString()));
+                    if (score_str == "")
+                    {
+                        score_str = "empty";
+                    }
+                    System.Windows.Forms.MessageBox.Show(cutoff_str + score_str);
+                    System.Windows.Forms.Clipboard.SetText(cutoff_str + score_str);
                 }
 
                 // Re-enable alerts
@@ -515,6 +517,11 @@ namespace ExceLintUI
             _button_Analyze_enabled = !active;
         }
 
+        private void setClearOnly()
+        {
+            _button_clearColoringButton_enabled = true;
+        }
+
         internal void markAsOK()
         {
             // the user told us that the cell was OK
@@ -545,7 +552,7 @@ namespace ExceLintUI
                 try
                 {
                     // when a user fixes something, we need to re-run the analysis
-                    analyze(MAX_DURATION_IN_MS, config);
+                    analyze(MAX_DURATION_IN_MS, config, useHeatMap: false);
                     // and flag again
                     flag();
                     // and then set the UI state
