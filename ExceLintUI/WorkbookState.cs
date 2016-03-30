@@ -40,6 +40,7 @@ namespace ExceLintUI
             public Score[] scores;
             public bool ranOK;
             public int cutoff;
+            public ExceLint.ErrorModel model;
         }
         #endregion DATASTRUCTURES
 
@@ -332,7 +333,7 @@ namespace ExceLintUI
                         var model = new ExceLint.ErrorModel(config, _dag, _tool_significance, p);
                         Score[] scores = model.rankByFeatureSum();
                         int cutoff = model.getSignificanceCutoff;
-                        return new Analysis { scores = scores, ranOK = true, cutoff = cutoff };
+                        return new Analysis { scores = scores, ranOK = true, cutoff = cutoff, model = model };
                     }
                 };
 
@@ -375,13 +376,27 @@ namespace ExceLintUI
                 // debug output
                 if (_debug_mode && _flaggable.Length > 0)
                 {
+                    // scores
                     var score_str = String.Join("\n", _flaggable.Select(score => score.Key.A1FullyQualified() + " -> " + score.Value.ToString()));
                     if (score_str == "")
                     {
                         score_str = "empty";
                     }
-                    System.Windows.Forms.MessageBox.Show(score_str);
                     System.Windows.Forms.Clipboard.SetText(score_str);
+                    System.Windows.Forms.MessageBox.Show(score_str);
+
+                    // time and space information
+                    var time_str = "DAG construction ms: " + _dag.AnalysisMilliseconds + "\n" +
+                                   "Feature scoring ms: " + analysis.model.ScoreTimeInMilliseconds + "\n" +
+                                   "Num score entries: " + analysis.model.NumScoreEntries + "\n" +
+                                   "Frequency counting ms: " + analysis.model.FrequencyTableTimeInMilliseconds + "\n" +
+                                   "Num freq table entries: " + analysis.model.NumFreqEntries + "\n" +
+                                   "Ranking ms: " + analysis.model.RankingTimeInMilliseconds + "\n" +
+                                   "Total ranking length: " + analysis.model.NumRankedEntries;
+
+                    System.Windows.Forms.Clipboard.SetText(time_str);
+                    System.Windows.Forms.MessageBox.Show(time_str);
+
                 }
 
                 // Re-enable alerts

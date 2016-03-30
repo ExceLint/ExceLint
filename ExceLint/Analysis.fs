@@ -181,11 +181,11 @@
 
             member self.RankingTimeInMilliseconds : int64 = _ranking_time
 
-            member self.NumCells : int = dag.allCells().Length
-
             member self.NumScoreEntries : int = Array.fold (fun acc (pairs: (AST.Address*double)[]) -> acc + pairs.Length) 0 (_scores.Values |> Seq.toArray)
 
             member self.NumFreqEntries : int = _ftable.Count
+
+            member self.NumRankedEntries : int = dag.allCells().Length
 
             member self.rankByFeatureSum() : Ranking = _ranking
 
