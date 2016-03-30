@@ -215,7 +215,7 @@
                         else
                             d.Add(addr2, [(fname,score)])
                     ) valid_scores
-                ) _data
+                ) _scores
 
                 let debug = Seq.map (fun (kvp: KeyValuePair<AST.Address,(string*double) list>) ->
                                         let addr2: AST.Address = kvp.Key

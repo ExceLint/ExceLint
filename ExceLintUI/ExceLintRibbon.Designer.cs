@@ -67,6 +67,8 @@
             this.allCellsFreq = this.Factory.CreateRibbonCheckBox();
             this.columnCellsFreq = this.Factory.CreateRibbonCheckBox();
             this.rowCellsFreq = this.Factory.CreateRibbonCheckBox();
+            this.separator3 = this.Factory.CreateRibbonSeparator();
+            this.DebugOutput = this.Factory.CreateRibbonCheckBox();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -105,6 +107,8 @@
             this.CheckCellGroup.Items.Add(this.allCellsFreq);
             this.CheckCellGroup.Items.Add(this.columnCellsFreq);
             this.CheckCellGroup.Items.Add(this.rowCellsFreq);
+            this.CheckCellGroup.Items.Add(this.separator3);
+            this.CheckCellGroup.Items.Add(this.DebugOutput);
             this.CheckCellGroup.Name = "CheckCellGroup";
             // 
             // box1
@@ -339,6 +343,15 @@
             this.rowCellsFreq.Label = "Row Cells Freq";
             this.rowCellsFreq.Name = "rowCellsFreq";
             // 
+            // separator3
+            // 
+            this.separator3.Name = "separator3";
+            // 
+            // DebugOutput
+            // 
+            this.DebugOutput.Label = "Show Debug Output";
+            this.DebugOutput.Name = "DebugOutput";
+            // 
             // ExceLintRibbon
             // 
             this.Name = "ExceLintRibbon";
@@ -393,6 +406,8 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox ProximityLeft;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox ProximityRight;
         internal Microsoft.Office.Tools.Ribbon.RibbonEditBox significanceTextBox;
+        internal Microsoft.Office.Tools.Ribbon.RibbonSeparator separator3;
+        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox DebugOutput;
     }
 
     partial class ThisRibbonCollection

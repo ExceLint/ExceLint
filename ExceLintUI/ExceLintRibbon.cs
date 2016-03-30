@@ -14,13 +14,15 @@ namespace ExceLintUI
         #region BUTTON_HANDLERS
         private void AnalyzeButton_Click(object sender, RibbonControlEventArgs e)
         {
-            // check for debug easter egg
-            if ((System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Alt) > 0)
-            {
-                currentWorkbook.DebugMode = true;
-            }
+            //// check for debug keypress
+            //if ((System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Alt) > 0)
+            //{
+            //    currentWorkbook.DebugMode = true;
+            //}
 
-            //var prop = getPercent(this.proportionTextBox.Text, this.proportionTextBox.Label);
+            // check for debug checkbox
+            currentWorkbook.DebugMode = this.DebugOutput.Checked;
+
             var sig = getPercent(this.significanceTextBox.Text, this.significanceTextBox.Label);
             if (sig == FSharpOption<double>.None)
             {
