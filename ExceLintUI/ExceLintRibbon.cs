@@ -27,7 +27,7 @@ namespace ExceLintUI
                 currentWorkbook.toolSignificance = sig.Value;
                 try
                 {
-                    currentWorkbook.analyze(WorkbookState.MAX_DURATION_IN_MS, getConfig(), useHeatMap: false);
+                    currentWorkbook.analyze(WorkbookState.MAX_DURATION_IN_MS, getConfig(), useHeatMap: false, forceDAGBuild: forceBuildDAG.Checked);
                     currentWorkbook.flag();
                     setUIState(currentWorkbook);
                 }
@@ -64,7 +64,7 @@ namespace ExceLintUI
 
         private void button2_Click(object sender, RibbonControlEventArgs e)
         {
-            currentWorkbook.getL2NormSum();
+            currentWorkbook.getL2NormSum(forceDAGBuild: forceBuildDAG.Checked);
         }
 
         private void ToDOT_Click(object sender, RibbonControlEventArgs e)
@@ -76,12 +76,12 @@ namespace ExceLintUI
 
         private void colSelect_Click(object sender, RibbonControlEventArgs e)
         {
-            currentWorkbook.getSelected(getConfig(), Scope.Selector.SameColumn);
+            currentWorkbook.getSelected(getConfig(), Scope.Selector.SameColumn, forceDAGBuild: forceBuildDAG.Checked);
         }
 
         private void rowSelected_Click(object sender, RibbonControlEventArgs e)
         {
-            currentWorkbook.getSelected(getConfig(), Scope.Selector.SameRow);
+            currentWorkbook.getSelected(getConfig(), Scope.Selector.SameRow, forceDAGBuild: forceBuildDAG.Checked);
         }
 
         private void button1_Click(object sender, RibbonControlEventArgs e)
@@ -89,10 +89,10 @@ namespace ExceLintUI
             // if the user holds down Option, get absolute vectors
             if ((System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Alt) > 0)
             {
-                currentWorkbook.getRawFormulaVectors();
+                currentWorkbook.getRawFormulaVectors(forceDAGBuild: forceBuildDAG.Checked);
             } else
             {
-                currentWorkbook.getFormulaRelVectors();
+                currentWorkbook.getFormulaRelVectors(forceDAGBuild: forceBuildDAG.Checked);
             }
         }
 
@@ -101,11 +101,11 @@ namespace ExceLintUI
             // if the user holds down Option, get absolute vectors
             if ((System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Alt) > 0)
             {
-                currentWorkbook.getRawDataVectors();
+                currentWorkbook.getRawDataVectors(forceDAGBuild: forceBuildDAG.Checked);
             }
             else
             {
-                currentWorkbook.getDataRelVectors();
+                currentWorkbook.getDataRelVectors(forceDAGBuild: forceBuildDAG.Checked);
             }
         }
 
@@ -114,11 +114,11 @@ namespace ExceLintUI
             // if the user holds down Option, get absolute vectors
             if ((System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Alt) > 0)
             {
-                currentWorkbook.getRawFormulaVectors();
+                currentWorkbook.getRawFormulaVectors(forceDAGBuild: forceBuildDAG.Checked);
             }
             else
             {
-                currentWorkbook.getFormulaAbsVectors();
+                currentWorkbook.getFormulaAbsVectors(forceDAGBuild: forceBuildDAG.Checked);
             }
         }
 
@@ -127,11 +127,11 @@ namespace ExceLintUI
             // if the user holds down Option, get absolute vectors
             if ((System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Alt) > 0)
             {
-                currentWorkbook.getRawDataVectors();
+                currentWorkbook.getRawDataVectors(forceDAGBuild: forceBuildDAG.Checked);
             }
             else
             {
-                currentWorkbook.getDataAbsVectors();
+                currentWorkbook.getDataAbsVectors(forceDAGBuild: forceBuildDAG.Checked);
             }
         }
 
@@ -150,7 +150,7 @@ namespace ExceLintUI
                 currentWorkbook.toolSignificance = sig.Value;
                 try
                 {
-                    currentWorkbook.analyze(WorkbookState.MAX_DURATION_IN_MS, getConfig(), useHeatMap: true);
+                    currentWorkbook.analyze(WorkbookState.MAX_DURATION_IN_MS, getConfig(), useHeatMap: true, forceDAGBuild: forceBuildDAG.Checked);
                     setUIState(currentWorkbook);
                 }
                 catch (Parcel.ParseException ex)
@@ -207,7 +207,7 @@ namespace ExceLintUI
 
         private void WorkbookAfterSave(Excel.Workbook Wb, bool Success)
         {
-            currentWorkbook.SerializeDAG();
+            currentWorkbook.SerializeDAG(forceDAGBuild: forceBuildDAG.Checked);
         }
 
         // This event is called when Excel opens a workbook

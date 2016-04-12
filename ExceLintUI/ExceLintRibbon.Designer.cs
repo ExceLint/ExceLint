@@ -43,6 +43,7 @@
             this.MarkAsOKButton = this.Factory.CreateRibbonButton();
             this.FixErrorButton = this.Factory.CreateRibbonButton();
             this.StartOverButton = this.Factory.CreateRibbonButton();
+            this.showHeatmap = this.Factory.CreateRibbonButton();
             this.button1 = this.Factory.CreateRibbonButton();
             this.FrmAbsVect = this.Factory.CreateRibbonButton();
             this.button3 = this.Factory.CreateRibbonButton();
@@ -70,7 +71,7 @@
             this.rowCellsFreq = this.Factory.CreateRibbonCheckBox();
             this.separator3 = this.Factory.CreateRibbonSeparator();
             this.DebugOutput = this.Factory.CreateRibbonCheckBox();
-            this.showHeatmap = this.Factory.CreateRibbonButton();
+            this.forceBuildDAG = this.Factory.CreateRibbonCheckBox();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -111,6 +112,7 @@
             this.CheckCellGroup.Items.Add(this.rowCellsFreq);
             this.CheckCellGroup.Items.Add(this.separator3);
             this.CheckCellGroup.Items.Add(this.DebugOutput);
+            this.CheckCellGroup.Items.Add(this.forceBuildDAG);
             this.CheckCellGroup.Name = "CheckCellGroup";
             // 
             // box1
@@ -165,6 +167,15 @@
             this.StartOverButton.Name = "StartOverButton";
             this.StartOverButton.ShowImage = true;
             this.StartOverButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.StartOverButton_Click);
+            // 
+            // showHeatmap
+            // 
+            this.showHeatmap.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.showHeatmap.Image = ((System.Drawing.Image)(resources.GetObject("showHeatmap.Image")));
+            this.showHeatmap.Label = "Heat Map";
+            this.showHeatmap.Name = "showHeatmap";
+            this.showHeatmap.ShowImage = true;
+            this.showHeatmap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.showHeatmap_Click);
             // 
             // button1
             // 
@@ -355,14 +366,10 @@
             this.DebugOutput.Label = "Show Debug Output";
             this.DebugOutput.Name = "DebugOutput";
             // 
-            // showHeatmap
+            // forceBuildDAG
             // 
-            this.showHeatmap.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.showHeatmap.Image = ((System.Drawing.Image)(resources.GetObject("showHeatmap.Image")));
-            this.showHeatmap.Label = "Heat Map";
-            this.showHeatmap.Name = "showHeatmap";
-            this.showHeatmap.ShowImage = true;
-            this.showHeatmap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.showHeatmap_Click);
+            this.forceBuildDAG.Label = "Force DAG Rebuild";
+            this.forceBuildDAG.Name = "forceBuildDAG";
             // 
             // ExceLintRibbon
             // 
@@ -421,6 +428,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonSeparator separator3;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox DebugOutput;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton showHeatmap;
+        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox forceBuildDAG;
     }
 
     partial class ThisRibbonCollection

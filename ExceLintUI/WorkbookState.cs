@@ -104,7 +104,7 @@ namespace ExceLintUI
             set { _debug_mode = value; }
         }
 
-        public void getSelected(ExceLint.FeatureConf config, Scope.Selector sel)
+        public void getSelected(ExceLint.FeatureConf config, Scope.Selector sel, Boolean forceDAGBuild)
         {
             // Disable screen updating during analysis to speed things up
             _app.ScreenUpdating = false;
@@ -115,7 +115,7 @@ namespace ExceLintUI
             var cursorStr = "(" + cursorAddr.X + "," + cursorAddr.Y + ")";  // for sanity-preservation purposes
 
             // build DAG
-            UpdateDAG();
+            UpdateDAG(forceDAGBuild);
 
             Func<Progress, ExceLint.ErrorModel> f = (Progress p) =>
              {
@@ -123,7 +123,7 @@ namespace ExceLintUI
                 return new ExceLint.ErrorModel(config, _dag, _tool_significance, p);
              };
 
-            var model = buildDAGAndDoStuff(f, 3);
+            var model = buildDAGAndDoStuff(forceDAGBuild, f, 3);
 
             var output = model.inspectSelectorFor(cursorAddr, sel);
 
@@ -147,13 +147,13 @@ namespace ExceLintUI
         private delegate RelativeVector[] VectorSelector(AST.Address addr, DAG dag);
         private delegate FullyQualifiedVector[] AbsVectorSelector(AST.Address addr, DAG dag);
 
-        private void getRawVectors(AbsVectorSelector f)
+        private void getRawVectors(AbsVectorSelector f, Boolean forceDAGBuild)
         {
             // Disable screen updating during analysis to speed things up
             _app.ScreenUpdating = false;
 
             // build DAG
-            UpdateDAG();
+            UpdateDAG(forceDAGBuild);
 
             // get cursor location
             var cursor = _app.Selection;
@@ -173,13 +173,13 @@ namespace ExceLintUI
             System.Windows.Forms.MessageBox.Show("From: " + cursorStr + "\n\n" + sourceVectsString);
         }
 
-        private void getVectors(VectorSelector f)
+        private void getVectors(VectorSelector f, Boolean forceDAGBuild)
         {
             // Disable screen updating during analysis to speed things up
             _app.ScreenUpdating = false;
 
             // build DAG
-            UpdateDAG();
+            UpdateDAG(forceDAGBuild);
 
             // get cursor location
             var cursor = _app.Selection;
@@ -199,58 +199,58 @@ namespace ExceLintUI
             System.Windows.Forms.MessageBox.Show("From: " + cursorStr + "\n\n" + sourceVectsString);
         }
 
-        internal void SerializeDAG()
+        internal void SerializeDAG(Boolean forceDAGBuild)
         {
             if (_dag == null)
             {
-                UpdateDAG();
+                UpdateDAG(forceDAGBuild);
             }
             _dag.SerializeToDirectory(CACHEDIRPATH);
         }
 
-        public void getFormulaRelVectors()
+        public void getFormulaRelVectors(Boolean forceDAGBuild)
         {
             VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, true, true, true);
-            getVectors(f);
+            getVectors(f, forceDAGBuild);
         }
 
-        public void getFormulaAbsVectors()
+        public void getFormulaAbsVectors(Boolean forceDAGBuild)
         {
             VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, true, false, true);
-            getVectors(f);
+            getVectors(f, forceDAGBuild);
         }
 
-        public void getDataRelVectors()
+        public void getDataRelVectors(Boolean forceDAGBuild)
         {
             VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, false, true, true);
-            getVectors(f);
+            getVectors(f, forceDAGBuild);
         }
 
-        public void getDataAbsVectors()
+        public void getDataAbsVectors(Boolean forceDAGBuild)
         {
             VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, false, false, true);
-            getVectors(f);
+            getVectors(f, forceDAGBuild);
         }
 
-        public void getRawFormulaVectors()
+        public void getRawFormulaVectors(Boolean forceDAGBuild)
         {
             AbsVectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.inputVectors(addr, dag, true);
-            getRawVectors(f);
+            getRawVectors(f, forceDAGBuild);
         }
 
-        public void getRawDataVectors()
+        public void getRawDataVectors(Boolean forceDAGBuild)
         {
             AbsVectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.outputVectors(addr, dag, true);
-            getRawVectors(f);
+            getRawVectors(f, forceDAGBuild);
         }
 
-        public void getL2NormSum()
+        public void getL2NormSum(Boolean forceDAGBuild)
         {
             // Disable screen updating during analysis to speed things up
             _app.ScreenUpdating = false;
 
             // build DAG
-            UpdateDAG();
+            UpdateDAG(forceDAGBuild);
 
             // get cursor location
             var cursor = _app.Selection;
@@ -267,7 +267,7 @@ namespace ExceLintUI
         }
 
         // this lets us reuse the progressbar for other work
-        private T buildDAGAndDoStuff<T>(Func<Progress,T> doStuff, long workMultiplier)
+        private T buildDAGAndDoStuff<T>(Boolean forceDAGBuild, Func<Progress,T> doStuff, long workMultiplier)
         {
             using (var pb = new ProgBar())
             {
@@ -275,25 +275,25 @@ namespace ExceLintUI
                 ProgressBarIncrementer incr = () => pb.IncrementProgress();
                 var p = new Progress(incr, workMultiplier);
 
-                RefreshDAG(p);
+                RefreshDAG(forceDAGBuild, p);
 
                 return doStuff(p);
             }
         }
 
-        private void UpdateDAG()
+        private void UpdateDAG(Boolean forceDAGBuild)
         {
             Func<Progress,int> f = (Progress p) => 1;
-            buildDAGAndDoStuff(f, 1L);
+            buildDAGAndDoStuff(forceDAGBuild, f, 1L);
         }
 
-        private void RefreshDAG(Progress p)
+        private void RefreshDAG(Boolean forceDAGBuild, Progress p)
         {
             if (_dag == null)
             {
-                _dag = DAG.DAGFromCache(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, CACHEDIRPATH, p);
+                _dag = DAG.DAGFromCache(forceDAGBuild, _app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, CACHEDIRPATH, p);
             }
-            else if (_dag_changed)
+            else if (_dag_changed || forceDAGBuild)
             {
                 _dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, p);
                 _dag_changed = false;
@@ -301,7 +301,7 @@ namespace ExceLintUI
             }
         }
 
-        public void analyze(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean useHeatMap)
+        public void analyze(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean useHeatMap, Boolean forceDAGBuild)
         {
             var sw = new System.Diagnostics.Stopwatch();
             sw.Start();
@@ -316,7 +316,7 @@ namespace ExceLintUI
             // build data dependence graph
             try
             {
-                UpdateDAG();
+                UpdateDAG(forceDAGBuild);
 
                 Func<Progress, Analysis> f = (Progress p) =>
                 {
@@ -337,7 +337,7 @@ namespace ExceLintUI
                     }
                 };
 
-                var analysis = buildDAGAndDoStuff(f, 3);
+                var analysis = buildDAGAndDoStuff(forceDAGBuild, f, 3);
 
                 if (!analysis.ranOK)
                 {
@@ -565,7 +565,7 @@ namespace ExceLintUI
                 try
                 {
                     // when a user fixes something, we need to re-run the analysis
-                    analyze(MAX_DURATION_IN_MS, config, useHeatMap: false);
+                    analyze(MAX_DURATION_IN_MS, config, useHeatMap: false, forceDAGBuild: true);
                     // and flag again
                     flag();
                     // and then set the UI state
