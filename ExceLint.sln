@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "COMWrapper", "Depends\COMWr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExceLintUI", "ExceLintUI\ExceLintUI.csproj", "{F9BECB73-F7A5-4462-AE0D-B90BA40E5CF4}"
 EndProject
+Project("{6141683F-8A12-4E36-9623-2EB02B2C2303}") = "ExceLintInstaller", "ExceLintInstaller\ExceLintInstaller.isproj", "{CC552F90-85A6-4D68-8549-EE7438EA150A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		CD_ROM|Any CPU = CD_ROM|Any CPU
@@ -96,6 +98,15 @@ Global
 		{F9BECB73-F7A5-4462-AE0D-B90BA40E5CF4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F9BECB73-F7A5-4462-AE0D-B90BA40E5CF4}.SingleImage|Any CPU.ActiveCfg = Release|Any CPU
 		{F9BECB73-F7A5-4462-AE0D-B90BA40E5CF4}.SingleImage|Any CPU.Build.0 = Release|Any CPU
+		{CC552F90-85A6-4D68-8549-EE7438EA150A}.CD_ROM|Any CPU.ActiveCfg = CD_ROM
+		{CC552F90-85A6-4D68-8549-EE7438EA150A}.CD_ROM|Any CPU.Build.0 = CD_ROM
+		{CC552F90-85A6-4D68-8549-EE7438EA150A}.Debug|Any CPU.ActiveCfg = DVD-5
+		{CC552F90-85A6-4D68-8549-EE7438EA150A}.DVD-5|Any CPU.ActiveCfg = DVD-5
+		{CC552F90-85A6-4D68-8549-EE7438EA150A}.DVD-5|Any CPU.Build.0 = DVD-5
+		{CC552F90-85A6-4D68-8549-EE7438EA150A}.Release|Any CPU.ActiveCfg = SingleImage
+		{CC552F90-85A6-4D68-8549-EE7438EA150A}.Release|Any CPU.Build.0 = SingleImage
+		{CC552F90-85A6-4D68-8549-EE7438EA150A}.SingleImage|Any CPU.ActiveCfg = SingleImage
+		{CC552F90-85A6-4D68-8549-EE7438EA150A}.SingleImage|Any CPU.Build.0 = SingleImage
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
