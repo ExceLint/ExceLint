@@ -208,6 +208,12 @@ namespace ExceLintUI
             _dag.SerializeToDirectory(CACHEDIRPATH);
         }
 
+        public void getMixedFormulaVectors(Boolean forceDAGBuild)
+        {
+            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(cell: addr, dag: dag, transitive: false, isForm: true, isRel: true, isMixed: true);
+            getVectors(f, forceDAGBuild);
+        }
+
         public void getFormulaRelVectors(Boolean forceDAGBuild)
         {
             VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, true, true, true);

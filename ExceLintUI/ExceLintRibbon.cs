@@ -12,6 +12,11 @@ namespace ExceLintUI
         WorkbookState currentWorkbook;
 
         #region BUTTON_HANDLERS
+        private void showVectors_Click(object sender, RibbonControlEventArgs e)
+        {
+            currentWorkbook.getMixedFormulaVectors(forceDAGBuild: forceBuildDAG.Checked);
+        }
+
         private void AnalyzeButton_Click(object sender, RibbonControlEventArgs e)
         {
             // check for debug checkbox
@@ -325,7 +330,7 @@ namespace ExceLintUI
 
             return c;
         }
-    
+
         #endregion UTILITY_FUNCTIONS
     }
 }

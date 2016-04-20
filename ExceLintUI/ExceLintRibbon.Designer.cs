@@ -39,19 +39,6 @@
             this.tab2 = this.Factory.CreateRibbonTab();
             this.CheckCellGroup = this.Factory.CreateRibbonGroup();
             this.box1 = this.Factory.CreateRibbonBox();
-            this.AnalyzeButton = this.Factory.CreateRibbonButton();
-            this.MarkAsOKButton = this.Factory.CreateRibbonButton();
-            this.FixErrorButton = this.Factory.CreateRibbonButton();
-            this.StartOverButton = this.Factory.CreateRibbonButton();
-            this.showHeatmap = this.Factory.CreateRibbonButton();
-            this.button1 = this.Factory.CreateRibbonButton();
-            this.FrmAbsVect = this.Factory.CreateRibbonButton();
-            this.button3 = this.Factory.CreateRibbonButton();
-            this.DataAbsVect = this.Factory.CreateRibbonButton();
-            this.button2 = this.Factory.CreateRibbonButton();
-            this.colSelect = this.Factory.CreateRibbonButton();
-            this.rowSelected = this.Factory.CreateRibbonButton();
-            this.ToDOT = this.Factory.CreateRibbonButton();
             this.significanceTextBox = this.Factory.CreateRibbonEditBox();
             this.separator1 = this.Factory.CreateRibbonSeparator();
             this.inDegree = this.Factory.CreateRibbonCheckBox();
@@ -72,6 +59,13 @@
             this.separator3 = this.Factory.CreateRibbonSeparator();
             this.DebugOutput = this.Factory.CreateRibbonCheckBox();
             this.forceBuildDAG = this.Factory.CreateRibbonCheckBox();
+            this.AnalyzeButton = this.Factory.CreateRibbonButton();
+            this.MarkAsOKButton = this.Factory.CreateRibbonButton();
+            this.FixErrorButton = this.Factory.CreateRibbonButton();
+            this.StartOverButton = this.Factory.CreateRibbonButton();
+            this.showHeatmap = this.Factory.CreateRibbonButton();
+            this.ToDOT = this.Factory.CreateRibbonButton();
+            this.showVectors = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -122,140 +116,9 @@
             this.box1.Items.Add(this.FixErrorButton);
             this.box1.Items.Add(this.StartOverButton);
             this.box1.Items.Add(this.showHeatmap);
-            this.box1.Items.Add(this.button1);
-            this.box1.Items.Add(this.FrmAbsVect);
-            this.box1.Items.Add(this.button3);
-            this.box1.Items.Add(this.DataAbsVect);
-            this.box1.Items.Add(this.button2);
-            this.box1.Items.Add(this.colSelect);
-            this.box1.Items.Add(this.rowSelected);
             this.box1.Items.Add(this.ToDOT);
+            this.box1.Items.Add(this.showVectors);
             this.box1.Name = "box1";
-            // 
-            // AnalyzeButton
-            // 
-            this.AnalyzeButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.AnalyzeButton.Image = global::ExceLintUI.Properties.Resources.analyze_small;
-            this.AnalyzeButton.Label = "Analyze";
-            this.AnalyzeButton.Name = "AnalyzeButton";
-            this.AnalyzeButton.ShowImage = true;
-            this.AnalyzeButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.AnalyzeButton_Click);
-            // 
-            // MarkAsOKButton
-            // 
-            this.MarkAsOKButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.MarkAsOKButton.Image = global::ExceLintUI.Properties.Resources.mark_as_ok_small;
-            this.MarkAsOKButton.Label = "Mark as OK";
-            this.MarkAsOKButton.Name = "MarkAsOKButton";
-            this.MarkAsOKButton.ShowImage = true;
-            this.MarkAsOKButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.MarkAsOKButton_Click);
-            // 
-            // FixErrorButton
-            // 
-            this.FixErrorButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.FixErrorButton.Image = global::ExceLintUI.Properties.Resources.correct_small;
-            this.FixErrorButton.Label = "Fix Error";
-            this.FixErrorButton.Name = "FixErrorButton";
-            this.FixErrorButton.ShowImage = true;
-            this.FixErrorButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.FixErrorButton_Click);
-            // 
-            // StartOverButton
-            // 
-            this.StartOverButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.StartOverButton.Image = global::ExceLintUI.Properties.Resources.clear_small;
-            this.StartOverButton.Label = "Start Over";
-            this.StartOverButton.Name = "StartOverButton";
-            this.StartOverButton.ShowImage = true;
-            this.StartOverButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.StartOverButton_Click);
-            // 
-            // showHeatmap
-            // 
-            this.showHeatmap.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.showHeatmap.Image = ((System.Drawing.Image)(resources.GetObject("showHeatmap.Image")));
-            this.showHeatmap.Label = "Heat Map";
-            this.showHeatmap.Name = "showHeatmap";
-            this.showHeatmap.ShowImage = true;
-            this.showHeatmap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.showHeatmap_Click);
-            // 
-            // button1
-            // 
-            this.button1.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.button1.Image = global::ExceLintUI.Properties.Resources.pain;
-            this.button1.Label = "Input (rel)";
-            this.button1.Name = "button1";
-            this.button1.ShowImage = true;
-            this.button1.Visible = false;
-            this.button1.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button1_Click);
-            // 
-            // FrmAbsVect
-            // 
-            this.FrmAbsVect.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.FrmAbsVect.Image = global::ExceLintUI.Properties.Resources.pain;
-            this.FrmAbsVect.Label = "Input (abs)";
-            this.FrmAbsVect.Name = "FrmAbsVect";
-            this.FrmAbsVect.ShowImage = true;
-            this.FrmAbsVect.Visible = false;
-            this.FrmAbsVect.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.FrmAbsVect_Click);
-            // 
-            // button3
-            // 
-            this.button3.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.button3.Image = global::ExceLintUI.Properties.Resources.pain;
-            this.button3.Label = "Output (rel)";
-            this.button3.Name = "button3";
-            this.button3.ShowImage = true;
-            this.button3.Visible = false;
-            this.button3.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button3_Click);
-            // 
-            // DataAbsVect
-            // 
-            this.DataAbsVect.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.DataAbsVect.Image = global::ExceLintUI.Properties.Resources.pain;
-            this.DataAbsVect.Label = "Output (abs)";
-            this.DataAbsVect.Name = "DataAbsVect";
-            this.DataAbsVect.ShowImage = true;
-            this.DataAbsVect.Visible = false;
-            this.DataAbsVect.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.DataAbsVect_Click);
-            // 
-            // button2
-            // 
-            this.button2.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.button2.Image = global::ExceLintUI.Properties.Resources.pain;
-            this.button2.Label = "L2Sum";
-            this.button2.Name = "button2";
-            this.button2.ShowImage = true;
-            this.button2.Visible = false;
-            this.button2.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.button2_Click);
-            // 
-            // colSelect
-            // 
-            this.colSelect.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.colSelect.Image = global::ExceLintUI.Properties.Resources.pain;
-            this.colSelect.Label = "ColSel";
-            this.colSelect.Name = "colSelect";
-            this.colSelect.ShowImage = true;
-            this.colSelect.Visible = false;
-            this.colSelect.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.colSelect_Click);
-            // 
-            // rowSelected
-            // 
-            this.rowSelected.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.rowSelected.Image = global::ExceLintUI.Properties.Resources.pain;
-            this.rowSelected.Label = "RowSel";
-            this.rowSelected.Name = "rowSelected";
-            this.rowSelected.ShowImage = true;
-            this.rowSelected.Visible = false;
-            this.rowSelected.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.rowSelected_Click);
-            // 
-            // ToDOT
-            // 
-            this.ToDOT.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.ToDOT.Image = global::ExceLintUI.Properties.Resources.graph;
-            this.ToDOT.Label = "ToDOT";
-            this.ToDOT.Name = "ToDOT";
-            this.ToDOT.ShowImage = true;
-            this.ToDOT.Visible = false;
-            this.ToDOT.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ToDOT_Click);
             // 
             // significanceTextBox
             // 
@@ -371,6 +234,70 @@
             this.forceBuildDAG.Label = "Force DAG Rebuild";
             this.forceBuildDAG.Name = "forceBuildDAG";
             // 
+            // AnalyzeButton
+            // 
+            this.AnalyzeButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.AnalyzeButton.Image = global::ExceLintUI.Properties.Resources.analyze_small;
+            this.AnalyzeButton.Label = "Analyze";
+            this.AnalyzeButton.Name = "AnalyzeButton";
+            this.AnalyzeButton.ShowImage = true;
+            this.AnalyzeButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.AnalyzeButton_Click);
+            // 
+            // MarkAsOKButton
+            // 
+            this.MarkAsOKButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.MarkAsOKButton.Image = global::ExceLintUI.Properties.Resources.mark_as_ok_small;
+            this.MarkAsOKButton.Label = "Mark as OK";
+            this.MarkAsOKButton.Name = "MarkAsOKButton";
+            this.MarkAsOKButton.ShowImage = true;
+            this.MarkAsOKButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.MarkAsOKButton_Click);
+            // 
+            // FixErrorButton
+            // 
+            this.FixErrorButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.FixErrorButton.Image = global::ExceLintUI.Properties.Resources.correct_small;
+            this.FixErrorButton.Label = "Fix Error";
+            this.FixErrorButton.Name = "FixErrorButton";
+            this.FixErrorButton.ShowImage = true;
+            this.FixErrorButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.FixErrorButton_Click);
+            // 
+            // StartOverButton
+            // 
+            this.StartOverButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.StartOverButton.Image = global::ExceLintUI.Properties.Resources.clear_small;
+            this.StartOverButton.Label = "Start Over";
+            this.StartOverButton.Name = "StartOverButton";
+            this.StartOverButton.ShowImage = true;
+            this.StartOverButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.StartOverButton_Click);
+            // 
+            // showHeatmap
+            // 
+            this.showHeatmap.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.showHeatmap.Image = ((System.Drawing.Image)(resources.GetObject("showHeatmap.Image")));
+            this.showHeatmap.Label = "Heat Map";
+            this.showHeatmap.Name = "showHeatmap";
+            this.showHeatmap.ShowImage = true;
+            this.showHeatmap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.showHeatmap_Click);
+            // 
+            // ToDOT
+            // 
+            this.ToDOT.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.ToDOT.Image = global::ExceLintUI.Properties.Resources.graph;
+            this.ToDOT.Label = "ToDOT";
+            this.ToDOT.Name = "ToDOT";
+            this.ToDOT.ShowImage = true;
+            this.ToDOT.Visible = false;
+            this.ToDOT.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ToDOT_Click);
+            // 
+            // showVectors
+            // 
+            this.showVectors.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.showVectors.Image = global::ExceLintUI.Properties.Resources.graph;
+            this.showVectors.Label = "Show Vectors";
+            this.showVectors.Name = "showVectors";
+            this.showVectors.ShowImage = true;
+            this.showVectors.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.showVectors_Click);
+            // 
             // ExceLintRibbon
             // 
             this.Name = "ExceLintRibbon";
@@ -400,9 +327,6 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton MarkAsOKButton;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton FixErrorButton;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton StartOverButton;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton button1;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton button2;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton button3;
         internal Microsoft.Office.Tools.Ribbon.RibbonSeparator separator1;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox inDegree;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox outDegree;
@@ -416,10 +340,6 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox allCellsFreq;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox columnCellsFreq;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox rowCellsFreq;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton colSelect;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton rowSelected;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton FrmAbsVect;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton DataAbsVect;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox ProximityAbove;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox ProximityBelow;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox ProximityLeft;
@@ -429,6 +349,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox DebugOutput;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton showHeatmap;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox forceBuildDAG;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton showVectors;
     }
 
     partial class ThisRibbonCollection

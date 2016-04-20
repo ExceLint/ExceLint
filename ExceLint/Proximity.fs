@@ -4,6 +4,7 @@ open Feature
 open Depends
 open ExceLint.Vector
 
+
 type Outcome =
 | Same = 1
 | NotSame = 0
@@ -13,21 +14,21 @@ let cellAbove(cell: AST.Address) : AST.Address option =
     if cell.Row - 1 < 1 then
         None
     else
-        Some(AST.Address.fromR1C1(cell.Row - 1, cell.Col, cell.WorksheetName, cell.WorkbookName, cell.Path))
+        Some(AST.Address.fromR1C1withMode(cell.Row - 1, cell.Col, AST.AddressMode.Absolute, AST.AddressMode.Absolute, cell.WorksheetName, cell.WorkbookName, cell.Path))
 
 let cellBelow(cell: AST.Address) : AST.Address option =
     // there is no bottom boundary
-    Some(AST.Address.fromR1C1(cell.Row + 1, cell.Col, cell.WorksheetName, cell.WorkbookName, cell.Path))
+    Some(AST.Address.fromR1C1withMode(cell.Row + 1, cell.Col, AST.AddressMode.Absolute, AST.AddressMode.Absolute, cell.WorksheetName, cell.WorkbookName, cell.Path))
 
 let cellLeft(cell: AST.Address) : AST.Address option =
     if cell.Col - 1 < 1 then
         None
     else
-        Some(AST.Address.fromR1C1(cell.Row, cell.Col - 1, cell.WorksheetName, cell.WorkbookName, cell.Path))
+        Some(AST.Address.fromR1C1withMode(cell.Row, cell.Col - 1, AST.AddressMode.Absolute, AST.AddressMode.Absolute, cell.WorksheetName, cell.WorkbookName, cell.Path))
 
 let cellRight(cell: AST.Address) : AST.Address option =
     // there is no right boundary
-    Some(AST.Address.fromR1C1(cell.Row, cell.Col + 1, cell.WorksheetName, cell.WorkbookName, cell.Path))
+    Some(AST.Address.fromR1C1withMode(cell.Row, cell.Col + 1, AST.AddressMode.Absolute, AST.AddressMode.Absolute, cell.WorksheetName, cell.WorkbookName, cell.Path))
 
 let cellProximal(cell: AST.Address)(dag: DAG)(selector: AST.Address -> AST.Address option) : double =
     match selector cell with
