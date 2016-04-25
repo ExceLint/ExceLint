@@ -132,18 +132,24 @@
             let cutRankBySignificance(ranking: Ranking): Ranking =
                 let cutoff = _significanceCutoff
 
+                // compute total order
+                let rank_nums = Array.map (fun (kvp: KeyValuePair<AST.Address,double>) -> int(kvp.Value)) ranking
+
+                // find the index of the "knee"
+                let dderiv_idx = dderiv(rank_nums)
+
+                // cut the ranking at the knee index
+                let knee_cut = ranking.[0..dderiv_idx]
+
+                // apply significance threshold
                 let cutrank = Array.fold (fun (acc: KeyValuePair<AST.Address,double> list)(score: KeyValuePair<AST.Address,double>) ->
                                     if score.Value > double cutoff then
                                         acc
                                     else
                                         score :: acc
-                                ) (List.empty) ranking |> List.rev |> List.toArray
+                                ) (List.empty) knee_cut |> List.rev |> List.toArray
 
-                let rank_nums = Array.map (fun (kvp: KeyValuePair<AST.Address,double>) -> int(kvp.Value)) cutrank
-
-                let dderiv_idx = dderiv(rank_nums)
-
-                cutrank.[0..dderiv_idx]
+                cutrank
 
             let rank(ftable: FreqTable) : Ranking =
                 // get sums for every address
