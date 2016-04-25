@@ -1880,8 +1880,8 @@
 		<col def="i2">Sequence</col>
 		<col def="S255">ISBuildSourcePath</col>
 		<col def="I4">ISAttributes</col>
-		<col def="S72">ISComponentSubFolder_</col>
-		<row><td>excelintui.primary_output</td><td>ExceLintUI.Primary_output</td><td>ExceLintUI.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLintUI&gt;|Built</td><td>3</td><td/></row>
+		<col def="S72">ISComponentSubFolder_</col>	<row><td>excelintui.dll.manifest</td><td>ISX_DEFAULTCOMPONENT</td><td>EXCELI~1.MAN|ExceLintUI.dll.manifest</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISPROJECTFOLDER&gt;..\ExceLintUI\bin\Release\ExceLintUI.dll.manifest</td><td>1</td><td/></row>
+		<row><td>excelintui.primary_output</td><td>ExceLintUI.Primary_output</td><td>ExceLintUI.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLintUI&gt;|Built</td><td>3</td><td/></row>	<row><td>excelintui.vsto</td><td>ISX_DEFAULTCOMPONENT</td><td>EXCELI~1.VST|ExceLintUI.vsto</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISPROJECTFOLDER&gt;..\ExceLintUI\bin\Release\ExceLintUI.vsto</td><td>1</td><td/></row>
 	</table>
 
 	<table name="FileSFPCatalog">
