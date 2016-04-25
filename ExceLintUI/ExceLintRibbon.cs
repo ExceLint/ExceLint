@@ -47,6 +47,13 @@ namespace ExceLintUI
                     System.Windows.Forms.MessageBox.Show("Insufficient memory to perform analysis.");
                     return;
                 }
+                catch (System.Exception ex)
+                {
+                    var msg = "Runtime exception. This message has been copied to your clipboard.\n" + ex.Message + "\n\nStack trace:\n" + ex.StackTrace;
+                    System.Windows.Forms.Clipboard.SetText(msg);
+                    System.Windows.Forms.MessageBox.Show(msg);
+                    return;
+                }
             }
         }
         
