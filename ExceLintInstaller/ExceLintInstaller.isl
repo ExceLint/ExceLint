@@ -339,21 +339,8 @@
 		<col def="S0">ISDotNetInstallerArgsCommit</col>
 		<col def="S0">ISDotNetInstallerArgsUninstall</col>
 		<col def="S0">ISDotNetInstallerArgsRollback</col>
-		<row><td>Depends.dll</td><td>{E296A646-B9AC-4A7D-99BC-1C9266F42E8D}</td><td>INSTALLDIR</td><td>2</td><td/><td>depends.dll</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>ExceLint.dll</td><td>{D2F46279-6E1A-4D18-B8ED-918C248F25FA}</td><td>INSTALLDIR</td><td>2</td><td/><td>excelint.dll</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>ExceLintUI.dll</td><td>{DE91F586-D46F-4DFE-AE57-D2DB48BDA47B}</td><td>INSTALLDIR</td><td>2</td><td/><td>excelintui.dll</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>ExcelParser.dll</td><td>{02822453-AC69-44CB-AFBA-FCC0BAEC2551}</td><td>INSTALLDIR</td><td>2</td><td/><td>excelparser.dll</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>FParsec.dll</td><td>{05AA35B1-D722-4167-86C0-53E883D6F175}</td><td>INSTALLDIR</td><td>2</td><td/><td>fparsec.dll</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>FParsecCS.dll</td><td>{B32E6B69-E87C-434C-893D-EC834B2A6BE0}</td><td>INSTALLDIR</td><td>2</td><td/><td>fparseccs.dll</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>FSharp.Core.dll</td><td>{236FF656-2A5C-4273-BEDA-8425F000B0B9}</td><td>INSTALLDIR</td><td>2</td><td/><td>fsharp.core.dll</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExceLintUI.Primary_output</td><td>{2C3B0C00-E125-44B6-8744-FF6D299C0D95}</td><td>INSTALLDIR</td><td>2</td><td/><td>excelintui.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ISX_DEFAULTCOMPONENT</td><td>{79DB6CB0-95C3-47CD-983E-E760B4E3C6D9}</td><td>INSTALLDIR</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>Microsoft.Office.Tools.Common.dll</td><td>{D85B82DA-2EF0-466B-B0BE-9F7369420B53}</td><td>INSTALLDIR</td><td>2</td><td/><td>microsoft.office.tools.commo</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>Microsoft.Office.Tools.Common.v4.0.Utilities.dll</td><td>{2A03E516-50BD-46C9-9709-8FFEAC59449F}</td><td>INSTALLDIR</td><td>2</td><td/><td>microsoft.office.tools.commo1</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>Microsoft.Office.Tools.Excel.dll</td><td>{C2DA9C33-913B-491D-A7A9-2BD7EC0238E8}</td><td>INSTALLDIR</td><td>2</td><td/><td>microsoft.office.tools.excel</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>Microsoft.Office.Tools.dll</td><td>{EBAC0518-E338-4CC1-A6CA-F4B04857E90E}</td><td>INSTALLDIR</td><td>2</td><td/><td>microsoft.office.tools.dll</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>Microsoft.Office.Tools.v4.0.Framework.dll</td><td>{507F47CE-BC03-400A-94B9-E4D134BB2D0E}</td><td>INSTALLDIR</td><td>2</td><td/><td>microsoft.office.tools.v4.0.</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>Microsoft.VisualStudio.Tools.Applications.Runtime.dll</td><td>{78578FAA-BE5C-412E-BFEE-28F97DEE2CF5}</td><td>INSTALLDIR</td><td>2</td><td/><td>microsoft.visualstudio.tools</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>ParcelCOMShim.dll</td><td>{7C714747-87A1-438C-A82A-5805D1F779D9}</td><td>INSTALLDIR</td><td>2</td><td/><td>parcelcomshim.dll</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 	</table>
 
 	<table name="Condition">
@@ -1062,21 +1049,8 @@
 	<table name="CreateFolder">
 		<col key="yes" def="s72">Directory_</col>
 		<col key="yes" def="s72">Component_</col>
-		<row><td>INSTALLDIR</td><td>Depends.dll</td></row>
-		<row><td>INSTALLDIR</td><td>ExceLint.dll</td></row>
-		<row><td>INSTALLDIR</td><td>ExceLintUI.dll</td></row>
-		<row><td>INSTALLDIR</td><td>ExcelParser.dll</td></row>
-		<row><td>INSTALLDIR</td><td>FParsec.dll</td></row>
-		<row><td>INSTALLDIR</td><td>FParsecCS.dll</td></row>
-		<row><td>INSTALLDIR</td><td>FSharp.Core.dll</td></row>
+		<row><td>INSTALLDIR</td><td>ExceLintUI.Primary_output</td></row>
 		<row><td>INSTALLDIR</td><td>ISX_DEFAULTCOMPONENT</td></row>
-		<row><td>INSTALLDIR</td><td>Microsoft.Office.Tools.Common.dll</td></row>
-		<row><td>INSTALLDIR</td><td>Microsoft.Office.Tools.Common.v4.0.Utilities.dll</td></row>
-		<row><td>INSTALLDIR</td><td>Microsoft.Office.Tools.Excel.dll</td></row>
-		<row><td>INSTALLDIR</td><td>Microsoft.Office.Tools.dll</td></row>
-		<row><td>INSTALLDIR</td><td>Microsoft.Office.Tools.v4.0.Framework.dll</td></row>
-		<row><td>INSTALLDIR</td><td>Microsoft.VisualStudio.Tools.Applications.Runtime.dll</td></row>
-		<row><td>INSTALLDIR</td><td>ParcelCOMShim.dll</td></row>
 	</table>
 
 	<table name="CustomAction">
@@ -1891,21 +1865,8 @@
 	<table name="FeatureComponents">
 		<col key="yes" def="s38">Feature_</col>
 		<col key="yes" def="s72">Component_</col>
-		<row><td>AlwaysInstall</td><td>Depends.dll</td></row>
-		<row><td>AlwaysInstall</td><td>ExceLint.dll</td></row>
-		<row><td>AlwaysInstall</td><td>ExceLintUI.dll</td></row>
-		<row><td>AlwaysInstall</td><td>ExcelParser.dll</td></row>
-		<row><td>AlwaysInstall</td><td>FParsec.dll</td></row>
-		<row><td>AlwaysInstall</td><td>FParsecCS.dll</td></row>
-		<row><td>AlwaysInstall</td><td>FSharp.Core.dll</td></row>
+		<row><td>AlwaysInstall</td><td>ExceLintUI.Primary_output</td></row>
 		<row><td>AlwaysInstall</td><td>ISX_DEFAULTCOMPONENT</td></row>
-		<row><td>AlwaysInstall</td><td>Microsoft.Office.Tools.Common.dll</td></row>
-		<row><td>AlwaysInstall</td><td>Microsoft.Office.Tools.Common.v4.0.Utilities.dll</td></row>
-		<row><td>AlwaysInstall</td><td>Microsoft.Office.Tools.Excel.dll</td></row>
-		<row><td>AlwaysInstall</td><td>Microsoft.Office.Tools.dll</td></row>
-		<row><td>AlwaysInstall</td><td>Microsoft.Office.Tools.v4.0.Framework.dll</td></row>
-		<row><td>AlwaysInstall</td><td>Microsoft.VisualStudio.Tools.Applications.Runtime.dll</td></row>
-		<row><td>AlwaysInstall</td><td>ParcelCOMShim.dll</td></row>
 	</table>
 
 	<table name="File">
@@ -1920,38 +1881,7 @@
 		<col def="S255">ISBuildSourcePath</col>
 		<col def="I4">ISAttributes</col>
 		<col def="S72">ISComponentSubFolder_</col>
-		<row><td>depends.dll</td><td>Depends.dll</td><td>Depends.dll</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\Depends.dll</td><td>1</td><td/></row>
-		<row><td>depends.pdb</td><td>ISX_DEFAULTCOMPONENT</td><td>Depends.pdb</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\Depends.pdb</td><td>1</td><td/></row>
-		<row><td>excelint.dll</td><td>ExceLint.dll</td><td>ExceLint.dll</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\ExceLint.dll</td><td>1</td><td/></row>
-		<row><td>excelint.pdb</td><td>ISX_DEFAULTCOMPONENT</td><td>ExceLint.pdb</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\ExceLint.pdb</td><td>1</td><td/></row>
-		<row><td>excelint.xml</td><td>ISX_DEFAULTCOMPONENT</td><td>ExceLint.xml</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\ExceLint.xml</td><td>1</td><td/></row>
-		<row><td>excelintui.dll</td><td>ExceLintUI.dll</td><td>EXCELI~1.DLL|ExceLintUI.dll</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\ExceLintUI.dll</td><td>1</td><td/></row>
-		<row><td>excelintui.dll.manifest</td><td>ISX_DEFAULTCOMPONENT</td><td>EXCELI~1.MAN|ExceLintUI.dll.manifest</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\ExceLintUI.dll.manifest</td><td>1</td><td/></row>
-		<row><td>excelintui.pdb</td><td>ISX_DEFAULTCOMPONENT</td><td>EXCELI~1.PDB|ExceLintUI.pdb</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\ExceLintUI.pdb</td><td>1</td><td/></row>
-		<row><td>excelintui.vsto</td><td>ISX_DEFAULTCOMPONENT</td><td>EXCELI~1.VST|ExceLintUI.vsto</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\ExceLintUI.vsto</td><td>1</td><td/></row>
-		<row><td>excelparser.dll</td><td>ExcelParser.dll</td><td>EXCELP~1.DLL|ExcelParser.dll</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\ExcelParser.dll</td><td>1</td><td/></row>
-		<row><td>excelparser.pdb</td><td>ISX_DEFAULTCOMPONENT</td><td>EXCELP~1.PDB|ExcelParser.pdb</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\ExcelParser.pdb</td><td>1</td><td/></row>
-		<row><td>excelparser.xml</td><td>ISX_DEFAULTCOMPONENT</td><td>EXCELP~1.XML|ExcelParser.xml</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\ExcelParser.xml</td><td>1</td><td/></row>
-		<row><td>fparsec.dll</td><td>FParsec.dll</td><td>FParsec.dll</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\FParsec.dll</td><td>1</td><td/></row>
-		<row><td>fparsec.xml</td><td>ISX_DEFAULTCOMPONENT</td><td>FParsec.xml</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\FParsec.xml</td><td>1</td><td/></row>
-		<row><td>fparseccs.dll</td><td>FParsecCS.dll</td><td>FPARSE~1.DLL|FParsecCS.dll</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\FParsecCS.dll</td><td>1</td><td/></row>
-		<row><td>fparseccs.xml</td><td>ISX_DEFAULTCOMPONENT</td><td>FPARSE~1.XML|FParsecCS.xml</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\FParsecCS.xml</td><td>1</td><td/></row>
-		<row><td>fsharp.core.dll</td><td>FSharp.Core.dll</td><td>FSHARP~1.DLL|FSharp.Core.dll</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\FSharp.Core.dll</td><td>1</td><td/></row>
-		<row><td>fsharp.core.xml</td><td>ISX_DEFAULTCOMPONENT</td><td>FSHARP~1.XML|FSharp.Core.xml</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\FSharp.Core.xml</td><td>1</td><td/></row>
-		<row><td>microsoft.office.tools.commo</td><td>Microsoft.Office.Tools.Common.dll</td><td>MICROS~1.DLL|Microsoft.Office.Tools.Common.dll</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\Microsoft.Office.Tools.Common.dll</td><td>1</td><td/></row>
-		<row><td>microsoft.office.tools.commo1</td><td>Microsoft.Office.Tools.Common.v4.0.Utilities.dll</td><td>MICROS~1.DLL|Microsoft.Office.Tools.Common.v4.0.Utilities.dll</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\Microsoft.Office.Tools.Common.v4.0.Utilities.dll</td><td>1</td><td/></row>
-		<row><td>microsoft.office.tools.commo2</td><td>ISX_DEFAULTCOMPONENT</td><td>MICROS~1.XML|Microsoft.Office.Tools.Common.v4.0.Utilities.xml</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\Microsoft.Office.Tools.Common.v4.0.Utilities.xml</td><td>1</td><td/></row>
-		<row><td>microsoft.office.tools.commo3</td><td>ISX_DEFAULTCOMPONENT</td><td>MICROS~1.XML|Microsoft.Office.Tools.Common.xml</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\Microsoft.Office.Tools.Common.xml</td><td>1</td><td/></row>
-		<row><td>microsoft.office.tools.dll</td><td>Microsoft.Office.Tools.dll</td><td>MICROS~1.DLL|Microsoft.Office.Tools.dll</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\Microsoft.Office.Tools.dll</td><td>1</td><td/></row>
-		<row><td>microsoft.office.tools.excel</td><td>Microsoft.Office.Tools.Excel.dll</td><td>MICROS~1.DLL|Microsoft.Office.Tools.Excel.dll</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\Microsoft.Office.Tools.Excel.dll</td><td>1</td><td/></row>
-		<row><td>microsoft.office.tools.excel1</td><td>ISX_DEFAULTCOMPONENT</td><td>MICROS~1.XML|Microsoft.Office.Tools.Excel.xml</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\Microsoft.Office.Tools.Excel.xml</td><td>1</td><td/></row>
-		<row><td>microsoft.office.tools.v4.0.</td><td>Microsoft.Office.Tools.v4.0.Framework.dll</td><td>MICROS~1.DLL|Microsoft.Office.Tools.v4.0.Framework.dll</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\Microsoft.Office.Tools.v4.0.Framework.dll</td><td>1</td><td/></row>
-		<row><td>microsoft.office.tools.v4.0.1</td><td>ISX_DEFAULTCOMPONENT</td><td>MICROS~1.XML|Microsoft.Office.Tools.v4.0.Framework.xml</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\Microsoft.Office.Tools.v4.0.Framework.xml</td><td>1</td><td/></row>
-		<row><td>microsoft.visualstudio.tools</td><td>Microsoft.VisualStudio.Tools.Applications.Runtime.dll</td><td>MICROS~1.DLL|Microsoft.VisualStudio.Tools.Applications.Runtime.dll</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\Microsoft.VisualStudio.Tools.Applications.Runtime.dll</td><td>1</td><td/></row>
-		<row><td>microsoft.visualstudio.tools1</td><td>ISX_DEFAULTCOMPONENT</td><td>MICROS~1.XML|Microsoft.VisualStudio.Tools.Applications.Runtime.xml</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\Microsoft.VisualStudio.Tools.Applications.Runtime.xml</td><td>1</td><td/></row>
-		<row><td>parcelcomshim.dll</td><td>ParcelCOMShim.dll</td><td>PARCEL~1.DLL|ParcelCOMShim.dll</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\ParcelCOMShim.dll</td><td>1</td><td/></row>
-		<row><td>parcelcomshim.pdb</td><td>ISX_DEFAULTCOMPONENT</td><td>PARCEL~1.PDB|ParcelCOMShim.pdb</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\ParcelCOMShim.pdb</td><td>1</td><td/></row>
-		<row><td>parcelcomshim.xml</td><td>ISX_DEFAULTCOMPONENT</td><td>PARCEL~1.XML|ParcelCOMShim.xml</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\ParcelCOMShim.xml</td><td>1</td><td/></row>
+		<row><td>excelintui.primary_output</td><td>ExceLintUI.Primary_output</td><td>ExceLintUI.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLintUI&gt;|Built</td><td>3</td><td/></row>
 	</table>
 
 	<table name="FileSFPCatalog">
@@ -2095,21 +2025,8 @@
 		<col def="S0">FTPLocation</col>
 		<col def="S0">HTTPLocation</col>
 		<col def="S0">Miscellaneous</col>
-		<row><td>Depends.dll</td><td/><td/><td>_25B198ED_4CC5_4EEA_BD3E_E49F8DD982CF_FILTER</td><td/><td/><td/><td/></row>
-		<row><td>ExceLint.dll</td><td/><td/><td>_4B3194AB_4931_4C50_88FF_84F9F36592BE_FILTER</td><td/><td/><td/><td/></row>
-		<row><td>ExceLintUI.dll</td><td/><td/><td>_BFEC89C2_15BC_447E_9F8F_717A0E292CF4_FILTER</td><td/><td/><td/><td/></row>
-		<row><td>ExcelParser.dll</td><td/><td/><td>_97394410_F392_4FDA_BD38_BACEB527590B_FILTER</td><td/><td/><td/><td/></row>
-		<row><td>FParsec.dll</td><td/><td/><td>_B4839B8B_A9BC_4DB2_88BB_7FE25FC83024_FILTER</td><td/><td/><td/><td/></row>
-		<row><td>FParsecCS.dll</td><td/><td/><td>_6C76F9F4_F153_4B87_856E_C1E3A3EA4741_FILTER</td><td/><td/><td/><td/></row>
-		<row><td>FSharp.Core.dll</td><td/><td/><td>_867A51DB_52FC_4852_8EFB_3DB830D0E5D6_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ExceLintUI.Primary_output</td><td/><td/><td>_7954D820_BA00_42A8_9E38_62C0BD89A08E_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ISX_DEFAULTCOMPONENT</td><td/><td/><td>_B6EE9F24_5BDB_4CFA_B769_AC93C53BBBEA_FILTER</td><td/><td/><td/><td/></row>
-		<row><td>Microsoft.Office.Tools.Common.dll</td><td/><td/><td>_FD194CFE_DEBE_4D12_974C_CB3AFEF5B6D4_FILTER</td><td/><td/><td/><td/></row>
-		<row><td>Microsoft.Office.Tools.Common.v4.0.Utilities.dll</td><td/><td/><td>_44F3166B_D7F5_462F_9261_5926B0E16EE2_FILTER</td><td/><td/><td/><td/></row>
-		<row><td>Microsoft.Office.Tools.Excel.dll</td><td/><td/><td>_516446AC_A3F6_4BAA_BA4A_9808019FE9A2_FILTER</td><td/><td/><td/><td/></row>
-		<row><td>Microsoft.Office.Tools.dll</td><td/><td/><td>_6217342E_08F9_472A_A01C_3371E6F0D3DE_FILTER</td><td/><td/><td/><td/></row>
-		<row><td>Microsoft.Office.Tools.v4.0.Framework.dll</td><td/><td/><td>_AA44F667_26B8_492D_B628_821C34F3D5EF_FILTER</td><td/><td/><td/><td/></row>
-		<row><td>Microsoft.VisualStudio.Tools.Applications.Runtime.dll</td><td/><td/><td>_47A8B2D3_0EDF_4742_9B43_71917935F856_FILTER</td><td/><td/><td/><td/></row>
-		<row><td>ParcelCOMShim.dll</td><td/><td/><td>_816E0BC3_5593_4C80_B050_A054A6FFAEDE_FILTER</td><td/><td/><td/><td/></row>
 	</table>
 
 	<table name="ISCustomActionReference">
@@ -2387,7 +2304,9 @@
 		<col def="S255">Value</col>
 		<col def="S255">TestValue</col>
 		<col def="i4">Type</col>
+		<row><td>COMWrapper</td><td>Depends\COMWrapper\COMWrapper.csproj</td><td/><td>2</td></row>
 		<row><td>CommonFilesFolder</td><td/><td/><td>1</td></row>
+		<row><td>ExceLintUI</td><td>ExceLintUI\ExceLintUI.csproj</td><td/><td>2</td></row>
 		<row><td>ISPROJECTDIR</td><td/><td/><td>1</td></row>
 		<row><td>ISProductFolder</td><td/><td/><td>1</td></row>
 		<row><td>ISProjectDataFolder</td><td/><td/><td>1</td></row>
@@ -4049,7 +3968,7 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>ISTheme</td><td>InstallShield Blue.theme</td></row>
 		<row><td>ISUSLock</td><td>{97422647-874A-4003-8F18-217B3F07CABB}</td></row>
 		<row><td>ISUSSignature</td><td>{6C6D2E51-CCA7-43E9-8180-5215C4A6CF45}</td></row>
-		<row><td>ISVisitedViews</td><td>viewAssistant,viewISToday,viewProject,viewAppFiles,viewShortcuts,viewRelease,viewObjects</td></row>
+		<row><td>ISVisitedViews</td><td>viewAssistant,viewISToday,viewProject,viewAppFiles,viewShortcuts,viewRelease,viewObjects,viewSystemSearch</td></row>
 		<row><td>Limited</td><td>1</td></row>
 		<row><td>LockPermissionMode</td><td>1</td></row>
 		<row><td>MsiExecCmdLineOptions</td><td/></row>
