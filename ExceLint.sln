@@ -30,6 +30,13 @@ Project("{6141683F-8A12-4E36-9623-2EB02B2C2303}") = "ExceLintInstaller", "ExceLi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParcelTest", "Depends\parcel\ParcelTest\ParcelTest.csproj", "{730227B9-77B3-4F81-A4FB-341AE9611363}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".build", ".build", "{91A1468A-E062-43ED-87EB-A2C9FD14AC34}"
+	ProjectSection(SolutionItems) = preProject
+		Build.proj = Build.proj
+		.build\MSBuild.Community.Tasks.dll = .build\MSBuild.Community.Tasks.dll
+		.build\MSBuild.Community.Tasks.targets = .build\MSBuild.Community.Tasks.targets
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		CD_ROM|Any CPU = CD_ROM|Any CPU
