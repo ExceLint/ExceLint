@@ -210,31 +210,31 @@ namespace ExceLintUI
 
         public void getMixedFormulaVectors(Boolean forceDAGBuild)
         {
-            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(cell: addr, dag: dag, transitive: false, isForm: true, isRel: true, isMixed: true);
+            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(cell: addr, dag: dag, transitive: false, isForm: true, isRel: true, isMixed: true, isOSI: true);
             getVectors(f, forceDAGBuild);
         }
 
         public void getFormulaRelVectors(Boolean forceDAGBuild)
         {
-            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, true, true, true);
+            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, true, true, true, isOSI: true);
             getVectors(f, forceDAGBuild);
         }
 
         public void getFormulaAbsVectors(Boolean forceDAGBuild)
         {
-            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, true, false, true);
+            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, true, false, true, isOSI: true);
             getVectors(f, forceDAGBuild);
         }
 
         public void getDataRelVectors(Boolean forceDAGBuild)
         {
-            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, false, true, true);
+            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, false, true, true, isOSI: true);
             getVectors(f, forceDAGBuild);
         }
 
         public void getDataAbsVectors(Boolean forceDAGBuild)
         {
-            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, false, false, true);
+            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, false, false, true, isOSI: true);
             getVectors(f, forceDAGBuild);
         }
 
