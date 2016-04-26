@@ -14,6 +14,12 @@ namespace ExceLintTests
             _addressModeDAG = AddressModeDAG();
         }
 
+        // gets the set of shallow intransitive mixed input vectors pointed to by the formula
+        private static Tuple<int,int,int>[] getSIMIVs(AST.Address formula, Depends.DAG dag)
+        {
+            return ExceLint.Vector.getVectors(formula, dag, transitive: false, isForm: true, isRel: true, isMixed: true);
+        }
+
         [TestMethod]
         [Ignore]    // painfully slow
         public void canBuildDependenceGraph()
@@ -34,14 +40,14 @@ namespace ExceLintTests
         }
 
         [TestMethod]
-        public void absoluteSingleVector()
+        public void absoluteSingleVectorSIMIV()
         {
             // tests that $A$2 in cell B2 on the same sheet returns the vector (1,2,0)
             var wbname = _addressModeDAG.getWorkbookName();
             var wsname = _addressModeDAG.getWorksheetNames()[0];
             var path = _addressModeDAG.getWorkbookDirectory();
             var formula = AST.Address.fromA1withMode(2, "B", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
-            var vectors = ExceLint.Vector.getVectors(formula, _addressModeDAG, transitive: false, isForm: true, isRel: true, isMixed: true);
+            var vectors = getSIMIVs(formula, _addressModeDAG);
             Assert.IsTrue(vectors.Length == 1);
             var foo = vectors[0];
             var bar = new Tuple<int, int, int>(1, 2, 0);
@@ -49,14 +55,14 @@ namespace ExceLintTests
         }
 
         [TestMethod]
-        public void relativeRowAbsoluteColumnSingleVector()
+        public void relativeRowAbsoluteColumnSingleVectorSIMIV()
         {
             // tests that A$3 in cell B3 on the same sheet returns the vector (-1,3,0)
             var wbname = _addressModeDAG.getWorkbookName();
             var wsname = _addressModeDAG.getWorksheetNames()[0];
             var path = _addressModeDAG.getWorkbookDirectory();
             var formula = AST.Address.fromA1withMode(3, "B", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
-            var vectors = ExceLint.Vector.getVectors(formula, _addressModeDAG, transitive: false, isForm: true, isRel: true, isMixed: true);
+            var vectors = getSIMIVs(formula, _addressModeDAG);
             Assert.IsTrue(vectors.Length == 1);
             var foo = vectors[0];
             var bar = new Tuple<int, int, int>(-1, 3, 0);
@@ -64,14 +70,14 @@ namespace ExceLintTests
         }
 
         [TestMethod]
-        public void absoluteRowRelativeColumnSingleVector()
+        public void absoluteRowRelativeColumnSingleVectorSIMIV()
         {
             // tests that $A4 in cell B4 on the same sheet returns the vector (1,0,0)
             var wbname = _addressModeDAG.getWorkbookName();
             var wsname = _addressModeDAG.getWorksheetNames()[0];
             var path = _addressModeDAG.getWorkbookDirectory();
             var formula = AST.Address.fromA1withMode(4, "B", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
-            var vectors = ExceLint.Vector.getVectors(formula, _addressModeDAG, transitive: false, isForm: true, isRel: true, isMixed: true);
+            var vectors = getSIMIVs(formula, _addressModeDAG);
             Assert.IsTrue(vectors.Length == 1);
             var foo = vectors[0];
             var bar = new Tuple<int, int, int>(1, 0, 0);
@@ -79,14 +85,14 @@ namespace ExceLintTests
         }
 
         [TestMethod]
-        public void relativeSingleVector()
+        public void relativeSingleVectorSIMIV()
         {
             // tests that A5 in cell B5 on the same sheet returns the vector (-1,0,0)
             var wbname = _addressModeDAG.getWorkbookName();
             var wsname = _addressModeDAG.getWorksheetNames()[0];
             var path = _addressModeDAG.getWorkbookDirectory();
             var formula = AST.Address.fromA1withMode(5, "B", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
-            var vectors = ExceLint.Vector.getVectors(formula, _addressModeDAG, transitive: false, isForm: true, isRel: true, isMixed: true);
+            var vectors = getSIMIVs(formula, _addressModeDAG);
             Assert.IsTrue(vectors.Length == 1);
             var foo = vectors[0];
             var bar = new Tuple<int, int, int>(-1, 0, 0);
@@ -94,14 +100,14 @@ namespace ExceLintTests
         }
 
         [TestMethod]
-        public void AbsAbsRangeVectors()
+        public void AbsAbsRangeVectorsSIMIV()
         {
             // tests that $A$2:$A$5 in cell C2 on the same sheet returns a set of absolute vectors
             var wbname = _addressModeDAG.getWorkbookName();
             var wsname = _addressModeDAG.getWorksheetNames()[0];
             var path = _addressModeDAG.getWorkbookDirectory();
             var formula = AST.Address.fromA1withMode(2, "C", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
-            var vectors = ExceLint.Vector.getVectors(formula, _addressModeDAG, transitive: false, isForm: true, isRel: true, isMixed: true);
+            var vectors = getSIMIVs(formula, _addressModeDAG);
             Assert.IsTrue(vectors.Length == 4);
             Assert.IsTrue(Array.Exists(vectors, e => e.Equals(new Tuple<int,int,int>(1, 2, 0))));
             Assert.IsTrue(Array.Exists(vectors, e => e.Equals(new Tuple<int, int, int>(1, 3, 0))));
@@ -110,14 +116,14 @@ namespace ExceLintTests
         }
 
         [TestMethod]
-        public void RelAbsRangeVectors()
+        public void RelAbsRangeVectorsSIMIV()
         {
             // tests that A$2:A$5 in cell C3 on the same sheet returns a set of mixed vectors
             var wbname = _addressModeDAG.getWorkbookName();
             var wsname = _addressModeDAG.getWorksheetNames()[0];
             var path = _addressModeDAG.getWorkbookDirectory();
             var formula = AST.Address.fromA1withMode(3, "C", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
-            var vectors = ExceLint.Vector.getVectors(formula, _addressModeDAG, transitive: false, isForm: true, isRel: true, isMixed: true);
+            var vectors = getSIMIVs(formula, _addressModeDAG);
             Assert.IsTrue(vectors.Length == 4);
             Assert.IsTrue(Array.Exists(vectors, e => e.Equals(new Tuple<int, int, int>(-2, 2, 0))));
             Assert.IsTrue(Array.Exists(vectors, e => e.Equals(new Tuple<int, int, int>(-2, 3, 0))));
@@ -126,14 +132,14 @@ namespace ExceLintTests
         }
 
         [TestMethod]
-        public void AbsRelRangeVectors()
+        public void AbsRelRangeVectorsSIMIV()
         {
             // tests that $A2:$A5 in cell C4 on the same sheet returns a set of mixed vectors
             var wbname = _addressModeDAG.getWorkbookName();
             var wsname = _addressModeDAG.getWorksheetNames()[0];
             var path = _addressModeDAG.getWorkbookDirectory();
             var formula = AST.Address.fromA1withMode(4, "C", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
-            var vectors = ExceLint.Vector.getVectors(formula, _addressModeDAG, transitive: false, isForm: true, isRel: true, isMixed: true);
+            var vectors = getSIMIVs(formula, _addressModeDAG);
             Assert.IsTrue(vectors.Length == 4);
             Assert.IsTrue(Array.Exists(vectors, e => e.Equals(new Tuple<int, int, int>(1, -2, 0))));
             Assert.IsTrue(Array.Exists(vectors, e => e.Equals(new Tuple<int, int, int>(1, -1, 0))));
@@ -142,14 +148,14 @@ namespace ExceLintTests
         }
 
         [TestMethod]
-        public void RelRelRangeVectors()
+        public void RelRelRangeVectorsSIMIV()
         {
             // tests that A2:A5 in cell C5 on the same sheet returns a set of mixed vectors
             var wbname = _addressModeDAG.getWorkbookName();
             var wsname = _addressModeDAG.getWorksheetNames()[0];
             var path = _addressModeDAG.getWorkbookDirectory();
             var formula = AST.Address.fromA1withMode(5, "C", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
-            var vectors = ExceLint.Vector.getVectors(formula, _addressModeDAG, transitive: false, isForm: true, isRel: true, isMixed: true);
+            var vectors = getSIMIVs(formula, _addressModeDAG);
             Assert.IsTrue(vectors.Length == 4);
             Assert.IsTrue(Array.Exists(vectors, e => e.Equals(new Tuple<int, int, int>(-2, -3, 0))));
             Assert.IsTrue(Array.Exists(vectors, e => e.Equals(new Tuple<int, int, int>(-2, -2, 0))));
