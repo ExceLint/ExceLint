@@ -36,6 +36,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="FSharp.Core, Version=4.3.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="System" />
   </ItemGroup>
   <Choose>
@@ -62,6 +63,14 @@
     <ProjectReference Include="..\Depends\Depends\Depends.csproj">
       <Project>{34fa1bc2-cfd6-44ec-ac0c-dfc62313e4bf}</Project>
       <Name>Depends</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Depends\parcel\Parcel\ExcelParser.fsproj">
+      <Project>{6de2a2b9-c029-4bdb-8992-d16276471d9f}</Project>
+      <Name>ExcelParser</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ExceLint\ExceLint.fsproj">
+      <Project>{a62bca5a-eb55-46ed-a49a-fdb34771b605}</Project>
+      <Name>ExceLint</Name>
     </ProjectReference>
   </ItemGroup>
   <Choose>
