@@ -432,6 +432,11 @@ namespace ExceLintUI
             // center screen on cell
             var visible_columns = app.ActiveWindow.VisibleRange.Columns.Count;
             var visible_rows = app.ActiveWindow.VisibleRange.Rows.Count;
+            // if the sheet is hidden, unhide it
+            if (comobj.Worksheet.Visible != Excel.XlSheetVisibility.xlSheetVisible)
+            {
+                comobj.Worksheet.Visible = Excel.XlSheetVisibility.xlSheetVisible;
+            }
             app.Goto(comobj, true);
             app.ActiveWindow.SmallScroll(Type.Missing, visible_rows / 2, Type.Missing, visible_columns / 2);
 
