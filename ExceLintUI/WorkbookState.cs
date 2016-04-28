@@ -429,14 +429,34 @@ namespace ExceLintUI
             // COM object
             var comobj = ParcelCOMShim.Address.GetCOMObject(cell, app);
 
-            // center screen on cell
-            var visible_columns = app.ActiveWindow.VisibleRange.Columns.Count;
-            var visible_rows = app.ActiveWindow.VisibleRange.Rows.Count;
             // if the sheet is hidden, unhide it
             if (comobj.Worksheet.Visible != Excel.XlSheetVisibility.xlSheetVisible)
             {
                 comobj.Worksheet.Visible = Excel.XlSheetVisibility.xlSheetVisible;
             }
+
+            // if the cell's row is hidden, unhide it
+            if (comobj.Rows.Hidden)
+            {
+                comobj.Rows.Hidden = false;
+            }
+
+            // if the cell's column is hidden, unhide it
+            if (comobj.Columns.Hidden)
+            {
+                comobj.Columns.Hidden = false;
+            }
+
+            // ensure that the cell is wide enough that we can actually see it
+            comobj.Columns.AutoFit();
+            comobj.Rows.AutoFit();
+
+            // make sure that the printable area is big enough to show the cell
+            comobj.Worksheet.PageSetup.PrintArea = comobj.Worksheet.UsedRange.Address;
+
+            // center screen on cell
+            var visible_columns = app.ActiveWindow.VisibleRange.Columns.Count;
+            var visible_rows = app.ActiveWindow.VisibleRange.Rows.Count;
             app.Goto(comobj, true);
             app.ActiveWindow.SmallScroll(Type.Missing, visible_rows / 2, Type.Missing, visible_columns / 2);
 
