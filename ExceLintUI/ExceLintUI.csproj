@@ -251,6 +251,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Resources\heatmap.png" />
+    <Content Include="Resources\magnifying-glass-clipart-transparent-background-9i4LRa6iE.jpeg" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
