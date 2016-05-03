@@ -487,6 +487,13 @@ namespace ExceLintUI
             }
             else
             {
+                // ensure that cell is unprotected or fail
+                if (unProtect(_flagged_cell) != ProtectionLevel.None)
+                {
+                    System.Windows.Forms.MessageBox.Show("Cannot highlight cell " + _flagged_cell.A1Local() + ". Cell is protected.");
+                    return;
+                } 
+
                 // get cell COM object
                 var com = ParcelCOMShim.Address.GetCOMObject(_flagged_cell, _app);
 
@@ -507,6 +514,38 @@ namespace ExceLintUI
                 // enable auditing buttons
                 setTool(active: true);
             }
+        }
+
+        private enum ProtectionLevel
+        {
+            None,
+            Workbook,
+            Worksheet
+        }
+
+        private ProtectionLevel unProtect(AST.Address cell)
+        {
+            // get cell COM object
+            var com = ParcelCOMShim.Address.GetCOMObject(_flagged_cell, _app);
+
+            // check workbook protection
+            if (((Excel.Workbook)com.Worksheet.Parent).HasPassword)
+            {
+                return ProtectionLevel.Workbook;
+            }
+            else
+            {
+                // try to unprotect worksheet
+                try
+                {
+                    com.Worksheet.Unprotect(string.Empty);
+                }
+                catch
+                {
+                    return ProtectionLevel.Worksheet;
+                }
+            }
+            return ProtectionLevel.None;
         }
 
         private void paintRed(AST.Address cell, double intensity)
