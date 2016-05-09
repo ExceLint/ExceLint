@@ -118,7 +118,7 @@
                 Array.sumBy (fun x -> Math.Pow(x, 2.0)) X
             )
 
-        let private basisVectorToRealVectorArr(v: RelativeVector) : double[] =
+        let private relativeVectorToRealVectorArr(v: RelativeVector) : double[] =
             let (x,y,z) = v
             [|
                 System.Convert.ToDouble(x);
@@ -126,11 +126,11 @@
                 System.Convert.ToDouble(z);
             |]
 
-        let private L2NormBV(v: RelativeVector) : double =
-            L2Norm(basisVectorToRealVectorArr(v))
+        let private L2NormRV(v: RelativeVector) : double =
+            L2Norm(relativeVectorToRealVectorArr(v))
 
-        let private L2NormBVSum(vs: RelativeVector[]) : double =
-            vs |> Array.map L2NormBV |> Array.sum
+        let private L2NormRVSum(vs: RelativeVector[]) : double =
+            vs |> Array.map L2NormRV |> Array.sum
 
         let transitiveInputVectors(fCell: AST.Address)(dag : DAG)(depth: int option)(mixed: bool) : FullyQualifiedVector[] =
             let rec tfVect(tailO: AST.Address option)(head: AST.Address)(depth: int option) : FullyQualifiedVector list =
@@ -206,7 +206,7 @@
         type DeepInputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag : DAG) : double = 
-                L2NormBVSum (getVectors cell dag (*transitive*) true (*isForm*) true (*isRel*) true (*isMixed*) false (*isOffSheetInsensitive*) true)
+                L2NormRVSum (getVectors cell dag (*transitive*) true (*isForm*) true (*isRel*) true (*isMixed*) false (*isOffSheetInsensitive*) true)
             static member capability : string*Capability =
                 (typeof<DeepInputVectorRelativeL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepInputVectorRelativeL2NormSum.run } )
@@ -214,7 +214,7 @@
         type DeepOutputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag : DAG) : double = 
-                L2NormBVSum (getVectors cell dag (*transitive*) true (*isForm*) false (*isRel*) true (*isMixed*) false (*isOffSheetInsensitive*) true)
+                L2NormRVSum (getVectors cell dag (*transitive*) true (*isForm*) false (*isRel*) true (*isMixed*) false (*isOffSheetInsensitive*) true)
             static member capability : string*Capability =
                 (typeof<DeepOutputVectorRelativeL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepOutputVectorRelativeL2NormSum.run } )
@@ -222,7 +222,7 @@
         type DeepInputVectorAbsoluteL2NormSum() =
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag: DAG) : double =
-                L2NormBVSum (getVectors cell dag (*transitive*) true (*isForm*) true (*isRel*) false (*isMixed*) false (*isOffSheetInsensitive*) true)
+                L2NormRVSum (getVectors cell dag (*transitive*) true (*isForm*) true (*isRel*) false (*isMixed*) false (*isOffSheetInsensitive*) true)
             static member capability : string*Capability =
                 (typeof<DeepInputVectorAbsoluteL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepInputVectorAbsoluteL2NormSum.run } )
@@ -230,7 +230,7 @@
         type DeepOutputVectorAbsoluteL2NormSum() =
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag: DAG) : double =
-                L2NormBVSum (getVectors cell dag (*transitive*) true (*isForm*) false (*isRel*) false (*isMixed*) false (*isOffSheetInsensitive*) true)
+                L2NormRVSum (getVectors cell dag (*transitive*) true (*isForm*) false (*isRel*) false (*isMixed*) false (*isOffSheetInsensitive*) true)
             static member capability : string*Capability =
                 (typeof<DeepOutputVectorAbsoluteL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepOutputVectorAbsoluteL2NormSum.run } )
@@ -238,7 +238,7 @@
         type ShallowInputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag : DAG) : double = 
-                L2NormBVSum (getVectors cell dag (*transitive*) false (*isForm*) true (*isRel*) true (*isMixed*) false (*isOffSheetInsensitive*) true)
+                L2NormRVSum (getVectors cell dag (*transitive*) false (*isForm*) true (*isRel*) true (*isMixed*) false (*isOffSheetInsensitive*) true)
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorRelativeL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorRelativeL2NormSum.run } )
@@ -246,7 +246,7 @@
         type ShallowOutputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag : DAG) : double = 
-                L2NormBVSum (getVectors cell dag (*transitive*) false (*isForm*) false (*isRel*) true (*isMixed*) false (*isOffSheetInsensitive*) true)
+                L2NormRVSum (getVectors cell dag (*transitive*) false (*isForm*) false (*isRel*) true (*isMixed*) false (*isOffSheetInsensitive*) true)
             static member capability : string*Capability =
                 (typeof<ShallowOutputVectorRelativeL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowOutputVectorRelativeL2NormSum.run } )
@@ -254,7 +254,7 @@
         type ShallowInputVectorAbsoluteL2NormSum() =
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag: DAG) : double =
-                L2NormBVSum (getVectors cell dag (*transitive*) false (*isForm*) true (*isRel*) false (*isMixed*) false (*isOffSheetInsensitive*) true)
+                L2NormRVSum (getVectors cell dag (*transitive*) false (*isForm*) true (*isRel*) false (*isMixed*) false (*isOffSheetInsensitive*) true)
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorAbsoluteL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorAbsoluteL2NormSum.run } )
@@ -262,7 +262,7 @@
         type ShallowOutputVectorAbsoluteL2NormSum() =
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag: DAG) : double =
-                L2NormBVSum (getVectors cell dag (*transitive*) false (*isForm*) false (*isRel*) false (*isMixed*) false (*isOffSheetInsensitive*) true)
+                L2NormRVSum (getVectors cell dag (*transitive*) false (*isForm*) false (*isRel*) false (*isMixed*) false (*isOffSheetInsensitive*) true)
             static member capability : string*Capability =
                 (typeof<ShallowOutputVectorAbsoluteL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowOutputVectorAbsoluteL2NormSum.run } )
@@ -270,7 +270,7 @@
         type ShallowInputVectorMixedL2NormSum() =
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag: DAG) : double =
-                L2NormBVSum (getVectors cell dag (*transitive*) false (*isForm*) true (*isRel*) true (*isMixed*) true (*isOffSheetInsensitive*) true)
+                L2NormRVSum (getVectors cell dag (*transitive*) false (*isForm*) true (*isRel*) true (*isMixed*) true (*isOffSheetInsensitive*) true)
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorMixedL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedL2NormSum.run } )
@@ -278,7 +278,7 @@
         type ShallowOutputVectorMixedL2NormSum() =
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag: DAG) : double =
-                L2NormBVSum (getVectors cell dag (*transitive*) false (*isForm*) false (*isRel*) true (*isMixed*) true (*isOffSheetInsensitive*) true)
+                L2NormRVSum (getVectors cell dag (*transitive*) false (*isForm*) false (*isRel*) true (*isMixed*) true (*isOffSheetInsensitive*) true)
             static member capability : string*Capability =
                 (typeof<ShallowOutputVectorMixedL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowOutputVectorMixedL2NormSum.run } )
@@ -286,7 +286,7 @@
         type DeepInputVectorMixedL2NormSum() =
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag: DAG) : double =
-                L2NormBVSum (getVectors cell dag (*transitive*) true (*isForm*) true (*isRel*) true (*isMixed*) true (*isOffSheetInsensitive*) true)
+                L2NormRVSum (getVectors cell dag (*transitive*) true (*isForm*) true (*isRel*) true (*isMixed*) true (*isOffSheetInsensitive*) true)
             static member capability : string*Capability =
                 (typeof<DeepInputVectorMixedL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepInputVectorMixedL2NormSum.run } )
@@ -294,7 +294,7 @@
         type DeepOutputVectorMixedL2NormSum() =
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag: DAG) : double =
-                L2NormBVSum (getVectors cell dag (*transitive*) true (*isForm*) false (*isRel*) true (*isMixed*) true (*isOffSheetInsensitive*) true)
+                L2NormRVSum (getVectors cell dag (*transitive*) true (*isForm*) false (*isRel*) true (*isMixed*) true (*isOffSheetInsensitive*) true)
             static member capability : string*Capability =
                 (typeof<DeepOutputVectorMixedL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepOutputVectorMixedL2NormSum.run } )
