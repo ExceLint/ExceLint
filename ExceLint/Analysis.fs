@@ -172,6 +172,33 @@
 
                 winners
 
+            let tryAbsolute(addr: AST.Address, faddr: AST.Address) : unit =
+                let ast = dag.getASTofFormulaAt(faddr)
+
+                // find all references to addr
+
+
+                failwith "yay"
+
+            let inferAddressModes(r: Ranking) : Ranking =
+                // convert ranking into map
+                let scores = r |> Array.map (fun (pair: KeyValuePair<AST.Address,double>) -> (pair.Key,pair.Value))
+                               |> Map.ofArray
+
+                // for each input cell, try changing all refs to either abs or rel;
+                // if anomalousness drops, ascribe new semantics to cell
+                dag.allCells()
+                    |> Array.map (fun cell ->
+                           let cf = dag.getFormulasThatRefCell cell
+
+                           // get the anomalousness of each cell's referencing formulas
+                           let scores = cf |> Array.map (fun f -> scores.[f])
+
+                           // change all refs and rerun ranking
+
+                           failwith "no"
+                       )
+
             // get scores for each feature: featurename -> (address, score)[]
             let (_scores: ScoreTable,_score_time: int64) = PerfUtils.runMillis runEnabledFeatures ()
 
