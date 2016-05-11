@@ -194,19 +194,44 @@
                            // get the anomalousness of each cell's referencing formulas
                            let scores = cf |> Array.map (fun f -> scores.[f])
 
-                           // change all refs and rerun ranking
+                           // get ASTs
+                           let asts = cf |> Array.map (fun f -> dag.getASTofFormulaAt f)
+
+                           // for each referencing f, systematically generate all ref variants
+                           let fs' = cf |> Array.mapi (fun i f ->
+                                               let ast = asts.[i]
+
+                                               let mutator = ASTMutator.mutateExpr ast cell
+
+                                               let cabs_rabs = mutator AST.AddressMode.Absolute AST.AddressMode.Absolute
+                                               let cabs_rrel = mutator AST.AddressMode.Absolute AST.AddressMode.Relative
+                                               let crel_rabs = mutator AST.AddressMode.Relative AST.AddressMode.Absolute
+                                               let crel_rrel = mutator AST.AddressMode.Relative AST.AddressMode.Relative
+
+                                               (cabs_rabs, cabs_rrel, crel_rabs, crel_rrel)
+                                           )
+
+                            // for each f, create a new model
+
+
+                           
 
                            failwith "no"
                        )
 
-            // get scores for each feature: featurename -> (address, score)[]
-            let (_scores: ScoreTable,_score_time: int64) = PerfUtils.runMillis runEnabledFeatures ()
+            let runModel() =
+                // get scores for each feature: featurename -> (address, score)[]
+                let (scores: ScoreTable,score_time: int64) = PerfUtils.runMillis runEnabledFeatures ()
 
-            // build frequency table: (featurename, selector, score) -> freq
-            let _ftable,_ftable_time = PerfUtils.runMillis buildFrequencyTable _scores
+                // build frequency table: (featurename, selector, score) -> freq
+                let ftable,ftable_time = PerfUtils.runMillis buildFrequencyTable scores
 
-            // rank
-            let _ranking,_ranking_time = PerfUtils.runMillis rank _ftable
+                // rank
+                let ranking,ranking_time = PerfUtils.runMillis rank ftable
+
+                (scores, ftable, ranking, score_time, ftable_time, ranking_time)
+
+            let (_scores, _ftable, _ranking, _score_time, _ftable_time, _ranking_time) = runModel()
 
             member self.ScoreTimeInMilliseconds : int64 = _score_time
 
