@@ -476,8 +476,7 @@ namespace ExceLintUI
             }
 
             // ensure that the cell is wide enough that we can actually see it
-            comobj.Columns.AutoFit();
-            comobj.Rows.AutoFit();
+            widenIfNecessary(comobj, app);
 
             // make sure that the printable area is big enough to show the cell
             comobj.Worksheet.PageSetup.PrintArea = comobj.Worksheet.UsedRange.Address;
@@ -492,6 +491,27 @@ namespace ExceLintUI
             // center on highlighted cell
             comobj.Select();
 
+        }
+
+        private void widenIfNecessary(Excel.Range comobj, Excel.Application app)
+        {
+            app.ScreenUpdating = false;
+            var width = comobj.ColumnWidth;
+            var height = comobj.RowHeight;
+            comobj.Columns.AutoFit();
+            comobj.Rows.AutoFit();
+
+            if (comobj.ColumnWidth < width)
+            {
+                comobj.ColumnWidth = width;
+            }
+
+            if (comobj.RowHeight < height)
+            {
+                comobj.RowHeight = height;
+            }
+
+            app.ScreenUpdating = true;
         }
 
         public void flag()
@@ -603,7 +623,6 @@ namespace ExceLintUI
                 {
                     var com = ParcelCOMShim.Address.GetCOMObject(pair.Key, _app);
                     com.Interior.ColorIndex = pair.Value.ColorIndex;
-                    com.Interior.Color = pair.Value.Color;
                 }
                 _colors.Clear();
             }
