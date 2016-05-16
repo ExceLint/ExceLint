@@ -32,7 +32,7 @@ namespace ExceLintUI
                 currentWorkbook.toolSignificance = sig.Value;
                 try
                 {
-                    currentWorkbook.analyze(WorkbookState.MAX_DURATION_IN_MS, getConfig(), useHeatMap: false, forceDAGBuild: forceBuildDAG.Checked);
+                    currentWorkbook.analyze(WorkbookState.MAX_DURATION_IN_MS, getConfig(), forceDAGBuild: forceBuildDAG.Checked);
                     currentWorkbook.flag();
                     setUIState(currentWorkbook);
                 }
@@ -149,9 +149,6 @@ namespace ExceLintUI
 
         private void showHeatmap_Click(object sender, RibbonControlEventArgs e)
         {
-            // check for debug checkbox
-            currentWorkbook.DebugMode = this.DebugOutput.Checked;
-
             var sig = getPercent(this.significanceTextBox.Text, this.significanceTextBox.Label);
             if (sig == FSharpOption<double>.None)
             {
@@ -162,7 +159,7 @@ namespace ExceLintUI
                 currentWorkbook.toolSignificance = sig.Value;
                 try
                 {
-                    currentWorkbook.analyze(WorkbookState.MAX_DURATION_IN_MS, getConfig(), useHeatMap: true, forceDAGBuild: forceBuildDAG.Checked);
+                    currentWorkbook.toggleHeatMap(WorkbookState.MAX_DURATION_IN_MS, getConfig(), forceDAGBuild: forceBuildDAG.Checked);
                     setUIState(currentWorkbook);
                 }
                 catch (Parcel.ParseException ex)
@@ -311,6 +308,14 @@ namespace ExceLintUI
             this.FixErrorButton.Enabled = wbs.FixError_Enabled;
             this.StartOverButton.Enabled = wbs.ClearColoringButton_Enabled;
             this.AnalyzeButton.Enabled = wbs.Analyze_Enabled;
+
+            if (wbs.HeatMap_Hidden)
+            {
+                this.showHeatmap.Label = "Show Heat Map";
+            } else
+            {
+                this.showHeatmap.Label = "Hide Heat Map";
+            }
         }
 
         public ExceLint.FeatureConf getConfig()

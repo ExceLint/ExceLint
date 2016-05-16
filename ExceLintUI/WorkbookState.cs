@@ -29,14 +29,17 @@ namespace ExceLintUI
         private Dictionary<AST.Address, CellColor> _colors;
         private HashSet<AST.Address> _tool_highlights = new HashSet<AST.Address>();
         private HashSet<AST.Address> _output_highlights = new HashSet<AST.Address>();
-        private HashSet<AST.Address> _known_good = new HashSet<AST.Address>();
-        private Score[] _flaggable;
+        private HashSet<AST.Address> _audited = new HashSet<AST.Address>();
+        //private Score[] _flaggable;
+        private Analysis _analysis;
         private AST.Address _flagged_cell;
         private DAG _dag;
         private bool _debug_mode = false;
         private bool _dag_changed = false;
+
         private struct Analysis
         {
+            public bool hasRun;
             public Score[] scores;
             public bool ranOK;
             public int cutoff;
@@ -49,6 +52,7 @@ namespace ExceLintUI
         private bool _button_MarkAsOK_enabled = false;
         private bool _button_FixError_enabled = false;
         private bool _button_clearColoringButton_enabled = false;
+        private bool _button_showHeatMap_on = true;
         #endregion BUTTON_STATE
 
         public WorkbookState(Excel.Application app, Excel.Workbook workbook)
@@ -56,18 +60,13 @@ namespace ExceLintUI
             _app = app;
             _workbook = workbook;
             _colors = new Dictionary<AST.Address, CellColor>();
+            _analysis.hasRun = false;
         }
 
         public void DAGChanged()
         {
             _dag_changed = true;
         }
-
-        //public double toolProportion
-        //{
-        //    get { return _tool_proportion; }
-        //    set { _tool_proportion = value; }
-        //}
 
         public double toolSignificance
         {
@@ -96,6 +95,12 @@ namespace ExceLintUI
         {
             get { return _button_clearColoringButton_enabled; }
             set { _button_clearColoringButton_enabled = value; }
+        }
+
+        public bool HeatMap_Hidden
+        {
+            get { return _button_showHeatMap_on; }
+            set { _button_showHeatMap_on = value; }
         }
 
         public bool DebugMode
@@ -307,61 +312,35 @@ namespace ExceLintUI
             }
         }
 
-        public void analyze(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean useHeatMap, Boolean forceDAGBuild)
+        public void toggleHeatMap(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean forceDAGBuild)
         {
-            var sw = new System.Diagnostics.Stopwatch();
-            sw.Start();
-
-            // disable screen updating during analysis to speed things up
-            _app.ScreenUpdating = false;
-
-            // Also disable alerts; e.g., Excel thinks that compute-bound plugins
-            // are deadlocked and alerts the user.  ExceLint really is just compute-bound.
-            _app.DisplayAlerts = false;
-
-            // build data dependence graph
-            try
+            if (HeatMap_Hidden)
             {
-                UpdateDAG(forceDAGBuild);
-
-                Func<Progress, Analysis> f = (Progress p) =>
+                if (!_analysis.hasRun)
                 {
-                    // sanity check
-                    if (_dag.getAllFormulaAddrs().Length == 0)
-                    {
-                        System.Windows.Forms.MessageBox.Show("This spreadsheet contains no formulas.");
-                        _app.ScreenUpdating = true;
-                        _flaggable = new KeyValuePair<AST.Address, double>[0];
-                        return new Analysis { scores = null, ranOK = false, cutoff = 0 };
-                    } else
-                    {
-                        // run analysis
-                        var model = new ExceLint.ErrorModel(config, _dag, _tool_significance, p);
-                        Score[] scores = model.rankByFeatureSum();
-                        int cutoff = model.getSignificanceCutoff;
-                        return new Analysis { scores = scores, ranOK = true, cutoff = cutoff, model = model };
-                    }
-                };
-
-                var analysis = buildDAGAndDoStuff(forceDAGBuild, f, 3);
-
-                if (!analysis.ranOK)
-                {
-                    return;
+                    // run analysis
+                    analyze(max_duration_in_ms, config, forceDAGBuild);
                 }
 
-                // assign scores to _flaggable
-                _flaggable = analysis.scores;
-
-                if (_flaggable.Length > 0 && useHeatMap)
+                if (_analysis.scores.Length > 0)
                 {
                     // calculate min/max heat map intensity
-                    var min_score = analysis.scores[0].Value;
-                    var max_score = analysis.scores[analysis.scores.Length - 1].Value;
+                    var min_score = _analysis.scores[0].Value;
+                    var max_score = _analysis.scores[_analysis.scores.Length - 1].Value;
+
+                    // Disable screen updating 
+                    _app.ScreenUpdating = false;
 
                     // paint cells
-                    foreach (Score s in analysis.scores)
+                    foreach (Score s in _analysis.scores)
                     {
+                        // ensure that cell is unprotected or fail
+                        if (unProtect(s.Key) != ProtectionLevel.None)
+                        {
+                            System.Windows.Forms.MessageBox.Show("Cannot highlight cell " + _flagged_cell.A1Local() + ". Cell is protected.");
+                            return;
+                        }
+
                         // get score value
                         var sVal = s.Value;
 
@@ -376,14 +355,63 @@ namespace ExceLintUI
                         paintRed(s.Key, intensity);
                     }
 
-                    setClearOnly();
+                    // Enable screen updating
+                    _app.ScreenUpdating = true;
+                }
+            } else
+            {
+                restoreOutputColors();
+            }
+            toggleHeatMapSetting();
+        }
+
+        public void analyze(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean forceDAGBuild)
+        {
+            var sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
+
+            // disable screen updating during analysis to speed things up
+            _app.ScreenUpdating = false;
+
+            // Also disable alerts; e.g., Excel thinks that compute-bound plugins
+            // are deadlocked and alerts the user.  ExceLint really is just compute-bound.
+            _app.DisplayAlerts = false;
+
+            // build data dependence graph
+            try
+            {
+                Func<Progress, Analysis> f = (Progress p) =>
+                {
+                    // sanity check
+                    if (_dag.getAllFormulaAddrs().Length == 0)
+                    {
+                        System.Windows.Forms.MessageBox.Show("This spreadsheet contains no formulas.");
+                        _app.ScreenUpdating = true;
+                        return new Analysis { scores = null, ranOK = false, cutoff = 0 };
+                    }
+                    else
+                    {
+                        // run analysis
+                        var model = new ExceLint.ErrorModel(config, _dag, _tool_significance, p);
+                        Score[] scores = model.rankByFeatureSum();
+                        int cutoff = model.getSignificanceCutoff;
+                        return new Analysis { scores = scores, ranOK = true, cutoff = cutoff, model = model, hasRun = true };
+                    }
+                };
+
+                _analysis = buildDAGAndDoStuff(forceDAGBuild, f, 3);
+
+                if (!_analysis.ranOK)
+                {
+                    return;
                 }
 
                 // debug output
-                if (_debug_mode && _flaggable.Length > 0)
+                if (_debug_mode && _analysis.scores.Length > 0)
                 {
                     // scores
-                    var score_str = String.Join("\n", _flaggable.Select(score => score.Key.A1FullyQualified() + " -> " + score.Value.ToString()));
+                    var cut_scores = _analysis.scores.Take(_analysis.cutoff + 1);
+                    var score_str = String.Join("\n", cut_scores.Select(score => score.Key.A1FullyQualified() + " -> " + score.Value.ToString()));
                     if (score_str == "")
                     {
                         score_str = "empty";
@@ -393,12 +421,12 @@ namespace ExceLintUI
 
                     // time and space information
                     var time_str = "DAG construction ms: " + _dag.AnalysisMilliseconds + "\n" +
-                                   "Feature scoring ms: " + analysis.model.ScoreTimeInMilliseconds + "\n" +
-                                   "Num score entries: " + analysis.model.NumScoreEntries + "\n" +
-                                   "Frequency counting ms: " + analysis.model.FrequencyTableTimeInMilliseconds + "\n" +
-                                   "Num freq table entries: " + analysis.model.NumFreqEntries + "\n" +
-                                   "Ranking ms: " + analysis.model.RankingTimeInMilliseconds + "\n" +
-                                   "Total ranking length: " + analysis.model.NumRankedEntries;
+                                   "Feature scoring ms: " + _analysis.model.ScoreTimeInMilliseconds + "\n" +
+                                   "Num score entries: " + _analysis.model.NumScoreEntries + "\n" +
+                                   "Frequency counting ms: " + _analysis.model.FrequencyTableTimeInMilliseconds + "\n" +
+                                   "Num freq table entries: " + _analysis.model.NumFreqEntries + "\n" +
+                                   "Ranking ms: " + _analysis.model.RankingTimeInMilliseconds + "\n" +
+                                   "Total ranking length: " + _analysis.model.NumRankedEntries;
 
                     System.Windows.Forms.Clipboard.SetText(time_str);
                     System.Windows.Forms.MessageBox.Show(time_str);
@@ -468,25 +496,21 @@ namespace ExceLintUI
 
         public void flag()
         {
-            //filter known_good
-            _flaggable = _flaggable.Where(kvp => !_known_good.Contains(kvp.Key)).ToArray();
-            if (_flaggable.Count() != 0)
-            {
-                // get TreeNode corresponding to most unusual score
-                _flagged_cell = _flaggable.First().Key;
-            }
-            else
-            {
-                _flagged_cell = null;
-            }
+            // filter known_good & cut by cutoff index
+            var flaggable = _analysis.scores
+                                .Take(_analysis.cutoff + 1)
+                                .Where(kvp => !_audited.Contains(kvp.Key)).ToArray();
 
-            if (_flagged_cell == null)
+            if (flaggable.Count() == 0)
             {
-                System.Windows.Forms.MessageBox.Show("No bugs remain.");
+                System.Windows.Forms.MessageBox.Show("Audit finished.");
                 resetTool();
             }
             else
             {
+                // get Score corresponding to most unusual score
+                _flagged_cell = flaggable.First().Key;
+
                 // ensure that cell is unprotected or fail
                 if (unProtect(_flagged_cell) != ProtectionLevel.None)
                 {
@@ -526,7 +550,7 @@ namespace ExceLintUI
         private ProtectionLevel unProtect(AST.Address cell)
         {
             // get cell COM object
-            var com = ParcelCOMShim.Address.GetCOMObject(_flagged_cell, _app);
+            var com = ParcelCOMShim.Address.GetCOMObject(cell, _app);
 
             // check workbook protection
             if (((Excel.Workbook)com.Worksheet.Parent).HasPassword)
@@ -571,6 +595,8 @@ namespace ExceLintUI
 
         private void restoreOutputColors()
         {
+            _app.ScreenUpdating = false;
+
             if (_workbook != null)
             {
                 foreach (KeyValuePair<AST.Address, CellColor> pair in _colors)
@@ -583,12 +609,15 @@ namespace ExceLintUI
             }
             _output_highlights.Clear();
             _colors.Clear();
+
+            _app.ScreenUpdating = true;
         }
 
         public void resetTool()
         {
             restoreOutputColors();
-            _known_good.Clear();
+            _audited.Clear();
+            _analysis.hasRun = false;
             setTool(active: false);
         }
 
@@ -605,10 +634,15 @@ namespace ExceLintUI
             _button_clearColoringButton_enabled = true;
         }
 
+        private void toggleHeatMapSetting()
+        {
+            _button_showHeatMap_on = !_button_showHeatMap_on;
+        }
+
         internal void markAsOK()
         {
             // the user told us that the cell was OK
-            _known_good.Add(_flagged_cell);
+            _audited.Add(_flagged_cell);
 
             // set the color of the cell to green
             var cell = ParcelCOMShim.Address.GetCOMObject(_flagged_cell, _app);
@@ -628,14 +662,14 @@ namespace ExceLintUI
             System.Action callback = () =>
             {
                 // add the cell to the known good list
-                _known_good.Add(_flagged_cell);
+                _audited.Add(_flagged_cell);
 
                 // unflag the cell
                 _flagged_cell = null;
                 try
                 {
                     // when a user fixes something, we need to re-run the analysis
-                    analyze(MAX_DURATION_IN_MS, config, useHeatMap: false, forceDAGBuild: true);
+                    analyze(MAX_DURATION_IN_MS, config, forceDAGBuild: true);
                     // and flag again
                     flag();
                     // and then set the UI state
