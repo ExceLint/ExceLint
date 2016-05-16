@@ -120,7 +120,7 @@
             /// Finds the maxmimum significance height
             /// </summary>
             /// <returns>maxmimum significance height count (an int)</returns>
-            let _significanceCutoff : int =
+            let _significanceThreshold : int =
                 // round to integer
                 int (
                     // get total number of counts
@@ -129,8 +129,8 @@
                     * alpha
                 )
 
-            let cutRankBySignificance(ranking: Ranking): Ranking =
-                let cutoff = _significanceCutoff
+            let findCutIndex(ranking: Ranking): int =
+                let sigThresh = _significanceThreshold
 
                 // compute total order
                 let rank_nums = Array.map (fun (kvp: KeyValuePair<AST.Address,double>) -> int(kvp.Value)) ranking
@@ -141,15 +141,18 @@
                 // cut the ranking at the knee index
                 let knee_cut = ranking.[0..dderiv_idx]
 
-                // apply significance threshold
-                let cutrank = Array.fold (fun (acc: KeyValuePair<AST.Address,double> list)(score: KeyValuePair<AST.Address,double>) ->
-                                    if score.Value > double cutoff then
-                                        acc
-                                    else
-                                        score :: acc
-                                ) (List.empty) knee_cut |> List.rev |> List.toArray
+                // the ranking may include scores above the significance threshold, so
+                // scan through the list to find the index of the last significant score
+                let cut_idx: int = knee_cut
+                                    |> Array.mapi (fun i elem -> (i,elem))
+                                    |> Array.fold (fun (acc: int)(i: int, score: KeyValuePair<AST.Address,double>) ->
+                                        if score.Value > double sigThresh then
+                                            acc
+                                        else
+                                            i
+                                        ) (knee_cut.Length - 1)
 
-                cutrank
+                cut_idx
 
             let rank(ftable: FreqTable) : Ranking =
                 // get sums for every address
@@ -166,11 +169,7 @@
                 let rankedAddrs: (AST.Address*int)[] = Array.sortBy (fun (addr,sum) -> sum) addrSums
 
                 // return KeyValuePairs
-                let totalOrder = Array.map (fun (addr,sum) -> new KeyValuePair<AST.Address,double>(addr,double sum)) rankedAddrs
-
-                let winners = cutRankBySignificance totalOrder
-
-                winners
+                Array.map (fun (addr,sum) -> new KeyValuePair<AST.Address,double>(addr,double sum)) rankedAddrs
 
             let tryAbsolute(addr: AST.Address, faddr: AST.Address) : unit =
                 let ast = dag.getASTofFormulaAt(faddr)
@@ -233,6 +232,9 @@
 
             let (_scores, _ftable, _ranking, _score_time, _ftable_time, _ranking_time) = runModel()
 
+            // rank cutoff
+            let _cutoff = findCutIndex _ranking
+
             member self.ScoreTimeInMilliseconds : int64 = _score_time
 
             member self.FrequencyTableTimeInMilliseconds : int64 = _ftable_time
@@ -247,7 +249,7 @@
 
             member self.rankByFeatureSum() : Ranking = _ranking
 
-            member self.getSignificanceCutoff : int = _significanceCutoff
+            member self.getSignificanceCutoff : int = _cutoff
 
             member self.inspectSelectorFor(addr: AST.Address, sel: Scope.Selector) : KeyValuePair<AST.Address,(string*double)[]>[] =
                 let sID = sel.id addr
