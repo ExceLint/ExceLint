@@ -9,6 +9,7 @@ namespace ExceLintUI
     public partial class ExceLintRibbon
     {
         Dictionary<Excel.Workbook, WorkbookState> wbstates = new Dictionary<Excel.Workbook, WorkbookState>();
+        System.Collections.Concurrent.ConcurrentDictionary<Excel.Workbook,Boolean> wbShutdown = new System.Collections.Concurrent.ConcurrentDictionary<Excel.Workbook,Boolean>();
         WorkbookState currentWorkbook;
 
         #region BUTTON_HANDLERS
@@ -195,7 +196,7 @@ namespace ExceLintUI
             Globals.ThisAddIn.Application.WorkbookOpen += WorkbookOpen;
             Globals.ThisAddIn.Application.WorkbookActivate += WorkbookActivated;
             Globals.ThisAddIn.Application.WorkbookDeactivate += WorkbookDeactivated;
-            Globals.ThisAddIn.Application.WorkbookBeforeClose += WorkbookClose;
+            Globals.ThisAddIn.Application.WorkbookBeforeClose += WorkbookBeforeClose;
             Globals.ThisAddIn.Application.SheetChange += SheetChange;
             Globals.ThisAddIn.Application.WorkbookAfterSave += WorkbookAfterSave;
 
@@ -223,6 +224,7 @@ namespace ExceLintUI
         private void WorkbookOpen(Excel.Workbook workbook)
         {
             wbstates.Add(workbook, new WorkbookState(Globals.ThisAddIn.Application, workbook));
+            wbShutdown.AddOrUpdate(workbook, false, (k, v) => v);
         }
 
         // This event is called when Excel brings an opened workbook
@@ -239,10 +241,36 @@ namespace ExceLintUI
             setUIState(currentWorkbook);
         }
 
+        private void cancelRemoveState()
+        {
+            System.Threading.Thread.Sleep(1000);
+
+            foreach(KeyValuePair<Excel.Workbook,Boolean> kvp in wbShutdown)
+            {
+                if (kvp.Value)
+                {
+                    wbShutdown[kvp.Key] = false;
+                }
+            }
+        }
+
         // This even it called when Excel sends an opened workbook
         // to the background
         private void WorkbookDeactivated(Excel.Workbook workbook)
         {
+            // if we recorded a workbook close for this workbook,
+            // remove all workbook state
+            if (wbShutdown[workbook])
+            {
+                wbstates.Remove(workbook);
+                if (wbstates.Count == 0)
+                {
+                    SetUIStateNoWorkbooks();
+                }
+                Boolean outcome;
+                wbShutdown.TryRemove(workbook, out outcome);
+            }
+
             currentWorkbook = null;
             // WorkbookBeforeClose event does not fire for default workbooks
             // containing no data
@@ -262,13 +290,15 @@ namespace ExceLintUI
             }
         }
 
-        private void WorkbookClose(Excel.Workbook workbook, ref bool Cancel)
+        private void WorkbookBeforeClose(Excel.Workbook workbook, ref bool Cancel)
         {
-            wbstates.Remove(workbook);
-            if (wbstates.Count == 0)
-            {
-                SetUIStateNoWorkbooks();
-            }
+            // record possible workbook close
+            wbShutdown[workbook] = true;
+            // if the user hits cancel, then WorkbookDeactivated will never
+            // be called, but the shutdown will still be recorded; the
+            // following schedules an action to unrecord the workbook close
+            System.Threading.Thread t = new System.Threading.Thread(cancelRemoveState);
+            t.Start();
         }
 
         private void SheetChange(object worksheet, Excel.Range target)
