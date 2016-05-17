@@ -26,7 +26,7 @@ namespace ExceLintUI
         private Excel.Workbook _workbook;
         //private double _tool_proportion = 0.05;
         private double _tool_significance = 0.05;
-        private Dictionary<AST.Address, CellColor> _colors;
+        private ColorDict _colors = new ColorDict();
         private HashSet<AST.Address> _tool_highlights = new HashSet<AST.Address>();
         private HashSet<AST.Address> _output_highlights = new HashSet<AST.Address>();
         private HashSet<AST.Address> _audited = new HashSet<AST.Address>();
@@ -59,7 +59,6 @@ namespace ExceLintUI
         {
             _app = app;
             _workbook = workbook;
-            _colors = new Dictionary<AST.Address, CellColor>();
             _analysis.hasRun = false;
         }
 
@@ -322,18 +321,20 @@ namespace ExceLintUI
                     analyze(max_duration_in_ms, config, forceDAGBuild);
                 }
 
-                if (_analysis.scores.Length > 0)
+                if (_analysis.cutoff > 0)
                 {
                     // calculate min/max heat map intensity
                     var min_score = _analysis.scores[0].Value;
-                    var max_score = _analysis.scores[_analysis.scores.Length - 1].Value;
+                    var max_score = _analysis.scores[_analysis.cutoff].Value;
 
                     // Disable screen updating 
                     _app.ScreenUpdating = false;
 
                     // paint cells
-                    foreach (Score s in _analysis.scores)
+                    for (int i = 0; i <= _analysis.cutoff; i++)
                     {
+                        var s = _analysis.scores[i];
+
                         // ensure that cell is unprotected or fail
                         if (unProtect(s.Key) != ProtectionLevel.None)
                         {
@@ -542,11 +543,10 @@ namespace ExceLintUI
                 var com = ParcelCOMShim.Address.GetCOMObject(_flagged_cell, _app);
 
                 // save old color
-                var cc = new CellColor(com.Interior.ColorIndex, com.Interior.Color);
-                if (!_colors.ContainsKey(_flagged_cell))
-                {
-                    _colors.Add(_flagged_cell, cc);
-                }
+                _colors.saveColorAt(
+                    _flagged_cell,
+                    new CellColor { ColorIndex = com.Interior.ColorIndex, Color = com.Interior.Color }
+                );
 
                 // highlight cell
                 com.Interior.Color = System.Drawing.Color.Red;
@@ -598,11 +598,10 @@ namespace ExceLintUI
             var com = ParcelCOMShim.Address.GetCOMObject(cell, _app);
 
             // save old color
-            var cc = new CellColor(com.Interior.ColorIndex, com.Interior.Color);
-            if (!_colors.ContainsKey(cell))
-            {
-                _colors.Add(cell, cc);
-            }
+            _colors.saveColorAt(
+                cell,
+                new CellColor { ColorIndex = com.Interior.ColorIndex, Color = com.Interior.Color }
+            );
 
             // highlight cell
             byte A = System.Drawing.Color.Red.A;
@@ -619,7 +618,7 @@ namespace ExceLintUI
 
             if (_workbook != null)
             {
-                foreach (KeyValuePair<AST.Address, CellColor> pair in _colors)
+                foreach (KeyValuePair<AST.Address, CellColor> pair in _colors.all())
                 {
                     var com = ParcelCOMShim.Address.GetCOMObject(pair.Key, _app);
                     com.Interior.ColorIndex = pair.Value.ColorIndex;

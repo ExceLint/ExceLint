@@ -162,6 +162,7 @@
     <Compile Include="CellFixForm.Designer.cs">
       <DependentUpon>CellFixForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="ColorDict.cs" />
     <Compile Include="ExceLintRibbon.cs">
       <SubType>Component</SubType>
     </Compile>
