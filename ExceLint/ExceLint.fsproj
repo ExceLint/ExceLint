@@ -55,6 +55,7 @@
     <Compile Include="Proximity.fs" />
     <Compile Include="FeatureConf.fs" />
     <Compile Include="PerfUtils.fs" />
+    <Compile Include="ASTMutator.fs" />
     <Compile Include="Analysis.fs" />
     <None Include="App.config" />
   </ItemGroup>
