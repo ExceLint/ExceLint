@@ -13,7 +13,7 @@
                 
             let nop = fun () -> ()
 
-            let runEnabledFeatures(cells: AST.Address[]) =
+            let runEnabledFeatures(cells: AST.Address[])(dag: Depends.DAG) =
                 config.EnabledFeatures |>
                 Array.map (fun fname ->
                     // get feature lambda
@@ -28,7 +28,7 @@
                     fname, fvals
                 ) |> adict
             
-            let buildFrequencyTable(data: ScoreTable)(incrProgress: unit -> unit): FreqTable =
+            static member buildFrequencyTable(data: ScoreTable)(incrProgress: unit -> unit)(dag: Depends.DAG)(config: FeatureConf): FreqTable =
                 let d = new Dict<string*Scope.SelectID*double,int>()
                 Array.iter (fun fname ->
                     Array.iter (fun (sel: Scope.Selector) ->
@@ -150,8 +150,6 @@
                 ) [| 0..(mat.[0]).Length - 1 |]
 
             let chooseLikelyAddressMode(cell: AST.Address)(rankmap: Map<AST.Address,double>)(refs: AST.Address[]) : AST.Expression option =
-                
-
                 // get the anomalousness of each cell's referencing formulas
                 let scores = refs |> Array.map (fun f -> rankmap.[f])
 
@@ -164,12 +162,10 @@
                 // find the number of histogram bins for the default interpretation
                 let bucketCount = countBuckets ftable
 
-                // get ASTs
-                let asts = refs |> Array.map (fun f -> dag.getASTofFormulaAt f)
-
                 // for each referencing formula, systematically generate all ref variants
                 let fs' = Array.mapi (fun i f ->
-                            let ast = asts.[i]
+                            // get AST
+                            let ast = dag.getASTofFormulaAt f
 
                             let mutator = ASTMutator.mutateExpr ast cell
 
@@ -178,14 +174,35 @@
                             let crel_rabs = mutator AST.AddressMode.Relative AST.AddressMode.Absolute
                             let crel_rrel = mutator AST.AddressMode.Relative AST.AddressMode.Relative
 
-                            [|cabs_rabs; cabs_rrel; crel_rabs; crel_rrel; |]
+                            [|(f, cabs_rabs); (f, cabs_rrel); (f, crel_rabs); (f, crel_rrel); |]
                           ) refs
 
                 // make the first index the mode, the second index the formula
                 let fsT = transpose fs'
 
                 // for each mode, find the number of bins, and choose the mode resulting in the min bin
-                let mode_idx = argmin (fun formula_exprs -> ) fsT
+                let mode_idx = argmin (fun (addrs_exprs: (AST.Address*AST.Expression)[]) ->
+                                   // generate formulas for each AST
+                                   let mutants = Array.map (fun (addr,ast: AST.Expression) ->
+                                                    new KeyValuePair<AST.Address,string>(addr,ast.ToFormula)
+                                                 ) addrs_exprs
+
+                                   // get new DAG
+                                   let dag' = dag.CopyWithUpdatedFormulas mutants
+
+                                   // get the set of buckets
+                                   let mutBuckets = runEnabledFeatures (
+                                                        Array.map (fun (kvp: KeyValuePair<AST.Address,string>) ->\
+                                                            kvp.Key
+                                                        ) mutants
+                                                    ) dag'
+
+                                   // compute frequency tables
+                                   let mutFtable = buildFrequencyTable mutBuckets nop
+
+                                   // count histogram buckets
+                                   countBuckets mutFtable
+                               ) fsT
                 
                 failwith "not yet"
 
@@ -219,7 +236,7 @@
 
             let runModel() =
                 // get scores for each feature: featurename -> (address, score)[]
-                let (scores: ScoreTable,score_time: int64) = PerfUtils.runMillis runEnabledFeatures (dag.allCells())
+                let (scores: ScoreTable,score_time: int64) = PerfUtils.runMillis2 runEnabledFeatures (dag.allCells()) dag
 
                 // build frequency table: (featurename, selector, score) -> freq
                 let ftable,ftable_time = PerfUtils.runMillis2 buildFrequencyTable scores (fun () -> progress.IncrementCounter())
