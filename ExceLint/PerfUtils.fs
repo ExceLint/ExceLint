@@ -20,5 +20,9 @@ let private run<'A,'B>(f: 'A -> 'B)(input: 'A)(tu: TimeUnit) : 'B*int64 =
 let runMillis<'A,'B>(f: 'A -> 'B)(input: 'A) : 'B*int64 =
     run f input Milliseconds
 
+let runMillis2<'A,'B,'C>(f: 'A -> 'B -> 'C)(input1: 'A)(input2: 'B) : 'C*int64 =
+    let f' = fun () -> f input1 input2
+    run f' () Milliseconds
+
 let runTicks<'A,'B>(f: 'A -> 'B)(input: 'A) : 'B*int64 =
     run f input Ticks

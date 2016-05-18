@@ -11,7 +11,9 @@
         // a C#-friendly error model constructor
         type ErrorModel(config: FeatureConf, dag: Depends.DAG, alpha: double, progress: Depends.Progress) =
                 
-            let runEnabledFeatures() =
+            let nop = fun () -> ()
+
+            let runEnabledFeatures(cells: AST.Address[]) =
                 config.EnabledFeatures |>
                 Array.map (fun fname ->
                     // get feature lambda
@@ -21,12 +23,12 @@
                         Array.map (fun cell ->
                             progress.IncrementCounter()
                             cell, feature cell dag
-                        ) (dag.allCells())
+                        ) cells
                     
                     fname, fvals
                 ) |> adict
             
-            let buildFrequencyTable(data: ScoreTable): FreqTable =
+            let buildFrequencyTable(data: ScoreTable)(incrProgress: unit -> unit): FreqTable =
                 let d = new Dict<string*Scope.SelectID*double,int>()
                 Array.iter (fun fname ->
                     Array.iter (fun (sel: Scope.Selector) ->
@@ -37,59 +39,11 @@
                                 d.[(fname,sID,score)] <- freq + 1
                             else
                                 d.Add((fname,sID,score), 1)
-                            progress.IncrementCounter()
+                            incrProgress()
                         ) (data.[fname])
                     ) (Scope.Selector.Kinds)
                 ) (config.EnabledFeatures)
                 d
-
-            /// <summary>Analyzes the given cell using all of the configured features and produces a score.</summary>
-            /// <param name="cell">the address of a formula cell</param>
-            /// <returns>a score</returns>
-            let score(cell: AST.Address)(fname: string) : double =
-                // get feature by name
-                let f = config.FeatureByName fname
-
-                // get feature value for this cell
-                f cell dag
-
-            let rankByFeatureAndSelector(fname: string)(dag: Depends.DAG)(sel: Scope.Selector)(ftable: FreqTable) : (AST.Address*int)[] =
-                // sort by least common
-                let sorted = Array.map (fun addr ->
-                                 let sID = sel.id addr
-                                 let score = score addr fname
-                                 let freq = ftable.[(fname,sID,score)]
-                                 addr, freq
-                             ) (dag.allCells()) |>
-                             Array.sortBy (fun (addr,freq) -> freq)
-                // return the address and its rank
-                sorted |> Array.mapi (fun i (addr,freq) -> addr,i )
-
-            let rankAllFeatures(dag: Depends.DAG)(sel: Scope.Selector)(ftable: FreqTable) : Dict<AST.Address,int[]> =
-                // get per-feature rank for every cell
-                let d = new Dict<AST.Address,int[]>()
-
-                Array.iteri (fun i fname ->
-                    let ranks = rankByFeatureAndSelector fname dag sel ftable
-                    Array.iter (fun (addr,rank) ->
-                        if d.ContainsKey addr then
-                            let arr = d.[addr]
-                            arr.[i] <- rank
-                            d.[addr] <- arr
-                        else
-                            let arr = Array.zeroCreate(config.EnabledFeatures.Length)
-                            arr.[i] <- rank
-                            d.Add(addr, arr)
-                    ) ranks
-                ) (config.EnabledFeatures)
-                d
-
-            let sumFeatureRanksAndSort(ranks: Dict<AST.Address,int[]>) : Ranking =
-                Seq.map (fun (kvp: KeyValuePair<AST.Address,int[]>) ->
-                    new KeyValuePair<AST.Address,double>(kvp.Key, double(Array.sum (kvp.Value)))
-                ) ranks
-                |> Seq.toArray
-                |> Array.sortBy (fun kvp -> kvp.Value)
 
             // sum the count of the appropriate feature bin of every feature
             // for the given address
@@ -171,13 +125,29 @@
                 // return KeyValuePairs
                 Array.map (fun (addr,sum) -> new KeyValuePair<AST.Address,double>(addr,double sum)) rankedAddrs
 
-            let tryAbsolute(addr: AST.Address, faddr: AST.Address) : unit =
-                let ast = dag.getASTofFormulaAt(faddr)
+            let countBuckets(ftable: FreqTable) : int =
+                // get total number of non-zero buckets in the entire table
+                Seq.filter (fun (elem: KeyValuePair<string*Scope.SelectID*double,int>) -> elem.Value > 0) ftable
+                |> Seq.length
 
-                // find all references to addr
+            let argmin(f: 'a -> int)(xs: 'a[]) : int =
+                let fx = Array.map (fun x -> f x) xs
 
+                Array.mapi (fun i res -> (i, res)) fx |>
+                Array.fold (fun arg (i, res) ->
+                    if arg = -1 || res < fx.[arg] then
+                        i
+                    else
+                        arg
+                ) -1 
 
-                failwith "yay"
+            let transpose(mat: 'a[][]) : 'a[][] =
+                // assumes that all subarrays are the same length
+                Array.map (fun i ->
+                    Array.map (fun j ->
+                        mat.[j].[i]
+                    ) [| 0..mat.Length - 1 |]
+                ) [| 0..(mat.[0]).Length - 1 |]
 
             let inferAddressModes(r: Ranking) : Ranking =
                 // convert ranking into map
@@ -190,6 +160,15 @@
                     |> Array.map (fun cell ->
                            let cf = dag.getFormulasThatRefCell cell
 
+                           // get the set of buckets for these formulas as-is
+                           let buckets = runEnabledFeatures cf
+
+                           // compute frequency table
+                           let ftable = buildFrequencyTable buckets nop
+
+                           // find the number of histogram bins for the default interpretation
+                           let bucketCount = countBuckets ftable
+
                            // get the anomalousness of each cell's referencing formulas
                            let scores = cf |> Array.map (fun f -> scores.[f])
 
@@ -197,18 +176,22 @@
                            let asts = cf |> Array.map (fun f -> dag.getASTofFormulaAt f)
 
                            // for each referencing f, systematically generate all ref variants
-                           let fs' = cf |> Array.mapi (fun i f ->
-                                               let ast = asts.[i]
+                           let fs' = Array.mapi (fun i f ->
+                                        let ast = asts.[i]
 
-                                               let mutator = ASTMutator.mutateExpr ast cell
+                                        let mutator = ASTMutator.mutateExpr ast cell
 
-                                               let cabs_rabs = mutator AST.AddressMode.Absolute AST.AddressMode.Absolute
-                                               let cabs_rrel = mutator AST.AddressMode.Absolute AST.AddressMode.Relative
-                                               let crel_rabs = mutator AST.AddressMode.Relative AST.AddressMode.Absolute
-                                               let crel_rrel = mutator AST.AddressMode.Relative AST.AddressMode.Relative
+                                        let cabs_rabs = mutator AST.AddressMode.Absolute AST.AddressMode.Absolute
+                                        let cabs_rrel = mutator AST.AddressMode.Absolute AST.AddressMode.Relative
+                                        let crel_rabs = mutator AST.AddressMode.Relative AST.AddressMode.Absolute
+                                        let crel_rrel = mutator AST.AddressMode.Relative AST.AddressMode.Relative
 
-                                               (cabs_rabs, cabs_rrel, crel_rabs, crel_rrel)
-                                           )
+                                        [|cabs_rabs; cabs_rrel; crel_rabs; crel_rrel; |]
+                                     ) cf
+
+                            let fsT = transpose fs'
+                            
+
 
                             // for each f, create a new model
 
@@ -220,10 +203,10 @@
 
             let runModel() =
                 // get scores for each feature: featurename -> (address, score)[]
-                let (scores: ScoreTable,score_time: int64) = PerfUtils.runMillis runEnabledFeatures ()
+                let (scores: ScoreTable,score_time: int64) = PerfUtils.runMillis runEnabledFeatures (dag.allCells())
 
                 // build frequency table: (featurename, selector, score) -> freq
-                let ftable,ftable_time = PerfUtils.runMillis buildFrequencyTable scores
+                let ftable,ftable_time = PerfUtils.runMillis2 buildFrequencyTable scores (fun () -> progress.IncrementCounter())
 
                 // rank
                 let ranking,ranking_time = PerfUtils.runMillis rank ftable
