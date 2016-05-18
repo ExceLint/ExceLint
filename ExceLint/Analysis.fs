@@ -149,57 +149,73 @@
                     ) [| 0..mat.Length - 1 |]
                 ) [| 0..(mat.[0]).Length - 1 |]
 
+            let chooseLikelyAddressMode(cell: AST.Address)(rankmap: Map<AST.Address,double>)(refs: AST.Address[]) : AST.Expression option =
+                
+
+                // get the anomalousness of each cell's referencing formulas
+                let scores = refs |> Array.map (fun f -> rankmap.[f])
+
+                // get the set of buckets for these formulas as-is
+                let buckets = runEnabledFeatures refs
+
+                // compute frequency table
+                let ftable = buildFrequencyTable buckets nop
+
+                // find the number of histogram bins for the default interpretation
+                let bucketCount = countBuckets ftable
+
+                // get ASTs
+                let asts = refs |> Array.map (fun f -> dag.getASTofFormulaAt f)
+
+                // for each referencing formula, systematically generate all ref variants
+                let fs' = Array.mapi (fun i f ->
+                            let ast = asts.[i]
+
+                            let mutator = ASTMutator.mutateExpr ast cell
+
+                            let cabs_rabs = mutator AST.AddressMode.Absolute AST.AddressMode.Absolute
+                            let cabs_rrel = mutator AST.AddressMode.Absolute AST.AddressMode.Relative
+                            let crel_rabs = mutator AST.AddressMode.Relative AST.AddressMode.Absolute
+                            let crel_rrel = mutator AST.AddressMode.Relative AST.AddressMode.Relative
+
+                            [|cabs_rabs; cabs_rrel; crel_rabs; crel_rrel; |]
+                          ) refs
+
+                // make the first index the mode, the second index the formula
+                let fsT = transpose fs'
+
+                // for each mode, find the number of bins, and choose the mode resulting in the min bin
+                let mode_idx = argmin (fun formula_exprs -> ) fsT
+                
+                failwith "not yet"
+
             let inferAddressModes(r: Ranking) : Ranking =
                 // convert ranking into map
-                let scores = r |> Array.map (fun (pair: KeyValuePair<AST.Address,double>) -> (pair.Key,pair.Value))
-                               |> Map.ofArray
+                let rankmap = r |> Array.map (fun (pair: KeyValuePair<AST.Address,double>) -> (pair.Key,pair.Value))
+                                |> Map.ofArray
+
+                let refss = Array.map (fun cell -> cell, dag.getFormulasThatRefCell cell) (dag.allCells())
+                            |> Map.ofArray
+
+                // rank inputs by their impact on the ranking
+                let crank = Array.sortBy (fun cell ->
+                                Array.sumBy (fun formula ->
+                                    rankmap.[formula]
+                                ) (refss.[cell])
+                            ) (dag.allCells())
 
                 // for each input cell, try changing all refs to either abs or rel;
-                // if anomalousness drops, ascribe new semantics to cell
-                dag.allCells()
-                    |> Array.map (fun cell ->
-                           let cf = dag.getFormulasThatRefCell cell
+                // if anomalousness drops, keep new interpretation
+                let newexprs = Array.map (fun cell ->
+                                   chooseLikelyAddressMode cell rankmap
+                               ) crank
 
-                           // get the set of buckets for these formulas as-is
-                           let buckets = runEnabledFeatures cf
-
-                           // compute frequency table
-                           let ftable = buildFrequencyTable buckets nop
-
-                           // find the number of histogram bins for the default interpretation
-                           let bucketCount = countBuckets ftable
-
-                           // get the anomalousness of each cell's referencing formulas
-                           let scores = cf |> Array.map (fun f -> scores.[f])
-
-                           // get ASTs
-                           let asts = cf |> Array.map (fun f -> dag.getASTofFormulaAt f)
-
-                           // for each referencing f, systematically generate all ref variants
-                           let fs' = Array.mapi (fun i f ->
-                                        let ast = asts.[i]
-
-                                        let mutator = ASTMutator.mutateExpr ast cell
-
-                                        let cabs_rabs = mutator AST.AddressMode.Absolute AST.AddressMode.Absolute
-                                        let cabs_rrel = mutator AST.AddressMode.Absolute AST.AddressMode.Relative
-                                        let crel_rabs = mutator AST.AddressMode.Relative AST.AddressMode.Absolute
-                                        let crel_rrel = mutator AST.AddressMode.Relative AST.AddressMode.Relative
-
-                                        [|cabs_rabs; cabs_rrel; crel_rabs; crel_rrel; |]
-                                     ) cf
-
-                            let fsT = transpose fs'
-                            
+                // create new set of formulas
 
 
-                            // for each f, create a new model
+                // run anomaly
 
-
-                           
-
-                           failwith "no"
-                       )
+                failwith "not yet"
 
             let runModel() =
                 // get scores for each feature: featurename -> (address, score)[]
