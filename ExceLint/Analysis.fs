@@ -8,7 +8,6 @@
         type FreqTable = Dict<string*Scope.SelectID*double,int>
         type Ranking = KeyValuePair<AST.Address,double>[]
 
-        // a C#-friendly error model constructor
         type ErrorModel(config: FeatureConf, dag: Depends.DAG, alpha: double, progress: Depends.Progress) =
             let _significanceThreshold : int =
                 // round to integer
@@ -27,7 +26,7 @@
                  _ftable_time: int64,
                  _ranking_time: int64) = ErrorModel.runModel dag config progress
 
-            // rank cutoff
+            // compute cutoff
             let _cutoff = ErrorModel.findCutIndex _ranking _significanceThreshold
 
             member self.ScoreTimeInMilliseconds : int64 = _score_time
@@ -81,6 +80,18 @@
                                      ) d
 
                 debug |> Seq.toArray
+
+            static member mergeFTables(ftables: FreqTable[]) : FreqTable =
+                Array.reduce (fun big small ->
+                    for pair in small do
+                        let key = pair.Key
+                        let count = pair.Value
+                        if big.ContainsKey key then
+                            big.Item(key) <- big.Item(key) + count
+                        else
+                            big.Add(key, count)
+                    big
+                ) ftables
 
             static member findCutIndex(ranking: Ranking)(thresh: int): int =
                 let sigThresh = thresh
