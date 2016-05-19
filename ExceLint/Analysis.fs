@@ -7,6 +7,7 @@
         type ScoreTable = Dict<string,(AST.Address*double)[]>
         type FreqTable = Dict<string*Scope.SelectID*double,int>
         type Ranking = KeyValuePair<AST.Address,double>[]
+        type Mutant = { mutants: KeyValuePair<AST.Address,string>[]; scores: ScoreTable; freqtable: FreqTable }
 
         type ErrorModel(config: FeatureConf, dag: Depends.DAG, alpha: double, progress: Depends.Progress) =
             let _significanceThreshold : int =
@@ -206,7 +207,7 @@
                     ) [| 0..mat.Length - 1 |]
                 ) [| 0..(mat.[0]).Length - 1 |]
 
-            static member chooseLikelyAddressMode(cell: AST.Address)(rankmap: Map<AST.Address,double>)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: unit -> unit) : AST.Expression option =
+            static member chooseLikelyAddressMode(cell: AST.Address)(rankmap: Map<AST.Address,double>)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: unit -> unit) : Mutant =
                 // get the anomalousness of each cell's referencing formulas
                 let scores = refs |> Array.map (fun f -> rankmap.[f])
 
@@ -237,9 +238,8 @@
                 // make the first index the mode, the second index the formula
                 let fsT = ErrorModel.transpose fs'
 
-                // for each mode, find the number of bins, and choose the mode resulting in the min bin
-                let mode_idx = ErrorModel.argmin (fun (addrs_exprs: (AST.Address*AST.Expression)[]) ->
-                                   // generate formulas for each AST
+                let genMutants = Array.map (fun (addrs_exprs: (AST.Address*AST.Expression)[]) ->
+                                    // generate formulas for each AST
                                    let mutants = Array.map (fun (addr,ast: AST.Expression) ->
                                                     new KeyValuePair<AST.Address,string>(addr,ast.ToFormula)
                                                  ) addrs_exprs
@@ -257,11 +257,16 @@
                                    // compute frequency tables
                                    let mutFtable = ErrorModel.buildFrequencyTable mutBuckets ErrorModel.nop dag config
 
+                                   { mutants = mutants; scores = mutBuckets; freqtable = mutFtable }
+                                 ) fsT
+
+                // for each mode, find the number of bins, and choose the mode resulting in the min bin
+                let mode_idx = ErrorModel.argmin (fun mutant ->
                                    // count histogram buckets
-                                   ErrorModel.countBuckets mutFtable
-                               ) fsT
-                
-                failwith "not yet"
+                                   ErrorModel.countBuckets mutant.freqtable
+                               ) genMutants
+
+                genMutants.[mode_idx]
 
 
             static member runEnabledFeatures(cells: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: unit -> unit) =
