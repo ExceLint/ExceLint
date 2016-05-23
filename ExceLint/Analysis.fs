@@ -147,27 +147,39 @@
 
                 cut_idx
 
+            static member private toDict(arr: ('a*'b)[]) : Dict<'a,'b> =
+                // assumes that 'a is unique
+                let d = new Dict<'a,'b>(arr.Length)
+                Array.iter (fun (a,b) ->
+                    d.Add(a,b)
+                ) arr
+                d
+
             static member private inferAddressModes(r: Ranking)(dag: Depends.DAG)(config: FeatureConf)(progress: unit -> unit) : Ranking =
                 let cells = dag.allCells()
 
                 // convert ranking into map
                 let rankmap = r |> Array.map (fun (pair: KeyValuePair<AST.Address,double>) -> (pair.Key,pair.Value))
-                                |> Map.ofArray
+                                |> ErrorModel.toDict
 
-                let refss = Array.map (fun input -> input, dag.getFormulasThatRefCell input) cells |> Map.ofArray
+                let refss = Array.map (fun input -> input, dag.getFormulasThatRefCell input) cells |> ErrorModel.toDict
 
                 // rank inputs by their impact on the ranking
                 let crank = Array.sortBy (fun input ->
-                                Array.sumBy (fun formula ->
-                                    rankmap.[formula]
-                                ) (refss.[input])
+                                let sum = Array.sumBy (fun formula ->
+                                              rankmap.[formula]
+                                          ) (refss.[input])
+                                -sum
                             ) cells
 
                 // for each input cell, try changing all refs to either abs or rel;
                 // if anomalousness drops, keep new interpretation
-                let mutants = Array.map (fun cell ->
-                                  ErrorModel.chooseLikelyAddressMode cell rankmap refss.[cell] dag config progress
-                              ) crank
+                let mutants = Array.map (fun input ->
+                                if refss.[input].Length <> 0 then
+                                    Some(ErrorModel.chooseLikelyAddressMode input refss.[input] dag config progress)
+                                else
+                                    None
+                              ) crank |> Array.choose id
 
                 // create new score and frequency tables
                 let newSS = ErrorModel.mergeMutants mutants
@@ -277,7 +289,7 @@
                 ) fsT
 
 
-            static member private chooseLikelyAddressMode(cell: AST.Address)(rankmap: Map<AST.Address,double>)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: unit -> unit) : Mutant =
+            static member private chooseLikelyAddressMode(cell: AST.Address)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: unit -> unit) : Mutant =
                 // generate all variants for this cell
                 let mutants = ErrorModel.genMutants cell refs dag config
 
