@@ -5,6 +5,7 @@
     open ConfUtils
 
         type ScoreTable = Dict<string,(AST.Address*double)[]>
+        type FastScoreTable = Dict<string,Dict<AST.Address,double>>
         type FreqTable = Dict<string*Scope.SelectID*double,int>
         type Ranking = KeyValuePair<AST.Address,double>[]
         type Mutant = { mutants: KeyValuePair<AST.Address,string>[]; scores: ScoreTable; freqtable: FreqTable }
@@ -190,12 +191,14 @@
                 (scores, ftable, ranking, score_time, ftable_time, ranking_time)
 
             static member rank(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(config: FeatureConf) : Ranking =
+                let fscores = ErrorModel.makeFastScoreTable scores
+
                 // get sums for every given cell
                 // and for every enabled scope
                 let addrSums: (AST.Address*int)[] =
                     Array.map (fun addr ->
                         let sum = Array.sumBy (fun sel ->
-                                      ErrorModel.sumFeatureCounts addr (Scope.Selector.AllCells) ftable scores config
+                                      ErrorModel.sumFeatureCounts addr (Scope.Selector.AllCells) ftable fscores config
                                   ) (config.EnabledScopes)
                         addr, sum
                     ) cells
@@ -324,24 +327,27 @@
                 ) (config.EnabledFeatures)
                 d
 
-            // sum the count of the appropriate feature bin of every feature
-            // for the given address
-            static member sumFeatureCounts(addr: AST.Address)(sel: Scope.Selector)(ftable: FreqTable)(scores: ScoreTable)(config: FeatureConf) : int =
-                let d = new Dict<string,Dict<AST.Address,double>>()
+            static member makeFastScoreTable(scores: ScoreTable) : FastScoreTable =
+                let d = new Dict<string,Dict<AST.Address,double>>(scores.Count)
                 
                 Seq.iter (fun (kvp: KeyValuePair<string,(AST.Address*double)[]>) ->
-                    let dd = new Dict<AST.Address,double>()
+                    let dd = new Dict<AST.Address,double>(kvp.Value.Length)
                     Array.iter (fun (addr,score) ->
                         dd.Add(addr, score)
                     ) (kvp.Value)
                     d.Add(kvp.Key, dd)
                 ) scores
 
+                d
+
+            // sum the count of the appropriate feature bin of every feature
+            // for the given address
+            static member sumFeatureCounts(addr: AST.Address)(sel: Scope.Selector)(ftable: FreqTable)(scores: FastScoreTable)(config: FeatureConf) : int =
                 Array.sumBy (fun fname -> 
                     // get selector ID
                     let sID = sel.id addr
                     // get feature score
-                    let fscore = d.[fname].[addr]
+                    let fscore = scores.[fname].[addr]
                     // get score count
                     ftable.[(fname,sID,fscore)]
                 ) (config.EnabledFeatures)
