@@ -28,6 +28,9 @@
                  _ftable_time: int64,
                  _ranking_time: int64) = ErrorModel.runModel dag config progress
 
+            // find model that minimizes anomalousness
+            let _ranking' = ErrorModel.inferAddressModes _ranking dag config (ErrorModel.nop)
+
             // compute cutoff
             let _cutoff = ErrorModel.findCutIndex _ranking _significanceThreshold
 
@@ -83,7 +86,7 @@
 
                 debug |> Seq.toArray
 
-            static member mergeFTables(mutants: Mutant[]) : FreqTable =
+            static member private mergeFTables(mutants: Mutant[]) : FreqTable =
                 let ftables = Array.map (fun mutant -> mutant.freqtable) mutants
                 Array.reduce (fun big small ->
                     for pair in small do
@@ -96,7 +99,7 @@
                     big
                 ) ftables
 
-            static member mergeScores(mutants: Mutant[]) : ScoreTable =
+            static member private mergeScores(mutants: Mutant[]) : ScoreTable =
                 let fnames = Array.map (fun mutant ->
                                 let keys: string[] = mutant.scores.Keys |> Seq.toArray
                                 keys
@@ -111,7 +114,7 @@
                          ) fnames
                 d
 
-            static member mergeMutants(mutants: Mutant[]) : Mutant =
+            static member private mergeMutants(mutants: Mutant[]) : Mutant =
                 let scores = ErrorModel.mergeScores mutants
                 let ftable = ErrorModel.mergeFTables mutants
                 let newSS = Array.fold (fun (acc: KeyValuePair<AST.Address,string> list)(mutant: Mutant) ->
@@ -119,7 +122,7 @@
                             ) (List.empty) mutants |> Array.ofList
                 { mutants = newSS; freqtable = ftable; scores = scores }
 
-            static member findCutIndex(ranking: Ranking)(thresh: int): int =
+            static member private findCutIndex(ranking: Ranking)(thresh: int): int =
                 let sigThresh = thresh
 
                 // compute total order
@@ -144,21 +147,20 @@
 
                 cut_idx
 
-            static member inferAddressModes(r: Ranking)(dag: Depends.DAG)(config: FeatureConf)(progress: unit -> unit) : Ranking =
+            static member private inferAddressModes(r: Ranking)(dag: Depends.DAG)(config: FeatureConf)(progress: unit -> unit) : Ranking =
+                let cells = dag.allCells()
+
                 // convert ranking into map
                 let rankmap = r |> Array.map (fun (pair: KeyValuePair<AST.Address,double>) -> (pair.Key,pair.Value))
                                 |> Map.ofArray
 
-                let refss = Array.map (fun cell -> cell, dag.getFormulasThatRefCell cell) (dag.allCells())
-                            |> Map.ofArray
-
-                let cells = dag.allCells()
+                let refss = Array.map (fun input -> input, dag.getFormulasThatRefCell input) cells |> Map.ofArray
 
                 // rank inputs by their impact on the ranking
-                let crank = Array.sortBy (fun cell ->
+                let crank = Array.sortBy (fun input ->
                                 Array.sumBy (fun formula ->
                                     rankmap.[formula]
-                                ) (refss.[cell])
+                                ) (refss.[input])
                             ) cells
 
                 // for each input cell, try changing all refs to either abs or rel;
@@ -173,7 +175,7 @@
                 // rerank
                 ErrorModel.rank cells newSS.freqtable newSS.scores config
 
-            static member runModel(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress) =
+            static member private runModel(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress) =
                 let _progf = fun () -> progress.IncrementCounter()
                 let _runf = fun () -> ErrorModel.runEnabledFeatures (dag.allCells()) dag config _progf
 
@@ -190,7 +192,7 @@
 
                 (scores, ftable, ranking, score_time, ftable_time, ranking_time)
 
-            static member rank(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(config: FeatureConf) : Ranking =
+            static member private rank(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(config: FeatureConf) : Ranking =
                 let fscores = ErrorModel.makeFastScoreTable scores
 
                 // get sums for every given cell
@@ -209,12 +211,12 @@
                 // return KeyValuePairs
                 Array.map (fun (addr,sum) -> new KeyValuePair<AST.Address,double>(addr,double sum)) rankedAddrs
 
-            static member countBuckets(ftable: FreqTable) : int =
+            static member private countBuckets(ftable: FreqTable) : int =
                 // get total number of non-zero buckets in the entire table
                 Seq.filter (fun (elem: KeyValuePair<string*Scope.SelectID*double,int>) -> elem.Value > 0) ftable
                 |> Seq.length
 
-            static member argmin(f: 'a -> int)(xs: 'a[]) : int =
+            static member private argmin(f: 'a -> int)(xs: 'a[]) : int =
                 let fx = Array.map (fun x -> f x) xs
 
                 Array.mapi (fun i res -> (i, res)) fx |>
@@ -225,7 +227,7 @@
                         arg
                 ) -1 
 
-            static member transpose(mat: 'a[][]) : 'a[][] =
+            static member private transpose(mat: 'a[][]) : 'a[][] =
                 // assumes that all subarrays are the same length
                 Array.map (fun i ->
                     Array.map (fun j ->
@@ -233,7 +235,7 @@
                     ) [| 0..mat.Length - 1 |]
                 ) [| 0..(mat.[0]).Length - 1 |]
 
-            static member genMutants(cell: AST.Address)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf) : Mutant[] =
+            static member private genMutants(cell: AST.Address)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf) : Mutant[] =
                 // for each referencing formula, systematically generate all ref variants
                 let fs' = Array.mapi (fun i f ->
                             // get AST
@@ -275,7 +277,7 @@
                 ) fsT
 
 
-            static member chooseLikelyAddressMode(cell: AST.Address)(rankmap: Map<AST.Address,double>)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: unit -> unit) : Mutant =
+            static member private chooseLikelyAddressMode(cell: AST.Address)(rankmap: Map<AST.Address,double>)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: unit -> unit) : Mutant =
                 // generate all variants for this cell
                 let mutants = ErrorModel.genMutants cell refs dag config
 
@@ -287,7 +289,7 @@
 
                 mutants.[mode_idx]
 
-            static member runEnabledFeatures(cells: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: unit -> unit) =
+            static member private runEnabledFeatures(cells: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: unit -> unit) =
                 config.EnabledFeatures |>
                 Array.map (fun fname ->
                     // get feature lambda
@@ -302,7 +304,7 @@
                     fname, fvals
                 ) |> adict
 
-            static member buildFrequencyTable(data: ScoreTable)(incrProgress: unit -> unit)(dag: Depends.DAG)(config: FeatureConf): FreqTable =
+            static member private buildFrequencyTable(data: ScoreTable)(incrProgress: unit -> unit)(dag: Depends.DAG)(config: FeatureConf): FreqTable =
                 let d = new Dict<string*Scope.SelectID*double,int>()
                 Array.iter (fun fname ->
                     Array.iter (fun (sel: Scope.Selector) ->
@@ -319,7 +321,7 @@
                 ) (config.EnabledFeatures)
                 d
 
-            static member makeFastScoreTable(scores: ScoreTable) : FastScoreTable =
+            static member private makeFastScoreTable(scores: ScoreTable) : FastScoreTable =
                 let d = new Dict<string,Dict<AST.Address,double>>(scores.Count)
                 
                 Seq.iter (fun (kvp: KeyValuePair<string,(AST.Address*double)[]>) ->
@@ -334,7 +336,7 @@
 
             // sum the count of the appropriate feature bin of every feature
             // for the given address
-            static member sumFeatureCounts(addr: AST.Address)(sel: Scope.Selector)(ftable: FreqTable)(scores: FastScoreTable)(config: FeatureConf) : int =
+            static member private sumFeatureCounts(addr: AST.Address)(sel: Scope.Selector)(ftable: FreqTable)(scores: FastScoreTable)(config: FeatureConf) : int =
                 Array.sumBy (fun fname -> 
                     // get selector ID
                     let sID = sel.id addr
@@ -345,7 +347,7 @@
                 ) (config.EnabledFeatures)
 
             // "AngleMin" algorithm
-            static member dderiv(y: int[]) : int =
+            static member private dderiv(y: int[]) : int =
                 let mutable anglemin = 1
                 let mutable angleminindex = 0
                 for index in 0..(y.Length - 3) do
@@ -355,5 +357,5 @@
                         angleminindex <- index
                 angleminindex
 
-            static member nop = fun () -> ()
+            static member private nop = fun () -> ()
 
