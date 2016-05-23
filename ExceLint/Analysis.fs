@@ -5,7 +5,7 @@
     open ConfUtils
 
         type ScoreTable = Dict<string,(AST.Address*double)[]>
-        type FastScoreTable = Dict<string,Dict<AST.Address,double>>
+        type FastScoreTable = Dict<string*AST.Address,double>
         type FreqTable = Dict<string*Scope.SelectID*double,int>
         type Ranking = KeyValuePair<AST.Address,double>[]
         type Mutant = { mutants: KeyValuePair<AST.Address,string>[]; scores: ScoreTable; freqtable: FreqTable }
@@ -86,41 +86,11 @@
 
                 debug |> Seq.toArray
 
-            static member private mergeFTables(mutants: Mutant[]) : FreqTable =
-                let ftables = Array.map (fun mutant -> mutant.freqtable) mutants
-                Array.reduce (fun big small ->
-                    for pair in small do
-                        let key = pair.Key
-                        let count = pair.Value
-                        if big.ContainsKey key then
-                            big.Item(key) <- big.Item(key) + count
-                        else
-                            big.Add(key, count)
-                    big
-                ) ftables
-
-            static member private mergeScores(mutants: Mutant[]) : ScoreTable =
-                let fnames = Array.map (fun mutant ->
-                                let keys: string[] = mutant.scores.Keys |> Seq.toArray
-                                keys
-                             ) mutants |> Array.concat |> Array.distinct
-
-                let d = new Dict<string,(AST.Address*double)[]>()
-                let ss = Array.iter (fun (fname: string) ->
-                               let s = Array.map (fun mutant ->
-                                           mutant.scores.[fname]
-                                       ) mutants |> Array.concat
-                               d.Add(fname, s)
-                         ) fnames
-                d
-
-            static member private mergeMutants(mutants: Mutant[]) : Mutant =
-                let scores = ErrorModel.mergeScores mutants
-                let ftable = ErrorModel.mergeFTables mutants
-                let newSS = Array.fold (fun (acc: KeyValuePair<AST.Address,string> list)(mutant: Mutant) ->
-                                (mutant.mutants |> Array.toList) @ acc
-                            ) (List.empty) mutants |> Array.ofList
-                { mutants = newSS; freqtable = ftable; scores = scores }
+            static member private mutantDAG(mutants: Mutant[])(dag: Depends.DAG) : Depends.DAG =
+                let fs = Array.fold (fun (acc: KeyValuePair<AST.Address,string> list)(mutant: Mutant) ->
+                             (mutant.mutants |> Array.toList) @ acc
+                         ) (List.empty) mutants |> Array.ofList
+                dag.CopyWithUpdatedFormulas fs
 
             static member private findCutIndex(ranking: Ranking)(thresh: int): int =
                 let sigThresh = thresh
@@ -182,10 +152,16 @@
                               ) crank |> Array.choose id
 
                 // create new score and frequency tables
-                let newSS = ErrorModel.mergeMutants mutants
+                let dag' = ErrorModel.mutantDAG mutants dag
+
+                // score
+                let scores = ErrorModel.runEnabledFeatures cells dag' config progress
+
+                // count freqs
+                let freqs = ErrorModel.buildFrequencyTable scores progress dag' config
 
                 // rerank
-                ErrorModel.rank cells newSS.freqtable newSS.scores config
+                ErrorModel.rank cells freqs scores config
 
             static member private runModel(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress) =
                 let _progf = fun () -> progress.IncrementCounter()
@@ -296,6 +272,7 @@
                 // find the variant that minimizes the bucket count
                 let mode_idx = ErrorModel.argmin (fun mutant ->
                                    // count histogram buckets
+                                   failwith "We need to ensure that we choose the original bin if it is already minimal"
                                    ErrorModel.countBuckets mutant.freqtable
                                ) mutants
 
@@ -334,14 +311,24 @@
                 d
 
             static member private makeFastScoreTable(scores: ScoreTable) : FastScoreTable =
-                let d = new Dict<string,Dict<AST.Address,double>>(scores.Count)
+                let mutable max = 0
+                for arr in scores do
+                    if arr.Value.Length > max then
+                        max <- arr.Value.Length
+
+                let d = new Dict<string*AST.Address,double>(max * scores.Count)
                 
                 Seq.iter (fun (kvp: KeyValuePair<string,(AST.Address*double)[]>) ->
-                    let dd = new Dict<AST.Address,double>(kvp.Value.Length)
+                    let fname = kvp.Key
+                    let arr = kvp.Value
                     Array.iter (fun (addr,score) ->
-                        dd.Add(addr, score)
-                    ) (kvp.Value)
-                    d.Add(kvp.Key, dd)
+                        if d.ContainsKey(fname,addr) then
+                            let bin = d.[fname,addr]
+                            let me = score
+                            let arr' = arr
+                            failwith "huh?"
+                        d.Add((fname,addr), score)
+                    ) arr
                 ) scores
 
                 d
@@ -353,7 +340,7 @@
                     // get selector ID
                     let sID = sel.id addr
                     // get feature score
-                    let fscore = scores.[fname].[addr]
+                    let fscore = scores.[fname,addr]
                     // get score count
                     ftable.[(fname,sID,fscore)]
                 ) (config.EnabledFeatures)
