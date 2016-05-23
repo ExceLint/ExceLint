@@ -234,18 +234,6 @@
                 ) [| 0..(mat.[0]).Length - 1 |]
 
             static member chooseLikelyAddressMode(cell: AST.Address)(rankmap: Map<AST.Address,double>)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: unit -> unit) : Mutant =
-                // get the anomalousness of each cell's referencing formulas
-                let scores = refs |> Array.map (fun f -> rankmap.[f])
-
-                // get the set of buckets for these formulas as-is
-                let buckets = ErrorModel.runEnabledFeatures refs dag config ErrorModel.nop
-
-                // compute frequency table
-                let ftable = ErrorModel.buildFrequencyTable buckets ErrorModel.nop dag config
-
-                // find the number of histogram bins for the default interpretation
-                let bucketCount = ErrorModel.countBuckets ftable
-
                 // for each referencing formula, systematically generate all ref variants
                 let fs' = Array.mapi (fun i f ->
                             // get AST
