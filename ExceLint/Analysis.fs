@@ -82,7 +82,8 @@
 
                 debug |> Seq.toArray
 
-            static member mergeFTables(ftables: FreqTable[]) : FreqTable =
+            static member mergeFTables(mutants: Mutant[]) : FreqTable =
+                let ftables = Array.map (fun mutant -> mutant.freqtable) mutants
                 Array.reduce (fun big small ->
                     for pair in small do
                         let key = pair.Key
@@ -93,6 +94,29 @@
                             big.Add(key, count)
                     big
                 ) ftables
+
+            static member mergeScores(mutants: Mutant[]) : ScoreTable =
+                let fnames = Array.map (fun mutant ->
+                                let keys: string[] = mutant.scores.Keys |> Seq.toArray
+                                keys
+                             ) mutants |> Array.concat |> Array.distinct
+
+                let d = new Dict<string,(AST.Address*double)[]>()
+                let ss = Array.iter (fun (fname: string) ->
+                               let s = Array.map (fun mutant ->
+                                           mutant.scores.[fname]
+                                       ) mutants |> Array.concat
+                               d.Add(fname, s)
+                         ) fnames
+                d
+
+            static member mergeMutants(mutants: Mutant[]) : Mutant =
+                let scores = ErrorModel.mergeScores mutants
+                let ftable = ErrorModel.mergeFTables mutants
+                let newSS = Array.fold (fun (acc: KeyValuePair<AST.Address,string> list)(mutant: Mutant) ->
+                                (mutant.mutants |> Array.toList) @ acc
+                            ) (List.empty) mutants |> Array.ofList
+                { mutants = newSS; freqtable = ftable; scores = scores }
 
             static member findCutIndex(ranking: Ranking)(thresh: int): int =
                 let sigThresh = thresh
@@ -127,55 +151,54 @@
                 let refss = Array.map (fun cell -> cell, dag.getFormulasThatRefCell cell) (dag.allCells())
                             |> Map.ofArray
 
+                let cells = dag.allCells()
+
                 // rank inputs by their impact on the ranking
                 let crank = Array.sortBy (fun cell ->
                                 Array.sumBy (fun formula ->
                                     rankmap.[formula]
                                 ) (refss.[cell])
-                            ) (dag.allCells())
+                            ) cells
 
                 // for each input cell, try changing all refs to either abs or rel;
                 // if anomalousness drops, keep new interpretation
-                let newexprs = Array.map (fun cell ->
-                                   ErrorModel.chooseLikelyAddressMode cell rankmap refss.[cell] dag config progress
-                               ) crank
+                let mutants = Array.map (fun cell ->
+                                  ErrorModel.chooseLikelyAddressMode cell rankmap refss.[cell] dag config progress
+                              ) crank
 
-                // create new set of formulas
+                // create new score and frequency tables
+                let newSS = ErrorModel.mergeMutants mutants
 
-
-                // run anomaly
-
-                failwith "not yet"
+                // rerank
+                ErrorModel.rank cells newSS.freqtable newSS.scores config
 
             static member runModel(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress) =
                 let _progf = fun () -> progress.IncrementCounter()
                 let _runf = fun () -> ErrorModel.runEnabledFeatures (dag.allCells()) dag config _progf
-                
 
                 // get scores for each feature: featurename -> (address, score)[]
                 let (scores: ScoreTable,score_time: int64) = PerfUtils.runMillis _runf ()
-
 
                 // build frequency table: (featurename, selector, score) -> freq
                 let _freqf = fun () -> ErrorModel.buildFrequencyTable scores _progf dag config
                 let ftable,ftable_time = PerfUtils.runMillis _freqf ()
 
                 // rank
-                let _rankf = fun () -> ErrorModel.rank ftable dag config
+                let _rankf = fun () -> ErrorModel.rank (dag.allCells()) ftable scores config
                 let ranking,ranking_time = PerfUtils.runMillis _rankf ()
 
                 (scores, ftable, ranking, score_time, ftable_time, ranking_time)
 
-            static member rank(ftable: FreqTable)(dag: Depends.DAG)(config: FeatureConf) : Ranking =
-                // get sums for every address
+            static member rank(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(config: FeatureConf) : Ranking =
+                // get sums for every given cell
                 // and for every enabled scope
                 let addrSums: (AST.Address*int)[] =
                     Array.map (fun addr ->
                         let sum = Array.sumBy (fun sel ->
-                                      ErrorModel.sumFeatureCounts addr (Scope.Selector.AllCells) ftable dag config
+                                      ErrorModel.sumFeatureCounts addr (Scope.Selector.AllCells) ftable scores config
                                   ) (config.EnabledScopes)
                         addr, sum
-                    ) (dag.allCells())
+                    ) cells
 
                 // rank by sum (smallest first)
                 let rankedAddrs: (AST.Address*int)[] = Array.sortBy (fun (addr,sum) -> sum) addrSums
@@ -283,7 +306,7 @@
                     
                     fname, fvals
                 ) |> adict
-            
+
             static member buildFrequencyTable(data: ScoreTable)(incrProgress: unit -> unit)(dag: Depends.DAG)(config: FeatureConf): FreqTable =
                 let d = new Dict<string*Scope.SelectID*double,int>()
                 Array.iter (fun fname ->
@@ -303,14 +326,19 @@
 
             // sum the count of the appropriate feature bin of every feature
             // for the given address
-            static member sumFeatureCounts(addr: AST.Address)(sel: Scope.Selector)(ftable: FreqTable)(dag: Depends.DAG)(config: FeatureConf) : int =
+            static member sumFeatureCounts(addr: AST.Address)(sel: Scope.Selector)(ftable: FreqTable)(scores: ScoreTable)(config: FeatureConf) : int =
+                let scoreMultiMap = scores
+                                    |> Seq.map (fun (kvp: KeyValuePair<string,(AST.Address*double)[]>) ->
+                                           kvp.Key, kvp.Value |> Map.ofArray
+                                       ) |> Map.ofSeq
+
                 Array.sumBy (fun fname -> 
                     // get feature
                     let feature = config.FeatureByName fname
                     // get selector ID
                     let sID = sel.id addr
                     // get feature score
-                    let fscore = feature addr dag
+                    let fscore = scoreMultiMap.[fname].[addr]
                     // get score count
                     ftable.[(fname,sID,fscore)]
                 ) (config.EnabledFeatures)
