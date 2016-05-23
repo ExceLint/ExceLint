@@ -233,7 +233,7 @@
                     ) [| 0..mat.Length - 1 |]
                 ) [| 0..(mat.[0]).Length - 1 |]
 
-            static member chooseLikelyAddressMode(cell: AST.Address)(rankmap: Map<AST.Address,double>)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: unit -> unit) : Mutant =
+            static member genMutants(cell: AST.Address)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf) : Mutant[] =
                 // for each referencing formula, systematically generate all ref variants
                 let fs' = Array.mapi (fun i f ->
                             // get AST
@@ -252,36 +252,40 @@
                 // make the first index the mode, the second index the formula
                 let fsT = ErrorModel.transpose fs'
 
-                let genMutants = Array.map (fun (addrs_exprs: (AST.Address*AST.Expression)[]) ->
-                                    // generate formulas for each AST
-                                   let mutants = Array.map (fun (addr,ast: AST.Expression) ->
-                                                    new KeyValuePair<AST.Address,string>(addr,ast.ToFormula)
-                                                 ) addrs_exprs
+                Array.map (fun (addrs_exprs: (AST.Address*AST.Expression)[]) ->
+                    // generate formulas for each AST
+                    let mutants = Array.map (fun (addr,ast: AST.Expression) ->
+                                    new KeyValuePair<AST.Address,string>(addr,ast.ToFormula)
+                                    ) addrs_exprs
 
-                                   // get new DAG
-                                   let dag' = dag.CopyWithUpdatedFormulas mutants
+                    // get new DAG
+                    let dag' = dag.CopyWithUpdatedFormulas mutants
 
-                                   // get the set of buckets
-                                   let mutBuckets = ErrorModel.runEnabledFeatures (
-                                                        Array.map (fun (kvp: KeyValuePair<AST.Address,string>) ->
-                                                            kvp.Key
-                                                        ) mutants
-                                                    ) dag' config ErrorModel.nop
+                    // get the set of buckets
+                    let mutBuckets = ErrorModel.runEnabledFeatures (
+                                        Array.map (fun (kvp: KeyValuePair<AST.Address,string>) ->
+                                            kvp.Key
+                                        ) mutants
+                                     ) dag' config ErrorModel.nop
 
-                                   // compute frequency tables
-                                   let mutFtable = ErrorModel.buildFrequencyTable mutBuckets ErrorModel.nop dag config
+                    // compute frequency tables
+                    let mutFtable = ErrorModel.buildFrequencyTable mutBuckets ErrorModel.nop dag config
+                    
+                    { mutants = mutants; scores = mutBuckets; freqtable = mutFtable }
+                ) fsT
 
-                                   { mutants = mutants; scores = mutBuckets; freqtable = mutFtable }
-                                 ) fsT
 
-                // for each mode, find the number of bins, and choose the mode resulting in the min bin
+            static member chooseLikelyAddressMode(cell: AST.Address)(rankmap: Map<AST.Address,double>)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: unit -> unit) : Mutant =
+                // generate all variants for this cell
+                let mutants = ErrorModel.genMutants cell refs dag config
+
+                // find the variant that minimizes the bucket count
                 let mode_idx = ErrorModel.argmin (fun mutant ->
                                    // count histogram buckets
                                    ErrorModel.countBuckets mutant.freqtable
-                               ) genMutants
+                               ) mutants
 
-                genMutants.[mode_idx]
-
+                mutants.[mode_idx]
 
             static member runEnabledFeatures(cells: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: unit -> unit) =
                 config.EnabledFeatures |>
