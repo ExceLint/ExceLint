@@ -265,18 +265,36 @@
                 ) fsT
 
 
-            static member private chooseLikelyAddressMode(cell: AST.Address)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: unit -> unit) : Mutant =
-                // generate all variants for this cell
-                let mutants = ErrorModel.genMutants cell refs dag config
+            static member private chooseLikelyAddressMode(input: AST.Address)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: unit -> unit) : Mutant =
+                // generate all variants for the formulas that refer to this cell
+                let mutants = ErrorModel.genMutants input refs dag config
 
-                // find the variant that minimizes the bucket count
+                // count the buckets for the default
+                let ref_fs = Array.map (fun (ref: AST.Address) ->
+                                new KeyValuePair<AST.Address,string>(ref,dag.getFormulaAtAddress(ref))
+                             ) refs
+                let def_buckets = ErrorModel.runEnabledFeatures (
+                                        Array.map (fun (kvp: KeyValuePair<AST.Address,string>) ->
+                                            kvp.Key
+                                        ) ref_fs
+                                     ) dag config ErrorModel.nop
+                let def_freq = ErrorModel.buildFrequencyTable def_buckets ErrorModel.nop dag config
+                let def_count = ErrorModel.countBuckets def_freq
+
+                // find the variants that minimize the bucket count
+                let mutant_counts = Array.map (fun mutant ->
+                                        failwith "these counts must be wrong"
+                                        ErrorModel.countBuckets mutant.freqtable
+                                    ) mutants
                 let mode_idx = ErrorModel.argmin (fun mutant ->
                                    // count histogram buckets
-                                   failwith "We need to ensure that we choose the original bin if it is already minimal"
                                    ErrorModel.countBuckets mutant.freqtable
                                ) mutants
 
-                mutants.[mode_idx]
+                if mutant_counts.[mode_idx] < def_count then
+                    mutants.[mode_idx]
+                else
+                    { mutants = ref_fs; scores = def_buckets; freqtable = def_freq; }
 
             static member private runEnabledFeatures(cells: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: unit -> unit) =
                 config.EnabledFeatures |>
