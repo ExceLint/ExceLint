@@ -3,7 +3,6 @@
     open System.Collections
     open System
     open ConfUtils
-    open Microsoft.Office.Interop.Excel
 
         type ScoreTable = Dict<string,(AST.Address*double)[]>
         type FastScoreTable = Dict<string*AST.Address,double>
@@ -11,7 +10,7 @@
         type Ranking = KeyValuePair<AST.Address,double>[]
         type Mutant = { mutants: KeyValuePair<AST.Address,string>[]; scores: ScoreTable; freqtable: FreqTable }
 
-        type ErrorModel(config: FeatureConf, dag: Depends.DAG, alpha: double, progress: Depends.Progress) =
+        type ErrorModel(config: FeatureConf, dag: Depends.DAG, alpha: double, progress: Depends.Progress, app: Microsoft.Office.Interop.Excel.Application) =
             let _significanceThreshold : int =
                 // round to integer
                 int (
@@ -30,7 +29,7 @@
                  _ranking_time: int64) = ErrorModel.runModel dag config progress
 
             // find model that minimizes anomalousness
-            let _ranking' = ErrorModel.inferAddressModes _ranking dag config (ErrorModel.nop)
+            let _ranking' = ErrorModel.inferAddressModes _ranking dag config (ErrorModel.nop) app
 
             // compute cutoff
             let _cutoff = ErrorModel.findCutIndex _ranking _significanceThreshold
@@ -87,7 +86,7 @@
 
                 debug |> Seq.toArray
 
-            static member private mutantDAG(mutants: Mutant[])(dag: Depends.DAG)(app: Application)(p: Depends.Progress) : Depends.DAG =
+            static member private mutantDAG(mutants: Mutant[])(dag: Depends.DAG)(app: Microsoft.Office.Interop.Excel.Application)(p: Depends.Progress) : Depends.DAG =
                 let fs = Array.fold (fun (acc: KeyValuePair<AST.Address,string> list)(mutant: Mutant) ->
                              (mutant.mutants |> Array.toList) @ acc
                          ) (List.empty) mutants |> Array.ofList
@@ -126,7 +125,7 @@
                 ) arr
                 d
 
-            static member private inferAddressModes(r: Ranking)(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress)(app: Application) : Ranking =
+            static member private inferAddressModes(r: Ranking)(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress)(app: Microsoft.Office.Interop.Excel.Application) : Ranking =
                 let cells = dag.allCells()
 
                 // convert ranking into map
@@ -223,7 +222,7 @@
                     ) [| 0..mat.Length - 1 |]
                 ) [| 0..(mat.[0]).Length - 1 |]
 
-            static member private genMutants(cell: AST.Address)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress)(app: Application) : Mutant[] =
+            static member private genMutants(cell: AST.Address)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress)(app: Microsoft.Office.Interop.Excel.Application) : Mutant[] =
                 // for each referencing formula, systematically generate all ref variants
                 let fs' = Array.mapi (fun i f ->
                             // get AST
@@ -265,7 +264,7 @@
                 ) fsT
 
 
-            static member private chooseLikelyAddressMode(input: AST.Address)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress)(app: Application) : Mutant =
+            static member private chooseLikelyAddressMode(input: AST.Address)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress)(app: Microsoft.Office.Interop.Excel.Application) : Mutant =
                 // generate all variants for the formulas that refer to this cell
                 let mutants = ErrorModel.genMutants input refs dag config progress app
 

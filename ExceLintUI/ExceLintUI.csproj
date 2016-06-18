@@ -156,12 +156,6 @@
     can be found.
   -->
   <ItemGroup>
-    <Compile Include="CellFixForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="CellFixForm.Designer.cs">
-      <DependentUpon>CellFixForm.cs</DependentUpon>
-    </Compile>
     <Compile Include="ColorDict.cs" />
     <Compile Include="ExceLintRibbon.cs">
       <SubType>Component</SubType>
@@ -180,9 +174,6 @@
     </Compile>
     <Compile Include="RibbonHelper.cs" />
     <Compile Include="WorkbookState.cs" />
-    <EmbeddedResource Include="CellFixForm.resx">
-      <DependentUpon>CellFixForm.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="ExceLintRibbon.resx">
       <DependentUpon>ExceLintRibbon.cs</DependentUpon>
     </EmbeddedResource>

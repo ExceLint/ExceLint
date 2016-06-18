@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Excel = Microsoft.Office.Interop.Excel;
-using Depends;
 using FullyQualifiedVector = ExceLint.Vector.FullyQualifiedVector;
 using RelativeVector = System.Tuple<int, int, int>;
 using Score = System.Collections.Generic.KeyValuePair<AST.Address, double>;
@@ -33,7 +32,7 @@ namespace ExceLintUI
         //private Score[] _flaggable;
         private Analysis _analysis;
         private AST.Address _flagged_cell;
-        private DAG _dag;
+        private Depends.DAG _dag;
         private bool _debug_mode = false;
         private bool _dag_changed = false;
 
@@ -121,10 +120,10 @@ namespace ExceLintUI
             // build DAG
             UpdateDAG(forceDAGBuild);
 
-            Func<Progress, ExceLint.ErrorModel> f = (Progress p) =>
+            Func<Depends.Progress, ExceLint.ErrorModel> f = (Depends.Progress p) =>
              {
                 // find all vectors for formula under the cursor
-                return new ExceLint.ErrorModel(config, _dag, _tool_significance, p);
+                return new ExceLint.ErrorModel(config, _dag, _tool_significance, p, _app);
              };
 
             var model = buildDAGAndDoStuff(forceDAGBuild, f, 3);
@@ -148,8 +147,8 @@ namespace ExceLintUI
             return scores.Select(tup => addr + " -> " + tup.Item1 + ": " + tup.Item2).ToArray();
         }
 
-        private delegate RelativeVector[] VectorSelector(AST.Address addr, DAG dag);
-        private delegate FullyQualifiedVector[] AbsVectorSelector(AST.Address addr, DAG dag);
+        private delegate RelativeVector[] VectorSelector(AST.Address addr, Depends.DAG dag);
+        private delegate FullyQualifiedVector[] AbsVectorSelector(AST.Address addr, Depends.DAG dag);
 
         private void getRawVectors(AbsVectorSelector f, Boolean forceDAGBuild)
         {
@@ -214,43 +213,43 @@ namespace ExceLintUI
 
         public void getMixedFormulaVectors(Boolean forceDAGBuild)
         {
-            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(cell: addr, dag: dag, transitive: false, isForm: true, isRel: true, isMixed: true, isOSI: true);
+            VectorSelector f = (AST.Address addr, Depends.DAG dag) => ExceLint.Vector.getVectors(cell: addr, dag: dag, transitive: false, isForm: true, isRel: true, isMixed: true, isOSI: true);
             getVectors(f, forceDAGBuild);
         }
 
         public void getFormulaRelVectors(Boolean forceDAGBuild)
         {
-            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, true, true, true, isOSI: true);
+            VectorSelector f = (AST.Address addr, Depends.DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, true, true, true, isOSI: true);
             getVectors(f, forceDAGBuild);
         }
 
         public void getFormulaAbsVectors(Boolean forceDAGBuild)
         {
-            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, true, false, true, isOSI: true);
+            VectorSelector f = (AST.Address addr, Depends.DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, true, false, true, isOSI: true);
             getVectors(f, forceDAGBuild);
         }
 
         public void getDataRelVectors(Boolean forceDAGBuild)
         {
-            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, false, true, true, isOSI: true);
+            VectorSelector f = (AST.Address addr, Depends.DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, false, true, true, isOSI: true);
             getVectors(f, forceDAGBuild);
         }
 
         public void getDataAbsVectors(Boolean forceDAGBuild)
         {
-            VectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, false, false, true, isOSI: true);
+            VectorSelector f = (AST.Address addr, Depends.DAG dag) => ExceLint.Vector.getVectors(addr, dag, false, false, false, true, isOSI: true);
             getVectors(f, forceDAGBuild);
         }
 
         public void getRawFormulaVectors(Boolean forceDAGBuild)
         {
-            AbsVectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.inputVectors(addr, dag, true);
+            AbsVectorSelector f = (AST.Address addr, Depends.DAG dag) => ExceLint.Vector.inputVectors(addr, dag, true);
             getRawVectors(f, forceDAGBuild);
         }
 
         public void getRawDataVectors(Boolean forceDAGBuild)
         {
-            AbsVectorSelector f = (AST.Address addr, DAG dag) => ExceLint.Vector.outputVectors(addr, dag, true);
+            AbsVectorSelector f = (AST.Address addr, Depends.DAG dag) => ExceLint.Vector.outputVectors(addr, dag, true);
             getRawVectors(f, forceDAGBuild);
         }
 
@@ -277,13 +276,13 @@ namespace ExceLintUI
         }
 
         // this lets us reuse the progressbar for other work
-        private T buildDAGAndDoStuff<T>(Boolean forceDAGBuild, Func<Progress,T> doStuff, long workMultiplier)
+        private T buildDAGAndDoStuff<T>(Boolean forceDAGBuild, Func<Depends.Progress,T> doStuff, long workMultiplier)
         {
             using (var pb = new ProgBar())
             {
                 // create progress delegate
-                ProgressBarIncrementer incr = () => pb.IncrementProgress();
-                var p = new Progress(incr, workMultiplier);
+                Depends.ProgressBarIncrementer incr = () => pb.IncrementProgress();
+                var p = new Depends.Progress(incr, workMultiplier);
 
                 RefreshDAG(forceDAGBuild, p);
 
@@ -293,19 +292,19 @@ namespace ExceLintUI
 
         private void UpdateDAG(Boolean forceDAGBuild)
         {
-            Func<Progress,int> f = (Progress p) => 1;
+            Func<Depends.Progress,int> f = (Depends.Progress p) => 1;
             buildDAGAndDoStuff(forceDAGBuild, f, 1L);
         }
 
-        private void RefreshDAG(Boolean forceDAGBuild, Progress p)
+        private void RefreshDAG(Boolean forceDAGBuild, Depends.Progress p)
         {
             if (_dag == null)
             {
-                _dag = DAG.DAGFromCache(forceDAGBuild, _app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, CACHEDIRPATH, p);
+                _dag = Depends.DAG.DAGFromCache(forceDAGBuild, _app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, CACHEDIRPATH, p);
             }
             else if (_dag_changed || forceDAGBuild)
             {
-                _dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, p);
+                _dag = new Depends.DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, p);
                 _dag_changed = false;
                 resetTool();
             }
@@ -381,7 +380,7 @@ namespace ExceLintUI
             // build data dependence graph
             try
             {
-                Func<Progress, Analysis> f = (Progress p) =>
+                Func<Depends.Progress, Analysis> f = (Depends.Progress p) =>
                 {
                     // sanity check
                     if (_dag.getAllFormulaAddrs().Length == 0)
@@ -393,7 +392,7 @@ namespace ExceLintUI
                     else
                     {
                         // run analysis
-                        var model = new ExceLint.ErrorModel(config, _dag, _tool_significance, p);
+                        var model = new ExceLint.ErrorModel(config, _dag, _tool_significance, p, _app);
                         Score[] scores = model.rankByFeatureSum();
                         int cutoff = model.getSignificanceCutoff;
                         return new Analysis { scores = scores, ranOK = true, cutoff = cutoff, model = model, hasRun = true };
@@ -673,50 +672,9 @@ namespace ExceLintUI
             flag();
         }
 
-        internal void fixError(Action<WorkbookState> setUIState, ExceLint.FeatureConf config)
-        {
-            var cell = ParcelCOMShim.Address.GetCOMObject(_flagged_cell, _app);
-            // this callback gets run when the user clicks "OK"
-            System.Action callback = () =>
-            {
-                // add the cell to the known good list
-                _audited.Add(_flagged_cell);
-
-                // unflag the cell
-                _flagged_cell = null;
-                try
-                {
-                    // when a user fixes something, we need to re-run the analysis
-                    analyze(MAX_DURATION_IN_MS, config, forceDAGBuild: true);
-                    // and flag again
-                    flag();
-                    // and then set the UI state
-                    setUIState(this);
-                }
-                catch (Parcel.ParseException ex)
-                {
-                    System.Windows.Forms.Clipboard.SetText(ex.Message);
-                    System.Windows.Forms.MessageBox.Show("Could not parse the formula string:\n" + ex.Message);
-                    return;
-                }
-                catch (System.OutOfMemoryException ex)
-                {
-                    System.Windows.Forms.MessageBox.Show("Insufficient memory to perform analysis.");
-                    return;
-                }
-
-            };
-            // show the form
-            var fixform = new CellFixForm(cell, GREEN, callback);
-            fixform.Show();
-
-            // restore output colors
-            restoreOutputColors();
-        }
-
         public string ToDOT()
         {
-            var dag = new DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
+            var dag = new Depends.DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
             return dag.ToDOT();
         }
     }
