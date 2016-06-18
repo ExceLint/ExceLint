@@ -3,6 +3,7 @@
     open System.Collections
     open System
     open ConfUtils
+    open Microsoft.Office.Interop.Excel
 
         type ScoreTable = Dict<string,(AST.Address*double)[]>
         type FastScoreTable = Dict<string*AST.Address,double>
@@ -86,11 +87,11 @@
 
                 debug |> Seq.toArray
 
-            static member private mutantDAG(mutants: Mutant[])(dag: Depends.DAG) : Depends.DAG =
+            static member private mutantDAG(mutants: Mutant[])(dag: Depends.DAG)(app: Application)(p: Depends.Progress) : Depends.DAG =
                 let fs = Array.fold (fun (acc: KeyValuePair<AST.Address,string> list)(mutant: Mutant) ->
                              (mutant.mutants |> Array.toList) @ acc
                          ) (List.empty) mutants |> Array.ofList
-                dag.CopyWithUpdatedFormulas fs
+                dag.CopyWithUpdatedFormulas(fs, app, true, p)
 
             static member private findCutIndex(ranking: Ranking)(thresh: int): int =
                 let sigThresh = thresh
@@ -125,7 +126,7 @@
                 ) arr
                 d
 
-            static member private inferAddressModes(r: Ranking)(dag: Depends.DAG)(config: FeatureConf)(progress: unit -> unit) : Ranking =
+            static member private inferAddressModes(r: Ranking)(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress)(app: Application) : Ranking =
                 let cells = dag.allCells()
 
                 // convert ranking into map
@@ -146,13 +147,13 @@
                 // if anomalousness drops, keep new interpretation
                 let mutants = Array.map (fun input ->
                                 if refss.[input].Length <> 0 then
-                                    Some(ErrorModel.chooseLikelyAddressMode input refss.[input] dag config progress)
+                                    Some(ErrorModel.chooseLikelyAddressMode input refss.[input] dag config progress app)
                                 else
                                     None
                               ) crank |> Array.choose id
 
                 // create new score and frequency tables
-                let dag' = ErrorModel.mutantDAG mutants dag
+                let dag' = ErrorModel.mutantDAG mutants dag app progress
 
                 // score
                 let scores = ErrorModel.runEnabledFeatures cells dag' config progress
@@ -164,14 +165,13 @@
                 ErrorModel.rank cells freqs scores config
 
             static member private runModel(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress) =
-                let _progf = fun () -> progress.IncrementCounter()
-                let _runf = fun () -> ErrorModel.runEnabledFeatures (dag.allCells()) dag config _progf
+                let _runf = fun () -> ErrorModel.runEnabledFeatures (dag.allCells()) dag config progress
 
                 // get scores for each feature: featurename -> (address, score)[]
                 let (scores: ScoreTable,score_time: int64) = PerfUtils.runMillis _runf ()
 
                 // build frequency table: (featurename, selector, score) -> freq
-                let _freqf = fun () -> ErrorModel.buildFrequencyTable scores _progf dag config
+                let _freqf = fun () -> ErrorModel.buildFrequencyTable scores progress dag config
                 let ftable,ftable_time = PerfUtils.runMillis _freqf ()
 
                 // rank
@@ -223,7 +223,7 @@
                     ) [| 0..mat.Length - 1 |]
                 ) [| 0..(mat.[0]).Length - 1 |]
 
-            static member private genMutants(cell: AST.Address)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf) : Mutant[] =
+            static member private genMutants(cell: AST.Address)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress)(app: Application) : Mutant[] =
                 // for each referencing formula, systematically generate all ref variants
                 let fs' = Array.mapi (fun i f ->
                             // get AST
@@ -249,7 +249,7 @@
                                     ) addrs_exprs
 
                     // get new DAG
-                    let dag' = dag.CopyWithUpdatedFormulas mutants
+                    let dag' = dag.CopyWithUpdatedFormulas(mutants, app, true, progress)
 
                     // get the set of buckets
                     let mutBuckets = ErrorModel.runEnabledFeatures (
@@ -265,9 +265,9 @@
                 ) fsT
 
 
-            static member private chooseLikelyAddressMode(input: AST.Address)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: unit -> unit) : Mutant =
+            static member private chooseLikelyAddressMode(input: AST.Address)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress)(app: Application) : Mutant =
                 // generate all variants for the formulas that refer to this cell
-                let mutants = ErrorModel.genMutants input refs dag config
+                let mutants = ErrorModel.genMutants input refs dag config progress app
 
                 // count the buckets for the default
                 let ref_fs = Array.map (fun (ref: AST.Address) ->
@@ -283,9 +283,9 @@
 
                 // find the variants that minimize the bucket count
                 let mutant_counts = Array.map (fun mutant ->
-                                        failwith "these counts must be wrong"
                                         ErrorModel.countBuckets mutant.freqtable
                                     ) mutants
+
                 let mode_idx = ErrorModel.argmin (fun mutant ->
                                    // count histogram buckets
                                    ErrorModel.countBuckets mutant.freqtable
@@ -296,7 +296,7 @@
                 else
                     { mutants = ref_fs; scores = def_buckets; freqtable = def_freq; }
 
-            static member private runEnabledFeatures(cells: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: unit -> unit) =
+            static member private runEnabledFeatures(cells: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress) =
                 config.EnabledFeatures |>
                 Array.map (fun fname ->
                     // get feature lambda
@@ -304,14 +304,14 @@
 
                     let fvals =
                         Array.map (fun cell ->
-                            progress()
+                            progress.IncrementCounter()
                             cell, feature cell dag
                         ) cells
                     
                     fname, fvals
                 ) |> adict
 
-            static member private buildFrequencyTable(data: ScoreTable)(incrProgress: unit -> unit)(dag: Depends.DAG)(config: FeatureConf): FreqTable =
+            static member private buildFrequencyTable(data: ScoreTable)(progress: Depends.Progress)(dag: Depends.DAG)(config: FeatureConf): FreqTable =
                 let d = new Dict<string*Scope.SelectID*double,int>()
                 Array.iter (fun fname ->
                     Array.iter (fun (sel: Scope.Selector) ->
@@ -322,7 +322,7 @@
                                 d.[(fname,sID,score)] <- freq + 1
                             else
                                 d.Add((fname,sID,score), 1)
-                            incrProgress()
+                            progress.IncrementCounter()
                         ) (data.[fname])
                     ) (Scope.Selector.Kinds)
                 ) (config.EnabledFeatures)
@@ -374,5 +374,5 @@
                         angleminindex <- index
                 angleminindex
 
-            static member private nop = fun () -> ()
+            static member private nop = Depends.Progress.NOPProgress()
 
