@@ -15,6 +15,7 @@
         | :? AST.ReferenceConstant as rc -> rc :> AST.Reference
         | :? AST.ReferenceString as rs -> rs :> AST.Reference
         | :? AST.ReferenceNamed as rn -> rn :> AST.Reference
+        | _ -> failwith "Unknown reference type."
 
     and mutateAddress(ra: AST.ReferenceAddress)(ref: AST.Address)(newCMode: AST.AddressMode)(newRMode: AST.AddressMode) : AST.ReferenceAddress =
         if ra.Address = ref then

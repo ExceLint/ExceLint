@@ -10,7 +10,7 @@
         type Ranking = KeyValuePair<AST.Address,double>[]
         type Mutant = { mutants: KeyValuePair<AST.Address,string>[]; scores: ScoreTable; freqtable: FreqTable }
 
-        type ErrorModel(config: FeatureConf, dag: Depends.DAG, alpha: double, progress: Depends.Progress, app: Microsoft.Office.Interop.Excel.Application) =
+        type ErrorModel(app: Microsoft.Office.Interop.Excel.Application, config: FeatureConf, dag: Depends.DAG, alpha: double, progress: Depends.Progress) =
             let _significanceThreshold : int =
                 // round to integer
                 int (
