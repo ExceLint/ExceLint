@@ -113,7 +113,7 @@ namespace ExceLintUI
             _app.ScreenUpdating = false;
 
             // get cursor location
-            var cursor = _app.Selection;
+            var cursor = (Excel.Range)_app.Selection;
             AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, _app.ActiveWorkbook);
             var cursorStr = "(" + cursorAddr.X + "," + cursorAddr.Y + ")";  // for sanity-preservation purposes
 
@@ -123,7 +123,7 @@ namespace ExceLintUI
             Func<Depends.Progress, ExceLint.ErrorModel> f = (Depends.Progress p) =>
              {
                 // find all vectors for formula under the cursor
-                return new ExceLint.ErrorModel(config, _dag, _tool_significance, p, _app);
+                return new ExceLint.ErrorModel(_app, config, _dag, _tool_significance, p);
              };
 
             var model = buildDAGAndDoStuff(forceDAGBuild, f, 3);
@@ -159,7 +159,7 @@ namespace ExceLintUI
             UpdateDAG(forceDAGBuild);
 
             // get cursor location
-            var cursor = _app.Selection;
+            var cursor = (Excel.Range)_app.Selection;
             AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, _app.ActiveWorkbook);
             var cursorStr = "(" + cursorAddr.X + "," + cursorAddr.Y + ")";  // for sanity-preservation purposes
 
@@ -185,7 +185,7 @@ namespace ExceLintUI
             UpdateDAG(forceDAGBuild);
 
             // get cursor location
-            var cursor = _app.Selection;
+            var cursor = (Excel.Range)_app.Selection;
             AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, _app.ActiveWorkbook);
             var cursorStr = "(" + cursorAddr.X + "," + cursorAddr.Y + ")";  // for sanity-preservation purposes
 
@@ -262,7 +262,7 @@ namespace ExceLintUI
             UpdateDAG(forceDAGBuild);
 
             // get cursor location
-            var cursor = _app.Selection;
+            var cursor = (Excel.Range)_app.Selection;
             AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, _app.ActiveWorkbook);
             var cursorStr = "(" + cursorAddr.X + "," + cursorAddr.Y + ")";  // for sanity-preservation purposes
 
@@ -392,7 +392,7 @@ namespace ExceLintUI
                     else
                     {
                         // run analysis
-                        var model = new ExceLint.ErrorModel(config, _dag, _tool_significance, p, _app);
+                        var model = new ExceLint.ErrorModel(_app, config, _dag, _tool_significance, p);
                         Score[] scores = model.rankByFeatureSum();
                         int cutoff = model.getSignificanceCutoff;
                         return new Analysis { scores = scores, ranOK = true, cutoff = cutoff, model = model, hasRun = true };
@@ -464,13 +464,13 @@ namespace ExceLintUI
             }
 
             // if the cell's row is hidden, unhide it
-            if (comobj.Rows.Hidden)
+            if ((bool)comobj.Rows.Hidden)
             {
                 comobj.Rows.Hidden = false;
             }
 
             // if the cell's column is hidden, unhide it
-            if (comobj.Columns.Hidden)
+            if ((bool)comobj.Columns.Hidden)
             {
                 comobj.Columns.Hidden = false;
             }
@@ -496,17 +496,17 @@ namespace ExceLintUI
         private void widenIfNecessary(Excel.Range comobj, Excel.Application app)
         {
             app.ScreenUpdating = false;
-            var width = comobj.ColumnWidth;
-            var height = comobj.RowHeight;
+            var width = (int)comobj.ColumnWidth;
+            var height = (int)comobj.RowHeight;
             comobj.Columns.AutoFit();
             comobj.Rows.AutoFit();
 
-            if (comobj.ColumnWidth < width)
+            if ((int)comobj.ColumnWidth < width)
             {
                 comobj.ColumnWidth = width;
             }
 
-            if (comobj.RowHeight < height)
+            if ((int)comobj.RowHeight < height)
             {
                 comobj.RowHeight = height;
             }
@@ -544,7 +544,7 @@ namespace ExceLintUI
                 // save old color
                 _colors.saveColorAt(
                     _flagged_cell,
-                    new CellColor { ColorIndex = com.Interior.ColorIndex, Color = com.Interior.Color }
+                    new CellColor { ColorIndex = (int)com.Interior.ColorIndex, Color = (int)com.Interior.Color }
                 );
 
                 // highlight cell
@@ -599,7 +599,7 @@ namespace ExceLintUI
             // save old color
             _colors.saveColorAt(
                 cell,
-                new CellColor { ColorIndex = com.Interior.ColorIndex, Color = com.Interior.Color }
+                new CellColor { ColorIndex = (int)com.Interior.ColorIndex, Color = (int)com.Interior.Color }
             );
 
             // highlight cell
