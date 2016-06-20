@@ -242,9 +242,9 @@
                 let fsT = ErrorModel.transpose fs'
 
                 Array.map (fun (addrs_exprs: (AST.Address*AST.Expression)[]) ->
-                    // generate formulas for each AST
-                    let mutants = Array.map (fun (addr,ast: AST.Expression) ->
-                                    new KeyValuePair<AST.Address,string>(addr,ast.ToFormula)
+                    // generate formulas for each expr AST
+                    let mutants = Array.map (fun (addr, expr: AST.Expression) ->
+                                    new KeyValuePair<AST.Address,string>(addr, expr.WellFormedFormula)
                                     ) addrs_exprs
 
                     // get new DAG
@@ -258,7 +258,7 @@
                                      ) dag' config ErrorModel.nop
 
                     // compute frequency tables
-                    let mutFtable = ErrorModel.buildFrequencyTable mutBuckets ErrorModel.nop dag config
+                    let mutFtable = ErrorModel.buildFrequencyTable mutBuckets ErrorModel.nop dag' config
                     
                     { mutants = mutants; scores = mutBuckets; freqtable = mutFtable }
                 ) fsT
