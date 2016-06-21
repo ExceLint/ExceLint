@@ -67,6 +67,7 @@
             this.forceBuildDAG = this.Factory.CreateRibbonCheckBox();
             this.inferAddrModes = this.Factory.CreateRibbonCheckBox();
             this.allCells = this.Factory.CreateRibbonCheckBox();
+            this.weightByIntrinsicAnomalousness = this.Factory.CreateRibbonCheckBox();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -110,6 +111,7 @@
             this.CheckCellGroup.Items.Add(this.forceBuildDAG);
             this.CheckCellGroup.Items.Add(this.inferAddrModes);
             this.CheckCellGroup.Items.Add(this.allCells);
+            this.CheckCellGroup.Items.Add(this.weightByIntrinsicAnomalousness);
             this.CheckCellGroup.Name = "CheckCellGroup";
             // 
             // box1
@@ -293,6 +295,7 @@
             // 
             // inferAddrModes
             // 
+            this.inferAddrModes.Checked = true;
             this.inferAddrModes.Label = "Infer Address Modes";
             this.inferAddrModes.Name = "inferAddrModes";
             // 
@@ -300,6 +303,12 @@
             // 
             this.allCells.Label = "Analyze All Cells";
             this.allCells.Name = "allCells";
+            // 
+            // weghtByIntrinsicAnomalousness
+            // 
+            this.weightByIntrinsicAnomalousness.Checked = true;
+            this.weightByIntrinsicAnomalousness.Label = "Reweight by Intrinsic Anomalousness";
+            this.weightByIntrinsicAnomalousness.Name = "weghtByIntrinsicAnomalousness";
             // 
             // ExceLintRibbon
             // 
@@ -354,6 +363,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton showVectors;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox inferAddrModes;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox allCells;
+        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox weightByIntrinsicAnomalousness;
     }
 
     partial class ThisRibbonCollection

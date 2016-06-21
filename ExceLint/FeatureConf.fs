@@ -178,6 +178,12 @@
                 let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Misc; runner = nop }
                 _config.Add(name, cap)
             )
+        member self.weightByIntrinsicAnomalousness() : FeatureConf =
+            FeatureConf(
+                let name = "WeightByIntrinsicAnomalousness"
+                let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Misc; runner = nop }
+                _config.Add(name, cap)
+            )
 
         // getters
         member self.FeatureByName

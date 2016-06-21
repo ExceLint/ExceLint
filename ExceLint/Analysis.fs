@@ -7,6 +7,7 @@
         type ScoreTable = Dict<string,(AST.Address*double)[]>
         type FastScoreTable = Dict<string*AST.Address,double>
         type FreqTable = Dict<string*Scope.SelectID*double,int>
+        type Weights = IDictionary<AST.Address,double>
         type Ranking = KeyValuePair<AST.Address,double>[]
         type ChangeSet = { mutants: KeyValuePair<AST.Address,string>[]; scores: ScoreTable; freqtable: FreqTable }
 
@@ -36,8 +37,16 @@
                             else
                                 _ranking
 
+            // adjust ranking by intrinsic anomalousness
+            let _ranking'' = ErrorModel.nonzero(
+                                 if config.IsEnabled "WeightByIntrinsicAnomalousness" then
+                                    ErrorModel.reweightRanking _ranking' (ErrorModel.intrinsicAnomalousnessWeights _analysis_base dag)
+                                 else
+                                    _ranking'
+                             )
+
             // compute cutoff
-            let _cutoff = ErrorModel.findCutIndex _ranking' _significanceThreshold
+            let _cutoff = ErrorModel.findCutIndex _ranking'' _significanceThreshold
 
             member self.ScoreTimeInMilliseconds : int64 = _score_time
 
@@ -53,7 +62,7 @@
 
             member self.NumRankedEntries : int = _analysis_base(dag).Length
 
-            member self.rankByFeatureSum() : Ranking = _ranking'
+            member self.rankByFeatureSum() : Ranking = _ranking''
 
             member self.getSignificanceCutoff : int = _cutoff
 
@@ -90,6 +99,53 @@
                                      ) d
 
                 debug |> Seq.toArray
+
+            static member private nonzero(r: Ranking) : Ranking =
+                Array.filter (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Value > 0.0) r
+
+            static member private transitiveInputs(faddr: AST.Address)(dag : Depends.DAG) : AST.Address[] =
+                let rec tf(addr: AST.Address) : AST.Address list =
+                    if (dag.isFormula addr) then
+                        // find all of the inputs (local dependencies) for formula
+                        let refs_single = dag.getFormulaSingleCellInputs addr |> List.ofSeq
+                        let refs_vector = dag.getFormulaInputVectors addr |>
+                                                List.ofSeq |>
+                                                List.map (fun rng -> rng.Addresses() |> Array.toList) |>
+                                                List.concat
+                        let refs = refs_single @ refs_vector
+                        // prepend addr & recursively call this function
+                        addr :: (List.map tf refs |> List.concat)
+                    else
+                        [addr]
+    
+                tf faddr |> List.toArray
+
+            static member private intrinsicAnomalousnessWeights(analysis_base: Depends.DAG -> AST.Address[])(dag: Depends.DAG) : Weights =
+                // get the set of cells to be analyzed
+                let cells = analysis_base(dag)
+
+                // for each cell, count how many formulas transitively refer to it
+                let refcounts = Array.map (fun i -> i,(dag.getFormulasThatRefCell i).Length) cells |> dict
+
+                // for each cell, compute cumulative reference count / total count
+                // this really only makes sense for formulas, but in case the user
+                // asked for a ranking of all cells, we compute refcounts here even
+                // for non-formulas
+                let weights = Array.map (fun f ->
+                                  let inputs' = ErrorModel.transitiveInputs f dag
+                                  let weight = double (Array.sumBy (fun i -> refcounts.[i]) inputs')
+                                  f,weight
+                              ) cells
+
+                weights |> dict
+
+            static member private reweightRanking(r: Ranking)(w: Weights) : Ranking =
+                r |> Array.map (fun (kvp: KeyValuePair<AST.Address,double>) ->
+                    let addr = kvp.Key
+                    let score = kvp.Value
+                    new KeyValuePair<AST.Address,double>(addr, w.[addr] * score)
+                  ) |>
+                  Array.sortBy (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Value)
 
             static member private getChangeSetAddresses(cs: ChangeSet) : AST.Address[] =
                 Array.map (fun (kvp: KeyValuePair<AST.Address,string>) ->
