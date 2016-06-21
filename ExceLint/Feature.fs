@@ -6,6 +6,7 @@ module Feature
     type ConfigKind =
     | Feature
     | Scope
+    | Misc
 
     type Capability = { enabled : bool; kind: ConfigKind; runner: AST.Address -> Depends.DAG -> double; }
 

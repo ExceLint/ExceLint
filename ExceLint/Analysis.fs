@@ -29,10 +29,13 @@
                  _ranking_time: int64) = ErrorModel.runModel dag config progress
 
             // find model that minimizes anomalousness
-            let _ranking' = ErrorModel.inferAddressModes _ranking dag config (ErrorModel.nop) app
+            let _ranking' = if config.IsEnabled "InferAddressModes" then
+                                ErrorModel.inferAddressModes _ranking dag config (ErrorModel.nop) app
+                            else
+                                _ranking
 
             // compute cutoff
-            let _cutoff = ErrorModel.findCutIndex _ranking _significanceThreshold
+            let _cutoff = ErrorModel.findCutIndex _ranking' _significanceThreshold
 
             member self.ScoreTimeInMilliseconds : int64 = _score_time
 
@@ -48,7 +51,7 @@
 
             member self.NumRankedEntries : int = dag.allComputationCells().Length
 
-            member self.rankByFeatureSum() : Ranking = _ranking
+            member self.rankByFeatureSum() : Ranking = _ranking'
 
             member self.getSignificanceCutoff : int = _cutoff
 

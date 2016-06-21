@@ -363,6 +363,8 @@ namespace ExceLintUI
             if (this.columnCellsFreq.Checked) { c = c.analyzeRelativeToColumns(); }
             if (this.rowCellsFreq.Checked) { c = c.analyzeRelativeToRows(); }
 
+            if (this.inferAddrModes.Checked) { c = c.inferAddressModes();  }
+
             return c;
         }
 

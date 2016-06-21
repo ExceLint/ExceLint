@@ -166,6 +166,12 @@
                 let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Scope; runner = nop}
                 _config.Add(name, cap)
             )
+        member self.inferAddressModes() : FeatureConf =
+            FeatureConf(
+                let name = "InferAddressModes"
+                let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Misc; runner = nop }
+                _config.Add(name, cap)
+            )
 
         // getters
         member self.FeatureByName
@@ -190,3 +196,6 @@
                                         | "ScopeRows" -> Some Scope.SameRow
                                         | _ -> failwith "Unknown scope selector."
                                     else None)
+
+        member self.IsEnabled(name: string) : bool =
+            _config.ContainsKey name && _config.[name].enabled
