@@ -201,7 +201,8 @@
                     Array.map (fun v -> relativeToTail v dag isOSI)
                 else
                     Array.map (fun v -> relativeToOrigin v dag isOSI)
-            rebase (vectors cell dag depth isMixed)
+            let output = rebase (vectors cell dag depth isMixed)
+            output
 
         type DeepInputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
