@@ -66,6 +66,7 @@
             this.DebugOutput = this.Factory.CreateRibbonCheckBox();
             this.forceBuildDAG = this.Factory.CreateRibbonCheckBox();
             this.inferAddrModes = this.Factory.CreateRibbonCheckBox();
+            this.allCells = this.Factory.CreateRibbonCheckBox();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -108,6 +109,7 @@
             this.CheckCellGroup.Items.Add(this.DebugOutput);
             this.CheckCellGroup.Items.Add(this.forceBuildDAG);
             this.CheckCellGroup.Items.Add(this.inferAddrModes);
+            this.CheckCellGroup.Items.Add(this.allCells);
             this.CheckCellGroup.Name = "CheckCellGroup";
             // 
             // box1
@@ -294,6 +296,11 @@
             this.inferAddrModes.Label = "Infer Address Modes";
             this.inferAddrModes.Name = "inferAddrModes";
             // 
+            // allCells
+            // 
+            this.allCells.Label = "Analyze All Cells";
+            this.allCells.Name = "allCells";
+            // 
             // ExceLintRibbon
             // 
             this.Name = "ExceLintRibbon";
@@ -346,6 +353,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox forceBuildDAG;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton showVectors;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox inferAddrModes;
+        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox allCells;
     }
 
     partial class ThisRibbonCollection

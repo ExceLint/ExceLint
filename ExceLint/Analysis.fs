@@ -11,11 +11,13 @@
         type ChangeSet = { mutants: KeyValuePair<AST.Address,string>[]; scores: ScoreTable; freqtable: FreqTable }
 
         type ErrorModel(app: Microsoft.Office.Interop.Excel.Application, config: FeatureConf, dag: Depends.DAG, alpha: double, progress: Depends.Progress) =
+            let _analysis_base(d: Depends.DAG) : AST.Address[] = if config.IsEnabled("AnalyzeOnlyInputs") then d.allComputationCells() else d.allCells()
+
             let _significanceThreshold : int =
                 // round to integer
                 int (
                     // get total number of counts
-                    double (dag.allComputationCells().Length * config.EnabledFeatures.Length * config.EnabledScopes.Length)
+                    double (_analysis_base(dag).Length * config.EnabledFeatures.Length * config.EnabledScopes.Length)
                     // times signficance
                     * alpha
                 )
@@ -26,11 +28,11 @@
                  _ranking: Ranking,
                  _score_time: int64,
                  _ftable_time: int64,
-                 _ranking_time: int64) = ErrorModel.runModel dag config progress
+                 _ranking_time: int64) = ErrorModel.runModel _analysis_base dag config progress
 
             // find model that minimizes anomalousness
             let _ranking' = if config.IsEnabled "InferAddressModes" then
-                                ErrorModel.inferAddressModes _ranking dag config (ErrorModel.nop) app
+                                ErrorModel.inferAddressModes _analysis_base _ranking dag config (ErrorModel.nop) app
                             else
                                 _ranking
 
@@ -49,7 +51,7 @@
 
             member self.NumFreqEntries : int = _ftable.Count
 
-            member self.NumRankedEntries : int = dag.allComputationCells().Length
+            member self.NumRankedEntries : int = _analysis_base(dag).Length
 
             member self.rankByFeatureSum() : Ranking = _ranking'
 
@@ -130,8 +132,8 @@
                 ) arr
                 d
 
-            static member private inferAddressModes(r: Ranking)(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress)(app: Microsoft.Office.Interop.Excel.Application) : Ranking =
-                let cells = dag.allComputationCells()
+            static member private inferAddressModes(analysis_base: Depends.DAG -> AST.Address[])(r: Ranking)(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress)(app: Microsoft.Office.Interop.Excel.Application) : Ranking =
+                let cells = analysis_base(dag)
 
                 // convert ranking into map
                 let rankmap = r |> Array.map (fun (pair: KeyValuePair<AST.Address,double>) -> (pair.Key,pair.Value))
@@ -174,8 +176,8 @@
                 // rerank
                 ErrorModel.rank cells freqs scores config
 
-            static member private runModel(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress) =
-                let _runf = fun () -> ErrorModel.runEnabledFeatures (dag.allComputationCells()) dag config progress
+            static member private runModel(analysisbase: Depends.DAG -> AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress) =
+                let _runf = fun () -> ErrorModel.runEnabledFeatures (analysisbase dag) dag config progress
 
                 // get scores for each feature: featurename -> (address, score)[]
                 let (scores: ScoreTable,score_time: int64) = PerfUtils.runMillis _runf ()
@@ -185,7 +187,7 @@
                 let ftable,ftable_time = PerfUtils.runMillis _freqf ()
 
                 // rank
-                let _rankf = fun () -> ErrorModel.rank (dag.allComputationCells()) ftable scores config
+                let _rankf = fun () -> ErrorModel.rank (analysisbase dag) ftable scores config
                 let ranking,ranking_time = PerfUtils.runMillis _rankf ()
 
                 (scores, ftable, ranking, score_time, ftable_time, ranking_time)
