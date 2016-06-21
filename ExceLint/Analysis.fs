@@ -339,11 +339,6 @@
                     let fname = kvp.Key
                     let arr = kvp.Value
                     Array.iter (fun (addr,score) ->
-                        if d.ContainsKey(fname,addr) then
-                            let bin = d.[fname,addr]
-                            let me = score
-                            let arr' = arr
-                            failwith "huh?"
                         d.Add((fname,addr), score)
                     ) arr
                 ) scores
