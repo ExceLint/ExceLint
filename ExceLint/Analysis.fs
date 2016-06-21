@@ -8,14 +8,14 @@
         type FastScoreTable = Dict<string*AST.Address,double>
         type FreqTable = Dict<string*Scope.SelectID*double,int>
         type Ranking = KeyValuePair<AST.Address,double>[]
-        type Mutant = { mutants: KeyValuePair<AST.Address,string>[]; scores: ScoreTable; freqtable: FreqTable }
+        type ChangeSet = { mutants: KeyValuePair<AST.Address,string>[]; scores: ScoreTable; freqtable: FreqTable }
 
         type ErrorModel(app: Microsoft.Office.Interop.Excel.Application, config: FeatureConf, dag: Depends.DAG, alpha: double, progress: Depends.Progress) =
             let _significanceThreshold : int =
                 // round to integer
                 int (
                     // get total number of counts
-                    double (dag.allCells().Length * config.EnabledFeatures.Length * config.EnabledScopes.Length)
+                    double (dag.allComputationCells().Length * config.EnabledFeatures.Length * config.EnabledScopes.Length)
                     // times signficance
                     * alpha
                 )
@@ -46,7 +46,7 @@
 
             member self.NumFreqEntries : int = _ftable.Count
 
-            member self.NumRankedEntries : int = dag.allCells().Length
+            member self.NumRankedEntries : int = dag.allComputationCells().Length
 
             member self.rankByFeatureSum() : Ranking = _ranking
 
@@ -86,11 +86,13 @@
 
                 debug |> Seq.toArray
 
-            static member private mutantDAG(mutants: Mutant[])(dag: Depends.DAG)(app: Microsoft.Office.Interop.Excel.Application)(p: Depends.Progress) : Depends.DAG =
-                let fs = Array.fold (fun (acc: KeyValuePair<AST.Address,string> list)(mutant: Mutant) ->
-                             (mutant.mutants |> Array.toList) @ acc
-                         ) (List.empty) mutants |> Array.ofList
-                dag.CopyWithUpdatedFormulas(fs, app, true, p)
+            static member private getChangeSetAddresses(cs: ChangeSet) : AST.Address[] =
+                Array.map (fun (kvp: KeyValuePair<AST.Address,string>) ->
+                    kvp.Key
+                ) cs.mutants
+
+            static member private mutateDAG(cs: ChangeSet)(dag: Depends.DAG)(app: Microsoft.Office.Interop.Excel.Application)(p: Depends.Progress) : Depends.DAG =
+                dag.CopyWithUpdatedFormulas(cs.mutants, app, true, p)
 
             static member private findCutIndex(ranking: Ranking)(thresh: int): int =
                 let sigThresh = thresh
@@ -126,12 +128,13 @@
                 d
 
             static member private inferAddressModes(r: Ranking)(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress)(app: Microsoft.Office.Interop.Excel.Application) : Ranking =
-                let cells = dag.allCells()
+                let cells = dag.allComputationCells()
 
                 // convert ranking into map
                 let rankmap = r |> Array.map (fun (pair: KeyValuePair<AST.Address,double>) -> (pair.Key,pair.Value))
                                 |> ErrorModel.toDict
 
+                // get all the formulas that ref each cell
                 let refss = Array.map (fun input -> input, dag.getFormulasThatRefCell input) cells |> ErrorModel.toDict
 
                 // rank inputs by their impact on the ranking
@@ -144,15 +147,20 @@
 
                 // for each input cell, try changing all refs to either abs or rel;
                 // if anomalousness drops, keep new interpretation
-                let mutants = Array.map (fun input ->
-                                if refss.[input].Length <> 0 then
-                                    Some(ErrorModel.chooseLikelyAddressMode input refss.[input] dag config progress app)
-                                else
-                                    None
-                              ) crank |> Array.choose id
+                let dag' = Array.fold (fun accdag input ->
+                               // get referring formulas
+                               let refs = refss.[input]
 
-                // create new score and frequency tables
-                let dag' = ErrorModel.mutantDAG mutants dag app progress
+                               if refs.Length <> 0 then
+                                   // run inference
+                                   let cs = ErrorModel.chooseLikelyAddressMode input refs accdag config progress app
+
+                                   // update DAG
+                                   ErrorModel.mutateDAG cs accdag app progress
+                               else
+                                   accdag
+                           ) dag crank
+
 
                 // score
                 let scores = ErrorModel.runEnabledFeatures cells dag' config progress
@@ -164,7 +172,7 @@
                 ErrorModel.rank cells freqs scores config
 
             static member private runModel(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress) =
-                let _runf = fun () -> ErrorModel.runEnabledFeatures (dag.allCells()) dag config progress
+                let _runf = fun () -> ErrorModel.runEnabledFeatures (dag.allComputationCells()) dag config progress
 
                 // get scores for each feature: featurename -> (address, score)[]
                 let (scores: ScoreTable,score_time: int64) = PerfUtils.runMillis _runf ()
@@ -174,7 +182,7 @@
                 let ftable,ftable_time = PerfUtils.runMillis _freqf ()
 
                 // rank
-                let _rankf = fun () -> ErrorModel.rank (dag.allCells()) ftable scores config
+                let _rankf = fun () -> ErrorModel.rank (dag.allComputationCells()) ftable scores config
                 let ranking,ranking_time = PerfUtils.runMillis _rankf ()
 
                 (scores, ftable, ranking, score_time, ftable_time, ranking_time)
@@ -222,7 +230,7 @@
                     ) [| 0..mat.Length - 1 |]
                 ) [| 0..(mat.[0]).Length - 1 |]
 
-            static member private genMutants(cell: AST.Address)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress)(app: Microsoft.Office.Interop.Excel.Application) : Mutant[] =
+            static member private genChanges(cell: AST.Address)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress)(app: Microsoft.Office.Interop.Excel.Application) : ChangeSet[] =
                 // for each referencing formula, systematically generate all ref variants
                 let fs' = Array.mapi (fun i f ->
                             // get AST
@@ -264,9 +272,9 @@
                 ) fsT
 
 
-            static member private chooseLikelyAddressMode(input: AST.Address)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress)(app: Microsoft.Office.Interop.Excel.Application) : Mutant =
+            static member private chooseLikelyAddressMode(input: AST.Address)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress)(app: Microsoft.Office.Interop.Excel.Application) : ChangeSet =
                 // generate all variants for the formulas that refer to this cell
-                let mutants = ErrorModel.genMutants input refs dag config progress app
+                let css = ErrorModel.genChanges input refs dag config progress app
 
                 // count the buckets for the default
                 let ref_fs = Array.map (fun (ref: AST.Address) ->
@@ -283,15 +291,15 @@
                 // find the variants that minimize the bucket count
                 let mutant_counts = Array.map (fun mutant ->
                                         ErrorModel.countBuckets mutant.freqtable
-                                    ) mutants
+                                    ) css
 
                 let mode_idx = ErrorModel.argmin (fun mutant ->
                                    // count histogram buckets
                                    ErrorModel.countBuckets mutant.freqtable
-                               ) mutants
+                               ) css
 
                 if mutant_counts.[mode_idx] < def_count then
-                    mutants.[mode_idx]
+                    css.[mode_idx]
                 else
                     { mutants = ref_fs; scores = def_buckets; freqtable = def_freq; }
 
