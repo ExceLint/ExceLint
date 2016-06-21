@@ -339,8 +339,15 @@
 		<col def="S0">ISDotNetInstallerArgsCommit</col>
 		<col def="S0">ISDotNetInstallerArgsUninstall</col>
 		<col def="S0">ISDotNetInstallerArgsRollback</col>
+		<row><td>COMWrapper.Primary_output</td><td>{95640401-1A0F-41A1-9772-BDBB2A0F5119}</td><td>INSTALLDIR</td><td>2</td><td/><td>comwrapper.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>Depends.Primary_output</td><td>{369C356D-424E-4AC3-88F0-D8B0A8482DB8}</td><td>INSTALLDIR</td><td>2</td><td/><td>depends.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExceLint.Primary_Output</td><td>{83B6A89F-7000-4FE7-9A33-999ED1B02884}</td><td>INSTALLDIR</td><td>2</td><td/><td>excelint.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ExceLintUI.Primary_output</td><td>{2C3B0C00-E125-44B6-8744-FF6D299C0D95}</td><td>INSTALLDIR</td><td>2</td><td/><td>excelintui.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExcelParser.Primary_Output</td><td>{9DC8BA28-208A-4CD0-9EF7-3C52C2354273}</td><td>INSTALLDIR</td><td>2</td><td/><td>excelparser.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>FParsec.Primary_Output</td><td>{1220C08E-1112-4B3B-ADEC-4D8A28DAF6D8}</td><td>INSTALLDIR</td><td>2</td><td/><td>fparsec.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>FParsecCS.Primary_output</td><td>{297D5171-0EB7-4FC0-9B9E-F480D2E652AB}</td><td>INSTALLDIR</td><td>2</td><td/><td>fparseccs.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ISX_DEFAULTCOMPONENT</td><td>{79DB6CB0-95C3-47CD-983E-E760B4E3C6D9}</td><td>INSTALLDIR</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ParcelCOMShim.Primary_Output</td><td>{0ED9ACA4-549B-4D07-909F-792A0AEAFB1B}</td><td>INSTALLDIR</td><td>2</td><td/><td>parcelcomshim.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 	</table>
 
 	<table name="Condition">
@@ -1049,8 +1056,15 @@
 	<table name="CreateFolder">
 		<col key="yes" def="s72">Directory_</col>
 		<col key="yes" def="s72">Component_</col>
+		<row><td>INSTALLDIR</td><td>COMWrapper.Primary_output</td></row>
+		<row><td>INSTALLDIR</td><td>Depends.Primary_output</td></row>
+		<row><td>INSTALLDIR</td><td>ExceLint.Primary_Output</td></row>
 		<row><td>INSTALLDIR</td><td>ExceLintUI.Primary_output</td></row>
+		<row><td>INSTALLDIR</td><td>ExcelParser.Primary_Output</td></row>
+		<row><td>INSTALLDIR</td><td>FParsec.Primary_Output</td></row>
+		<row><td>INSTALLDIR</td><td>FParsecCS.Primary_output</td></row>
 		<row><td>INSTALLDIR</td><td>ISX_DEFAULTCOMPONENT</td></row>
+		<row><td>INSTALLDIR</td><td>ParcelCOMShim.Primary_Output</td></row>
 	</table>
 
 	<table name="CustomAction">
@@ -1866,8 +1880,15 @@
 	<table name="FeatureComponents">
 		<col key="yes" def="s38">Feature_</col>
 		<col key="yes" def="s72">Component_</col>
+		<row><td>AlwaysInstall</td><td>COMWrapper.Primary_output</td></row>
+		<row><td>AlwaysInstall</td><td>Depends.Primary_output</td></row>
+		<row><td>AlwaysInstall</td><td>ExceLint.Primary_Output</td></row>
 		<row><td>AlwaysInstall</td><td>ExceLintUI.Primary_output</td></row>
+		<row><td>AlwaysInstall</td><td>ExcelParser.Primary_Output</td></row>
+		<row><td>AlwaysInstall</td><td>FParsec.Primary_Output</td></row>
+		<row><td>AlwaysInstall</td><td>FParsecCS.Primary_output</td></row>
 		<row><td>AlwaysInstall</td><td>ISX_DEFAULTCOMPONENT</td></row>
+		<row><td>AlwaysInstall</td><td>ParcelCOMShim.Primary_Output</td></row>
 	</table>
 
 	<table name="File">
@@ -1882,9 +1903,16 @@
 		<col def="S255">ISBuildSourcePath</col>
 		<col def="I4">ISAttributes</col>
 		<col def="S72">ISComponentSubFolder_</col>
+		<row><td>comwrapper.primary_output</td><td>COMWrapper.Primary_output</td><td>COMWrapper.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;COMWrapper&gt;|Built</td><td>3</td><td/></row>
+		<row><td>depends.primary_output</td><td>Depends.Primary_output</td><td>Depends.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;Depends&gt;|Built</td><td>3</td><td/></row>
+		<row><td>excelint.primary_output</td><td>ExceLint.Primary_Output</td><td>ExceLint.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLint&gt;|Built</td><td>3</td><td/></row>
 		<row><td>excelintui.dll.manifest</td><td>ISX_DEFAULTCOMPONENT</td><td>EXCELI~1.MAN|ExceLintUI.dll.manifest</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISPROJECTFOLDER&gt;..\ExceLintUI\bin\Release\ExceLintUI.dll.manifest</td><td>1</td><td/></row>
 		<row><td>excelintui.primary_output</td><td>ExceLintUI.Primary_output</td><td>ExceLintUI.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLintUI&gt;|Built</td><td>3</td><td/></row>
 		<row><td>excelintui.vsto</td><td>ISX_DEFAULTCOMPONENT</td><td>EXCELI~1.VST|ExceLintUI.vsto</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISPROJECTFOLDER&gt;..\ExceLintUI\bin\Release\ExceLintUI.vsto</td><td>1</td><td/></row>
+		<row><td>excelparser.primary_output</td><td>ExcelParser.Primary_Output</td><td>ExcelParser.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExcelParser&gt;|Built</td><td>3</td><td/></row>
+		<row><td>fparsec.primary_output</td><td>FParsec.Primary_Output</td><td>FParsec.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;FParsec&gt;|Built</td><td>3</td><td/></row>
+		<row><td>fparseccs.primary_output</td><td>FParsecCS.Primary_output</td><td>FParsecCS.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;FParsecCS&gt;|Built</td><td>3</td><td/></row>
+		<row><td>parcelcomshim.primary_output</td><td>ParcelCOMShim.Primary_Output</td><td>ParcelCOMShim.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ParcelCOMShim&gt;|Built</td><td>3</td><td/></row>
 	</table>
 
 	<table name="FileSFPCatalog">
@@ -2028,8 +2056,15 @@
 		<col def="S0">FTPLocation</col>
 		<col def="S0">HTTPLocation</col>
 		<col def="S0">Miscellaneous</col>
+		<row><td>COMWrapper.Primary_output</td><td/><td/><td>_42663356_B917_47C3_8D1E_19E427C926AF_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>Depends.Primary_output</td><td/><td/><td>_087AC475_391E_410F_9A8C_D3026EF5A685_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ExceLint.Primary_Output</td><td/><td/><td>_7EA62BF1_D9E9_494B_97A1_885DF3C759CA_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ExceLintUI.Primary_output</td><td/><td/><td>_7954D820_BA00_42A8_9E38_62C0BD89A08E_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ExcelParser.Primary_Output</td><td/><td/><td>_F52FDEAB_E4F4_468B_BB19_BE824F0742B7_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>FParsec.Primary_Output</td><td/><td/><td>_CCFEB7EC_DAC1_4DFE_8193_C50B6F14785A_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>FParsecCS.Primary_output</td><td/><td/><td>_F096BB03_F32A_40BD_A20F_60B4765FB967_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ISX_DEFAULTCOMPONENT</td><td/><td/><td>_B6EE9F24_5BDB_4CFA_B769_AC93C53BBBEA_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ParcelCOMShim.Primary_Output</td><td/><td/><td>_947F6C5A_02C7_4C88_AD7C_650884E157A0_FILTER</td><td/><td/><td/><td/></row>
 	</table>
 
 	<table name="ISCustomActionReference">
@@ -2309,11 +2344,17 @@
 		<col def="i4">Type</col>
 		<row><td>COMWrapper</td><td>Depends\COMWrapper\COMWrapper.csproj</td><td/><td>2</td></row>
 		<row><td>CommonFilesFolder</td><td/><td/><td>1</td></row>
+		<row><td>Depends</td><td>Depends\Depends\Depends.csproj</td><td/><td>2</td></row>
+		<row><td>ExceLint</td><td>ExceLint\ExceLint.fsproj</td><td/><td>2</td></row>
 		<row><td>ExceLintUI</td><td>ExceLintUI\ExceLintUI.csproj</td><td/><td>2</td></row>
+		<row><td>ExcelParser</td><td>Depends\parcel\Parcel\ExcelParser.fsproj</td><td/><td>2</td></row>
+		<row><td>FParsec</td><td>Depends\parcel\FParsec\FParsec.fsproj</td><td/><td>2</td></row>
+		<row><td>FParsecCS</td><td>Depends\parcel\FParsecCS\FParsecCS.csproj</td><td/><td>2</td></row>
 		<row><td>ISPROJECTDIR</td><td/><td/><td>1</td></row>
 		<row><td>ISProductFolder</td><td/><td/><td>1</td></row>
 		<row><td>ISProjectDataFolder</td><td/><td/><td>1</td></row>
 		<row><td>ISProjectFolder</td><td/><td/><td>1</td></row>
+		<row><td>ParcelCOMShim</td><td>Depends\ParcelCOMShim\ParcelCOMShim\ParcelCOMShim.fsproj</td><td/><td>2</td></row>
 		<row><td>ProgramFilesFolder</td><td/><td/><td>1</td></row>
 		<row><td>SystemFolder</td><td/><td/><td>1</td></row>
 		<row><td>WindowsFolder</td><td/><td/><td>1</td></row>

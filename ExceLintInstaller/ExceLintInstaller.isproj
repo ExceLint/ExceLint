@@ -29,9 +29,37 @@
 	</ItemGroup>
 	<Import Project="$(MSBuildExtensionsPath32)\InstallShield\2015Limited\InstallShield.targets"/>
 	<ItemGroup>
+		<ProjectReference Include="..\Depends\COMWrapper\COMWrapper.csproj">
+			<Name>COMWrapper</Name>
+			<Project>{D9BC52FF-2319-4216-96FD-6F9CF2D05539}</Project>
+		</ProjectReference>
+		<ProjectReference Include="..\Depends\Depends\Depends.csproj">
+			<Name>Depends</Name>
+			<Project>{34FA1BC2-CFD6-44EC-AC0C-DFC62313E4BF}</Project>
+		</ProjectReference>
+		<ProjectReference Include="..\ExceLint\ExceLint.fsproj">
+			<Name>ExceLint</Name>
+			<Project>{A62BCA5A-EB55-46ED-A49A-FDB34771B605}</Project>
+		</ProjectReference>
 		<ProjectReference Include="..\ExceLintUI\ExceLintUI.csproj">
 			<Name>ExceLintUI</Name>
 			<Project>{F9BECB73-F7A5-4462-AE0D-B90BA40E5CF4}</Project>
+		</ProjectReference>
+		<ProjectReference Include="..\Depends\parcel\Parcel\ExcelParser.fsproj">
+			<Name>ExcelParser</Name>
+			<Project>{6DE2A2B9-C029-4BDB-8992-D16276471D9F}</Project>
+		</ProjectReference>
+		<ProjectReference Include="..\Depends\parcel\FParsec\FParsec.fsproj">
+			<Name>FParsec</Name>
+			<Project>{D8A416FA-BE7D-4929-8A6A-DA28B206853C}</Project>
+		</ProjectReference>
+		<ProjectReference Include="..\Depends\parcel\FParsecCS\FParsecCS.csproj">
+			<Name>FParsecCS</Name>
+			<Project>{35888456-3095-4133-92C8-6DD3205F4C2D}</Project>
+		</ProjectReference>
+		<ProjectReference Include="..\Depends\ParcelCOMShim\ParcelCOMShim\ParcelCOMShim.fsproj">
+			<Name>ParcelCOMShim</Name>
+			<Project>{71E3AF28-8088-4F9D-9392-858964D72947}</Project>
 		</ProjectReference>
 	</ItemGroup>
 </Project>
