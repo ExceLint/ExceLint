@@ -496,17 +496,17 @@ namespace ExceLintUI
         private void widenIfNecessary(Excel.Range comobj, Excel.Application app)
         {
             app.ScreenUpdating = false;
-            var width = (int)comobj.ColumnWidth;
-            var height = (int)comobj.RowHeight;
+            var width = Convert.ToInt32(comobj.ColumnWidth);
+            var height = Convert.ToInt32(comobj.RowHeight);
             comobj.Columns.AutoFit();
             comobj.Rows.AutoFit();
 
-            if ((int)comobj.ColumnWidth < width)
+            if (Convert.ToInt32(comobj.ColumnWidth) < width)
             {
                 comobj.ColumnWidth = width;
             }
 
-            if ((int)comobj.RowHeight < height)
+            if (Convert.ToInt32(comobj.RowHeight) < height)
             {
                 comobj.RowHeight = height;
             }
@@ -544,7 +544,7 @@ namespace ExceLintUI
                 // save old color
                 _colors.saveColorAt(
                     _flagged_cell,
-                    new CellColor { ColorIndex = (int)com.Interior.ColorIndex, Color = (int)com.Interior.Color }
+                    new CellColor { ColorIndex = (int)com.Interior.ColorIndex, Color = (double)com.Interior.Color }
                 );
 
                 // highlight cell
@@ -599,7 +599,7 @@ namespace ExceLintUI
             // save old color
             _colors.saveColorAt(
                 cell,
-                new CellColor { ColorIndex = (int)com.Interior.ColorIndex, Color = (int)com.Interior.Color }
+                new CellColor { ColorIndex = (int)com.Interior.ColorIndex, Color = (double)com.Interior.Color }
             );
 
             // highlight cell
