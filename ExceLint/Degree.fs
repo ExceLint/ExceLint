@@ -18,19 +18,19 @@
                     |> List.concat)
             System.Convert.ToDouble(allInputAddresses.Length)
 
-            /// <summary>Gets the number of inputs referenced by fAddr.</summary>
-            /// <param name="cell">the address of an arbitrary cell</param>
-            /// <param name="dag">a DAG</param>
-            /// <returns>the number of inputs referenced by cell</returns>
-            static member run cell (dag : DAG) = 
-                if dag.isFormula(cell) then
-                    InDegree.getIndegreeForFormulaCell cell dag
-                else
-                    0.0
+         /// <summary>Gets the number of inputs referenced by fAddr.</summary>
+         /// <param name="cell">the address of an arbitrary cell</param>
+         /// <param name="dag">a DAG</param>
+         /// <returns>the number of inputs referenced by cell</returns>
+         static member run cell (dag : DAG) = 
+             if dag.isFormula(cell) then
+                 InDegree.getIndegreeForFormulaCell cell dag
+             else
+                 0.0
 
-            static member capability : string*Capability =
-                (typeof<InDegree>.Name,
-                    { enabled = false; kind = ConfigKind.Feature; runner = InDegree.run } )
+         static member capability : string*Capability =
+             (typeof<InDegree>.Name,
+                 { enabled = false; kind = ConfigKind.Feature; runner = InDegree.run } )
 
     type OutDegree() =
         inherit BaseFeature()

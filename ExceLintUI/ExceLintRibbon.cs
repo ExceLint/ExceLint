@@ -43,7 +43,7 @@ namespace ExceLintUI
                     System.Windows.Forms.MessageBox.Show("Could not parse the formula string:\n" + ex.Message);
                     return;
                 }
-                catch (System.OutOfMemoryException ex)
+                catch (System.OutOfMemoryException)
                 {
                     System.Windows.Forms.MessageBox.Show("Insufficient memory to perform analysis.");
                     return;
@@ -58,11 +58,6 @@ namespace ExceLintUI
             }
         }
         
-        private void FixErrorButton_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.fixError(setUIState, getConfig());
-        }
-
         private void MarkAsOKButton_Click(object sender, RibbonControlEventArgs e)
         {
             currentWorkbook.markAsOK();
@@ -169,7 +164,7 @@ namespace ExceLintUI
                     System.Windows.Forms.MessageBox.Show("Could not parse the formula string:\n" + ex.Message);
                     return;
                 }
-                catch (System.OutOfMemoryException ex)
+                catch (System.OutOfMemoryException)
                 {
                     System.Windows.Forms.MessageBox.Show("Insufficient memory to perform analysis.");
                     return;
@@ -183,7 +178,6 @@ namespace ExceLintUI
         private void SetUIStateNoWorkbooks()
         {
             this.MarkAsOKButton.Enabled = false;
-            this.FixErrorButton.Enabled = false;
             this.StartOverButton.Enabled = false;
             this.AnalyzeButton.Enabled = false;
         }
@@ -335,7 +329,6 @@ namespace ExceLintUI
         private void setUIState(WorkbookState wbs)
         {
             this.MarkAsOKButton.Enabled = wbs.MarkAsOK_Enabled;
-            this.FixErrorButton.Enabled = wbs.FixError_Enabled;
             this.StartOverButton.Enabled = wbs.ClearColoringButton_Enabled;
             this.AnalyzeButton.Enabled = wbs.Analyze_Enabled;
 

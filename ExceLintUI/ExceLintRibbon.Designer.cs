@@ -41,7 +41,6 @@
             this.box1 = this.Factory.CreateRibbonBox();
             this.AnalyzeButton = this.Factory.CreateRibbonButton();
             this.MarkAsOKButton = this.Factory.CreateRibbonButton();
-            this.FixErrorButton = this.Factory.CreateRibbonButton();
             this.StartOverButton = this.Factory.CreateRibbonButton();
             this.showHeatmap = this.Factory.CreateRibbonButton();
             this.ToDOT = this.Factory.CreateRibbonButton();
@@ -113,7 +112,6 @@
             // 
             this.box1.Items.Add(this.AnalyzeButton);
             this.box1.Items.Add(this.MarkAsOKButton);
-            this.box1.Items.Add(this.FixErrorButton);
             this.box1.Items.Add(this.StartOverButton);
             this.box1.Items.Add(this.showHeatmap);
             this.box1.Items.Add(this.ToDOT);
@@ -137,16 +135,6 @@
             this.MarkAsOKButton.Name = "MarkAsOKButton";
             this.MarkAsOKButton.ShowImage = true;
             this.MarkAsOKButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.MarkAsOKButton_Click);
-            // 
-            // FixErrorButton
-            // 
-            this.FixErrorButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.FixErrorButton.Image = global::ExceLintUI.Properties.Resources.correct_small;
-            this.FixErrorButton.Label = "Fix Error";
-            this.FixErrorButton.Name = "FixErrorButton";
-            this.FixErrorButton.ShowImage = true;
-            this.FixErrorButton.Visible = false;
-            this.FixErrorButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.FixErrorButton_Click);
             // 
             // StartOverButton
             // 
@@ -326,7 +314,6 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonBox box1;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton AnalyzeButton;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton MarkAsOKButton;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton FixErrorButton;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton StartOverButton;
         internal Microsoft.Office.Tools.Ribbon.RibbonSeparator separator1;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox inDegree;
