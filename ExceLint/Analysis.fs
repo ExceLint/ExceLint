@@ -65,7 +65,11 @@
 
             member self.NumRankedEntries : int = _analysis_base(dag).Length
 
-            member self.rankByFeatureSum() : Ranking = ErrorModel.canonicalSort _ranking3
+            member self.rankByFeatureSum() : Ranking =
+                if ErrorModel.rankingIsSane _ranking dag (config.IsEnabled "AnalyzeOnlyFormulas") then
+                    ErrorModel.canonicalSort _ranking3
+                else
+                    failwith "ERROR: Formula-only analysis returns non-formulas."
 
             member self.getSignificanceCutoff : int = _cutoff
 
@@ -102,6 +106,12 @@
                                      ) d
 
                 debug |> Seq.toArray
+
+            static member private rankingIsSane(r: Ranking)(dag: Depends.DAG)(formulasOnly: bool) : bool =
+                if formulasOnly then
+                    Array.forall (fun (kvp: KeyValuePair<AST.Address,double>) -> dag.isFormula kvp.Key) r
+                else
+                    true
 
             static member private nonzero(r: Ranking) : Ranking =
                 Array.filter (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Value > 0.0) r
