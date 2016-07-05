@@ -56,7 +56,7 @@
             let _rankingSorted = ErrorModel.canonicalSort  _ranking3
 
             // compute cutoff
-            let _cutoff = ErrorModel.findCutIndex _rankingSorted _significanceThreshold
+            let _cutoff = ErrorModel.findCutIndex _rankingSorted _significanceThreshold _causes
 
             member self.ScoreTimeInMilliseconds : int64 = _score_time
 
@@ -229,7 +229,27 @@
             static member private mutateDAG(cs: ChangeSet)(dag: Depends.DAG)(app: Microsoft.Office.Interop.Excel.Application)(p: Depends.Progress) : Depends.DAG =
                 dag.CopyWithUpdatedFormulas(cs.mutants, app, true, p)
 
-            static member private findCutIndex(ranking: Ranking)(thresh: int): int =
+            static member private equivalenceClasses(ranking: Ranking)(causes: Causes) : Dict<AST.Address,int> =
+                let rankgrps = Array.groupBy (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Value) ranking
+
+                let grpids = Array.mapi (fun i (hb,_) -> hb,i) rankgrps |> adict
+
+                let output = Array.map (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Key, grpids.[kvp.Value]) ranking |> adict
+
+                output
+
+            static member private seekEquivalenceBoundary(ranking: Ranking)(causes: Causes)(cut_idx: int) : int =
+                let ecs = ErrorModel.equivalenceClasses ranking causes
+                if ecs.[ranking.[cut_idx].Key] = ecs.[ranking.[cut_idx + 1].Key] then
+                    // find the first index that is different by scanning backward
+                    let mutable seek = ecs.[ranking.[cut_idx - 1].Key]
+                    while seek = ecs.[ranking.[cut_idx].Key] && seek > 0 do
+                        seek <- seek - 1
+                    seek
+                else
+                    cut_idx
+
+            static member private findCutIndex(ranking: Ranking)(thresh: int)(causes: Causes): int =
                 let sigThresh = thresh
 
                 // compute total order
@@ -241,8 +261,8 @@
                 // cut the ranking at the knee index
                 let knee_cut = ranking.[0..dderiv_idx]
 
-                // the ranking may include scores above the significance threshold, so
-                // scan through the list to find the index of the last significant score
+                // further cut by scaning through the list to find the
+                // index of the last significant score
                 let cut_idx: int = knee_cut
                                     |> Array.mapi (fun i elem -> (i,elem))
                                     |> Array.fold (fun (acc: int)(i: int, score: KeyValuePair<AST.Address,double>) ->
@@ -252,7 +272,8 @@
                                             i
                                         ) (knee_cut.Length - 1)
 
-                cut_idx
+                // does the cut index straddle an equivalence class?
+                ErrorModel.seekEquivalenceBoundary ranking causes cut_idx
 
             static member private toDict(arr: ('a*'b)[]) : Dict<'a,'b> =
                 // assumes that 'a is unique
