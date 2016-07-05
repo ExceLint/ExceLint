@@ -17,7 +17,7 @@
         static member ToPretty(id: SelectID) : string =
             match id with
             | None,None,None -> "AllCells"
-            | Some(x),None,Some(path) -> "SameColumn"
-            | None,Some(y),Some(path) -> "SameRow"
-            | _ -> "unknown"
+            | Some(x),None,Some(path) -> "Column " + x.ToString()
+            | None,Some(y),Some(path) -> "Row " + y.ToString()
+            | _ -> failwith "Unknown selector"
         static member Kinds = [| AllCells; SameColumn; SameRow |]
