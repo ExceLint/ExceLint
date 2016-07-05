@@ -6,9 +6,11 @@
 
         type ScoreTable = Dict<string,(AST.Address*double)[]>
         type FastScoreTable = Dict<string*AST.Address,double>
-        type FreqTable = Dict<string*Scope.SelectID*double,int>
+        type HistoBin = string*Scope.SelectID*double
+        type FreqTable = Dict<HistoBin,int>
         type Weights = IDictionary<AST.Address,double>
         type Ranking = KeyValuePair<AST.Address,double>[]
+        type Causes = Dict<AST.Address,(HistoBin*int)[]>
         type ChangeSet = { mutants: KeyValuePair<AST.Address,string>[]; scores: ScoreTable; freqtable: FreqTable }
 
         type ErrorModel(app: Microsoft.Office.Interop.Excel.Application, config: FeatureConf, dag: Depends.DAG, alpha: double, progress: Depends.Progress) =
@@ -30,6 +32,7 @@
             let (_scores: ScoreTable,
                  _ftable: FreqTable,
                  _ranking: Ranking,
+                 _causes: Causes,
                  _score_time: int64,
                  _ftable_time: int64,
                  _ranking_time: int64) = ErrorModel.runModel _analysis_base dag config progress
@@ -40,16 +43,20 @@
                             else
                                 _ranking
 
+            // compute weights
+            let _weights = if config.IsEnabled "WeightByIntrinsicAnomalousness" then
+                               ErrorModel.intrinsicAnomalousnessWeights _analysis_base dag
+                           else
+                               ErrorModel.noWeights _analysis_base dag
+
             // adjust ranking by intrinsic anomalousness
-            let _ranking3 = ErrorModel.nonzero(
-                                 if config.IsEnabled "WeightByIntrinsicAnomalousness" then
-                                    ErrorModel.reweightRanking _ranking2 (ErrorModel.intrinsicAnomalousnessWeights _analysis_base dag)
-                                 else
-                                    _ranking2
-                             )
+            let _ranking3 = ErrorModel.nonzero(ErrorModel.reweightRanking _ranking2 _weights)
+
+            // sort ranking
+            let _rankingSorted = ErrorModel.canonicalSort  _ranking3
 
             // compute cutoff
-            let _cutoff = ErrorModel.findCutIndex _ranking3 _significanceThreshold
+            let _cutoff = ErrorModel.findCutIndex _rankingSorted _significanceThreshold
 
             member self.ScoreTimeInMilliseconds : int64 = _score_time
 
@@ -65,9 +72,17 @@
 
             member self.NumRankedEntries : int = _analysis_base(dag).Length
 
+            member self.causeOf(addr: AST.Address) : KeyValuePair<HistoBin,int>[] =
+                Array.map (fun cause ->
+                    let (bin,count) = cause
+                    new KeyValuePair<HistoBin,int>(bin,count)
+                ) _causes.[addr]
+
+            member self.weightOf(addr: AST.Address) : double = _weights.[addr]
+
             member self.rankByFeatureSum() : Ranking =
                 if ErrorModel.rankingIsSane _ranking dag (config.IsEnabled "AnalyzeOnlyFormulas") then
-                    ErrorModel.canonicalSort _ranking3
+                    _rankingSorted
                 else
                     failwith "ERROR: Formula-only analysis returns non-formulas."
 
@@ -106,6 +121,14 @@
                                      ) d
 
                 debug |> Seq.toArray
+
+            static member prettyHistoBinDesc(hb: HistoBin) : string =
+                let (feature_name,selector,fscore) = hb
+                "(" +
+                "feature name: " + feature_name + ", " +
+                "selector: " + Scope.Selector.ToPretty selector + ", " +
+                "feature value: " + fscore.ToString() +
+                ")"
 
             static member private rankingIsSane(r: Ranking)(dag: Depends.DAG)(formulasOnly: bool) : bool =
                 if formulasOnly then
@@ -170,6 +193,23 @@
                                   let inputs = ErrorModel.transitiveInputs f dag
                                   let weight = double (Array.sumBy (fun i -> refcounts.[i]) inputs)
                                   f,weight
+                              ) cells
+
+                weights |> dict
+
+            static member private noWeights(analysis_base: Depends.DAG -> AST.Address[])(dag: Depends.DAG) : Weights =
+                // get the set of cells to be analyzed
+                let cells = analysis_base(dag)
+
+                // for each cell, compute cumulative reference count. the insight here
+                // is that summary rows are counting things that are counted by
+                // subcomputations; thus, we should inflate their ranks by how much
+                // they over-count.
+                // this really only makes sense for formulas, but in case the user
+                // asked for a ranking of all cells, we compute refcounts here even
+                // for non-formulas
+                let weights = Array.map (fun f ->
+                                  f,1.0
                               ) cells
 
                 weights |> dict
@@ -280,7 +320,26 @@
                 let _rankf = fun () -> ErrorModel.rank (analysisbase dag) ftable scores config
                 let ranking,ranking_time = PerfUtils.runMillis _rankf ()
 
-                (scores, ftable, ranking, score_time, ftable_time, ranking_time)
+                // save causes
+                let _causef = fun () -> ErrorModel.causes (analysisbase dag) ftable scores config
+                let causes,causes_time = PerfUtils.runMillis _causef ()
+
+                (scores, ftable, ranking, causes, score_time, ftable_time, ranking_time + causes_time)
+
+            static member private causes(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(config: FeatureConf) : Causes =
+                let fscores = ErrorModel.makeFastScoreTable scores
+
+                // get histogram bin heights for every given cell
+                // and for every enabled scope and feature
+                let carr =
+                    Array.map (fun addr ->
+                        let causes = Array.map (fun sel ->
+                                         ErrorModel.getFeatureCounts addr sel ftable fscores config
+                                     ) (config.EnabledScopes) |> Array.concat
+                        (addr, causes)
+                    ) cells
+
+                carr |> adict
 
             static member private rank(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(config: FeatureConf) : Ranking =
                 let fscores = ErrorModel.makeFastScoreTable scores
@@ -290,7 +349,7 @@
                 let addrSums: (AST.Address*int)[] =
                     Array.map (fun addr ->
                         let sum = Array.sumBy (fun sel ->
-                                      ErrorModel.sumFeatureCounts addr (Scope.Selector.AllCells) ftable fscores config
+                                      ErrorModel.sumFeatureCounts addr sel ftable fscores config
                                   ) (config.EnabledScopes)
                         addr, sum
                     ) cells
@@ -300,7 +359,7 @@
 
             static member private countBuckets(ftable: FreqTable) : int =
                 // get total number of non-zero buckets in the entire table
-                Seq.filter (fun (elem: KeyValuePair<string*Scope.SelectID*double,int>) -> elem.Value > 0) ftable
+                Seq.filter (fun (elem: KeyValuePair<HistoBin,int>) -> elem.Value > 0) ftable
                 |> Seq.length
 
             static member private argmin(f: 'a -> int)(xs: 'a[]) : int =
@@ -411,7 +470,7 @@
                 ) |> adict
 
             static member private buildFrequencyTable(data: ScoreTable)(progress: Depends.Progress)(dag: Depends.DAG)(config: FeatureConf): FreqTable =
-                let d = new Dict<string*Scope.SelectID*double,int>()
+                let d = new Dict<HistoBin,int>()
                 Array.iter (fun fname ->
                     Array.iter (fun (sel: Scope.Selector) ->
                         Array.iter (fun (addr: AST.Address, score: double) ->
@@ -455,6 +514,17 @@
                     let fscore = scores.[fname,addr]
                     // get score count
                     ftable.[(fname,sID,fscore)]
+                ) (config.EnabledFeatures)
+
+            static member private getFeatureCounts(addr: AST.Address)(sel: Scope.Selector)(ftable: FreqTable)(scores: FastScoreTable)(config: FeatureConf) : (HistoBin*int)[] =
+                Array.map (fun fname -> 
+                    // get selector ID
+                    let sID = sel.id addr
+                    // get feature score
+                    let fscore = scores.[fname,addr]
+                    // get score count
+                    let count = ftable.[(fname,sID,fscore)]
+                    (fname,sID,fscore),count
                 ) (config.EnabledFeatures)
 
             // "AngleMin" algorithm

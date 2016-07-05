@@ -1,6 +1,6 @@
 ﻿module Scope
     type SelectID = (int option*int option*string option)
-    
+        
     type Selector =
     | AllCells
     | SameColumn
@@ -14,4 +14,10 @@
             | AllCells -> None, None, None
             | SameColumn -> Some addr.X, None, Some (addr.Path + ":" + addr.WorkbookName + ":" + addr.WorksheetName)
             | SameRow -> None, Some addr.Y, Some (addr.Path + ":" + addr.WorkbookName + ":" + addr.WorksheetName)
+        static member ToPretty(id: SelectID) : string =
+            match id with
+            | None,None,None -> "AllCells"
+            | Some(x),None,Some(path) -> "SameColumn"
+            | None,Some(y),Some(path) -> "SameRow"
+            | _ -> "unknown"
         static member Kinds = [| AllCells; SameColumn; SameRow |]

@@ -416,8 +416,18 @@ namespace ExceLintUI
                 if (_debug_mode && _analysis.scores.Length > 0)
                 {
                     // scores
-                    var cut_scores = _analysis.scores.Take(_analysis.cutoff + 1);
-                    var score_str = String.Join("\n", cut_scores.Select(score => score.Key.A1FullyQualified() + " -> " + score.Value.ToString()));
+                    var score_str = String.Join("\n", _analysis.scores.Select((score, idx) => {
+                                        // prefix with cutoff marker, if applicable
+                                        var prefix = "";
+                                        if (idx == _analysis.cutoff + 1) { prefix = "--- CUTOFF ---\n"; }
+
+                                        // enumerate causes
+                                        var causes = _analysis.model.causeOf(score.Key);
+                                        var causes_str = "\tcauses: [\n" + String.Join("\n", causes.Select(cause => "\t\t" + ExceLint.ErrorModel.prettyHistoBinDesc(cause.Key) + " = " + cause.Value)) + "\n\t]";
+
+                        // print
+                        return prefix + score.Key.A1FullyQualified() + " -> " + score.Value.ToString() + "\n" + causes_str + "\n\t" + "weight: " + _analysis.model.weightOf(score.Key);
+                                    }));
                     if (score_str == "")
                     {
                         score_str = "empty";
