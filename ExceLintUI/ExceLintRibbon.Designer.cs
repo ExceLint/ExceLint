@@ -295,7 +295,6 @@
             // 
             // inferAddrModes
             // 
-            this.inferAddrModes.Checked = true;
             this.inferAddrModes.Label = "Infer Address Modes";
             this.inferAddrModes.Name = "inferAddrModes";
             // 
@@ -304,11 +303,11 @@
             this.allCells.Label = "Analyze All Cells";
             this.allCells.Name = "allCells";
             // 
-            // weghtByIntrinsicAnomalousness
+            // weightByIntrinsicAnomalousness
             // 
             this.weightByIntrinsicAnomalousness.Checked = true;
             this.weightByIntrinsicAnomalousness.Label = "Reweight by Intrinsic Anomalousness";
-            this.weightByIntrinsicAnomalousness.Name = "weghtByIntrinsicAnomalousness";
+            this.weightByIntrinsicAnomalousness.Name = "weightByIntrinsicAnomalousness";
             // 
             // ExceLintRibbon
             // 
