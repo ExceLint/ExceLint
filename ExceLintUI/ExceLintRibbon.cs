@@ -364,7 +364,7 @@ namespace ExceLintUI
             if (this.rowCellsFreq.Checked) { c = c.analyzeRelativeToRows(); }
 
             if (this.inferAddrModes.Checked) { c = c.inferAddressModes();  }
-            if (!this.allCells.Checked) { c = c.analyzeOnlyInputs();  }
+            if (!this.allCells.Checked) { c = c.analyzeOnlyFormulas();  }
             if (this.weightByIntrinsicAnomalousness.Checked) { c = c.weightByIntrinsicAnomalousness(); }
 
             return c;

@@ -12,12 +12,15 @@
         type ChangeSet = { mutants: KeyValuePair<AST.Address,string>[]; scores: ScoreTable; freqtable: FreqTable }
 
         type ErrorModel(app: Microsoft.Office.Interop.Excel.Application, config: FeatureConf, dag: Depends.DAG, alpha: double, progress: Depends.Progress) =
-            let _analysis_base(d: Depends.DAG) : AST.Address[] = if config.IsEnabled("AnalyzeOnlyInputs") then d.allComputationCells() else d.allCells()
+            // _analysis_base specifies which cells should be ranked:
+            // 1. allCells means all cells in the spreadsheet
+            // 2. onlyFormulas means only formulas
+            let _analysis_base(d: Depends.DAG) : AST.Address[] = if config.IsEnabled("AnalyzeOnlyFormulas") then d.getAllFormulaAddrs() else d.allCells()
 
             let _significanceThreshold : int =
                 // round to integer
                 int (
-                    // get total number of counts
+                    // get total number of counts (maximum possible histogram height)
                     double (_analysis_base(dag).Length * config.EnabledFeatures.Length * config.EnabledScopes.Length)
                     // times signficance
                     * alpha
@@ -32,21 +35,21 @@
                  _ranking_time: int64) = ErrorModel.runModel _analysis_base dag config progress
 
             // find model that minimizes anomalousness
-            let _ranking' = if config.IsEnabled "InferAddressModes" then
+            let _ranking2 = if config.IsEnabled "InferAddressModes" then
                                 ErrorModel.inferAddressModes _analysis_base _ranking dag config (ErrorModel.nop) app
                             else
                                 _ranking
 
             // adjust ranking by intrinsic anomalousness
-            let _ranking'' = ErrorModel.nonzero(
+            let _ranking3 = ErrorModel.nonzero(
                                  if config.IsEnabled "WeightByIntrinsicAnomalousness" then
-                                    ErrorModel.reweightRanking _ranking' (ErrorModel.intrinsicAnomalousnessWeights _analysis_base dag)
+                                    ErrorModel.reweightRanking _ranking2 (ErrorModel.intrinsicAnomalousnessWeights _analysis_base dag)
                                  else
-                                    _ranking'
+                                    _ranking2
                              )
 
             // compute cutoff
-            let _cutoff = ErrorModel.findCutIndex _ranking'' _significanceThreshold
+            let _cutoff = ErrorModel.findCutIndex _ranking3 _significanceThreshold
 
             member self.ScoreTimeInMilliseconds : int64 = _score_time
 
@@ -62,7 +65,7 @@
 
             member self.NumRankedEntries : int = _analysis_base(dag).Length
 
-            member self.rankByFeatureSum() : Ranking = _ranking''
+            member self.rankByFeatureSum() : Ranking = _ranking3
 
             member self.getSignificanceCutoff : int = _cutoff
 
@@ -124,16 +127,16 @@
                 // get the set of cells to be analyzed
                 let cells = analysis_base(dag)
 
-                // for each cell, count how many formulas transitively refer to it
-                let refcounts = Array.map (fun i -> i,(dag.getFormulasThatRefCell i).Length) cells |> dict
+                // for each input in the dependence graph, count how many formulas transitively refer to it
+                let refcounts = Array.map (fun i -> i,(dag.getFormulasThatRefCell i).Length) (dag.allCells()) |> dict
 
                 // for each cell, compute cumulative reference count / total count
                 // this really only makes sense for formulas, but in case the user
                 // asked for a ranking of all cells, we compute refcounts here even
                 // for non-formulas
                 let weights = Array.map (fun f ->
-                                  let inputs' = ErrorModel.transitiveInputs f dag
-                                  let weight = double (Array.sumBy (fun i -> refcounts.[i]) inputs')
+                                  let inputs = ErrorModel.transitiveInputs f dag
+                                  let weight = double (Array.sumBy (fun i -> refcounts.[i]) inputs)
                                   f,weight
                               ) cells
 
