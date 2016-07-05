@@ -130,7 +130,10 @@
                 // for each input in the dependence graph, count how many formulas transitively refer to it
                 let refcounts = Array.map (fun i -> i,(dag.getFormulasThatRefCell i).Length) (dag.allCells()) |> dict
 
-                // for each cell, compute cumulative reference count / total count
+                // for each cell, compute cumulative reference count. the insight here
+                // is that summary rows are counting things that are counted by
+                // subcomputations; thus, we should inflate their ranks by how much
+                // they over-count.
                 // this really only makes sense for formulas, but in case the user
                 // asked for a ranking of all cells, we compute refcounts here even
                 // for non-formulas
