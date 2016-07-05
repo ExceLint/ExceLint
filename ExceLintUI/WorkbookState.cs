@@ -192,14 +192,20 @@ namespace ExceLintUI
             // find all sources for formula under the cursor
             RelativeVector[] sourceVects = f(cursorAddr, _dag);
 
-            // make string
-            string[] sourceVectStrings = sourceVects.Select(vect => vect.ToString()).ToArray();
-            var sourceVectsString = String.Join("\n", sourceVectStrings);
-
             // Enable screen updating when we're done
             _app.ScreenUpdating = true;
 
-            System.Windows.Forms.MessageBox.Show("From: " + cursorStr + "\n\n" + sourceVectsString);
+            if (sourceVects.Length == 0)
+            {
+                System.Windows.Forms.MessageBox.Show("No vectors.");
+            } else
+            {
+                // make string
+                string[] sourceVectStrings = sourceVects.Select(vect => vect.ToString()).ToArray();
+                var sourceVectsString = String.Join("\n", sourceVectStrings);
+
+                System.Windows.Forms.MessageBox.Show("From: " + cursorStr + "\n\n" + sourceVectsString);
+            }
         }
 
         internal void SerializeDAG(Boolean forceDAGBuild)
