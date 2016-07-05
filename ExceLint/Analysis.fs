@@ -65,7 +65,7 @@
 
             member self.NumRankedEntries : int = _analysis_base(dag).Length
 
-            member self.rankByFeatureSum() : Ranking = _ranking3
+            member self.rankByFeatureSum() : Ranking = ErrorModel.canonicalSort _ranking3
 
             member self.getSignificanceCutoff : int = _cutoff
 
@@ -105,6 +105,25 @@
 
             static member private nonzero(r: Ranking) : Ranking =
                 Array.filter (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Value > 0.0) r
+
+            static member private canonicalSort(r: Ranking) : Ranking =
+                Array.sortWith (fun a b ->
+                                       let a_addr: AST.Address = a.Key
+                                       let a_score: double = a.Value
+                                       let b_addr: AST.Address = b.Key
+                                       let b_score: double = b.Value
+                                       if a_score < b_score then
+                                           -1
+                                       else if a_score = b_score then
+                                           if (a_addr.Col) < (b_addr.Col) then
+                                               -1
+                                           else if a_addr.Col = b_addr.Col && a_addr.Row <= b_addr.Row then
+                                               -1
+                                           else
+                                               1
+                                       else
+                                           1
+                                   ) r
 
             static member private transitiveInputs(faddr: AST.Address)(dag : Depends.DAG) : AST.Address[] =
                 let rec tf(addr: AST.Address) : AST.Address list =
@@ -150,8 +169,7 @@
                     let addr = kvp.Key
                     let score = kvp.Value
                     new KeyValuePair<AST.Address,double>(addr, w.[addr] * score)
-                  ) |>
-                  Array.sortBy (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Value)
+                  )
 
             static member private getChangeSetAddresses(cs: ChangeSet) : AST.Address[] =
                 Array.map (fun (kvp: KeyValuePair<AST.Address,string>) ->
@@ -267,28 +285,8 @@
                         addr, sum
                     ) cells
 
-                // rank by sum (smallest first)
-                // for ties, rank by column and then row
-                let rankedAddrs = Array.sortWith (fun a b ->
-                                       let a_addr: AST.Address = fst a
-                                       let a_sum: int = snd a
-                                       let b_addr: AST.Address = fst b
-                                       let b_sum: int = snd b
-                                       if a_sum < b_sum then
-                                           1
-                                       else if a_sum = b_sum then
-                                           if (a_addr.Col) < (b_addr.Col) then
-                                               1
-                                           else if a_addr.Col = b_addr.Col && a_addr.Row <= b_addr.Row then
-                                               1
-                                           else
-                                               -1
-                                       else
-                                           -1
-                                   ) addrSums
-
                 // return KeyValuePairs
-                Array.map (fun (addr,sum) -> new KeyValuePair<AST.Address,double>(addr,double sum)) rankedAddrs
+                Array.map (fun (addr,sum) -> new KeyValuePair<AST.Address,double>(addr,double sum)) addrSums
 
             static member private countBuckets(ftable: FreqTable) : int =
                 // get total number of non-zero buckets in the entire table
