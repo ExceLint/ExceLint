@@ -268,7 +268,24 @@
                     ) cells
 
                 // rank by sum (smallest first)
-                let rankedAddrs: (AST.Address*int)[] = Array.sortBy (fun (addr,sum) -> sum) addrSums
+                // for ties, rank by column and then row
+                let rankedAddrs = Array.sortWith (fun a b ->
+                                       let a_addr: AST.Address = fst a
+                                       let a_sum: int = snd a
+                                       let b_addr: AST.Address = fst b
+                                       let b_sum: int = snd b
+                                       if a_sum < b_sum then
+                                           1
+                                       else if a_sum = b_sum then
+                                           if (a_addr.Col) < (b_addr.Col) then
+                                               1
+                                           else if a_addr.Col = b_addr.Col && a_addr.Row <= b_addr.Row then
+                                               1
+                                           else
+                                               -1
+                                       else
+                                           -1
+                                   ) addrSums
 
                 // return KeyValuePairs
                 Array.map (fun (addr,sum) -> new KeyValuePair<AST.Address,double>(addr,double sum)) rankedAddrs
