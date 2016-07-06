@@ -241,16 +241,18 @@
 
                 if ecs.[ranking.[cut_idx].Key] = ecs.[ranking.[cut_idx + 1].Key] then
                     // find the first index that is different by scanning backward
-                    if cut_idx = 0 then
-                        0
+                    if cut_idx <= 0 then
+                        -1
                     else
-                        let mutable seek = ecs.[ranking.[cut_idx - 1].Key]
-                        while seek = ecs.[ranking.[cut_idx].Key] && seek > 0 do
-                            seek <- seek - 1
-                        seek
+                        let mutable seek_idx = ecs.[ranking.[cut_idx - 1].Key]
+                        while seek_idx = ecs.[ranking.[cut_idx].Key] && seek_idx >= 0 do
+                            seek_idx <- seek_idx - 1
+                        seek_idx
                 else
                     cut_idx
 
+            // returns the index of the last element to KEEP
+            // returns -1 if you should keep nothing
             static member private findCutIndex(ranking: Ranking)(thresh: double)(causes: Causes): int =
                 // compute total order
                 let rank_nums = Array.map (fun (kvp: KeyValuePair<AST.Address,double>) -> int(kvp.Value)) ranking
@@ -271,7 +273,7 @@
                                                 (max_idx, cum_mass)
                                             else
                                                 (i, cum_mass)
-                                            ) (0,0.0)
+                                            ) (-1,0.0)
 
                 // does the cut index straddle an equivalence class?
                 ErrorModel.seekEquivalenceBoundary ranking causes cut_idx
