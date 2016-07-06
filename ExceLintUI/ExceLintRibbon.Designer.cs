@@ -184,7 +184,7 @@
             this.significanceTextBox.Label = "Sig. Thresh.";
             this.significanceTextBox.Name = "significanceTextBox";
             this.significanceTextBox.SizeString = "100.0";
-            this.significanceTextBox.Text = "0.25";
+            this.significanceTextBox.Text = "5";
             // 
             // separator1
             // 

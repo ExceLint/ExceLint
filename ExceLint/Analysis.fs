@@ -19,15 +19,6 @@
             // 2. onlyFormulas means only formulas
             let _analysis_base(d: Depends.DAG) : AST.Address[] = if config.IsEnabled("AnalyzeOnlyFormulas") then d.getAllFormulaAddrs() else d.allCells()
 
-            let _significanceThreshold : int =
-                // round to integer
-                int (
-                    // get total number of counts (maximum possible histogram height)
-                    double (_analysis_base(dag).Length * config.EnabledFeatures.Length * config.EnabledScopes.Length)
-                    // times signficance
-                    * alpha
-                )
-
             // build model
             let (_scores: ScoreTable,
                  _ftable: FreqTable,
@@ -54,6 +45,13 @@
 
             // sort ranking
             let _rankingSorted = ErrorModel.canonicalSort  _ranking3
+
+            // compute significance threshold
+            let _significanceThreshold : double =
+                // compute total mass of distribution
+                let total_mass = Array.sumBy (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Value) _rankingSorted
+                // compute the maximum score allowable
+                total_mass * alpha
 
             // compute cutoff
             let _cutoff = ErrorModel.findCutIndex _rankingSorted _significanceThreshold _causes
@@ -240,18 +238,20 @@
 
             static member private seekEquivalenceBoundary(ranking: Ranking)(causes: Causes)(cut_idx: int) : int =
                 let ecs = ErrorModel.equivalenceClasses ranking causes
+
                 if ecs.[ranking.[cut_idx].Key] = ecs.[ranking.[cut_idx + 1].Key] then
                     // find the first index that is different by scanning backward
-                    let mutable seek = ecs.[ranking.[cut_idx - 1].Key]
-                    while seek = ecs.[ranking.[cut_idx].Key] && seek > 0 do
-                        seek <- seek - 1
-                    seek
+                    if cut_idx = 0 then
+                        0
+                    else
+                        let mutable seek = ecs.[ranking.[cut_idx - 1].Key]
+                        while seek = ecs.[ranking.[cut_idx].Key] && seek > 0 do
+                            seek <- seek - 1
+                        seek
                 else
                     cut_idx
 
-            static member private findCutIndex(ranking: Ranking)(thresh: int)(causes: Causes): int =
-                let sigThresh = thresh
-
+            static member private findCutIndex(ranking: Ranking)(thresh: double)(causes: Causes): int =
                 // compute total order
                 let rank_nums = Array.map (fun (kvp: KeyValuePair<AST.Address,double>) -> int(kvp.Value)) ranking
 
@@ -263,14 +263,15 @@
 
                 // further cut by scaning through the list to find the
                 // index of the last significant score
-                let cut_idx: int = knee_cut
-                                    |> Array.mapi (fun i elem -> (i,elem))
-                                    |> Array.fold (fun (acc: int)(i: int, score: KeyValuePair<AST.Address,double>) ->
-                                        if score.Value > double sigThresh then
-                                            acc
-                                        else
-                                            i
-                                        ) (knee_cut.Length - 1)
+                let (cut_idx: int, _) = knee_cut
+                                        |> Array.mapi (fun i elem -> (i,elem))
+                                        |> Array.fold (fun (max_idx: int, mass: double)(i: int, score: KeyValuePair<AST.Address,double>) ->
+                                            let cum_mass = mass + score.Value
+                                            if cum_mass > thresh then
+                                                (max_idx, cum_mass)
+                                            else
+                                                (i, cum_mass)
+                                            ) (0,0.0)
 
                 // does the cut index straddle an equivalence class?
                 ErrorModel.seekEquivalenceBoundary ranking causes cut_idx
