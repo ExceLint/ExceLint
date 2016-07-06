@@ -120,6 +120,17 @@
 
                 debug |> Seq.toArray
 
+            // sanity check: are scores monotonically increasing?
+            static member monotonicallyIncreasing(r: Ranking) : bool =
+                let mutable last = 0.0
+                let mutable outcome = true
+                for kvp in r do
+                    if kvp.Value >= last then
+                        last <- kvp.Value
+                    else
+                        outcome <- false
+                outcome
+
             static member prettyHistoBinDesc(hb: HistoBin) : string =
                 let (feature_name,selector,fscore) = hb
                 "(" +
@@ -138,23 +149,30 @@
                 Array.filter (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Value > 0.0) r
 
             static member private canonicalSort(r: Ranking) : Ranking =
-                Array.sortWith (fun a b ->
-                                       let a_addr: AST.Address = a.Key
-                                       let a_score: double = a.Value
-                                       let b_addr: AST.Address = b.Key
-                                       let b_score: double = b.Value
-                                       if a_score < b_score then
-                                           -1
-                                       else if a_score = b_score then
-                                           if (a_addr.Col) < (b_addr.Col) then
-                                               -1
-                                           else if a_addr.Col = b_addr.Col && a_addr.Row <= b_addr.Row then
-                                               -1
-                                           else
-                                               1
-                                       else
-                                           1
-                                   ) r
+                let arr = Array.sortWith (fun (a: KeyValuePair<AST.Address,double>)(b: KeyValuePair<AST.Address,double>) ->
+                                              let a_addr: AST.Address = a.Key
+                                              let a_score: double = a.Value
+                                              let b_addr: AST.Address = b.Key
+                                              let b_score: double = b.Value
+                                              if a_score < b_score then
+                                                  -1
+                                              elif a_score = b_score then
+                                                  if a_addr.Col < b_addr.Col then
+                                                      -1
+                                                  elif a_addr.Col = b_addr.Col then
+                                                      if a_addr.Row < b_addr.Row then
+                                                          -1
+                                                      elif a_addr.Row = b_addr.Row then
+                                                          0
+                                                      else
+                                                          1
+                                                  else
+                                                      1
+                                              else
+                                                  1
+                                         ) r
+                assert (ErrorModel.monotonicallyIncreasing arr)
+                arr
 
             static member private transitiveInputs(faddr: AST.Address)(dag : Depends.DAG) : AST.Address[] =
                 let rec tf(addr: AST.Address) : AST.Address list =
@@ -173,12 +191,30 @@
     
                 tf faddr |> List.toArray
 
+            static member private refCount(dag: Depends.DAG) : Dict<AST.Address,int> =
+                // for each input in the dependence graph, count how many formulas transitively refer to it
+                let refcounts = Array.map (fun i -> i,(dag.getFormulasThatRefCell i).Length) (dag.allCells()) |> adict
+
+                // if an input was not available at the time of dependence graph construction,
+                // it will not be in dag.allCells() but formulas may refer to it; this
+                // adds what refcount information we can discern from the visible parts
+                // of the dependence graph
+                for f in (dag.getAllFormulaAddrs()) do
+                    let inputs = ErrorModel.transitiveInputs f dag
+                    for i in inputs do
+                        if not (refcounts.ContainsKey i) then
+                            refcounts.Add(i, 1)
+                        else
+                            refcounts.[i] <- refcounts.[i] + 1
+
+                refcounts
+
             static member private intrinsicAnomalousnessWeights(analysis_base: Depends.DAG -> AST.Address[])(dag: Depends.DAG) : Weights =
                 // get the set of cells to be analyzed
                 let cells = analysis_base(dag)
 
-                // for each input in the dependence graph, count how many formulas transitively refer to it
-                let refcounts = Array.map (fun i -> i,(dag.getFormulasThatRefCell i).Length) (dag.allCells()) |> dict
+                // determine how many formulas refer to each input
+                let refcounts = ErrorModel.refCount dag
 
                 // for each cell, compute cumulative reference count. the insight here
                 // is that summary rows are counting things that are counted by
