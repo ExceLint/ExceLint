@@ -332,6 +332,16 @@ namespace ExceLintUI
             this.StartOverButton.Enabled = wbs.ClearColoringButton_Enabled;
             this.AnalyzeButton.Enabled = wbs.Analyze_Enabled;
 
+            this.allCellsFreq.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
+            this.columnCellsFreq.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
+            this.rowCellsFreq.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
+            this.DebugOutput.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
+            this.forceBuildDAG.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
+            this.inferAddrModes.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
+            this.allCells.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
+            this.weightByIntrinsicAnomalousness.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
+            this.significanceTextBox.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
+
             if (wbs.HeatMap_Hidden)
             {
                 this.showHeatmap.Label = "Show Heat Map";
