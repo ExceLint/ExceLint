@@ -237,19 +237,22 @@
                 output
 
             static member private seekEquivalenceBoundary(ranking: Ranking)(causes: Causes)(cut_idx: int) : int =
-                let ecs = ErrorModel.equivalenceClasses ranking causes
-
-                if ecs.[ranking.[cut_idx].Key] = ecs.[ranking.[cut_idx + 1].Key] then
-                    // find the first index that is different by scanning backward
-                    if cut_idx <= 0 then
-                        -1
-                    else
-                        let mutable seek_idx = ecs.[ranking.[cut_idx - 1].Key]
-                        while seek_idx = ecs.[ranking.[cut_idx].Key] && seek_idx >= 0 do
-                            seek_idx <- seek_idx - 1
-                        seek_idx
+                if ranking.Length = 0 then
+                    -1
                 else
-                    cut_idx
+                    let ecs = ErrorModel.equivalenceClasses ranking causes
+
+                    if ecs.[ranking.[cut_idx].Key] = ecs.[ranking.[cut_idx + 1].Key] then
+                        // find the first index that is different by scanning backward
+                        if cut_idx <= 0 then
+                            -1
+                        else
+                            let mutable seek_idx = ecs.[ranking.[cut_idx - 1].Key]
+                            while seek_idx = ecs.[ranking.[cut_idx].Key] && seek_idx >= 0 do
+                                seek_idx <- seek_idx - 1
+                            seek_idx
+                    else
+                        cut_idx
 
             // returns the index of the last element to KEEP
             // returns -1 if you should keep nothing
@@ -261,7 +264,7 @@
                 let dderiv_idx = ErrorModel.dderiv(rank_nums)
 
                 // cut the ranking at the knee index
-                let knee_cut = ranking.[0..dderiv_idx]
+                let knee_cut = if dderiv_idx = 0 then Array.empty else ranking.[0..dderiv_idx]
 
                 // further cut by scaning through the list to find the
                 // index of the last significant score

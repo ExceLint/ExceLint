@@ -539,7 +539,7 @@ namespace ExceLintUI
 
             if (flaggable.Count() == 0)
             {
-                System.Windows.Forms.MessageBox.Show("Audit finished.");
+                System.Windows.Forms.MessageBox.Show("No remaining anomalies.");
                 resetTool();
             }
             else
