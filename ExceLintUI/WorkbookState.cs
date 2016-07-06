@@ -347,28 +347,32 @@ namespace ExceLintUI
                             return;
                         }
 
-                        // get score value
-                        var sVal = s.Value;
-
-                        // compute intensity
-                        var intensity = 1.0;
-                        if (max_score - min_score != 0)
-                        {
-                            intensity = (Convert.ToDouble(sVal - max_score) / Convert.ToDouble(min_score - max_score)) * 0.9 + 0.1;
-                        }
-
                         // make it some shade of red
-                        paintRed(s.Key, intensity);
+                        paintRed(s.Key, intensity(min_score, max_score, s.Value));
                     }
 
                     // Enable screen updating
                     _app.ScreenUpdating = true;
+                } else
+                {
+                    System.Windows.Forms.MessageBox.Show("No anomalies.");
+                    return;
                 }
             } else
             {
                 restoreOutputColors();
             }
             toggleHeatMapSetting();
+        }
+
+        private double intensity(double min_score, double max_score, double score)
+        {
+            var lmax = Math.Log(max_score - min_score + 1);
+            var lscore = Math.Log(score - min_score + 1);
+            var shade = (1 - (lscore / lmax)) / 2.0 + 0.5;
+
+            System.Diagnostics.Debug.Assert(shade >= 0.0 && shade <= 1.0);
+            return shade;
         }
 
         public void analyze(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean forceDAGBuild)
