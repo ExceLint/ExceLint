@@ -23,13 +23,11 @@ namespace ExceLintUI
         #region DATASTRUCTURES
         private Excel.Application _app;
         private Excel.Workbook _workbook;
-        //private double _tool_proportion = 0.05;
         private double _tool_significance = 0.05;
         private ColorDict _colors = new ColorDict();
         private HashSet<AST.Address> _tool_highlights = new HashSet<AST.Address>();
         private HashSet<AST.Address> _output_highlights = new HashSet<AST.Address>();
         private HashSet<AST.Address> _audited = new HashSet<AST.Address>();
-        //private Score[] _flaggable;
         private Analysis _analysis;
         private AST.Address _flagged_cell;
         private Depends.DAG _dag;
@@ -64,6 +62,11 @@ namespace ExceLintUI
         public void DAGChanged()
         {
             _dag_changed = true;
+        }
+
+        public void ConfigChanged()
+        {
+            _analysis.hasRun = false;
         }
 
         public double toolSignificance
@@ -369,7 +372,12 @@ namespace ExceLintUI
         {
             var lmax = Math.Log(max_score - min_score + 1);
             var lscore = Math.Log(score - min_score + 1);
-            var shade = (1 - (lscore / lmax)) / 2.0 + 0.5;
+
+            var shade = 1.0;
+            if (lmax != lscore)
+            {
+                shade = (1 - (lscore / lmax)) / 2.0 + 0.5;
+            }
 
             System.Diagnostics.Debug.Assert(shade >= 0.0 && shade <= 1.0);
             return shade;

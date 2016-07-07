@@ -181,10 +181,11 @@
             // 
             // significanceTextBox
             // 
-            this.significanceTextBox.Label = "Sig. Thresh.";
+            this.significanceTextBox.Label = "% Most Unusual";
             this.significanceTextBox.Name = "significanceTextBox";
             this.significanceTextBox.SizeString = "100.0";
             this.significanceTextBox.Text = "5";
+            this.significanceTextBox.TextChanged += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.significanceTextBox_TextChanged);
             // 
             // separator1
             // 
@@ -195,18 +196,21 @@
             this.inDegree.Label = "In-Degree";
             this.inDegree.Name = "inDegree";
             this.inDegree.Visible = false;
+            this.inDegree.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.inDegree_Click);
             // 
             // outDegree
             // 
             this.outDegree.Label = "Out-Degree";
             this.outDegree.Name = "outDegree";
             this.outDegree.Visible = false;
+            this.outDegree.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.outDegree_Click);
             // 
             // combinedDegree
             // 
             this.combinedDegree.Label = "Both-Degree";
             this.combinedDegree.Name = "combinedDegree";
             this.combinedDegree.Visible = false;
+            this.combinedDegree.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.combinedDegree_Click);
             // 
             // inVectors
             // 
@@ -214,48 +218,56 @@
             this.inVectors.Label = "In-Vectors (mix; sh)";
             this.inVectors.Name = "inVectors";
             this.inVectors.Visible = false;
+            this.inVectors.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.inVectors_Click);
             // 
             // outVectors
             // 
             this.outVectors.Label = "Out-Vectors (mix; sh)";
             this.outVectors.Name = "outVectors";
             this.outVectors.Visible = false;
+            this.outVectors.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.outVectors_Click);
             // 
             // inVectorsAbs
             // 
             this.inVectorsAbs.Label = "In-Vectors (abs; sh)";
             this.inVectorsAbs.Name = "inVectorsAbs";
             this.inVectorsAbs.Visible = false;
+            this.inVectorsAbs.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.inVectorsAbs_Click);
             // 
             // outVectorsAbs
             // 
             this.outVectorsAbs.Label = "Out-Vectors (abs; sh)";
             this.outVectorsAbs.Name = "outVectorsAbs";
             this.outVectorsAbs.Visible = false;
+            this.outVectorsAbs.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.outVectorsAbs_Click);
             // 
             // ProximityAbove
             // 
             this.ProximityAbove.Label = "Above";
             this.ProximityAbove.Name = "ProximityAbove";
             this.ProximityAbove.Visible = false;
+            this.ProximityAbove.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ProximityAbove_Click);
             // 
             // ProximityBelow
             // 
             this.ProximityBelow.Label = "Below";
             this.ProximityBelow.Name = "ProximityBelow";
             this.ProximityBelow.Visible = false;
+            this.ProximityBelow.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ProximityBelow_Click);
             // 
             // ProximityLeft
             // 
             this.ProximityLeft.Label = "Left";
             this.ProximityLeft.Name = "ProximityLeft";
             this.ProximityLeft.Visible = false;
+            this.ProximityLeft.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ProximityLeft_Click);
             // 
             // ProximityRight
             // 
             this.ProximityRight.Label = "Right";
             this.ProximityRight.Name = "ProximityRight";
             this.ProximityRight.Visible = false;
+            this.ProximityRight.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ProximityRight_Click);
             // 
             // separator2
             // 
@@ -266,18 +278,21 @@
             this.allCellsFreq.Checked = true;
             this.allCellsFreq.Label = "All Cells Freq.";
             this.allCellsFreq.Name = "allCellsFreq";
+            this.allCellsFreq.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.allCellsFreq_Click);
             // 
             // columnCellsFreq
             // 
             this.columnCellsFreq.Checked = true;
             this.columnCellsFreq.Label = "Column Cells Freq";
             this.columnCellsFreq.Name = "columnCellsFreq";
+            this.columnCellsFreq.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.columnCellsFreq_Click);
             // 
             // rowCellsFreq
             // 
             this.rowCellsFreq.Checked = true;
             this.rowCellsFreq.Label = "Row Cells Freq";
             this.rowCellsFreq.Name = "rowCellsFreq";
+            this.rowCellsFreq.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.rowCellsFreq_Click);
             // 
             // separator3
             // 
@@ -287,27 +302,32 @@
             // 
             this.DebugOutput.Label = "Show Debug Output";
             this.DebugOutput.Name = "DebugOutput";
+            this.DebugOutput.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.DebugOutput_Click);
             // 
             // forceBuildDAG
             // 
             this.forceBuildDAG.Label = "Force DAG Rebuild";
             this.forceBuildDAG.Name = "forceBuildDAG";
+            this.forceBuildDAG.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.forceBuildDAG_Click);
             // 
             // inferAddrModes
             // 
             this.inferAddrModes.Label = "Infer Address Modes";
             this.inferAddrModes.Name = "inferAddrModes";
+            this.inferAddrModes.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.inferAddrModes_Click);
             // 
             // allCells
             // 
             this.allCells.Label = "Analyze All Cells";
             this.allCells.Name = "allCells";
+            this.allCells.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.allCells_Click);
             // 
             // weightByIntrinsicAnomalousness
             // 
             this.weightByIntrinsicAnomalousness.Checked = true;
             this.weightByIntrinsicAnomalousness.Label = "Reweight by Intrinsic Anomalousness";
             this.weightByIntrinsicAnomalousness.Name = "weightByIntrinsicAnomalousness";
+            this.weightByIntrinsicAnomalousness.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.weightByIntrinsicAnomalousness_Click);
             // 
             // ExceLintRibbon
             // 
