@@ -45,16 +45,17 @@
                     | Success(analysis2) -> fn2 input analysis2
                     | Cancellation -> Cancellation
 
+            let conv1 (fn: Input -> AnalysisOutcome) : Input -> Analysis -> AnalysisOutcome =
+                fun (input: Input)(analysis: Analysis) -> fn input
+
         type ErrorModel(app: Microsoft.Office.Interop.Excel.Application, config: FeatureConf, dag: Depends.DAG, alpha: double, progress: Depends.Progress) =
             let mutable _was_cancelled = false
 
             let _input : Pipeline.Input = { app = app; config = config; dag = dag; alpha = alpha; progress = progress; }
 
-            // build model
-            let _analysis = ErrorModel.runModel _input
-
-            // find model that minimizes anomalousness
-            let _ranking2 = ErrorModel.inferAddressModes _analysis _input
+            let _analysis = Pipeline.comb
+                                (Pipeline.conv1 ErrorModel.runModel)    // build model
+                                ErrorModel.inferAddressModes            // find model that minimizes anomalousness
 
             // compute weights
             let _weights = if config.IsEnabled "WeightByIntrinsicAnomalousness" then
@@ -421,7 +422,7 @@
                         }
                     )
                 else
-                    analysis.ranking
+                    Pipeline.Success(analysis)
 
             static member private runModel(input: Pipeline.Input) : Pipeline.AnalysisOutcome =
                 try
