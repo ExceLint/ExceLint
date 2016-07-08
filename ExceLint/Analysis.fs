@@ -13,32 +13,54 @@
         type Causes = Dict<AST.Address,(HistoBin*int)[]>
         type ChangeSet = { mutants: KeyValuePair<AST.Address,string>[]; scores: ScoreTable; freqtable: FreqTable }
 
+        module Pipeline =
+            exception AnalysisCancelled
+
+            type Input = {
+                app: Microsoft.Office.Interop.Excel.Application;
+                config: FeatureConf;
+                dag: Depends.DAG;
+                alpha: double;
+                progress: Depends.Progress;
+            }
+
+            type Analysis = {
+                scores: ScoreTable;
+                ftable: FreqTable;
+                ranking: Ranking;
+                causes: Causes;
+                ftable_time: int64;
+                ranking_time: int64;
+                significance_threshold: double;
+                cutoff: int
+            }
+
+            type AnalysisOutcome =
+            | Success of Analysis
+            | Cancellation
+
+            let comb (fn1: Input -> Analysis -> AnalysisOutcome)(fn2: Input -> Analysis -> AnalysisOutcome) : Input -> Analysis -> AnalysisOutcome =
+                fun (input: Input)(analysis: Analysis) ->
+                    match (fn1 input analysis) with
+                    | Success(analysis2) -> fn2 input analysis2
+                    | Cancellation -> Cancellation
+
         type ErrorModel(app: Microsoft.Office.Interop.Excel.Application, config: FeatureConf, dag: Depends.DAG, alpha: double, progress: Depends.Progress) =
-            // _analysis_base specifies which cells should be ranked:
-            // 1. allCells means all cells in the spreadsheet
-            // 2. onlyFormulas means only formulas
-            let _analysis_base(d: Depends.DAG) : AST.Address[] = if config.IsEnabled("AnalyzeOnlyFormulas") then d.getAllFormulaAddrs() else d.allCells()
+            let mutable _was_cancelled = false
+
+            let _input : Pipeline.Input = { app = app; config = config; dag = dag; alpha = alpha; progress = progress; }
 
             // build model
-            let (_scores: ScoreTable,
-                 _ftable: FreqTable,
-                 _ranking: Ranking,
-                 _causes: Causes,
-                 _score_time: int64,
-                 _ftable_time: int64,
-                 _ranking_time: int64) = ErrorModel.runModel _analysis_base dag config progress
+            let _analysis = ErrorModel.runModel _input
 
             // find model that minimizes anomalousness
-            let _ranking2 = if config.IsEnabled "InferAddressModes" then
-                                ErrorModel.inferAddressModes _analysis_base _ranking dag config (ErrorModel.nop) app
-                            else
-                                _ranking
+            let _ranking2 = ErrorModel.inferAddressModes _analysis _input
 
             // compute weights
             let _weights = if config.IsEnabled "WeightByIntrinsicAnomalousness" then
-                               ErrorModel.intrinsicAnomalousnessWeights _analysis_base dag
-                           else
-                               ErrorModel.noWeights _analysis_base dag
+                                ErrorModel.intrinsicAnomalousnessWeights _analysis_base dag
+                            else
+                                ErrorModel.noWeights _analysis_base dag
 
             // adjust ranking by intrinsic anomalousness
             let _ranking3 = ErrorModel.nonzero(ErrorModel.reweightRanking _ranking2 _weights)
@@ -55,6 +77,8 @@
 
             // compute cutoff
             let _cutoff = ErrorModel.findCutIndex _rankingSorted _significanceThreshold _causes
+
+            member self.WasCancelled : bool = _was_cancelled
 
             member self.ScoreTimeInMilliseconds : int64 = _score_time
 
@@ -119,6 +143,15 @@
                                      ) d
 
                 debug |> Seq.toArray
+
+            // _analysis_base specifies which cells should be ranked:
+            // 1. allCells means all cells in the spreadsheet
+            // 2. onlyFormulas means only formulas
+            static member analysisBase(config: FeatureConf)(d: Depends.DAG) : AST.Address[] =
+                if config.IsEnabled("AnalyzeOnlyFormulas") then
+                    d.getAllFormulaAddrs()
+                else
+                    d.allCells()
 
             // sanity check: are scores monotonically increasing?
             static member monotonicallyIncreasing(r: Ranking) : bool =
@@ -325,69 +358,104 @@
                 ) arr
                 d
 
-            static member private inferAddressModes(analysis_base: Depends.DAG -> AST.Address[])(r: Ranking)(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress)(app: Microsoft.Office.Interop.Excel.Application) : Ranking =
-                let cells = analysis_base(dag)
+            static member private inferAddressModes(input: Pipeline.Input)(analysis: Pipeline.Analysis) : Pipeline.AnalysisOutcome =
+                if input.config.IsEnabled "InferAddressModes" then
+                    let cells = ErrorModel.analysisBase input.config input.dag
 
-                // convert ranking into map
-                let rankmap = r |> Array.map (fun (pair: KeyValuePair<AST.Address,double>) -> (pair.Key,pair.Value))
-                                |> ErrorModel.toDict
+                    // convert ranking into map
+                    let rankmap = analysis.ranking
+                                  |> Array.map (fun (pair: KeyValuePair<AST.Address,double>) -> (pair.Key,pair.Value))
+                                  |> ErrorModel.toDict
 
-                // get all the formulas that ref each cell
-                let refss = Array.map (fun input -> input, dag.getFormulasThatRefCell input) cells |> ErrorModel.toDict
+                    // get all the formulas that ref each cell
+                    let refss = Array.map (fun i -> i, input.dag.getFormulasThatRefCell i) cells |> ErrorModel.toDict
 
-                // rank inputs by their impact on the ranking
-                let crank = Array.sortBy (fun input ->
-                                let sum = Array.sumBy (fun formula ->
-                                              rankmap.[formula]
-                                          ) (refss.[input])
-                                -sum
-                            ) cells
+                    // rank inputs by their impact on the ranking
+                    let crank = Array.sortBy (fun input ->
+                                    let sum = Array.sumBy (fun formula ->
+                                                  rankmap.[formula]
+                                              ) (refss.[input])
+                                    -sum
+                                ) cells
 
-                // for each input cell, try changing all refs to either abs or rel;
-                // if anomalousness drops, keep new interpretation
-                let dag' = Array.fold (fun accdag input ->
-                               // get referring formulas
-                               let refs = refss.[input]
+                    // for each input cell, try changing all refs to either abs or rel;
+                    // if anomalousness drops, keep new interpretation
+                    let dag' = Array.fold (fun accdag i ->
+                                   // get referring formulas
+                                   let refs = refss.[i]
 
-                               if refs.Length <> 0 then
-                                   // run inference
-                                   let cs = ErrorModel.chooseLikelyAddressMode input refs accdag config progress app
+                                   if refs.Length <> 0 then
+                                       // run inference
+                                       let cs = ErrorModel.chooseLikelyAddressMode i refs accdag input.config input.progress input.app
 
-                                   // update DAG
-                                   ErrorModel.mutateDAG cs accdag app progress
-                               else
-                                   accdag
-                           ) dag crank
+                                       // update DAG
+                                       ErrorModel.mutateDAG cs accdag input.app input.progress
+                                   else
+                                       accdag
+                               ) input.dag crank
 
 
-                // score
-                let scores = ErrorModel.runEnabledFeatures cells dag' config progress
+                    // score
+                    let scores = ErrorModel.runEnabledFeatures cells dag' input.config input.progress
 
-                // count freqs
-                let freqs = ErrorModel.buildFrequencyTable scores progress dag' config
+                    // count freqs
+                    let freqs = ErrorModel.buildFrequencyTable scores input.progress dag' input.config
+                    
+                    // rerank
+                    let ranking = ErrorModel.rank cells freqs scores input.config;
 
-                // rerank
-                ErrorModel.rank cells freqs scores config
+                    // get causes
+                    let causes = ErrorModel.causes (ErrorModel.analysisBase input.config input.dag) freqs scores input.config;
 
-            static member private runModel(analysisbase: Depends.DAG -> AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress) =
-                let _runf = fun () -> ErrorModel.runEnabledFeatures (analysisbase dag) dag config progress
+                    // TODO: we shouldn't just blindly pass along old _time numbers
+                    Pipeline.Success(
+                        {
+                            scores = scores;
+                            ftable = freqs;
+                            ranking = ranking;
+                            causes = causes;
+                            ftable_time = analysis.ftable_time;
+                            ranking_time = analysis.ranking_time;
+                            significance_threshold = 0.05;
+                            cutoff = 0;
+                        }
+                    )
+                else
+                    analysis.ranking
 
-                // get scores for each feature: featurename -> (address, score)[]
-                let (scores: ScoreTable,score_time: int64) = PerfUtils.runMillis _runf ()
+            static member private runModel(input: Pipeline.Input) : Pipeline.AnalysisOutcome =
+                try
+                    let _runf = fun () -> ErrorModel.runEnabledFeatures (ErrorModel.analysisBase input.config input.dag) input.dag input.config input.progress
 
-                // build frequency table: (featurename, selector, score) -> freq
-                let _freqf = fun () -> ErrorModel.buildFrequencyTable scores progress dag config
-                let ftable,ftable_time = PerfUtils.runMillis _freqf ()
+                    // get scores for each feature: featurename -> (address, score)[]
+                    let (scores: ScoreTable,score_time: int64) = PerfUtils.runMillis _runf ()
 
-                // rank
-                let _rankf = fun () -> ErrorModel.rank (analysisbase dag) ftable scores config
-                let ranking,ranking_time = PerfUtils.runMillis _rankf ()
+                    // build frequency table: (featurename, selector, score) -> freq
+                    let _freqf = fun () -> ErrorModel.buildFrequencyTable scores input.progress input.dag input.config
+                    let ftable,ftable_time = PerfUtils.runMillis _freqf ()
 
-                // save causes
-                let _causef = fun () -> ErrorModel.causes (analysisbase dag) ftable scores config
-                let causes,causes_time = PerfUtils.runMillis _causef ()
+                    // rank
+                    let _rankf = fun () -> ErrorModel.rank (ErrorModel.analysisBase input.config input.dag) ftable scores input.config
+                    let ranking,ranking_time = PerfUtils.runMillis _rankf ()
 
-                (scores, ftable, ranking, causes, score_time, ftable_time, ranking_time + causes_time)
+                    // save causes
+                    let _causef = fun () -> ErrorModel.causes (ErrorModel.analysisBase input.config input.dag) ftable scores input.config
+                    let causes,causes_time = PerfUtils.runMillis _causef ()
+
+                    Pipeline.Success(
+                        {
+                            scores = scores;
+                            ftable = ftable;
+                            ranking = ranking;
+                            causes = causes;
+                            ftable_time = ftable_time;
+                            ranking_time = ranking_time + causes_time;
+                            significance_threshold = 0.05;
+                            cutoff = 0;
+                        }
+                    )
+                with
+                | AnalysisCancelled -> Pipeline.Cancellation
 
             static member private causes(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(config: FeatureConf) : Causes =
                 let fscores = ErrorModel.makeFastScoreTable scores

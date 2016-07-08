@@ -1,10 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 
 namespace ExceLintUI
@@ -15,14 +9,15 @@ namespace ExceLintUI
     public partial class ProgBar : Form
     {
         private int _count = 0;
+        private Boolean _cancel = false;
 
         public ProgBar()
         {
             InitializeComponent();
+
             workProgress.Minimum = 0;
             workProgress.Maximum = 100;
             this.Visible = true;
-
         }
 
         public void IncrementProgress()
@@ -53,6 +48,21 @@ namespace ExceLintUI
             workProgress.Value = pbval;
 
             _count++;
+        }
+
+        private void ProgBar_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void ProgBar_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            _cancel = true;
+        }
+
+        public bool IsCancelled()
+        {
+            return _cancel;
         }
     }
 }
