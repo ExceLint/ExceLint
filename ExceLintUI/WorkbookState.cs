@@ -5,6 +5,7 @@ using Excel = Microsoft.Office.Interop.Excel;
 using FullyQualifiedVector = ExceLint.Vector.FullyQualifiedVector;
 using RelativeVector = System.Tuple<int, int, int>;
 using Score = System.Collections.Generic.KeyValuePair<AST.Address, double>;
+using Microsoft.FSharp.Core;
 
 namespace ExceLintUI
 {
@@ -125,8 +126,16 @@ namespace ExceLintUI
 
             Func<Depends.Progress, ExceLint.ErrorModel> f = (Depends.Progress p) =>
              {
-                // find all vectors for formula under the cursor
-                return new ExceLint.ErrorModel(_app, config, _dag, _tool_significance, p);
+                 // find all vectors for formula under the cursor
+                 //return new ExceLint.ErrorModel(_app, config, _dag, _tool_significance, p);
+
+                 var mopt = ExceLint.ModelBuilder.analyze(_app, config, _dag, _tool_significance, p);
+                 if (FSharpOption<ExceLint.ErrorModel>.get_IsNone(mopt))
+                 {
+                     throw new Exception("Could not build model.");
+                 } else {
+                     return mopt.Value;
+                 }
              };
 
             var model = buildDAGAndDoStuff(forceDAGBuild, f, 3);
@@ -410,10 +419,18 @@ namespace ExceLintUI
                     else
                     {
                         // run analysis
-                        var model = new ExceLint.ErrorModel(_app, config, _dag, _tool_significance, p);
-                        Score[] scores = model.rankByFeatureSum();
-                        int cutoff = model.getSignificanceCutoff;
-                        return new Analysis { scores = scores, ranOK = true, cutoff = cutoff, model = model, hasRun = true };
+                        var mopt = ExceLint.ModelBuilder.analyze(_app, config, _dag, _tool_significance, p);
+                        if (FSharpOption<ExceLint.ErrorModel>.get_IsNone(mopt))
+                        {
+                            throw new Exception("Could not build model.");
+                        }
+                        else
+                        {
+                            var model = mopt.Value;
+                            Score[] scores = model.rankByFeatureSum();
+                            int cutoff = model.getSignificanceCutoff;
+                            return new Analysis { scores = scores, ranOK = true, cutoff = cutoff, model = model, hasRun = true };
+                        }
                     }
                 };
 

@@ -59,7 +59,8 @@
     <Compile Include="Pipeline.fs" />
     <Compile Include="PerfUtils.fs" />
     <Compile Include="ASTMutator.fs" />
-    <Compile Include="Analysis.fs" />
+    <Compile Include="ErrorModel.fs" />
+    <Compile Include="ModelBuilder.fs" />
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
