@@ -56,6 +56,7 @@
     <Compile Include="Vector.fs" />
     <Compile Include="Proximity.fs" />
     <Compile Include="FeatureConf.fs" />
+    <Compile Include="Pipeline.fs" />
     <Compile Include="PerfUtils.fs" />
     <Compile Include="ASTMutator.fs" />
     <Compile Include="Analysis.fs" />
