@@ -123,9 +123,6 @@ namespace ExceLintUI
             AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, _app.ActiveWorkbook);
             var cursorStr = "(" + cursorAddr.X + "," + cursorAddr.Y + ")";  // for sanity-preservation purposes
 
-            // build DAG
-            UpdateDAG(forceDAGBuild);
-
             Func<Depends.Progress, ExceLint.ErrorModel> f = (Depends.Progress p) =>
              {
                  // find all vectors for formula under the cursor
@@ -140,7 +137,11 @@ namespace ExceLintUI
                  }
              };
 
-            var model = buildDAGAndDoStuff(forceDAGBuild, f, 3);
+            ExceLint.ErrorModel model;
+            using (var pb = new ProgBar())
+            {
+                model = buildDAGAndDoStuff(forceDAGBuild, f, 3, pb);
+            }
 
             var output = model.inspectSelectorFor(cursorAddr, sel);
 
@@ -170,7 +171,10 @@ namespace ExceLintUI
             _app.ScreenUpdating = false;
 
             // build DAG
-            UpdateDAG(forceDAGBuild);
+            using (var pb = new ProgBar())
+            {
+                UpdateDAG(forceDAGBuild, pb);
+            }
 
             // get cursor location
             var cursor = (Excel.Range)_app.Selection;
@@ -196,7 +200,10 @@ namespace ExceLintUI
             _app.ScreenUpdating = false;
 
             // build DAG
-            UpdateDAG(forceDAGBuild);
+            using (var pb = new ProgBar())
+            {
+                UpdateDAG(forceDAGBuild, pb);
+            }
 
             // get cursor location
             var cursor = (Excel.Range)_app.Selection;
@@ -224,9 +231,9 @@ namespace ExceLintUI
 
         internal void SerializeDAG(Boolean forceDAGBuild)
         {
-            if (_dag == null)
+            using (var pb = new ProgBar())
             {
-                UpdateDAG(forceDAGBuild);
+                UpdateDAG(forceDAGBuild, pb);
             }
             _dag.SerializeToDirectory(CACHEDIRPATH);
         }
@@ -279,7 +286,10 @@ namespace ExceLintUI
             _app.ScreenUpdating = false;
 
             // build DAG
-            UpdateDAG(forceDAGBuild);
+            using (var pb = new ProgBar())
+            {
+                UpdateDAG(forceDAGBuild, pb);
+            }
 
             // get cursor location
             var cursor = (Excel.Range)_app.Selection;
@@ -296,25 +306,37 @@ namespace ExceLintUI
         }
 
         // this lets us reuse the progressbar for other work
-        private T buildDAGAndDoStuff<T>(Boolean forceDAGBuild, Func<Depends.Progress,T> doStuff, long workMultiplier)
+        //private T buildDAGAndDoStuff<T>(Boolean forceDAGBuild, Func<Depends.Progress,T> doStuff, long workMultiplier)
+        //{
+        //    using (var pb = new ProgBar())
+        //    {
+        //        // create progress delegates
+        //        Depends.ProgressBarIncrementer incr = () => pb.IncrementProgress();
+        //        var p = new Depends.Progress(incr, workMultiplier);
+        //        pb.registerCancelCallback(() => p.Cancel());
+
+        //        RefreshDAG(forceDAGBuild, p);
+
+        //        return doStuff(p);
+        //    }
+        //}
+
+        private T buildDAGAndDoStuff<T>(Boolean forceDAGBuild, Func<Depends.Progress, T> doStuff, long workMultiplier, ProgBar pb)
         {
-            using (var pb = new ProgBar())
-            {
-                // create progress delegates
-                Depends.ProgressBarIncrementer incr = () => pb.IncrementProgress();
-                var p = new Depends.Progress(incr, workMultiplier);
-                pb.registerCancelCallback(() => p.Cancel());
+            // create progress delegates
+            Depends.ProgressBarIncrementer incr = () => pb.IncrementProgress();
+            var p = new Depends.Progress(incr, workMultiplier);
+            pb.registerCancelCallback(() => p.Cancel());
 
-                RefreshDAG(forceDAGBuild, p);
+            RefreshDAG(forceDAGBuild, p);
 
-                return doStuff(p);
-            }
+            return doStuff(p);
         }
 
-        private void UpdateDAG(Boolean forceDAGBuild)
+        private void UpdateDAG(Boolean forceDAGBuild, ProgBar pb)
         {
             Func<Depends.Progress,int> f = (Depends.Progress p) => 1;
-            buildDAGAndDoStuff(forceDAGBuild, f, 1L);
+            buildDAGAndDoStuff(forceDAGBuild, f, 1L, pb);
         }
 
         private void RefreshDAG(Boolean forceDAGBuild, Depends.Progress p)
@@ -331,14 +353,14 @@ namespace ExceLintUI
             }
         }
 
-        public void toggleHeatMap(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean forceDAGBuild)
+        public void toggleHeatMap(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean forceDAGBuild, ProgBar pb)
         {
             if (HeatMap_Hidden)
             {
                 if (!_analysis.hasRun)
                 {
                     // run analysis
-                    analyze(max_duration_in_ms, config, forceDAGBuild);
+                    analyze(max_duration_in_ms, config, forceDAGBuild, pb);
                 }
 
                 if (_analysis.cutoff > 0)
@@ -395,7 +417,7 @@ namespace ExceLintUI
             return shade;
         }
 
-        public void analyze(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean forceDAGBuild)
+        public void analyze(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean forceDAGBuild, ProgBar pb)
         {
             var sw = new System.Diagnostics.Stopwatch();
             sw.Start();
@@ -437,7 +459,10 @@ namespace ExceLintUI
                     }
                 };
 
-                _analysis = buildDAGAndDoStuff(forceDAGBuild, f, 3);
+                _analysis = buildDAGAndDoStuff(forceDAGBuild, f, 3, pb);
+
+                // tell progbar to go away
+                pb.Dispose();
 
                 if (!_analysis.ranOK)
                 {
@@ -447,38 +472,7 @@ namespace ExceLintUI
                 // debug output
                 if (_debug_mode && _analysis.scores.Length > 0)
                 {
-                    // scores
-                    var score_str = String.Join("\n", _analysis.scores.Select((score, idx) => {
-                                        // prefix with cutoff marker, if applicable
-                                        var prefix = "";
-                                        if (idx == _analysis.cutoff + 1) { prefix = "--- CUTOFF ---\n"; }
-
-                                        // enumerate causes
-                                        var causes = _analysis.model.causeOf(score.Key);
-                                        var causes_str = "\tcauses: [\n" + String.Join("\n", causes.Select(cause => "\t\t" + ExceLint.ErrorModel.prettyHistoBinDesc(cause.Key) + " = " + cause.Value)) + "\n\t]";
-
-                        // print
-                        return prefix + score.Key.A1FullyQualified() + " -> " + score.Value.ToString() + "\n" + causes_str + "\n\t" + "weight: " + _analysis.model.weightOf(score.Key);
-                                    }));
-                    if (score_str == "")
-                    {
-                        score_str = "empty";
-                    }
-                    System.Windows.Forms.Clipboard.SetText(score_str);
-                    System.Windows.Forms.MessageBox.Show(score_str);
-
-                    // time and space information
-                    var time_str = "DAG construction ms: " + _dag.AnalysisMilliseconds + "\n" +
-                                   "Feature scoring ms: " + _analysis.model.ScoreTimeInMilliseconds + "\n" +
-                                   "Num score entries: " + _analysis.model.NumScoreEntries + "\n" +
-                                   "Frequency counting ms: " + _analysis.model.FrequencyTableTimeInMilliseconds + "\n" +
-                                   "Num freq table entries: " + _analysis.model.NumFreqEntries + "\n" +
-                                   "Ranking ms: " + _analysis.model.RankingTimeInMilliseconds + "\n" +
-                                   "Total ranking length: " + _analysis.model.NumRankedEntries;
-
-                    System.Windows.Forms.Clipboard.SetText(time_str);
-                    System.Windows.Forms.MessageBox.Show(time_str);
-
+                    printDebugInfo();
                 }
 
                 // Re-enable alerts
@@ -495,6 +489,41 @@ namespace ExceLintUI
             }
 
             sw.Stop();
+        }
+
+        private void printDebugInfo()
+        {
+            // scores
+            var score_str = String.Join("\n", _analysis.scores.Select((score, idx) => {
+                // prefix with cutoff marker, if applicable
+                var prefix = "";
+                if (idx == _analysis.cutoff + 1) { prefix = "--- CUTOFF ---\n"; }
+
+                // enumerate causes
+                var causes = _analysis.model.causeOf(score.Key);
+                var causes_str = "\tcauses: [\n" + String.Join("\n", causes.Select(cause => "\t\t" + ExceLint.ErrorModel.prettyHistoBinDesc(cause.Key) + " = " + cause.Value)) + "\n\t]";
+
+                // print
+                return prefix + score.Key.A1FullyQualified() + " -> " + score.Value.ToString() + "\n" + causes_str + "\n\t" + "weight: " + _analysis.model.weightOf(score.Key);
+            }));
+            if (score_str == "")
+            {
+                score_str = "empty";
+            }
+            System.Windows.Forms.Clipboard.SetText(score_str);
+            System.Windows.Forms.MessageBox.Show(score_str);
+
+            // time and space information
+            var time_str = "DAG construction ms: " + _dag.AnalysisMilliseconds + "\n" +
+                           "Feature scoring ms: " + _analysis.model.ScoreTimeInMilliseconds + "\n" +
+                           "Num score entries: " + _analysis.model.NumScoreEntries + "\n" +
+                           "Frequency counting ms: " + _analysis.model.FrequencyTableTimeInMilliseconds + "\n" +
+                           "Num freq table entries: " + _analysis.model.NumFreqEntries + "\n" +
+                           "Ranking ms: " + _analysis.model.RankingTimeInMilliseconds + "\n" +
+                           "Total ranking length: " + _analysis.model.NumRankedEntries;
+
+            System.Windows.Forms.Clipboard.SetText(time_str);
+            System.Windows.Forms.MessageBox.Show(time_str);
         }
 
         private void activateAndCenterOn(AST.Address cell, Excel.Application app)

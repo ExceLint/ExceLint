@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Microsoft.Office.Tools.Ribbon;
 using Microsoft.FSharp.Core;
 using Excel = Microsoft.Office.Interop.Excel;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace ExceLintUI
 {
@@ -23,45 +25,81 @@ namespace ExceLintUI
             // check for debug checkbox
             currentWorkbook.DebugMode = this.DebugOutput.Checked;
 
+            // get significance threshold
             var sig = getPercent(this.significanceTextBox.Text, this.significanceTextBox.Label);
-            if (sig == FSharpOption<double>.None)
+
+            // workbook- and UI-update callback
+            Action<WorkbookState> updateWorkbook = (WorkbookState wbs) =>
+            {
+                this.currentWorkbook = wbs;
+                setUIState(currentWorkbook);
+            };
+
+            // create progbar in main thread;
+            // worker thread will call Dispose
+            var pb = new ProgBar();
+
+            // call task in new thread and do not wait
+            Task t = Task.Run(() => DoAnalysis(sig, currentWorkbook, getConfig(), this.forceBuildDAG.Checked, updateWorkbook, pb));     
+        }
+
+        private static void DoAnalysis(FSharpOption<double> sigThresh, WorkbookState wbs, ExceLint.FeatureConf conf, bool forceBuildDAG, Action<WorkbookState> updateState, ProgBar pb)
+        {
+            if (sigThresh == FSharpOption<double>.None)
             {
                 return;
             }
             else
             {
-                currentWorkbook.toolSignificance = sig.Value;
+                wbs.toolSignificance = sigThresh.Value;
                 try
                 {
-                    currentWorkbook.analyze(WorkbookState.MAX_DURATION_IN_MS, getConfig(), forceDAGBuild: forceBuildDAG.Checked);
-                    currentWorkbook.flag();
-                    setUIState(currentWorkbook);
+                    wbs.analyze(WorkbookState.MAX_DURATION_IN_MS, conf, forceBuildDAG, pb);
+                    wbs.flag();
+                    updateState(wbs);
                 }
                 catch (Parcel.ParseException ex)
                 {
-                    System.Windows.Forms.Clipboard.SetText(ex.Message);
-                    System.Windows.Forms.MessageBox.Show("Could not parse the formula string:\n" + ex.Message);
-                    return;
+                    RunInSTAThread(() =>
+                    {
+                        System.Windows.Forms.Clipboard.SetText(ex.Message);
+                        System.Windows.Forms.MessageBox.Show("Could not parse the formula string:\n" + ex.Message);
+                    });
                 }
                 catch (AnalysisCancelled)
                 {
-                    System.Windows.Forms.MessageBox.Show("Analysis cancelled.");
+                    RunInSTAThread(() =>
+                    {
+                        System.Windows.Forms.MessageBox.Show("Analysis cancelled.");
+                    });
                 }
-                catch (System.OutOfMemoryException)
+                catch (OutOfMemoryException)
                 {
-                    System.Windows.Forms.MessageBox.Show("Insufficient memory to perform analysis.");
-                    return;
+                    RunInSTAThread(() =>
+                    {
+                        System.Windows.Forms.MessageBox.Show("Insufficient memory to perform analysis.");
+                    });
                 }
-                catch (System.Exception ex)
+                catch (Exception ex)
                 {
-                    var msg = "Runtime exception. This message has been copied to your clipboard.\n" + ex.Message + "\n\nStack trace:\n" + ex.StackTrace;
-                    System.Windows.Forms.Clipboard.SetText(msg);
-                    System.Windows.Forms.MessageBox.Show(msg);
-                    return;
+                    RunInSTAThread(() =>
+                    {
+                        var msg = "Runtime exception. This message has been copied to your clipboard.\n" + ex.Message + "\n\nStack trace:\n" + ex.StackTrace;
+                        System.Windows.Forms.Clipboard.SetText(msg);
+                        System.Windows.Forms.MessageBox.Show(msg);
+                    });
                 }
             }
         }
-        
+
+        private static void RunInSTAThread(ThreadStart t)
+        {
+            Thread thread = new Thread(t);
+            thread.SetApartmentState(ApartmentState.STA);
+            thread.Start();
+            thread.Join();
+        }
+
         private void MarkAsOKButton_Click(object sender, RibbonControlEventArgs e)
         {
             currentWorkbook.markAsOK();
@@ -159,7 +197,11 @@ namespace ExceLintUI
                 currentWorkbook.toolSignificance = sig.Value;
                 try
                 {
-                    currentWorkbook.toggleHeatMap(WorkbookState.MAX_DURATION_IN_MS, getConfig(), forceDAGBuild: forceBuildDAG.Checked);
+                    // create progbar in main thread;
+                    // worker will call Dispose
+                    var pb = new ProgBar();
+
+                    currentWorkbook.toggleHeatMap(WorkbookState.MAX_DURATION_IN_MS, getConfig(), forceBuildDAG.Checked, pb);
                     setUIState(currentWorkbook);
                 }
                 catch (Parcel.ParseException ex)

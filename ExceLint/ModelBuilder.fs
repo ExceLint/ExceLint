@@ -505,7 +505,7 @@
                     Success(analysis)
 
             let private cancellableWait(input: Input)(analysis: Analysis) : AnalysisOutcome =
-                let mutable timer = 100
+                let mutable timer = 10
                 while not (input.progress.IsCancelled()) && timer > 0 do
                     System.Threading.Thread.Sleep(1000)
                     timer <- timer - 1
