@@ -62,13 +62,13 @@ namespace ExceLintUI
                     var debug_info = prepareDebugInfo(wbs);
                     var timing_info = prepareTimingInfo(wbs);
 
-                    pb.GoAway();
-
                     // debug output
                     if (wbs.DebugMode)
                     {
                         RunInSTAThread(() => printDebugInfo(debug_info, timing_info));
                     }
+
+                    pb.GoAway();
                 }
                 catch (Parcel.ParseException ex)
                 {
@@ -308,13 +308,13 @@ namespace ExceLintUI
                     var debug_info = prepareDebugInfo(wbs);
                     var timing_info = prepareTimingInfo(wbs);
 
-                    pb.GoAway();
-
                     // debug output
                     if (wbs.DebugMode)
                     {
                         RunInSTAThread(() => printDebugInfo(debug_info, timing_info));
                     }
+
+                    pb.GoAway();
                 }
                 catch (Parcel.ParseException ex)
                 {
