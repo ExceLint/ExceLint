@@ -1,5 +1,16 @@
 ﻿module Scope
-    type SelectID = (int option*int option*string option)
+//    type SelectID = (int option*int option*string option)
+
+    type XYPath = {
+        x: int option;
+        y: int option;
+        fullpath: string option;
+    }
+
+    type SelectID =
+    | AllID of XYPath
+    | ColumnID of XYPath
+    | RowID of XYPath
         
     type Selector =
     | AllCells
@@ -11,13 +22,12 @@
         // in the same column.
         member self.id(addr: AST.Address) : SelectID =
             match self with
-            | AllCells -> None, None, None
-            | SameColumn -> Some addr.X, None, Some (addr.Path + ":" + addr.WorkbookName + ":" + addr.WorksheetName)
-            | SameRow -> None, Some addr.Y, Some (addr.Path + ":" + addr.WorkbookName + ":" + addr.WorksheetName)
+            | AllCells -> AllID ({ x = None; y = None; fullpath = None })
+            | SameColumn -> ColumnID { x = Some addr.X; y = None; fullpath = Some (addr.Path + ":" + addr.WorkbookName + ":" + addr.WorksheetName) }
+            | SameRow -> RowID { x = None; y = Some addr.Y; fullpath = Some (addr.Path + ":" + addr.WorkbookName + ":" + addr.WorksheetName)}
         static member ToPretty(id: SelectID) : string =
             match id with
-            | None,None,None -> "AllCells"
-            | Some(x),None,Some(path) -> "Column " + x.ToString()
-            | None,Some(y),Some(path) -> "Row " + y.ToString()
-            | _ -> failwith "Unknown selector"
+            | AllID(_) -> "AllCells"
+            | ColumnID(xyp) -> "Column " + xyp.x.ToString()
+            | RowID(xyp) -> "Row " + xyp.y.ToString()
         static member Kinds = [| AllCells; SameColumn; SameRow |]
