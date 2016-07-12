@@ -50,6 +50,18 @@ namespace ExceLintUI
             _count++;
         }
 
+        public void Reset()
+        {
+            if (this.InvokeRequired)
+            {
+                this.BeginInvoke(new Action(this.Reset));
+                return;
+            }
+
+            _count = 0;
+            workProgress.Value = 0;
+        }
+
         public void registerCancelCallback(Action cancelAction)
         {
             _cancel_action = cancelAction;
@@ -68,11 +80,12 @@ namespace ExceLintUI
 
         private void ProgBar_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            MessageBox.Show("You clicked me!");
-            if (_cancel_action != null)
-            {
-                _cancel_action();
-            }
+            _cancel_action?.Invoke();
+        }
+
+        private void ProgBar_Load(object sender, EventArgs e)
+        {
+            this.FormClosing += new FormClosingEventHandler(ProgBar_Closing);
         }
     }
 }

@@ -317,27 +317,12 @@ namespace ExceLintUI
             System.Windows.Forms.MessageBox.Show(cursorStr + " = " + l2ns);
         }
 
-        // this lets us reuse the progressbar for other work
-        //private T buildDAGAndDoStuff<T>(Boolean forceDAGBuild, Func<Depends.Progress,T> doStuff, long workMultiplier)
-        //{
-        //    using (var pb = new ProgBar())
-        //    {
-        //        // create progress delegates
-        //        Depends.ProgressBarIncrementer incr = () => pb.IncrementProgress();
-        //        var p = new Depends.Progress(incr, workMultiplier);
-        //        pb.registerCancelCallback(() => p.Cancel());
-
-        //        RefreshDAG(forceDAGBuild, p);
-
-        //        return doStuff(p);
-        //    }
-        //}
-
         private T buildDAGAndDoStuff<T>(Boolean forceDAGBuild, Func<Depends.Progress, T> doStuff, long workMultiplier, ProgBar pb)
         {
             // create progress delegates
             Depends.ProgressBarIncrementer incr = () => pb.IncrementProgress();
-            var p = new Depends.Progress(incr, workMultiplier);
+            Depends.ProgressBarReset reset = () => pb.Reset();
+            var p = new Depends.Progress(incr, reset, workMultiplier);
             pb.registerCancelCallback(() => p.Cancel());
 
             RefreshDAG(forceDAGBuild, p);

@@ -278,7 +278,7 @@
                     (fname,sID,fscore),count
                 ) (config.EnabledFeatures)
 
-            let private causes(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(config: FeatureConf) : Causes =
+            let private causes(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(config: FeatureConf)(progress: Depends.Progress) : Causes =
                 let fscores = makeFastScoreTable scores
 
                 // get histogram bin heights for every given cell
@@ -286,7 +286,10 @@
                 let carr =
                     Array.map (fun addr ->
                         let causes = Array.map (fun sel ->
-                                         getFeatureCounts addr sel ftable fscores config
+                                        if progress.IsCancelled() then
+                                            raise AnalysisCancelled
+
+                                        getFeatureCounts addr sel ftable fscores config
                                      ) (config.EnabledScopes) |> Array.concat
                         (addr, causes)
                     ) cells
@@ -305,13 +308,16 @@
                     ftable.[(fname,sID,fscore)]
                 ) (config.EnabledFeatures)
 
-            let private rank(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(config: FeatureConf) : Ranking =
+            let private rank(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(config: FeatureConf)(progress: Depends.Progress) : Ranking =
                 let fscores = makeFastScoreTable scores
 
                 // get sums for every given cell
                 // and for every enabled scope
                 let addrSums: (AST.Address*int)[] =
                     Array.map (fun addr ->
+                        if progress.IsCancelled() then
+                                raise AnalysisCancelled
+
                         let sum = Array.sumBy (fun sel ->
                                       sumFeatureCounts addr sel ftable fscores config
                                   ) (config.EnabledScopes)
@@ -353,6 +359,9 @@
 
                     let fvals =
                         Array.map (fun cell ->
+                            if progress.IsCancelled() then
+                                raise AnalysisCancelled
+
                             progress.IncrementCounter()
                             cell, feature cell dag
                         ) cells
@@ -365,6 +374,9 @@
                 Array.iter (fun fname ->
                     Array.iter (fun (sel: Scope.Selector) ->
                         Array.iter (fun (addr: AST.Address, score: double) ->
+                            if progress.IsCancelled() then
+                                raise AnalysisCancelled
+
                             let sID = sel.id addr
                             if d.ContainsKey (fname,sID,score) then
                                 let freq = d.[(fname,sID,score)]
@@ -452,55 +464,58 @@
 
             let private inferAddressModes(input: Input)(analysis: Analysis) : AnalysisOutcome =
                 if input.config.IsEnabled "InferAddressModes" then
-                    let cells = analysisBase input.config input.dag
+                    try
+                        let cells = analysisBase input.config input.dag
 
-                    // convert ranking into map
-                    let rankmap = analysis.ranking
-                                  |> Array.map (fun (pair: KeyValuePair<AST.Address,double>) -> (pair.Key,pair.Value))
-                                  |> toDict
+                        // convert ranking into map
+                        let rankmap = analysis.ranking
+                                      |> Array.map (fun (pair: KeyValuePair<AST.Address,double>) -> (pair.Key,pair.Value))
+                                      |> toDict
 
-                    // get all the formulas that ref each cell
-                    let refss = Array.map (fun i -> i, input.dag.getFormulasThatRefCell i) cells |> toDict
+                        // get all the formulas that ref each cell
+                        let refss = Array.map (fun i -> i, input.dag.getFormulasThatRefCell i) cells |> toDict
 
-                    // rank inputs by their impact on the ranking
-                    let crank = Array.sortBy (fun input ->
-                                    let sum = Array.sumBy (fun formula ->
-                                                  rankmap.[formula]
-                                              ) (refss.[input])
-                                    -sum
-                                ) cells
+                        // rank inputs by their impact on the ranking
+                        let crank = Array.sortBy (fun input ->
+                                        let sum = Array.sumBy (fun formula ->
+                                                      rankmap.[formula]
+                                                  ) (refss.[input])
+                                        -sum
+                                    ) cells
 
-                    // for each input cell, try changing all refs to either abs or rel;
-                    // if anomalousness drops, keep new interpretation
-                    let dag' = Array.fold (fun accdag i ->
-                                   // get referring formulas
-                                   let refs = refss.[i]
+                        // for each input cell, try changing all refs to either abs or rel;
+                        // if anomalousness drops, keep new interpretation
+                        let dag' = Array.fold (fun accdag i ->
+                                       // get referring formulas
+                                       let refs = refss.[i]
 
-                                   if refs.Length <> 0 then
-                                       // run inference
-                                       let cs = chooseLikelyAddressMode i refs accdag input.config input.progress input.app
+                                       if refs.Length <> 0 then
+                                           // run inference
+                                           let cs = chooseLikelyAddressMode i refs accdag input.config input.progress input.app
 
-                                       // update DAG
-                                       mutateDAG cs accdag input.app input.progress
-                                   else
-                                       accdag
-                               ) input.dag crank
+                                           // update DAG
+                                           mutateDAG cs accdag input.app input.progress
+                                       else
+                                           accdag
+                                   ) input.dag crank
 
 
-                    // score
-                    let scores = runEnabledFeatures cells dag' input.config input.progress
+                        // score
+                        let scores = runEnabledFeatures cells dag' input.config input.progress
 
-                    // count freqs
-                    let freqs = buildFrequencyTable scores input.progress dag' input.config
+                        // count freqs
+                        let freqs = buildFrequencyTable scores input.progress dag' input.config
                     
-                    // rerank
-                    let ranking = rank cells freqs scores input.config;
+                        // rerank
+                        let ranking = rank cells freqs scores input.config input.progress
 
-                    // get causes
-                    let causes = causes (analysisBase input.config input.dag) freqs scores input.config;
+                        // get causes
+                        let causes = causes (analysisBase input.config input.dag) freqs scores input.config input.progress
 
-                    // TODO: we shouldn't just blindly pass along old _time numbers
-                    Success({ analysis with scores = scores; ftable = freqs; ranking = ranking; causes = causes; })
+                        // TODO: we shouldn't just blindly pass along old _time numbers
+                        Success({ analysis with scores = scores; ftable = freqs; ranking = ranking; causes = causes; })
+                    with
+                    | AnalysisCancelled -> Cancellation
                 else
                     Success(analysis)
 
@@ -523,11 +538,11 @@
                     let ftable,ftable_time = PerfUtils.runMillis _freqf ()
 
                     // rank
-                    let _rankf = fun () -> rank (analysisBase input.config input.dag) ftable scores input.config
+                    let _rankf = fun () -> rank (analysisBase input.config input.dag) ftable scores input.config input.progress
                     let ranking,ranking_time = PerfUtils.runMillis _rankf ()
 
                     // save causes
-                    let _causef = fun () -> causes (analysisBase input.config input.dag) ftable scores input.config
+                    let _causef = fun () -> causes (analysisBase input.config input.dag) ftable scores input.config input.progress
                     let causes,causes_time = PerfUtils.runMillis _causef ()
 
                     Success(
@@ -550,18 +565,21 @@
             let analyze(app: Microsoft.Office.Interop.Excel.Application)(config: FeatureConf)(dag: Depends.DAG)(alpha: double)(progress: Depends.Progress) =
                 let input : Input = { app = app; config = config; dag = dag; alpha = alpha; progress = progress; }
 
-                let pipeline = runModel
-//                                +> cancellableWait    // for debugging
-                                +> inferAddressModes
-                                +> weights
-                                +> reweightRanking
-                                +> canonicalSort
-                                +> significanceThreshold
-                                +> cutoff
+                if dag.IsCancelled() then
+                    None
+                else
+                    let pipeline = runModel
+    //                                +> cancellableWait    // for debugging
+                                    +> inferAddressModes
+                                    +> weights
+                                    +> reweightRanking
+                                    +> canonicalSort
+                                    +> significanceThreshold
+                                    +> cutoff
 
-                match pipeline input with
-                | Success(analysis) -> Some (ErrorModel(input, analysis))
-                | Cancellation -> None
+                    match pipeline input with
+                    | Success(analysis) -> Some (ErrorModel(input, analysis))
+                    | Cancellation -> None
 
         
 

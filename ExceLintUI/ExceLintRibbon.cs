@@ -499,7 +499,7 @@ namespace ExceLintUI
         {
             this.MarkAsOKButton.Enabled = wbs.MarkAsOK_Enabled;
             this.StartOverButton.Enabled = wbs.ClearColoringButton_Enabled;
-            this.AnalyzeButton.Enabled = wbs.Analyze_Enabled;
+            this.AnalyzeButton.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
 
             this.allCellsFreq.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
             this.columnCellsFreq.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;

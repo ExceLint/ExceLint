@@ -6,10 +6,6 @@
     open Pipeline
 
     type ErrorModel(input: Input, analysis: Analysis) =
-        let mutable _was_cancelled = false
-
-        member self.WasCancelled : bool = _was_cancelled
-
         member self.ScoreTimeInMilliseconds : int64 = analysis.score_time
 
         member self.FrequencyTableTimeInMilliseconds : int64 = analysis.ftable_time

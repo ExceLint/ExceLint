@@ -47,7 +47,9 @@
             this.Name = "ProgBar";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "ProgBar";
+            this.Load += new System.EventHandler(this.ProgBar_Load);
             this.ResumeLayout(false);
+
         }
 
         #endregion
