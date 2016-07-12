@@ -59,10 +59,15 @@ namespace ExceLintUI
                     wbs.flag();
                     updateState(wbs);
 
+                    var debug_info = prepareDebugInfo(wbs);
+                    var timing_info = prepareTimingInfo(wbs);
+
+                    pb.GoAway();
+
                     // debug output
                     if (wbs.DebugMode)
                     {
-                        RunInSTAThread(() => printDebugInfo(wbs));
+                        RunInSTAThread(() => printDebugInfo(debug_info, timing_info));
                     }
                 }
                 catch (Parcel.ParseException ex)
@@ -99,20 +104,20 @@ namespace ExceLintUI
             }
         }
 
-        private static void printDebugInfo(WorkbookState wbs)
+        private static string prepareDebugInfo(WorkbookState wbs)
         {
             var a = wbs.getAnalysis();
 
             if (FSharpOption<WorkbookState.Analysis>.get_IsNone(a))
             {
-                return;
+                return "";
             }
 
             var analysis = a.Value;
 
             if (analysis.scores.Length == 0)
             {
-                return;
+                return "";
             }
 
             // scores
@@ -132,8 +137,20 @@ namespace ExceLintUI
             {
                 score_str = "empty";
             }
-            System.Windows.Forms.Clipboard.SetText(score_str);
-            System.Windows.Forms.MessageBox.Show(score_str);
+
+            return score_str;
+        }
+
+        private static string prepareTimingInfo(WorkbookState wbs)
+        {
+            var a = wbs.getAnalysis();
+
+            if (FSharpOption<WorkbookState.Analysis>.get_IsNone(a))
+            {
+                return "";
+            }
+
+            var analysis = a.Value;
 
             // time and space information
             var time_str = "DAG construction ms: " + analysis.dag.AnalysisMilliseconds + "\n" +
@@ -144,8 +161,22 @@ namespace ExceLintUI
                            "Ranking ms: " + analysis.model.RankingTimeInMilliseconds + "\n" +
                            "Total ranking length: " + analysis.model.NumRankedEntries;
 
-            System.Windows.Forms.Clipboard.SetText(time_str);
-            System.Windows.Forms.MessageBox.Show(time_str);
+            return time_str;
+        }
+
+        private static void printDebugInfo(string debug_info, string time_info)
+        {
+            if (!String.IsNullOrEmpty(debug_info))
+            {
+                System.Windows.Forms.Clipboard.SetText(debug_info);
+                System.Windows.Forms.MessageBox.Show(debug_info);
+            }
+
+            if (!String.IsNullOrEmpty(debug_info))
+            {
+                System.Windows.Forms.Clipboard.SetText(time_info);
+                System.Windows.Forms.MessageBox.Show(time_info);
+            }
         }
 
         private static void RunInSTAThread(ThreadStart t)
@@ -274,10 +305,15 @@ namespace ExceLintUI
                     wbs.toggleHeatMap(WorkbookState.MAX_DURATION_IN_MS, conf, forceBuildDAG, pb);
                     updateState(wbs);
 
+                    var debug_info = prepareDebugInfo(wbs);
+                    var timing_info = prepareTimingInfo(wbs);
+
+                    pb.GoAway();
+
                     // debug output
                     if (wbs.DebugMode)
                     {
-                        RunInSTAThread(() => printDebugInfo(wbs));
+                        RunInSTAThread(() => printDebugInfo(debug_info, timing_info));
                     }
                 }
                 catch (Parcel.ParseException ex)

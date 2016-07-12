@@ -375,11 +375,6 @@ namespace ExceLintUI
                     analyze(max_duration_in_ms, config, forceDAGBuild, pb);
                 }
 
-                if (!pb.IsDisposed)
-                {
-                    pb.GoAway();
-                }
-
                 if (_analysis.cutoff > 0)
                 {
                     // calculate min/max heat map intensity
@@ -477,9 +472,6 @@ namespace ExceLintUI
                 };
 
                 _analysis = buildDAGAndDoStuff(forceDAGBuild, f, 3, pb);
-
-                // tell progbar to go away
-                pb.GoAway();
 
                 if (!_analysis.ranOK)
                 {
