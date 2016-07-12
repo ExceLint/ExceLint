@@ -43,6 +43,10 @@ namespace ExceLintUI
                     System.Windows.Forms.MessageBox.Show("Could not parse the formula string:\n" + ex.Message);
                     return;
                 }
+                catch (AnalysisCancelled)
+                {
+                    System.Windows.Forms.MessageBox.Show("Analysis cancelled.");
+                }
                 catch (System.OutOfMemoryException)
                 {
                     System.Windows.Forms.MessageBox.Show("Insufficient memory to perform analysis.");
@@ -163,6 +167,10 @@ namespace ExceLintUI
                     System.Windows.Forms.Clipboard.SetText(ex.Message);
                     System.Windows.Forms.MessageBox.Show("Could not parse the formula string:\n" + ex.Message);
                     return;
+                }
+                catch (AnalysisCancelled)
+                {
+                    System.Windows.Forms.MessageBox.Show("Analysis cancelled.");
                 }
                 catch (System.OutOfMemoryException)
                 {

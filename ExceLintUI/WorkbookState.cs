@@ -9,6 +9,8 @@ using Microsoft.FSharp.Core;
 
 namespace ExceLintUI
 {
+    public class AnalysisCancelled : Exception { }
+
     public class WorkbookState
     {
         #region CONSTANTS
@@ -132,7 +134,7 @@ namespace ExceLintUI
                  var mopt = ExceLint.ModelBuilder.analyze(_app, config, _dag, _tool_significance, p);
                  if (FSharpOption<ExceLint.ErrorModel>.get_IsNone(mopt))
                  {
-                     throw new Exception("Could not build model.");
+                     throw new AnalysisCancelled();
                  } else {
                      return mopt.Value;
                  }
@@ -298,9 +300,10 @@ namespace ExceLintUI
         {
             using (var pb = new ProgBar())
             {
-                // create progress delegate
+                // create progress delegates
                 Depends.ProgressBarIncrementer incr = () => pb.IncrementProgress();
                 var p = new Depends.Progress(incr, workMultiplier);
+                pb.registerCancelCallback(() => p.Cancel());
 
                 RefreshDAG(forceDAGBuild, p);
 
@@ -422,7 +425,7 @@ namespace ExceLintUI
                         var mopt = ExceLint.ModelBuilder.analyze(_app, config, _dag, _tool_significance, p);
                         if (FSharpOption<ExceLint.ErrorModel>.get_IsNone(mopt))
                         {
-                            throw new Exception("Could not build model.");
+                            throw new AnalysisCancelled();
                         }
                         else
                         {

@@ -9,7 +9,7 @@ namespace ExceLintUI
     public partial class ProgBar : Form
     {
         private int _count = 0;
-        private Boolean _cancel = false;
+        private Action _cancel_action;
 
         public ProgBar()
         {
@@ -50,19 +50,18 @@ namespace ExceLintUI
             _count++;
         }
 
-        private void ProgBar_Load(object sender, EventArgs e)
+        public void registerCancelCallback(Action cancelAction)
         {
-
+            _cancel_action = cancelAction;
         }
 
         private void ProgBar_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            _cancel = true;
-        }
-
-        public bool IsCancelled()
-        {
-            return _cancel;
+            MessageBox.Show("You clicked me!");
+            if (_cancel_action != null)
+            {
+                _cancel_action();
+            }
         }
     }
 }

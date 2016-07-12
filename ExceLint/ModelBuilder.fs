@@ -504,6 +504,13 @@
                 else
                     Success(analysis)
 
+            let private cancellableWait(input: Input)(analysis: Analysis) : AnalysisOutcome =
+                let mutable timer = 100
+                while not (input.progress.IsCancelled()) && timer > 0 do
+                    System.Threading.Thread.Sleep(1000)
+                    timer <- timer - 1
+                Success(analysis)
+
             let private runModel(input: Input) : AnalysisOutcome =
                 try
                     let _runf = fun () -> runEnabledFeatures (analysisBase input.config input.dag) input.dag input.config input.progress
@@ -544,6 +551,7 @@
                 let input : Input = { app = app; config = config; dag = dag; alpha = alpha; progress = progress; }
 
                 let pipeline = runModel
+                                +> cancellableWait
                                 +> inferAddressModes
                                 +> weights
                                 +> reweightRanking
