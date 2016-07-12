@@ -37,12 +37,13 @@ namespace ExceLintUI
         private bool _debug_mode = false;
         private bool _dag_changed = false;
 
-        private struct Analysis
+        public struct Analysis
         {
             public bool hasRun;
             public Score[] scores;
             public bool ranOK;
             public int cutoff;
+            public Depends.DAG dag;
             public ExceLint.ErrorModel model;
         }
         #endregion DATASTRUCTURES
@@ -70,6 +71,17 @@ namespace ExceLintUI
         public void ConfigChanged()
         {
             _analysis.hasRun = false;
+        }
+
+        public FSharpOption<Analysis> getAnalysis()
+        {
+            if (_analysis.hasRun)
+            {
+                return FSharpOption<Analysis>.Some(_analysis);
+            } else
+            {
+                return FSharpOption<Analysis>.None;
+            }
         }
 
         public double toolSignificance
@@ -363,6 +375,11 @@ namespace ExceLintUI
                     analyze(max_duration_in_ms, config, forceDAGBuild, pb);
                 }
 
+                if (!pb.IsDisposed)
+                {
+                    pb.GoAway();
+                }
+
                 if (_analysis.cutoff > 0)
                 {
                     // calculate min/max heat map intensity
@@ -454,7 +471,7 @@ namespace ExceLintUI
                             var model = mopt.Value;
                             Score[] scores = model.rankByFeatureSum();
                             int cutoff = model.getSignificanceCutoff;
-                            return new Analysis { scores = scores, ranOK = true, cutoff = cutoff, model = model, hasRun = true };
+                            return new Analysis { scores = scores, ranOK = true, cutoff = cutoff, model = model, hasRun = true, dag = _dag };
                         }
                     }
                 };
@@ -462,17 +479,11 @@ namespace ExceLintUI
                 _analysis = buildDAGAndDoStuff(forceDAGBuild, f, 3, pb);
 
                 // tell progbar to go away
-                pb.Dispose();
+                pb.GoAway();
 
                 if (!_analysis.ranOK)
                 {
                     return;
-                }
-
-                // debug output
-                if (_debug_mode && _analysis.scores.Length > 0)
-                {
-                    printDebugInfo();
                 }
 
                 // Re-enable alerts
@@ -489,41 +500,6 @@ namespace ExceLintUI
             }
 
             sw.Stop();
-        }
-
-        private void printDebugInfo()
-        {
-            // scores
-            var score_str = String.Join("\n", _analysis.scores.Select((score, idx) => {
-                // prefix with cutoff marker, if applicable
-                var prefix = "";
-                if (idx == _analysis.cutoff + 1) { prefix = "--- CUTOFF ---\n"; }
-
-                // enumerate causes
-                var causes = _analysis.model.causeOf(score.Key);
-                var causes_str = "\tcauses: [\n" + String.Join("\n", causes.Select(cause => "\t\t" + ExceLint.ErrorModel.prettyHistoBinDesc(cause.Key) + " = " + cause.Value)) + "\n\t]";
-
-                // print
-                return prefix + score.Key.A1FullyQualified() + " -> " + score.Value.ToString() + "\n" + causes_str + "\n\t" + "weight: " + _analysis.model.weightOf(score.Key);
-            }));
-            if (score_str == "")
-            {
-                score_str = "empty";
-            }
-            System.Windows.Forms.Clipboard.SetText(score_str);
-            System.Windows.Forms.MessageBox.Show(score_str);
-
-            // time and space information
-            var time_str = "DAG construction ms: " + _dag.AnalysisMilliseconds + "\n" +
-                           "Feature scoring ms: " + _analysis.model.ScoreTimeInMilliseconds + "\n" +
-                           "Num score entries: " + _analysis.model.NumScoreEntries + "\n" +
-                           "Frequency counting ms: " + _analysis.model.FrequencyTableTimeInMilliseconds + "\n" +
-                           "Num freq table entries: " + _analysis.model.NumFreqEntries + "\n" +
-                           "Ranking ms: " + _analysis.model.RankingTimeInMilliseconds + "\n" +
-                           "Total ranking length: " + _analysis.model.NumRankedEntries;
-
-            System.Windows.Forms.Clipboard.SetText(time_str);
-            System.Windows.Forms.MessageBox.Show(time_str);
         }
 
         private void activateAndCenterOn(AST.Address cell, Excel.Application app)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Office.Tools.Ribbon;
 using Microsoft.FSharp.Core;
 using Excel = Microsoft.Office.Interop.Excel;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Threading;
 
@@ -57,6 +58,12 @@ namespace ExceLintUI
                     wbs.analyze(WorkbookState.MAX_DURATION_IN_MS, conf, forceBuildDAG, pb);
                     wbs.flag();
                     updateState(wbs);
+
+                    // debug output
+                    if (wbs.DebugMode)
+                    {
+                        RunInSTAThread(() => printDebugInfo(wbs));
+                    }
                 }
                 catch (Parcel.ParseException ex)
                 {
@@ -90,6 +97,55 @@ namespace ExceLintUI
                     });
                 }
             }
+        }
+
+        private static void printDebugInfo(WorkbookState wbs)
+        {
+            var a = wbs.getAnalysis();
+
+            if (FSharpOption<WorkbookState.Analysis>.get_IsNone(a))
+            {
+                return;
+            }
+
+            var analysis = a.Value;
+
+            if (analysis.scores.Length == 0)
+            {
+                return;
+            }
+
+            // scores
+            var score_str = String.Join("\n", analysis.scores.Select((score, idx) => {
+                // prefix with cutoff marker, if applicable
+                var prefix = "";
+                if (idx == analysis.cutoff + 1) { prefix = "--- CUTOFF ---\n"; }
+
+                // enumerate causes
+                var causes = analysis.model.causeOf(score.Key);
+                var causes_str = "\tcauses: [\n" + String.Join("\n", causes.Select(cause => "\t\t" + ExceLint.ErrorModel.prettyHistoBinDesc(cause.Key) + " = " + cause.Value)) + "\n\t]";
+
+                // print
+                return prefix + score.Key.A1FullyQualified() + " -> " + score.Value.ToString() + "\n" + causes_str + "\n\t" + "weight: " + analysis.model.weightOf(score.Key);
+            }));
+            if (score_str == "")
+            {
+                score_str = "empty";
+            }
+            System.Windows.Forms.Clipboard.SetText(score_str);
+            System.Windows.Forms.MessageBox.Show(score_str);
+
+            // time and space information
+            var time_str = "DAG construction ms: " + analysis.dag.AnalysisMilliseconds + "\n" +
+                           "Feature scoring ms: " + analysis.model.ScoreTimeInMilliseconds + "\n" +
+                           "Num score entries: " + analysis.model.NumScoreEntries + "\n" +
+                           "Frequency counting ms: " + analysis.model.FrequencyTableTimeInMilliseconds + "\n" +
+                           "Num freq table entries: " + analysis.model.NumFreqEntries + "\n" +
+                           "Ranking ms: " + analysis.model.RankingTimeInMilliseconds + "\n" +
+                           "Total ranking length: " + analysis.model.NumRankedEntries;
+
+            System.Windows.Forms.Clipboard.SetText(time_str);
+            System.Windows.Forms.MessageBox.Show(time_str);
         }
 
         private static void RunInSTAThread(ThreadStart t)
@@ -188,36 +244,63 @@ namespace ExceLintUI
         private void showHeatmap_Click(object sender, RibbonControlEventArgs e)
         {
             var sig = getPercent(this.significanceTextBox.Text, this.significanceTextBox.Label);
-            if (sig == FSharpOption<double>.None)
+
+            // workbook- and UI-update callback
+            Action<WorkbookState> updateWorkbook = (WorkbookState wbs) =>
+            {
+                this.currentWorkbook = wbs;
+                setUIState(currentWorkbook);
+            };
+
+            // create progbar in main thread;
+            // worker thread will call Dispose
+            var pb = new ProgBar();
+
+            // call task in new thread and do not wait
+            Task t = Task.Run(() => DoHeatmap(sig, currentWorkbook, getConfig(), this.forceBuildDAG.Checked, updateWorkbook, pb));
+        }
+
+        private static void DoHeatmap(FSharpOption<double> sigThresh, WorkbookState wbs, ExceLint.FeatureConf conf, bool forceBuildDAG, Action<WorkbookState> updateState, ProgBar pb)
+        {
+            if (sigThresh == FSharpOption<double>.None)
             {
                 return;
             }
             else
             {
-                currentWorkbook.toolSignificance = sig.Value;
+                wbs.toolSignificance = sigThresh.Value;
                 try
                 {
-                    // create progbar in main thread;
-                    // worker will call Dispose
-                    var pb = new ProgBar();
+                    wbs.toggleHeatMap(WorkbookState.MAX_DURATION_IN_MS, conf, forceBuildDAG, pb);
+                    updateState(wbs);
 
-                    currentWorkbook.toggleHeatMap(WorkbookState.MAX_DURATION_IN_MS, getConfig(), forceBuildDAG.Checked, pb);
-                    setUIState(currentWorkbook);
+                    // debug output
+                    if (wbs.DebugMode)
+                    {
+                        RunInSTAThread(() => printDebugInfo(wbs));
+                    }
                 }
                 catch (Parcel.ParseException ex)
                 {
-                    System.Windows.Forms.Clipboard.SetText(ex.Message);
-                    System.Windows.Forms.MessageBox.Show("Could not parse the formula string:\n" + ex.Message);
-                    return;
+                    RunInSTAThread(() =>
+                    {
+                        System.Windows.Forms.Clipboard.SetText(ex.Message);
+                        System.Windows.Forms.MessageBox.Show("Could not parse the formula string:\n" + ex.Message);
+                    });
                 }
                 catch (AnalysisCancelled)
                 {
-                    System.Windows.Forms.MessageBox.Show("Analysis cancelled.");
+                    RunInSTAThread(() =>
+                    {
+                        System.Windows.Forms.MessageBox.Show("Analysis cancelled.");
+                    });
                 }
-                catch (System.OutOfMemoryException)
+                catch (OutOfMemoryException)
                 {
-                    System.Windows.Forms.MessageBox.Show("Insufficient memory to perform analysis.");
-                    return;
+                    RunInSTAThread(() =>
+                    {
+                        System.Windows.Forms.MessageBox.Show("Insufficient memory to perform analysis.");
+                    });
                 }
             }
         }

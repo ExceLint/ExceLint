@@ -551,7 +551,7 @@
                 let input : Input = { app = app; config = config; dag = dag; alpha = alpha; progress = progress; }
 
                 let pipeline = runModel
-                                +> cancellableWait
+//                                +> cancellableWait    // for debugging
                                 +> inferAddressModes
                                 +> weights
                                 +> reweightRanking

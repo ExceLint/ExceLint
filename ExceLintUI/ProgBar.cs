@@ -55,6 +55,17 @@ namespace ExceLintUI
             _cancel_action = cancelAction;
         }
 
+        public void GoAway()
+        {
+            if (this.InvokeRequired)
+            {
+                this.BeginInvoke(new Action(this.GoAway));
+                return;
+            }
+
+            this.Dispose();
+        }
+
         private void ProgBar_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             MessageBox.Show("You clicked me!");
