@@ -499,10 +499,17 @@ namespace ExceLintUI
 
         private void setUIState(WorkbookState wbs)
         {
+            // enable auditing buttons if an audit has started
             this.MarkAsOKButton.Enabled = wbs.MarkAsOK_Enabled;
             this.StartOverButton.Enabled = wbs.ClearColoringButton_Enabled;
             this.AnalyzeButton.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
 
+            // only enable viewing heatmap if we are not in the middle of an analysis
+            this.showHeatmap.Enabled = wbs.Analyze_Enabled;
+
+            // disable config buttons if we are:
+            // 1. in the middle of an audit, or
+            // 2. we are viewing the heatmap
             this.allCellsFreq.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
             this.columnCellsFreq.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
             this.rowCellsFreq.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
@@ -513,6 +520,7 @@ namespace ExceLintUI
             this.weightByIntrinsicAnomalousness.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
             this.significanceTextBox.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
 
+            // toggle the heatmap label depending on the heatmap shown/hidden state
             if (wbs.HeatMap_Hidden)
             {
                 this.showHeatmap.Label = "Show Heat Map";
