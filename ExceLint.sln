@@ -44,6 +44,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FParsec", "Depends\parcel\F
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ExcelParserConsole", "Depends\parcel\ParcelConsole\ExcelParserConsole.fsproj", "{EB5D17BF-060E-41FE-AB6E-E916D68FCBA4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DependsTests", "Depends\Tests\DependsTests.csproj", "{6C6B1628-AD0A-41F4-AFE0-FD922FB63BF3}"
+EndProject
 Global
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true
@@ -197,6 +199,18 @@ Global
 		{EB5D17BF-060E-41FE-AB6E-E916D68FCBA4}.SingleImage|Any CPU.Build.0 = Release|Any CPU
 		{EB5D17BF-060E-41FE-AB6E-E916D68FCBA4}.SingleImage|x86.ActiveCfg = Release|x86
 		{EB5D17BF-060E-41FE-AB6E-E916D68FCBA4}.SingleImage|x86.Build.0 = Release|x86
+		{6C6B1628-AD0A-41F4-AFE0-FD922FB63BF3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C6B1628-AD0A-41F4-AFE0-FD922FB63BF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C6B1628-AD0A-41F4-AFE0-FD922FB63BF3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6C6B1628-AD0A-41F4-AFE0-FD922FB63BF3}.Debug|x86.Build.0 = Debug|Any CPU
+		{6C6B1628-AD0A-41F4-AFE0-FD922FB63BF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C6B1628-AD0A-41F4-AFE0-FD922FB63BF3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C6B1628-AD0A-41F4-AFE0-FD922FB63BF3}.Release|x86.ActiveCfg = Release|Any CPU
+		{6C6B1628-AD0A-41F4-AFE0-FD922FB63BF3}.Release|x86.Build.0 = Release|Any CPU
+		{6C6B1628-AD0A-41F4-AFE0-FD922FB63BF3}.SingleImage|Any CPU.ActiveCfg = Release|Any CPU
+		{6C6B1628-AD0A-41F4-AFE0-FD922FB63BF3}.SingleImage|Any CPU.Build.0 = Release|Any CPU
+		{6C6B1628-AD0A-41F4-AFE0-FD922FB63BF3}.SingleImage|x86.ActiveCfg = Release|Any CPU
+		{6C6B1628-AD0A-41F4-AFE0-FD922FB63BF3}.SingleImage|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
