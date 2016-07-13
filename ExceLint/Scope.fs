@@ -14,7 +14,18 @@
             self.y = other.y &&
             self.fullpath = other.fullpath
         override self.GetHashCode() : int =
-            self.x.GetHashCode() ||| self.y.GetHashCode() ||| self.fullpath.GetHashCode()
+            let xhc = match self.x with
+                        | Some(i) -> i.GetHashCode()
+                        | None -> 0
+
+            let yhc = match self.y with
+                        | Some(i) -> i.GetHashCode()
+                        | None -> 0
+
+            let phc = match self.fullpath with
+                        | Some(s) -> s.GetHashCode()
+                        | None -> 0
+            xhc||| yhc ||| phc
         interface System.IComparable with
             member self.CompareTo obj =
                 let other = obj :?> XYPath
@@ -34,21 +45,30 @@
 
     [<CustomEquality; CustomComparison>]
     type SelectID =
-    | AllID of XYPath
+    | AllID
     | ColumnID of XYPath
     | RowID of XYPath
     | LevelID of Set<Level>
         override self.Equals(obj: obj) : bool =
-            let sel2 = obj :?> SelectID
-            match self,sel2 with
-            | AllID(xyp1),AllID(xyp2) -> xyp1 = xyp2
-            | ColumnID(xyp1),ColumnID(xyp2) -> xyp1 = xyp2
-            | RowID(xyp1),ColumnID(xyp2) -> xyp1 = xyp2
-            | LevelID(lv1),LevelID(lv2) -> not (Set.isEmpty (Set.intersect lv1 lv2))
-            | _,_ -> false
+            let other = obj :?> SelectID
+
+            match self with
+            | AllID -> true
+            | ColumnID(xyp1) ->
+                match other with
+                | ColumnID(xyp2) -> xyp1 = xyp2
+                | _ -> false
+            | RowID(xyp1) ->
+                match other with
+                | RowID(xyp2) -> xyp1 = xyp2
+                | _ -> false
+            | LevelID(lv1) ->
+                match other with
+                | LevelID(lv2) -> not (Set.isEmpty (Set.intersect lv1 lv2))
+                | _ -> false
         override self.GetHashCode() : int =
             match self with
-            | AllID(xyp) -> xyp.GetHashCode()
+            | AllID -> 0
             | ColumnID(xyp) -> xyp.GetHashCode()
             | RowID(xyp) -> xyp.GetHashCode()
             | LevelID(lv) -> lv.GetHashCode()
@@ -56,8 +76,7 @@
             member self.CompareTo(obj: obj) : int =
                 let other = obj :?> SelectID
                 match self,other with
-                | AllID(xyp1),AllID(xyp2) ->
-                    (xyp1 :> System.IComparable).CompareTo(xyp2)
+                | AllID,AllID -> 0
                 | ColumnID(xyp1),ColumnID(xyp2) -> 
                     (xyp1 :> System.IComparable).CompareTo(xyp2)
                 | RowID(xyp1),RowID(xyp2) ->
@@ -93,7 +112,7 @@
         // in the same column.
         member self.id(addr: AST.Address)(dag: Depends.DAG) : SelectID =
             match self with
-            | AllCells -> AllID { x = None; y = None; fullpath = None }
+            | AllCells -> AllID
             | SameColumn -> ColumnID { x = Some addr.X; y = None; fullpath = Some (addr.Path + ":" + addr.WorkbookName + ":" + addr.WorksheetName) }
             | SameRow -> RowID { x = None; y = Some addr.Y; fullpath = Some (addr.Path + ":" + addr.WorkbookName + ":" + addr.WorksheetName)}
             | SameLevel -> LevelID (levelsOf addr dag)

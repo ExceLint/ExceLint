@@ -305,7 +305,12 @@
                     // get feature score
                     let fscore = scores.[fname,addr]
                     // get score count
-                    ftable.[(fname,sID,fscore)]
+                    try
+                        ftable.[(fname,sID,fscore)]
+                    with
+                    | exn ->
+                        ftable.[(fname,sID,fscore)] |> ignore
+                        failwith "no"
                 ) (config.EnabledFeatures)
 
             let private rank(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(config: FeatureConf)(progress: Depends.Progress)(dag: Depends.DAG) : Ranking =
