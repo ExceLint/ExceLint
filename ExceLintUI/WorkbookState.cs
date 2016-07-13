@@ -155,7 +155,7 @@ namespace ExceLintUI
                 model = buildDAGAndDoStuff(forceDAGBuild, f, 3, pb);
             }
 
-            var output = model.inspectSelectorFor(cursorAddr, sel);
+            var output = model.inspectSelectorFor(cursorAddr, sel, _dag);
 
             // make output string
             string[] outputStrings = output.SelectMany(kvp => prettyPrintSelectScores(kvp)).ToArray();

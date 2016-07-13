@@ -36,8 +36,8 @@
 
         member self.getSignificanceCutoff : int = analysis.cutoff
 
-        member self.inspectSelectorFor(addr: AST.Address, sel: Scope.Selector) : KeyValuePair<AST.Address,(string*double)[]>[] =
-            let sID = sel.id addr
+        member self.inspectSelectorFor(addr: AST.Address, sel: Scope.Selector, dag: Depends.DAG) : KeyValuePair<AST.Address,(string*double)[]>[] =
+            let sID = sel.id addr dag
 
             let d = new Dict<AST.Address,(string*double) list>()
 
@@ -47,7 +47,7 @@
 
                 let valid_scores =
                     Array.choose (fun (addr2,score) ->
-                        if sel.id addr2 = sID then
+                        if sel.id addr2 dag = sID then
                             Some (addr2,score)
                         else
                             None

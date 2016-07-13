@@ -267,10 +267,10 @@
 
                 d
 
-            let private getFeatureCounts(addr: AST.Address)(sel: Scope.Selector)(ftable: FreqTable)(scores: FastScoreTable)(config: FeatureConf) : (HistoBin*int)[] =
+            let private getFeatureCounts(addr: AST.Address)(sel: Scope.Selector)(ftable: FreqTable)(scores: FastScoreTable)(config: FeatureConf)(dag: Depends.DAG) : (HistoBin*int)[] =
                 Array.map (fun fname -> 
                     // get selector ID
-                    let sID = sel.id addr
+                    let sID = sel.id addr dag
                     // get feature score
                     let fscore = scores.[fname,addr]
                     // get score count
@@ -278,7 +278,7 @@
                     (fname,sID,fscore),count
                 ) (config.EnabledFeatures)
 
-            let private causes(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(config: FeatureConf)(progress: Depends.Progress) : Causes =
+            let private causes(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(config: FeatureConf)(progress: Depends.Progress)(dag: Depends.DAG) : Causes =
                 let fscores = makeFastScoreTable scores
 
                 // get histogram bin heights for every given cell
@@ -289,7 +289,7 @@
                                         if progress.IsCancelled() then
                                             raise AnalysisCancelled
 
-                                        getFeatureCounts addr sel ftable fscores config
+                                        getFeatureCounts addr sel ftable fscores config dag
                                      ) (config.EnabledScopes) |> Array.concat
                         (addr, causes)
                     ) cells
@@ -298,17 +298,17 @@
 
             // sum the count of the appropriate feature bin of every feature
             // for the given address
-            let private sumFeatureCounts(addr: AST.Address)(sel: Scope.Selector)(ftable: FreqTable)(scores: FastScoreTable)(config: FeatureConf) : int =
+            let private sumFeatureCounts(addr: AST.Address)(sel: Scope.Selector)(ftable: FreqTable)(scores: FastScoreTable)(config: FeatureConf)(dag: Depends.DAG) : int =
                 Array.sumBy (fun fname -> 
                     // get selector ID
-                    let sID = sel.id addr
+                    let sID = sel.id addr dag
                     // get feature score
                     let fscore = scores.[fname,addr]
                     // get score count
                     ftable.[(fname,sID,fscore)]
                 ) (config.EnabledFeatures)
 
-            let private rank(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(config: FeatureConf)(progress: Depends.Progress) : Ranking =
+            let private rank(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(config: FeatureConf)(progress: Depends.Progress)(dag: Depends.DAG) : Ranking =
                 let fscores = makeFastScoreTable scores
 
                 // get sums for every given cell
@@ -319,7 +319,7 @@
                                 raise AnalysisCancelled
 
                         let sum = Array.sumBy (fun sel ->
-                                      sumFeatureCounts addr sel ftable fscores config
+                                      sumFeatureCounts addr sel ftable fscores config dag
                                   ) (config.EnabledScopes)
                         addr, sum
                     ) cells
@@ -377,7 +377,7 @@
                             if progress.IsCancelled() then
                                 raise AnalysisCancelled
 
-                            let sID = sel.id addr
+                            let sID = sel.id addr dag
                             if d.ContainsKey (fname,sID,score) then
                                 let freq = d.[(fname,sID,score)]
                                 d.[(fname,sID,score)] <- freq + 1
@@ -507,10 +507,10 @@
                         let freqs = buildFrequencyTable scores input.progress dag' input.config
                     
                         // rerank
-                        let ranking = rank cells freqs scores input.config input.progress
+                        let ranking = rank cells freqs scores input.config input.progress input.dag
 
                         // get causes
-                        let causes = causes (analysisBase input.config input.dag) freqs scores input.config input.progress
+                        let causes = causes (analysisBase input.config input.dag) freqs scores input.config input.progress input.dag
 
                         // TODO: we shouldn't just blindly pass along old _time numbers
                         Success({ analysis with scores = scores; ftable = freqs; ranking = ranking; causes = causes; })
@@ -538,11 +538,11 @@
                     let ftable,ftable_time = PerfUtils.runMillis _freqf ()
 
                     // rank
-                    let _rankf = fun () -> rank (analysisBase input.config input.dag) ftable scores input.config input.progress
+                    let _rankf = fun () -> rank (analysisBase input.config input.dag) ftable scores input.config input.progress input.dag
                     let ranking,ranking_time = PerfUtils.runMillis _rankf ()
 
                     // save causes
-                    let _causef = fun () -> causes (analysisBase input.config input.dag) ftable scores input.config input.progress
+                    let _causef = fun () -> causes (analysisBase input.config input.dag) ftable scores input.config input.progress input.dag
                     let causes,causes_time = PerfUtils.runMillis _causef ()
 
                     Success(
