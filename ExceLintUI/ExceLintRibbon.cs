@@ -275,6 +275,10 @@ namespace ExceLintUI
 
         private void showHeatmap_Click(object sender, RibbonControlEventArgs e)
         {
+            // check for debug checkbox
+            currentWorkbook.DebugMode = this.DebugOutput.Checked;
+
+            // get significance threshold
             var sig = getPercent(this.significanceTextBox.Text, this.significanceTextBox.Label);
 
             // workbook- and UI-update callback
