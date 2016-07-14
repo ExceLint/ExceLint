@@ -11,6 +11,8 @@ namespace ExceLintUI
 {
     public partial class ExceLintRibbon
     {
+        private static bool USE_MULTITHREADED_UI = false;
+
         Dictionary<Excel.Workbook, WorkbookState> wbstates = new Dictionary<Excel.Workbook, WorkbookState>();
         System.Collections.Concurrent.ConcurrentDictionary<Excel.Workbook,Boolean> wbShutdown = new System.Collections.Concurrent.ConcurrentDictionary<Excel.Workbook,Boolean>();
         WorkbookState currentWorkbook;
@@ -181,10 +183,16 @@ namespace ExceLintUI
 
         private static void RunInSTAThread(ThreadStart t)
         {
-            Thread thread = new Thread(t);
-            thread.SetApartmentState(ApartmentState.STA);
-            thread.Start();
-            thread.Join();
+            if (USE_MULTITHREADED_UI)
+            {
+                Thread thread = new Thread(t);
+                thread.SetApartmentState(ApartmentState.STA);
+                thread.Start();
+                thread.Join();
+            } else
+            {
+                t.Invoke();
+            }
         }
 
         private void MarkAsOKButton_Click(object sender, RibbonControlEventArgs e)
@@ -311,7 +319,7 @@ namespace ExceLintUI
                     updateState(wbs);
 
                     // debug output
-                    if (wbs.DebugMode)
+                    if (wbs.DebugMode && !wbs.HeatMap_Hidden)
                     {
                         var debug_info = prepareDebugInfo(wbs);
                         var timing_info = prepareTimingInfo(wbs);
