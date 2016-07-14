@@ -510,15 +510,17 @@ namespace ExceLintUI
             // disable config buttons if we are:
             // 1. in the middle of an audit, or
             // 2. we are viewing the heatmap
-            this.allCellsFreq.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
-            this.columnCellsFreq.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
-            this.rowCellsFreq.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
-            this.DebugOutput.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
-            this.forceBuildDAG.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
-            this.inferAddrModes.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
-            this.allCells.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
-            this.weightByIntrinsicAnomalousness.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
-            this.significanceTextBox.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
+            var enable_config = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
+            this.allCellsFreq.Enabled = enable_config;
+            this.columnCellsFreq.Enabled = enable_config;
+            this.rowCellsFreq.Enabled = enable_config;
+            this.levelsFreq.Enabled = enable_config;
+            this.DebugOutput.Enabled = enable_config;
+            this.forceBuildDAG.Enabled = enable_config;
+            this.inferAddrModes.Enabled = enable_config;
+            this.allCells.Enabled = enable_config;
+            this.weightByIntrinsicAnomalousness.Enabled = enable_config;
+            this.significanceTextBox.Enabled = enable_config;
 
             // toggle the heatmap label depending on the heatmap shown/hidden state
             if (wbs.HeatMap_Hidden)
