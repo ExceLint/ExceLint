@@ -149,15 +149,20 @@
                 if cut_idx = -1 || ranking.Length = 0 then
                     -1
                 else
+                    // a map from AST.Address to equivalence class number
                     let ecs = equivalenceClasses ranking causes
 
-                    if ecs.[ranking.[cut_idx].Key] = ecs.[ranking.[cut_idx + 1].Key] then
+                    // get the equivalence class of the element at the cut index (inclusive)
+                    let cutEC = ecs.[ranking.[cut_idx].Key]
+
+                    if cutEC = ecs.[ranking.[cut_idx + 1].Key] then
                         // find the first index that is different by scanning backward
                         if cut_idx <= 0 then
                             -1
                         else
-                            let mutable seek_idx = ecs.[ranking.[cut_idx - 1].Key]
-                            while seek_idx = ecs.[ranking.[cut_idx].Key] && seek_idx >= 0 do
+                            // find the index in the ranking where the equivalence class changes
+                            let mutable seek_idx = cut_idx - 1
+                            while seek_idx >= 0 && ecs.[ranking.[seek_idx].Key] = cutEC do
                                 seek_idx <- seek_idx - 1
                             seek_idx
                     else
@@ -315,7 +320,10 @@
                         failwith "no"
                 ) (config.EnabledFeatures)
 
-            let private rank(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(config: FeatureConf)(progress: Depends.Progress)(dag: Depends.DAG) : Ranking =
+            // for every cell and for every requested conditional,
+            // find the bin height for the cell, then sum all
+            // of these bin heights to produce a total ranking score
+            let private totalHistoSums(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(config: FeatureConf)(progress: Depends.Progress)(dag: Depends.DAG) : Ranking =
                 let fscores = makeFastScoreTable scores
 
                 // get sums for every given cell
@@ -514,7 +522,7 @@
                         let freqs = buildFrequencyTable scores input.progress dag' input.config
                     
                         // rerank
-                        let ranking = rank cells freqs scores input.config input.progress input.dag
+                        let ranking = totalHistoSums cells freqs scores input.config input.progress input.dag
 
                         // get causes
                         let causes = causes (analysisBase input.config input.dag) freqs scores input.config input.progress input.dag
@@ -545,7 +553,7 @@
                     let ftable,ftable_time = PerfUtils.runMillis _freqf ()
 
                     // rank
-                    let _rankf = fun () -> rank (analysisBase input.config input.dag) ftable scores input.config input.progress input.dag
+                    let _rankf = fun () -> totalHistoSums (analysisBase input.config input.dag) ftable scores input.config input.progress input.dag
                     let ranking,ranking_time = PerfUtils.runMillis _rankf ()
 
                     // save causes
