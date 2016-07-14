@@ -168,15 +168,15 @@ namespace ExceLintUI
         {
             if (!String.IsNullOrEmpty(debug_info))
             {
-                System.Windows.Forms.Clipboard.SetText(debug_info);
-                System.Windows.Forms.MessageBox.Show(debug_info);
+                var desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                var debugInfoPath = System.IO.Path.Combine(desktopPath, "ExceLintDebugInfo.txt");
+
+                System.IO.File.WriteAllText(debugInfoPath, debug_info);
+
+                System.Windows.Forms.MessageBox.Show("Debug information written to file:\n" + debugInfoPath);
             }
 
-            if (!String.IsNullOrEmpty(debug_info))
-            {
-                System.Windows.Forms.Clipboard.SetText(time_info);
-                System.Windows.Forms.MessageBox.Show(time_info);
-            }
+            System.Windows.Forms.MessageBox.Show(time_info);
         }
 
         private static void RunInSTAThread(ThreadStart t)
