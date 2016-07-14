@@ -68,6 +68,7 @@
             this.inferAddrModes = this.Factory.CreateRibbonCheckBox();
             this.allCells = this.Factory.CreateRibbonCheckBox();
             this.weightByIntrinsicAnomalousness = this.Factory.CreateRibbonCheckBox();
+            this.levelsFreq = this.Factory.CreateRibbonCheckBox();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -106,6 +107,7 @@
             this.CheckCellGroup.Items.Add(this.allCellsFreq);
             this.CheckCellGroup.Items.Add(this.columnCellsFreq);
             this.CheckCellGroup.Items.Add(this.rowCellsFreq);
+            this.CheckCellGroup.Items.Add(this.levelsFreq);
             this.CheckCellGroup.Items.Add(this.separator3);
             this.CheckCellGroup.Items.Add(this.DebugOutput);
             this.CheckCellGroup.Items.Add(this.forceBuildDAG);
@@ -276,7 +278,7 @@
             // allCellsFreq
             // 
             this.allCellsFreq.Checked = true;
-            this.allCellsFreq.Label = "All Cells Freq.";
+            this.allCellsFreq.Label = "All Cells Freq";
             this.allCellsFreq.Name = "allCellsFreq";
             this.allCellsFreq.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.allCellsFreq_Click);
             // 
@@ -328,6 +330,12 @@
             this.weightByIntrinsicAnomalousness.Label = "Reweight by Intrinsic Anomalousness";
             this.weightByIntrinsicAnomalousness.Name = "weightByIntrinsicAnomalousness";
             this.weightByIntrinsicAnomalousness.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.weightByIntrinsicAnomalousness_Click);
+            // 
+            // levelsFreq
+            // 
+            this.levelsFreq.Checked = true;
+            this.levelsFreq.Label = "Levels Freq";
+            this.levelsFreq.Name = "levelsFreq";
             // 
             // ExceLintRibbon
             // 
@@ -383,6 +391,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox inferAddrModes;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox allCells;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox weightByIntrinsicAnomalousness;
+        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox levelsFreq;
     }
 
     partial class ThisRibbonCollection

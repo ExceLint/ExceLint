@@ -166,6 +166,12 @@
                 let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Scope; runner = nop}
                 _config.Add(name, cap)
             )
+        member self.analyzeRelativeToLevels() : FeatureConf =
+            FeatureConf(
+                let name = "ScopeLevels"
+                let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Scope; runner = nop}
+                _config.Add(name, cap)
+            )
         member self.inferAddressModes() : FeatureConf =
             FeatureConf(
                 let name = "InferAddressModes"
@@ -206,6 +212,7 @@
                                         | "ScopeAllCells" -> Some Scope.AllCells
                                         | "ScopeColumns" -> Some Scope.SameColumn
                                         | "ScopeRows" -> Some Scope.SameRow
+                                        | "ScopeLevels" -> Some Scope.SameLevel
                                         | _ -> failwith "Unknown scope selector."
                                     else None)
 

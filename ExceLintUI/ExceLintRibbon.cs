@@ -534,24 +534,30 @@ namespace ExceLintUI
         {
             var c = new ExceLint.FeatureConf();
 
+            // reference counts
             if (this.inDegree.Checked) { c = c.enableInDegree(); }
             if (this.outDegree.Checked) { c = c.enableOutDegree(); }
             if (this.combinedDegree.Checked) { c = c.enableCombinedDegree(); }
 
+            // spatiostructual vectors
             if (this.inVectors.Checked) { c = c.enableShallowInputVectorMixedL2NormSum(); }
             if (this.outVectors.Checked) { c = c.enableShallowOutputVectorMixedL2NormSum(); }
             if (this.inVectorsAbs.Checked) { c = c.enableShallowInputVectorAbsoluteL2NormSum(); }
             if (this.outVectorsAbs.Checked) { c = c.enableShallowOutputVectorAbsoluteL2NormSum(); }
 
+            // locality
             if (this.ProximityAbove.Checked) { c = c.enableProximityAbove(); }
             if (this.ProximityBelow.Checked) { c = c.enableProximityBelow(); }
             if (this.ProximityLeft.Checked) { c = c.enableProximityLeft(); }
             if (this.ProximityRight.Checked) { c = c.enableProximityRight(); }
 
+            // Scopes (i.e., conditioned analysis)
             if (this.allCellsFreq.Checked) { c = c.analyzeRelativeToAllCells(); }
             if (this.columnCellsFreq.Checked) { c = c.analyzeRelativeToColumns(); }
             if (this.rowCellsFreq.Checked) { c = c.analyzeRelativeToRows(); }
+            if (this.levelsFreq.Checked) { c = c.analyzeRelativeToLevels(); }
 
+            // weighting / program resynthesis
             if (this.inferAddrModes.Checked) { c = c.inferAddressModes();  }
             if (!this.allCells.Checked) { c = c.analyzeOnlyFormulas();  }
             if (this.weightByIntrinsicAnomalousness.Checked) { c = c.weightByIntrinsicAnomalousness(); }
