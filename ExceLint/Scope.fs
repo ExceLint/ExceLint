@@ -124,4 +124,4 @@
             | LevelID(levels) ->
                 let lstrs = Set.map (fun l -> l.ToString()) levels |> Set.toList
                 "Levels [" + (List.reduce (fun (acc: string)(l: string) -> acc + ", " + l.ToString()) lstrs) + "]"
-        static member Kinds = [| AllCells; SameColumn; SameRow |]
+        static member Kinds = [| AllCells; SameColumn; SameRow; SameLevel |]
