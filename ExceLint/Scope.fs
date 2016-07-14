@@ -42,6 +42,9 @@
         fn_fullpath: string;
         level: int
     }
+    with
+        override self.ToString() =
+            "{ fn_x: " + self.fn_x.ToString() + "; fn_y: " + self.fn_y.ToString() + "; fn_fullpath: " + self.fn_fullpath + "; level: " + self.level.ToString() + " }"
 
     [<CustomEquality; CustomComparison>]
     type SelectID =
