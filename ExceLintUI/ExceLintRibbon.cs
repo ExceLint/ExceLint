@@ -60,12 +60,11 @@ namespace ExceLintUI
                     wbs.flag();
                     updateState(wbs);
 
-                    var debug_info = prepareDebugInfo(wbs);
-                    var timing_info = prepareTimingInfo(wbs);
-
                     // debug output
                     if (wbs.DebugMode)
                     {
+                        var debug_info = prepareDebugInfo(wbs);
+                        var timing_info = prepareTimingInfo(wbs);
                         RunInSTAThread(() => printDebugInfo(debug_info, timing_info));
                     }
 
@@ -311,12 +310,11 @@ namespace ExceLintUI
                     wbs.toggleHeatMap(WorkbookState.MAX_DURATION_IN_MS, conf, forceBuildDAG, pb);
                     updateState(wbs);
 
-                    var debug_info = prepareDebugInfo(wbs);
-                    var timing_info = prepareTimingInfo(wbs);
-
                     // debug output
                     if (wbs.DebugMode)
                     {
+                        var debug_info = prepareDebugInfo(wbs);
+                        var timing_info = prepareTimingInfo(wbs);
                         RunInSTAThread(() => printDebugInfo(debug_info, timing_info));
                     }
 
