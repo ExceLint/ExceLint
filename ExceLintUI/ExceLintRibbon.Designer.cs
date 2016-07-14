@@ -326,7 +326,6 @@
             // 
             // weightByIntrinsicAnomalousness
             // 
-            this.weightByIntrinsicAnomalousness.Checked = true;
             this.weightByIntrinsicAnomalousness.Label = "Reweight by Intrinsic Anomalousness";
             this.weightByIntrinsicAnomalousness.Name = "weightByIntrinsicAnomalousness";
             this.weightByIntrinsicAnomalousness.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.weightByIntrinsicAnomalousness_Click);
