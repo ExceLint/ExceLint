@@ -144,7 +144,9 @@
                 output
 
             let private seekEquivalenceBoundary(ranking: Ranking)(causes: Causes)(cut_idx: int) : int =
-                if ranking.Length = 0 then
+                // if we have no anomalies, because either the cut index excludes
+                // all cells or because the ranking is zero-length, just return -1
+                if cut_idx = -1 || ranking.Length = 0 then
                     -1
                 else
                     let ecs = equivalenceClasses ranking causes
