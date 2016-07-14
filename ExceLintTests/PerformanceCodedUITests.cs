@@ -35,7 +35,7 @@ namespace ExceLintTests
         {
             var t = Time(() => this.UIMap.AuditRoundTripPerformance());
 
-            Assert.IsTrue(t <= TimeSpan.FromSeconds(40));
+            Assert.IsTrue(t <= TimeSpan.FromSeconds(45));
         }
 
         #region Additional test attributes
