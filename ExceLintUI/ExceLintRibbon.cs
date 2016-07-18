@@ -320,11 +320,16 @@ namespace ExceLintUI
                 wbs.toolSignificance = sigThresh.Value;
                 try
                 {
+                    // if, BEFORE the analysis, the user requests debug info
+                    // AND the heatmap is PRESENTLY HIDDEN, show the debug info
+                    // whether there ends up being a heatmap to show or not.
+                    var debug_display = wbs.DebugMode && wbs.HeatMap_Hidden;
+
                     wbs.toggleHeatMap(WorkbookState.MAX_DURATION_IN_MS, conf, forceBuildDAG, pb);
                     updateState(wbs);
 
                     // debug output
-                    if (wbs.DebugMode && !wbs.HeatMap_Hidden)
+                    if (debug_display)
                     {
                         var debug_info = prepareDebugInfo(wbs);
                         var timing_info = prepareTimingInfo(wbs);
