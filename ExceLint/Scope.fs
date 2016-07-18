@@ -94,7 +94,11 @@
                 | _,_ -> failwith "incomparable"
         
     let levelsOf(input: AST.Address)(dag: Depends.DAG) : Set<Level> =
-        let refdepths = dag.AllRefDistancesFromInput input
+        let terminal_formulas = new HashSet<AST.Address>(dag.terminalFormulaNodes false)
+        let unfilt_refdepts = dag.AllRefDistancesFromInput input
+        let refdepths = Seq.filter (fun (kvp: KeyValuePair<AST.Address,HashSet<int>>) ->
+                            terminal_formulas.Contains kvp.Key
+                        ) unfilt_refdepts
 
         Seq.map (fun (kvp: KeyValuePair<AST.Address,HashSet<int>>) ->
             let faddr = kvp.Key;
