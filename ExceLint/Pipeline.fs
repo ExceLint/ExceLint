@@ -6,12 +6,12 @@
         open ConfUtils
 
         type ScoreTable = Dict<string,(AST.Address*double)[]>
-        type FastScoreTable = Dict<string*AST.Address,double>
+        type FlatScoreTable = Dict<string*AST.Address,double>
         type HistoBin = string*Scope.SelectID*double
         type FreqTable = Dict<HistoBin,int>
         type Weights = IDictionary<AST.Address,double>
         type Ranking = KeyValuePair<AST.Address,double>[]
-        type Causes = Dict<AST.Address,(HistoBin*int)[]>
+        type Causes = Dict<AST.Address,(HistoBin*int*double)[]>
         type ChangeSet = { mutants: KeyValuePair<AST.Address,string>[]; scores: ScoreTable; freqtable: FreqTable }
 
         exception AnalysisCancelled

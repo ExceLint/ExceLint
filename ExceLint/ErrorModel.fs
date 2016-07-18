@@ -20,10 +20,11 @@
 
         member self.NumRankedEntries : int = analysis.ranking.Length
 
-        member self.causeOf(addr: AST.Address) : KeyValuePair<HistoBin,int>[] =
+        member self.causeOf(addr: AST.Address) : KeyValuePair<HistoBin,Tuple<int,double>>[] =
             Array.map (fun cause ->
-                let (bin,count) = cause
-                new KeyValuePair<HistoBin,int>(bin,count)
+                let (bin,count,beta) = cause
+                let tup = new Tuple<int,double>(count,beta)
+                new KeyValuePair<HistoBin,Tuple<int,double>>(bin,tup)
             ) analysis.causes.[addr]
 
         member self.weightOf(addr: AST.Address) : double = analysis.weights.[addr]

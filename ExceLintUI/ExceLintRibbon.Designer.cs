@@ -62,13 +62,14 @@
             this.allCellsFreq = this.Factory.CreateRibbonCheckBox();
             this.columnCellsFreq = this.Factory.CreateRibbonCheckBox();
             this.rowCellsFreq = this.Factory.CreateRibbonCheckBox();
+            this.levelsFreq = this.Factory.CreateRibbonCheckBox();
             this.separator3 = this.Factory.CreateRibbonSeparator();
             this.DebugOutput = this.Factory.CreateRibbonCheckBox();
             this.forceBuildDAG = this.Factory.CreateRibbonCheckBox();
             this.inferAddrModes = this.Factory.CreateRibbonCheckBox();
             this.allCells = this.Factory.CreateRibbonCheckBox();
             this.weightByIntrinsicAnomalousness = this.Factory.CreateRibbonCheckBox();
-            this.levelsFreq = this.Factory.CreateRibbonCheckBox();
+            this.conditioningSetSize = this.Factory.CreateRibbonCheckBox();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -114,6 +115,7 @@
             this.CheckCellGroup.Items.Add(this.inferAddrModes);
             this.CheckCellGroup.Items.Add(this.allCells);
             this.CheckCellGroup.Items.Add(this.weightByIntrinsicAnomalousness);
+            this.CheckCellGroup.Items.Add(this.conditioningSetSize);
             this.CheckCellGroup.Name = "CheckCellGroup";
             // 
             // box1
@@ -296,6 +298,13 @@
             this.rowCellsFreq.Name = "rowCellsFreq";
             this.rowCellsFreq.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.rowCellsFreq_Click);
             // 
+            // levelsFreq
+            // 
+            this.levelsFreq.Checked = true;
+            this.levelsFreq.Label = "Levels Freq";
+            this.levelsFreq.Name = "levelsFreq";
+            this.levelsFreq.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.levelsFreq_Click);
+            // 
             // separator3
             // 
             this.separator3.Name = "separator3";
@@ -330,11 +339,11 @@
             this.weightByIntrinsicAnomalousness.Name = "weightByIntrinsicAnomalousness";
             this.weightByIntrinsicAnomalousness.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.weightByIntrinsicAnomalousness_Click);
             // 
-            // levelsFreq
+            // conditioningSetSize
             // 
-            this.levelsFreq.Checked = true;
-            this.levelsFreq.Label = "Levels Freq";
-            this.levelsFreq.Name = "levelsFreq";
+            this.conditioningSetSize.Label = "Weigh by Conditioning Set Size";
+            this.conditioningSetSize.Name = "conditioningSetSize";
+            this.conditioningSetSize.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.conditioningSetSize_Click);
             // 
             // ExceLintRibbon
             // 
@@ -391,6 +400,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox allCells;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox weightByIntrinsicAnomalousness;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox levelsFreq;
+        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox conditioningSetSize;
     }
 
     partial class ThisRibbonCollection

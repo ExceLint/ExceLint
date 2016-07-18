@@ -130,10 +130,15 @@ namespace ExceLintUI
 
                 // enumerate causes
                 var causes = analysis.model.causeOf(score.Key);
-                var causes_str = "\tcauses: [\n" + String.Join("\n", causes.Select(cause => "\t\t" + ExceLint.ErrorModel.prettyHistoBinDesc(cause.Key) + " = " + cause.Value)) + "\n\t]";
+                var causes_str = "\tcauses: [\n" +
+                                 String.Join("\n", causes.Select(cause => {
+                                     var causeScore = cause.Value.Item1;
+                                     var causeWeight = cause.Value.Item2;
+                                     return "\t\t" + ExceLint.ErrorModel.prettyHistoBinDesc(cause.Key) + ": (CSS weight) * score = " + causeWeight + " x " + causeScore + " = " + causeWeight * causeScore;
+                                 })) + "\n\t]";
 
                 // print
-                return prefix + score.Key.A1FullyQualified() + " -> " + score.Value.ToString() + "\n" + causes_str + "\n\t" + "weight: " + analysis.model.weightOf(score.Key);
+                return prefix + score.Key.A1FullyQualified() + " -> " + score.Value.ToString() + "\n" + causes_str + "\n\t" + "intrinsic anomalousness weight: " + analysis.model.weightOf(score.Key);
             }));
             if (score_str == "")
             {
@@ -531,6 +536,7 @@ namespace ExceLintUI
             this.allCells.Enabled = enable_config;
             this.weightByIntrinsicAnomalousness.Enabled = enable_config;
             this.significanceTextBox.Enabled = enable_config;
+            this.conditioningSetSize.Enabled = enable_config;
 
             // toggle the heatmap label depending on the heatmap shown/hidden state
             if (wbs.HeatMap_Hidden)
@@ -573,6 +579,7 @@ namespace ExceLintUI
             if (this.inferAddrModes.Checked) { c = c.inferAddressModes();  }
             if (!this.allCells.Checked) { c = c.analyzeOnlyFormulas();  }
             if (this.weightByIntrinsicAnomalousness.Checked) { c = c.weightByIntrinsicAnomalousness(); }
+            if (this.conditioningSetSize.Checked) { c = c.weightByConditioningSetSize(); }
 
             return c;
         }
@@ -675,6 +682,16 @@ namespace ExceLintUI
         }
 
         private void significanceTextBox_TextChanged(object sender, RibbonControlEventArgs e)
+        {
+            currentWorkbook.ConfigChanged();
+        }
+
+        private void conditioningSetSize_Click(object sender, RibbonControlEventArgs e)
+        {
+            currentWorkbook.ConfigChanged();
+        }
+
+        private void levelsFreq_Click(object sender, RibbonControlEventArgs e)
         {
             currentWorkbook.ConfigChanged();
         }

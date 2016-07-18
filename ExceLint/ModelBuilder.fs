@@ -256,7 +256,7 @@
             let private mutateDAG(cs: ChangeSet)(dag: Depends.DAG)(app: Microsoft.Office.Interop.Excel.Application)(p: Depends.Progress) : Depends.DAG =
                 dag.CopyWithUpdatedFormulas(cs.mutants, app, true, p)
 
-            let private makeFastScoreTable(scores: ScoreTable) : FastScoreTable =
+            let private makeFastScoreTable(scores: ScoreTable) : FlatScoreTable =
                 let mutable max = 0
                 for arr in scores do
                     if arr.Value.Length > max then
@@ -274,7 +274,25 @@
 
                 d
 
-            let private getFeatureCounts(addr: AST.Address)(sel: Scope.Selector)(ftable: FreqTable)(scores: FastScoreTable)(config: FeatureConf)(dag: Depends.DAG) : (HistoBin*int)[] =
+            let private sizeOfConditioningSet(addr: AST.Address)(cells: AST.Address[])(sel: Scope.Selector)(dag: Depends.DAG) : int =
+                // get selector ID
+                let sID = sel.id addr dag
+                let total = Array.sumBy (fun c ->
+                                let sID' = sel.id c dag
+                                if sID = sID' then
+                                    1
+                                else
+                                    0
+                            ) cells
+                total
+             
+            let private conditioningSetWeight(addr: AST.Address)(cells: AST.Address[])(sel: Scope.Selector)(dag: Depends.DAG)(config: FeatureConf) : double =
+                if config.IsEnabled "WeightByConditioningSetSize" then
+                    Math.Log (double (sizeOfConditioningSet addr cells sel dag))
+                else
+                    1.0
+
+            let private getCause(addr: AST.Address)(cells: AST.Address[])(sel: Scope.Selector)(ftable: FreqTable)(scores: FlatScoreTable)(config: FeatureConf)(dag: Depends.DAG) : (HistoBin*int*double)[] =
                 Array.map (fun fname -> 
                     // get selector ID
                     let sID = sel.id addr dag
@@ -282,7 +300,9 @@
                     let fscore = scores.[fname,addr]
                     // get score count
                     let count = ftable.[(fname,sID,fscore)]
-                    (fname,sID,fscore),count
+                    // get weight coefficient (beta)
+                    let beta = conditioningSetWeight addr cells sel dag config
+                    (fname,sID,fscore),count,beta
                 ) (config.EnabledFeatures)
 
             let private causes(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(config: FeatureConf)(progress: Depends.Progress)(dag: Depends.DAG) : Causes =
@@ -296,7 +316,8 @@
                                         if progress.IsCancelled() then
                                             raise AnalysisCancelled
 
-                                        getFeatureCounts addr sel ftable fscores config dag
+                                        getCause addr cells sel ftable fscores config dag
+
                                      ) (config.EnabledScopes) |> Array.concat
                         (addr, causes)
                     ) cells
@@ -305,36 +326,39 @@
 
             // sum the count of the appropriate feature bin of every feature
             // for the given address
-            let private sumFeatureCounts(addr: AST.Address)(sel: Scope.Selector)(ftable: FreqTable)(scores: FastScoreTable)(config: FeatureConf)(dag: Depends.DAG) : int =
+            let private sumFeatureCounts(addr: AST.Address)(sel: Scope.Selector)(ftable: FreqTable)(scores: FlatScoreTable)(config: FeatureConf)(dag: Depends.DAG) : int =
                 Array.sumBy (fun fname -> 
                     // get selector ID
                     let sID = sel.id addr dag
                     // get feature score
                     let fscore = scores.[fname,addr]
                     // get score count
-                    try
-                        ftable.[(fname,sID,fscore)]
-                    with
-                    | exn ->
-                        ftable.[(fname,sID,fscore)] |> ignore
-                        failwith "no"
+                    ftable.[(fname,sID,fscore)]
                 ) (config.EnabledFeatures)
 
             // for every cell and for every requested conditional,
             // find the bin height for the cell, then sum all
             // of these bin heights to produce a total ranking score
+            // THIS IS WHERE ALL THE ACTION HAPPENS, FOLKS
             let private totalHistoSums(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(config: FeatureConf)(progress: Depends.Progress)(dag: Depends.DAG) : Ranking =
                 let fscores = makeFastScoreTable scores
 
                 // get sums for every given cell
                 // and for every enabled scope
-                let addrSums: (AST.Address*int)[] =
+                let addrSums: (AST.Address*double)[] =
                     Array.map (fun addr ->
                         if progress.IsCancelled() then
                                 raise AnalysisCancelled
 
                         let sum = Array.sumBy (fun sel ->
-                                      sumFeatureCounts addr sel ftable fscores config dag
+                                      // compute conditioning set weight
+                                      let beta_sel_i = conditioningSetWeight addr cells sel dag config
+
+                                      // this is the conditional count
+                                      let count = sumFeatureCounts addr sel ftable fscores config dag
+
+                                      // weigh
+                                      beta_sel_i * (double count)
                                   ) (config.EnabledScopes)
                         addr, sum
                     ) cells
