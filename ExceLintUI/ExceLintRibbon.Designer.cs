@@ -341,6 +341,7 @@
             // 
             // conditioningSetSize
             // 
+            this.conditioningSetSize.Checked = true;
             this.conditioningSetSize.Label = "Weigh by Conditioning Set Size";
             this.conditioningSetSize.Name = "conditioningSetSize";
             this.conditioningSetSize.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.conditioningSetSize_Click);
