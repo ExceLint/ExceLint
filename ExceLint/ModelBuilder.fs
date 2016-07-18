@@ -288,7 +288,8 @@
              
             let private conditioningSetWeight(addr: AST.Address)(cells: AST.Address[])(sel: Scope.Selector)(dag: Depends.DAG)(config: FeatureConf) : double =
                 if config.IsEnabled "WeightByConditioningSetSize" then
-                    1.0 / Math.Log (double (sizeOfConditioningSet addr cells sel dag))
+//                    1.0 / Math.Log (double (sizeOfConditioningSet addr cells sel dag))
+                    1.0 / double (sizeOfConditioningSet addr cells sel dag)
                 else
                     1.0
 
