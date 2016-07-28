@@ -10,10 +10,12 @@ open System
         let app = new Application()
 
         for file in config.files do
-//            let wb = app.OpenWorkbook(@"..\..\TestData\AddressModes.xlsx")
-//            let graph = wb.buildDependenceGraph()
+            let shortf = (System.IO.Path.GetFileName file)
 
-            printfn "Analyzing: %A" (System.IO.Path.GetFileName file)
+            printfn "Analyzing: %A" shortf
+            let wb = app.OpenWorkbook(file)
+            let graph = wb.buildDependenceGraph()
+            printfn "DAG built: %A" shortf
 
         printfn "Analysis complete.  Press Enter to continue."
         System.Console.ReadLine() |> ignore
