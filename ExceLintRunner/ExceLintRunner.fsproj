@@ -26,7 +26,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DocumentationFile>bin\Debug\ExceLintRunner.XML</DocumentationFile>
     <Prefer32Bit>true</Prefer32Bit>
-    <StartArguments>"../../../../data/analyses/CUSTODES/custodes/example/input_spreadsheets/" "C:\Users\Dan Barowy\Desktop\excelint_output.csv"</StartArguments>
+    <StartArguments>"../../../../data/analyses/CUSTODES/custodes/example/input_spreadsheets/" "C:\Users\dbarowy\Desktop\excelint_output.csv" true true true true false false true</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -39,38 +39,6 @@
     <DocumentationFile>bin\Release\ExceLintRunner.XML</DocumentationFile>
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="mscorlib" />
-    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Numerics" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Args.fs" />
-    <Compile Include="Program.fs" />
-    <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Depends\COMWrapper\COMWrapper.csproj">
-      <Name>COMWrapper</Name>
-      <Project>{d9bc52ff-2319-4216-96fd-6f9cf2d05539}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Depends\Depends\Depends.csproj">
-      <Name>Depends</Name>
-      <Project>{34fa1bc2-cfd6-44ec-ac0c-dfc62313e4bf}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\ExceLint\ExceLint.fsproj">
-      <Name>ExceLint</Name>
-      <Project>{a62bca5a-eb55-46ed-a49a-fdb34771b605}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-  </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
   </PropertyGroup>
@@ -87,6 +55,49 @@
     </Otherwise>
   </Choose>
   <Import Project="$(FSharpTargetsPath)" />
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Args.fs" />
+    <Compile Include="CSV.fs" />
+    <Compile Include="Program.fs" />
+    <None Include="App.config" />
+    <Content Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="FSharp.Data">
+      <HintPath>..\packages\FSharp.Data.2.3.2\lib\net40\FSharp.Data.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Office.Interop.Excel, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c" />
+    <Reference Include="mscorlib" />
+    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Xml.Linq" />
+    <ProjectReference Include="..\Depends\COMWrapper\COMWrapper.csproj">
+      <Name>COMWrapper</Name>
+      <Project>{d9bc52ff-2319-4216-96fd-6f9cf2d05539}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Depends\Depends\Depends.csproj">
+      <Name>Depends</Name>
+      <Project>{34fa1bc2-cfd6-44ec-ac0c-dfc62313e4bf}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Depends\parcel\Parcel\ExcelParser.fsproj">
+      <Name>ExcelParser</Name>
+      <Project>{6de2a2b9-c029-4bdb-8992-d16276471d9f}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\ExceLint\ExceLint.fsproj">
+      <Name>ExceLint</Name>
+      <Project>{a62bca5a-eb55-46ed-a49a-fdb34771b605}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
