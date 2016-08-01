@@ -14,9 +14,9 @@ open System.IO
 
         let csv = new CSV.ExceLintRunnerLogger([])
         let mutable csv_file = csv.Append([])
-        use sw = new StreamWriter(config.csv)
 
-        for file in config.files do
+        using (new StreamWriter(config.csv)) (fun sw ->
+            for file in config.files do
             let shortf = (System.IO.Path.GetFileName file)
 
             printfn "Analyzing: %A" shortf
@@ -54,6 +54,7 @@ open System.IO
                                 csv_file
 
             csv_file.Save sw
+        )
 
         printfn "Analysis complete.  Press Enter to continue."
         System.Console.ReadLine() |> ignore
