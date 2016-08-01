@@ -1,20 +1,25 @@
 ﻿module Args
 
 open System.IO
+open System.Text.RegularExpressions
 
-    type Config(dpath: string, csv: string, fc: ExceLint.FeatureConf) =
+    type Config(dpath: string, opath: string, verbose: bool, csv: string, fc: ExceLint.FeatureConf) =
         member self.files: string[] =
             Directory.EnumerateFiles(dpath, "*.xls?", SearchOption.AllDirectories) |> Seq.toArray
         member self.csv: string = csv
+        member self.isVerbose : bool = verbose
+        member self.verbose_csv(wbname: string) = Path.Combine(opath, Regex.Replace(wbname,"[^A-Za-z0-9_-]","") + ".csv")
         member self.FeatureConf = fc
 
     let usage() : unit =
-        printfn "ExceLintRunner.exe [input directory] [output csv] [opt1 ... opt7]"
+        printfn "ExceLintRunner.exe [input directory] [output path] [opt_verbose] [opt1 ... opt7]"
         printfn 
-            "Recursively finds all Excel (*.xls and *.xlsx) files in [input directory], \
-            opens them, runs ExceLint, and prints output statistics to [output csv]. \
+            "Recursively finds all Excel (*.xls and *.xlsx) files in [input directory], \n\
+            opens them, runs ExceLint, and prints output statistics to a file called \n\
+            exceline_output.csv in [output path].\n\n\
             Press Ctrl-C to cancel an analysis."
         printfn "\nwhere\n"
+        printfn "opt_verbose = <true> or <false>: log per-spreadsheet flagged cells as separate csvs"
         printfn "opt1 = <true> or <false>: condition by all cells"
         printfn "opt2 = <true> or <false>: condition by columns"
         printfn "opt3 = <true> or <false>: condition by rows"
@@ -23,22 +28,25 @@ open System.IO
         printfn "opt6 = <true> or <false>: weigh by intrinsic anomalousness"
         printfn "opt7 = <true> or <false>: weigh by conditioning set size"
         printfn "\nExample:"
-        printfn "ExceLintRunner \"C:\\data\" output.csv true true true true false false true"
+        printfn "ExceLintRunner \"C:\\data\" output.csv true true true true true false false true"
 
         System.Environment.Exit(1)
 
     let processArgs(argv: string[]) : Config =
-        if argv.Length <> 9 then
+        if argv.Length <> 10 then
             usage()
         let dpath = argv.[0]
-        let csv = argv.[1]
-        let optCondAllCells = System.Boolean.Parse(argv.[2])
-        let optCondCols = System.Boolean.Parse(argv.[3])
-        let optCondRows = System.Boolean.Parse(argv.[4])
-        let optCondLevels = System.Boolean.Parse(argv.[5])
-        let optAddrMode = System.Boolean.Parse(argv.[6])
-        let optIntrinsicAnom = System.Boolean.Parse(argv.[7])
-        let optCondSetSz = System.Boolean.Parse(argv.[8])
+        let opath = argv.[1]
+        let optVerbose = System.Boolean.Parse(argv.[2])
+        let optCondAllCells = System.Boolean.Parse(argv.[3])
+        let optCondCols = System.Boolean.Parse(argv.[4])
+        let optCondRows = System.Boolean.Parse(argv.[5])
+        let optCondLevels = System.Boolean.Parse(argv.[6])
+        let optAddrMode = System.Boolean.Parse(argv.[7])
+        let optIntrinsicAnom = System.Boolean.Parse(argv.[8])
+        let optCondSetSz = System.Boolean.Parse(argv.[9])
+
+        let csv = Path.Combine(opath, "excelint_output.csv")
 
         let mutable featureConf = new ExceLint.FeatureConf()
 
@@ -51,5 +59,5 @@ open System.IO
         featureConf <- if optIntrinsicAnom then featureConf.weightByIntrinsicAnomalousness() else featureConf
         featureConf <- if optCondSetSz then featureConf.weightByConditioningSetSize() else featureConf
 
-        Config(dpath, csv, featureConf)
+        Config(dpath, opath, optVerbose, csv, featureConf)
 

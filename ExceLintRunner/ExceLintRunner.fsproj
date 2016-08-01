@@ -58,7 +58,7 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Args.fs" />
-    <Compile Include="CSV.fs" />
+    <Compile Include="CSVs.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <Content Include="packages.config" />
