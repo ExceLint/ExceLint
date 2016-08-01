@@ -51,6 +51,7 @@ open ExceLint
                                           )
 
                                 let output = csv_file.Append([row])
+                                printfn "Global stats logged: %A" shortf
 
                                 // per-workbook stats
                                 if (config.isVerbose) then
@@ -69,7 +70,11 @@ open ExceLint
                                                           )
                                             per_csv_file <- per_csv_file.Append([per_row])
                                         ) ranking |> ignore
+
+                                        printfn "Local stats logged: %A" shortf
                                     )
+
+                                printfn "Analysis complete: %A" shortf
 
                                 output
                                 
