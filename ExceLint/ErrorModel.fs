@@ -12,6 +12,10 @@
 
         member self.RankingTimeInMilliseconds : int64 = analysis.ranking_time
 
+        member self.ConditioningSetSizeTimeInMilliseconds: int64 = analysis.csstable_time
+
+        member self.CausesTimeInMilliseconds: int64 = analysis.causes_time
+
         member self.NumScoreEntries : int = Array.fold (fun acc (pairs: (AST.Address*double)[]) ->
                                                 acc + pairs.Length
                                             ) 0 (analysis.scores.Values |> Seq.toArray)

@@ -7,6 +7,7 @@
 
         type ScoreTable = Dict<string,(AST.Address*double)[]>
         type FlatScoreTable = Dict<string*AST.Address,double>
+        type ConditioningSetSizeTable = Dict<Scope.Selector,Dict<AST.Address,int>>
         type HistoBin = string*Scope.SelectID*double
         type FreqTable = Dict<HistoBin,int>
         type Weights = IDictionary<AST.Address,double>
@@ -27,11 +28,14 @@
         type Analysis = {
             scores: ScoreTable;
             ftable: FreqTable;
+            csstable: ConditioningSetSizeTable;
             ranking: Ranking;
             causes: Causes;
             score_time: int64;
             ftable_time: int64;
+            csstable_time: int64;
             ranking_time: int64;
+            causes_time: int64;
             significance_threshold: double;
             cutoff: int;
             weights: Weights;

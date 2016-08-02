@@ -286,14 +286,13 @@
                             ) cells
                 total
              
-            let private conditioningSetWeight(addr: AST.Address)(cells: AST.Address[])(sel: Scope.Selector)(dag: Depends.DAG)(config: FeatureConf) : double =
+            let private conditioningSetWeight(addr: AST.Address)(sel: Scope.Selector)(csstable: ConditioningSetSizeTable)(config: FeatureConf) : double =
                 if config.IsEnabled "WeightByConditioningSetSize" then
-//                    1.0 / Math.Log (double (sizeOfConditioningSet addr cells sel dag))
-                    1.0 / double (sizeOfConditioningSet addr cells sel dag)
+                    1.0 / double (csstable.[sel].[addr])
                 else
                     1.0
 
-            let private getCause(addr: AST.Address)(cells: AST.Address[])(sel: Scope.Selector)(ftable: FreqTable)(scores: FlatScoreTable)(config: FeatureConf)(dag: Depends.DAG) : (HistoBin*int*double)[] =
+            let private getCause(addr: AST.Address)(cells: AST.Address[])(sel: Scope.Selector)(ftable: FreqTable)(scores: FlatScoreTable)(csstable: ConditioningSetSizeTable)(config: FeatureConf)(dag: Depends.DAG) : (HistoBin*int*double)[] =
                 Array.map (fun fname -> 
                     // get selector ID
                     let sID = sel.id addr dag
@@ -302,11 +301,11 @@
                     // get score count
                     let count = ftable.[(fname,sID,fscore)]
                     // get weight coefficient (beta)
-                    let beta = conditioningSetWeight addr cells sel dag config
+                    let beta = conditioningSetWeight addr sel csstable config
                     (fname,sID,fscore),count,beta
                 ) (config.EnabledFeatures)
 
-            let private causes(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(config: FeatureConf)(progress: Depends.Progress)(dag: Depends.DAG) : Causes =
+            let private causes(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(csstable: ConditioningSetSizeTable)(config: FeatureConf)(progress: Depends.Progress)(dag: Depends.DAG) : Causes =
                 let fscores = makeFastScoreTable scores
 
                 // get histogram bin heights for every given cell
@@ -317,7 +316,7 @@
                                         if progress.IsCancelled() then
                                             raise AnalysisCancelled
 
-                                        getCause addr cells sel ftable fscores config dag
+                                        getCause addr cells sel ftable fscores csstable config dag
 
                                      ) (config.EnabledScopes) |> Array.concat
                         (addr, causes)
@@ -341,7 +340,7 @@
             // find the bin height for the cell, then sum all
             // of these bin heights to produce a total ranking score
             // THIS IS WHERE ALL THE ACTION HAPPENS, FOLKS
-            let private totalHistoSums(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(config: FeatureConf)(progress: Depends.Progress)(dag: Depends.DAG) : Ranking =
+            let private totalHistoSums(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(csstable: ConditioningSetSizeTable)(config: FeatureConf)(progress: Depends.Progress)(dag: Depends.DAG) : Ranking =
                 let fscores = makeFastScoreTable scores
 
                 // get sums for every given cell
@@ -353,7 +352,7 @@
 
                         let sum = Array.sumBy (fun sel ->
                                       // compute conditioning set weight
-                                      let beta_sel_i = conditioningSetWeight addr cells sel dag config
+                                      let beta_sel_i = conditioningSetWeight addr sel csstable config
 
                                       // this is the conditional count
                                       let count = sumFeatureCounts addr sel ftable fscores config dag
@@ -425,8 +424,30 @@
                                 d.Add((fname,sID,score), 1)
                             progress.IncrementCounter()
                         ) (data.[fname])
-                    ) (Scope.Selector.Kinds)
+                    ) (config.EnabledScopes)
                 ) (config.EnabledFeatures)
+                d
+
+            let private buildCSSTable(cells: AST.Address[])(progress: Depends.Progress)(dag: Depends.DAG)(config: FeatureConf): ConditioningSetSizeTable =
+                let d = new ConditioningSetSizeTable()
+                Array.iter (fun (sel: Scope.Selector) ->
+                    Array.iter (fun cell ->
+                        if progress.IsCancelled() then
+                            raise AnalysisCancelled
+
+                        progress.IncrementCounter()
+
+                        // size of cell's conditioning set when conditioned on sel
+                        let n = sizeOfConditioningSet cell cells sel dag
+
+                        // initialize nested storage, if necessary
+                        if not (d.ContainsKey sel) then
+                            d.Add(sel, new Dict<AST.Address,int>())
+
+                        // add to dictionary
+                        d.[sel].Add(cell, n)
+                    ) cells
+                ) (config.EnabledScopes)
                 d
 
             let private genChanges(cell: AST.Address)(refs: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress)(app: Microsoft.Office.Interop.Excel.Application) : ChangeSet[] =
@@ -545,12 +566,15 @@
 
                         // count freqs
                         let freqs = buildFrequencyTable scores input.progress dag' input.config
-                    
+
+                        // compute conditioning set size
+                        let csstable = buildCSSTable cells input.progress dag' input.config
+
                         // rerank
-                        let ranking = totalHistoSums cells freqs scores input.config input.progress input.dag
+                        let ranking = totalHistoSums cells freqs scores csstable input.config input.progress input.dag
 
                         // get causes
-                        let causes = causes (analysisBase input.config input.dag) freqs scores input.config input.progress input.dag
+                        let causes = causes cells freqs scores csstable input.config input.progress input.dag
 
                         // TODO: we shouldn't just blindly pass along old _time numbers
                         Success({ analysis with scores = scores; ftable = freqs; ranking = ranking; causes = causes; })
@@ -568,7 +592,9 @@
 
             let private runModel(input: Input) : AnalysisOutcome =
                 try
-                    let _runf = fun () -> runEnabledFeatures (analysisBase input.config input.dag) input.dag input.config input.progress
+                    let cells = (analysisBase input.config input.dag)
+
+                    let _runf = fun () -> runEnabledFeatures cells input.dag input.config input.progress
 
                     // get scores for each feature: featurename -> (address, score)[]
                     let (scores: ScoreTable,score_time: int64) = PerfUtils.runMillis _runf ()
@@ -577,23 +603,30 @@
                     let _freqf = fun () -> buildFrequencyTable scores input.progress input.dag input.config
                     let ftable,ftable_time = PerfUtils.runMillis _freqf ()
 
+                    // build conditioning set size table
+                    let _cssf = fun () -> buildCSSTable cells input.progress input.dag input.config
+                    let csstable,csstable_time = PerfUtils.runMillis _cssf ()
+
                     // rank
-                    let _rankf = fun () -> totalHistoSums (analysisBase input.config input.dag) ftable scores input.config input.progress input.dag
+                    let _rankf = fun () -> totalHistoSums cells ftable scores csstable input.config input.progress input.dag
                     let ranking,ranking_time = PerfUtils.runMillis _rankf ()
 
                     // save causes
-                    let _causef = fun () -> causes (analysisBase input.config input.dag) ftable scores input.config input.progress input.dag
+                    let _causef = fun () -> causes cells ftable scores csstable input.config input.progress input.dag
                     let causes,causes_time = PerfUtils.runMillis _causef ()
 
                     Success(
                         {
                             scores = scores;
                             ftable = ftable;
+                            csstable = csstable;
                             ranking = ranking;
                             causes = causes;
                             score_time = score_time;
                             ftable_time = ftable_time;
-                            ranking_time = ranking_time + causes_time;
+                            csstable_time = csstable_time;
+                            ranking_time = ranking_time;
+                            causes_time = causes_time;
                             significance_threshold = 0.05;
                             cutoff = 0;
                             weights = new Dictionary<AST.Address,double>();

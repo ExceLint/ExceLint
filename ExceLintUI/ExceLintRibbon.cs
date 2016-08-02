@@ -164,6 +164,8 @@ namespace ExceLintUI
                            "Feature scoring ms: " + analysis.model.ScoreTimeInMilliseconds + "\n" +
                            "Num score entries: " + analysis.model.NumScoreEntries + "\n" +
                            "Frequency counting ms: " + analysis.model.FrequencyTableTimeInMilliseconds + "\n" +
+                           "Conditioning set size ms: " + analysis.model.ConditioningSetSizeTimeInMilliseconds + "\n" +
+                           "Causes ms: " + analysis.model.CausesTimeInMilliseconds + "\n" +
                            "Num freq table entries: " + analysis.model.NumFreqEntries + "\n" +
                            "Ranking ms: " + analysis.model.RankingTimeInMilliseconds + "\n" +
                            "Total ranking length: " + analysis.model.NumRankedEntries;
