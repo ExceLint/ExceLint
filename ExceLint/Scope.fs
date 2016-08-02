@@ -111,9 +111,6 @@ module Scope =
             ) distances
         ) refdepths |> Seq.concat |> Set.ofSeq
 
-    
-
-
     type Selector =
     | AllCells
     | SameColumn
@@ -139,16 +136,22 @@ module Scope =
         static member Kinds = [| AllCells; SameColumn; SameRow; SameLevel |]
 
     and SelectorCache() =
-        let _cache = new Dict<(AST.Address*Selector),SelectID>()
+        let _cache = new Dict<Selector,Dict<AST.Address,SelectID>>()
 
         member self.fetchOrStore(addr: AST.Address)(dag: Depends.DAG)(sel: Selector) : SelectID =
-            if not (_cache.ContainsKey(addr, sel)) then
+            if not (_cache.ContainsKey(sel)) then
+                _cache.Add(sel, new Dict<AST.Address,SelectID>())
+
+            if not (_cache.[sel].ContainsKey(addr)) then
                 let sID = match sel with
                             | AllCells -> AllID
                             | SameColumn -> ColumnID { x = Some addr.X; y = None; fullpath = Some (addr.Path + ":" + addr.WorkbookName + ":" + addr.WorksheetName) }
                             | SameRow -> RowID { x = None; y = Some addr.Y; fullpath = Some (addr.Path + ":" + addr.WorkbookName + ":" + addr.WorksheetName)}
                             | SameLevel -> LevelID (levelsOf addr dag)
-                _cache.Add((addr,sel), sID)
+                _cache.[sel].Add(addr, sID)
+
                 sID
             else
-                _cache.[addr,sel]
+                _cache.[sel].[addr]
+
+    type SelectIDCache = Dict<SelectID,Set<AST.Address>>

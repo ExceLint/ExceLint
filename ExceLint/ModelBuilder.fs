@@ -275,17 +275,12 @@
 
                 d
 
-            let private sizeOfConditioningSet(addr: AST.Address)(cells: AST.Address[])(sel: Scope.Selector)(selcache: Scope.SelectorCache)(dag: Depends.DAG) : int =
+            let private sizeOfConditioningSet(addr: AST.Address)(sel: Scope.Selector)(selcache: Scope.SelectorCache)(sidcache: Scope.SelectIDCache)(dag: Depends.DAG) : int =
                 // get selector ID
                 let sID = sel.id addr dag selcache
-                let total = Array.sumBy (fun c ->
-                                let sID' = sel.id c dag selcache
-                                if sID = sID' then
-                                    1
-                                else
-                                    0
-                            ) cells
-                total
+
+                // get number of cells with matching sID
+                if sidcache.ContainsKey sID then sidcache.[sID].Count else failwith ("sID cache is missing sID " + sID.ToString())
              
             let private conditioningSetWeight(addr: AST.Address)(sel: Scope.Selector)(csstable: ConditioningSetSizeTable)(config: FeatureConf) : double =
                 if config.IsEnabled "WeightByConditioningSetSize" then
@@ -409,7 +404,11 @@
                     fname, fvals
                 ) |> adict
 
-            let private buildFrequencyTable(scoretable: ScoreTable)(selcache: Scope.SelectorCache)(progress: Depends.Progress)(dag: Depends.DAG)(config: FeatureConf): FreqTable =
+            let private buildFrequencyTable(scoretable: ScoreTable)(selcache: Scope.SelectorCache)(progress: Depends.Progress)(dag: Depends.DAG)(config: FeatureConf): FreqTable*Scope.SelectIDCache =
+                // as a side-effect, maintain a selectID cache to make
+                // conditioning set size lookup fast
+                let s = new Scope.SelectIDCache()
+
                 let d = new Dict<HistoBin,int>()
                 Array.iter (fun fname ->
                     Array.iter (fun (sel: Scope.Selector) ->
@@ -417,7 +416,15 @@
                             if progress.IsCancelled() then
                                 raise AnalysisCancelled
 
+                            // fetch SelectID for this selector and address
                             let sID = sel.id addr dag selcache
+
+                            // update SelectIDCache if necessary
+                            if not (s.ContainsKey(sID)) then
+                                s.Add(sID, set [addr])
+                            else if not (s.[sID].Contains(addr)) then
+                                s.[sID] <- s.[sID].Add(addr)
+
                             if d.ContainsKey (fname,sID,score) then
                                 let freq = d.[(fname,sID,score)]
                                 d.[(fname,sID,score)] <- freq + 1
@@ -427,9 +434,9 @@
                         ) (scoretable.[fname])
                     ) (config.EnabledScopes)
                 ) (config.EnabledFeatures)
-                d
+                d,s
 
-            let private buildCSSTable(cells: AST.Address[])(progress: Depends.Progress)(dag: Depends.DAG)(selcache: Scope.SelectorCache)(config: FeatureConf): ConditioningSetSizeTable =
+            let private buildCSSTable(cells: AST.Address[])(progress: Depends.Progress)(dag: Depends.DAG)(selcache: Scope.SelectorCache)(sidcache: Scope.SelectIDCache)(config: FeatureConf): ConditioningSetSizeTable =
                 let d = new ConditioningSetSizeTable()
                 Array.iter (fun (sel: Scope.Selector) ->
                     Array.iter (fun cell ->
@@ -439,7 +446,7 @@
                         progress.IncrementCounter()
 
                         // size of cell's conditioning set when conditioned on sel
-                        let n = sizeOfConditioningSet cell cells sel selcache dag
+                        let n = sizeOfConditioningSet cell sel selcache sidcache dag
 
                         // initialize nested storage, if necessary
                         if not (d.ContainsKey sel) then
@@ -490,9 +497,9 @@
                                      ) dag' config nop
 
                     // compute frequency tables
-                    let mutFtable = buildFrequencyTable mutBuckets selcache nop dag' config
+                    let (mutFtable,mutSIDCache) = buildFrequencyTable mutBuckets selcache nop dag' config
                     
-                    { mutants = mutants; scores = mutBuckets; freqtable = mutFtable; selcache = selcache }
+                    { mutants = mutants; scores = mutBuckets; freqtable = mutFtable; selcache = selcache; sidcache = mutSIDCache }
                 ) fsT
 
 
@@ -510,7 +517,7 @@
                                         ) ref_fs
                                      ) dag config nop
                 let def_selcache = Scope.SelectorCache()
-                let def_freq = buildFrequencyTable def_buckets def_selcache nop dag config
+                let (def_freq, def_sidcache) = buildFrequencyTable def_buckets def_selcache nop dag config
                 let def_count = countBuckets def_freq
 
                 // find the variants that minimize the bucket count
@@ -526,7 +533,7 @@
                 if mutant_counts.[mode_idx] < def_count then
                     css.[mode_idx]
                 else
-                    { mutants = ref_fs; scores = def_buckets; freqtable = def_freq; selcache = def_selcache }
+                    { mutants = ref_fs; scores = def_buckets; freqtable = def_freq; selcache = def_selcache; sidcache = def_sidcache }
 
             let private inferAddressModes(input: Input)(analysis: Analysis) : AnalysisOutcome =
                 if input.config.IsEnabled "InferAddressModes" then
@@ -572,10 +579,10 @@
                         let scores = runEnabledFeatures cells dag' input.config input.progress
 
                         // count freqs
-                        let freqs = buildFrequencyTable scores selcache input.progress dag' input.config
+                        let (freqs,sidcache) = buildFrequencyTable scores selcache input.progress dag' input.config
 
                         // compute conditioning set size
-                        let csstable = buildCSSTable cells input.progress dag' selcache input.config
+                        let csstable = buildCSSTable cells input.progress dag' selcache sidcache input.config
 
                         // rerank
                         let ranking = totalHistoSums cells freqs scores csstable selcache input.config input.progress input.dag
@@ -610,10 +617,10 @@
 
                     // build frequency table: (featurename, selector, score) -> freq
                     let _freqf = fun () -> buildFrequencyTable scores selcache input.progress input.dag input.config
-                    let ftable,ftable_time = PerfUtils.runMillis _freqf ()
+                    let (ftable,sidcache),ftable_time = PerfUtils.runMillis _freqf ()
 
                     // build conditioning set size table
-                    let _cssf = fun () -> buildCSSTable cells input.progress input.dag selcache input.config
+                    let _cssf = fun () -> buildCSSTable cells input.progress input.dag selcache sidcache input.config
                     let csstable,csstable_time = PerfUtils.runMillis _cssf ()
 
                     // rank

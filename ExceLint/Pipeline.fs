@@ -13,7 +13,13 @@
         type Weights = IDictionary<AST.Address,double>
         type Ranking = KeyValuePair<AST.Address,double>[]
         type Causes = Dict<AST.Address,(HistoBin*int*double)[]>
-        type ChangeSet = { mutants: KeyValuePair<AST.Address,string>[]; scores: ScoreTable; freqtable: FreqTable; selcache: Scope.SelectorCache }
+        type ChangeSet = {
+            mutants: KeyValuePair<AST.Address,string>[];
+            scores: ScoreTable;
+            freqtable: FreqTable;
+            selcache: Scope.SelectorCache;
+            sidcache: Scope.SelectIDCache;
+        }
 
         exception AnalysisCancelled
 
