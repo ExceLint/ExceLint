@@ -4,11 +4,6 @@
     open System
 
     module ConfUtils =
-        // we're using C# Dictionary instead of F# map
-        // for debugging (it's inspectable) and speed purposes
-        type Dict<'a,'b> = Dictionary<'a,'b>
-        let adict(a: seq<('a*'b)>) = new Dict<'a,'b>(a |> dict)
-
         type RunnerMap = Map<string, AST.Address -> Depends.DAG -> double>
 
     // a C#-friendly configuration object that is also pure/fluent

@@ -228,12 +228,12 @@ namespace ExceLintUI
 
         private void colSelect_Click(object sender, RibbonControlEventArgs e)
         {
-            currentWorkbook.getSelected(getConfig(), Scope.Selector.SameColumn, forceDAGBuild: forceBuildDAG.Checked);
+            currentWorkbook.getSelected(getConfig(), ExceLint.Scope.Selector.SameColumn, forceDAGBuild: forceBuildDAG.Checked);
         }
 
         private void rowSelected_Click(object sender, RibbonControlEventArgs e)
         {
-            currentWorkbook.getSelected(getConfig(), Scope.Selector.SameRow, forceDAGBuild: forceBuildDAG.Checked);
+            currentWorkbook.getSelected(getConfig(), ExceLint.Scope.Selector.SameRow, forceDAGBuild: forceBuildDAG.Checked);
         }
 
         private void button1_Click(object sender, RibbonControlEventArgs e)

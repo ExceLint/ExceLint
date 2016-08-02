@@ -1,5 +1,8 @@
-﻿module Scope
+﻿namespace ExceLint
+
+module Scope =
     open System.Collections.Generic
+    open Utils
 
     [<CustomEquality; CustomComparison>]
     type XYPath = {
@@ -108,6 +111,9 @@
             ) distances
         ) refdepths |> Seq.concat |> Set.ofSeq
 
+    
+
+
     type Selector =
     | AllCells
     | SameColumn
@@ -117,12 +123,8 @@
         // compute conditional distributions.  E.g., if addr1
         // and addr2 have the same SameColumn ID, then they are
         // in the same column.
-        member self.id(addr: AST.Address)(dag: Depends.DAG) : SelectID =
-            match self with
-            | AllCells -> AllID
-            | SameColumn -> ColumnID { x = Some addr.X; y = None; fullpath = Some (addr.Path + ":" + addr.WorkbookName + ":" + addr.WorksheetName) }
-            | SameRow -> RowID { x = None; y = Some addr.Y; fullpath = Some (addr.Path + ":" + addr.WorkbookName + ":" + addr.WorksheetName)}
-            | SameLevel -> LevelID (levelsOf addr dag)
+        member self.id(addr: AST.Address)(dag: Depends.DAG)(cache: SelectorCache) : SelectID =
+            cache.fetchOrStore addr dag self
         static member ToPretty(id: SelectID) : string =
             match id with
             | AllID(_) -> "AllCells"
@@ -135,3 +137,18 @@
                     let lstrs = Set.map (fun l -> l.ToString()) levels |> Set.toList
                     "Levels [" + (List.reduce (fun (acc: string)(l: string) -> acc + ", " + l.ToString()) lstrs) + "]"
         static member Kinds = [| AllCells; SameColumn; SameRow; SameLevel |]
+
+    and SelectorCache() =
+        let _cache = new Dict<(AST.Address*Selector),SelectID>()
+
+        member self.fetchOrStore(addr: AST.Address)(dag: Depends.DAG)(sel: Selector) : SelectID =
+            if not (_cache.ContainsKey(addr, sel)) then
+                let sID = match sel with
+                            | AllCells -> AllID
+                            | SameColumn -> ColumnID { x = Some addr.X; y = None; fullpath = Some (addr.Path + ":" + addr.WorkbookName + ":" + addr.WorksheetName) }
+                            | SameRow -> RowID { x = None; y = Some addr.Y; fullpath = Some (addr.Path + ":" + addr.WorkbookName + ":" + addr.WorksheetName)}
+                            | SameLevel -> LevelID (levelsOf addr dag)
+                _cache.Add((addr,sel), sID)
+                sID
+            else
+                _cache.[addr,sel]

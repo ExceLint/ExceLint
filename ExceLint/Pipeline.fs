@@ -3,7 +3,7 @@
         open System.Collections.Generic
         open System.Collections
         open System
-        open ConfUtils
+        open Utils
 
         type ScoreTable = Dict<string,(AST.Address*double)[]>
         type FlatScoreTable = Dict<string*AST.Address,double>
@@ -13,7 +13,7 @@
         type Weights = IDictionary<AST.Address,double>
         type Ranking = KeyValuePair<AST.Address,double>[]
         type Causes = Dict<AST.Address,(HistoBin*int*double)[]>
-        type ChangeSet = { mutants: KeyValuePair<AST.Address,string>[]; scores: ScoreTable; freqtable: FreqTable }
+        type ChangeSet = { mutants: KeyValuePair<AST.Address,string>[]; scores: ScoreTable; freqtable: FreqTable; selcache: Scope.SelectorCache }
 
         exception AnalysisCancelled
 

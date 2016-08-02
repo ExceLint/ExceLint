@@ -2,6 +2,7 @@
     open System.Collections.Generic
     open System.Collections
     open System
+    open Utils
     open ConfUtils
     open Pipeline
 
@@ -274,11 +275,11 @@
 
                 d
 
-            let private sizeOfConditioningSet(addr: AST.Address)(cells: AST.Address[])(sel: Scope.Selector)(dag: Depends.DAG) : int =
+            let private sizeOfConditioningSet(addr: AST.Address)(cells: AST.Address[])(sel: Scope.Selector)(selcache: Scope.SelectorCache)(dag: Depends.DAG) : int =
                 // get selector ID
-                let sID = sel.id addr dag
+                let sID = sel.id addr dag selcache
                 let total = Array.sumBy (fun c ->
-                                let sID' = sel.id c dag
+                                let sID' = sel.id c dag selcache
                                 if sID = sID' then
                                     1
                                 else
@@ -292,10 +293,10 @@
                 else
                     1.0
 
-            let private getCause(addr: AST.Address)(cells: AST.Address[])(sel: Scope.Selector)(ftable: FreqTable)(scores: FlatScoreTable)(csstable: ConditioningSetSizeTable)(config: FeatureConf)(dag: Depends.DAG) : (HistoBin*int*double)[] =
+            let private getCause(addr: AST.Address)(cells: AST.Address[])(sel: Scope.Selector)(ftable: FreqTable)(scores: FlatScoreTable)(csstable: ConditioningSetSizeTable)(selcache: Scope.SelectorCache)(config: FeatureConf)(dag: Depends.DAG) : (HistoBin*int*double)[] =
                 Array.map (fun fname -> 
                     // get selector ID
-                    let sID = sel.id addr dag
+                    let sID = sel.id addr dag selcache
                     // get feature score
                     let fscore = scores.[fname,addr]
                     // get score count
@@ -305,7 +306,7 @@
                     (fname,sID,fscore),count,beta
                 ) (config.EnabledFeatures)
 
-            let private causes(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(csstable: ConditioningSetSizeTable)(config: FeatureConf)(progress: Depends.Progress)(dag: Depends.DAG) : Causes =
+            let private causes(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(csstable: ConditioningSetSizeTable)(selcache: Scope.SelectorCache)(config: FeatureConf)(progress: Depends.Progress)(dag: Depends.DAG) : Causes =
                 let fscores = makeFastScoreTable scores
 
                 // get histogram bin heights for every given cell
@@ -316,7 +317,7 @@
                                         if progress.IsCancelled() then
                                             raise AnalysisCancelled
 
-                                        getCause addr cells sel ftable fscores csstable config dag
+                                        getCause addr cells sel ftable fscores csstable selcache config dag
 
                                      ) (config.EnabledScopes) |> Array.concat
                         (addr, causes)
@@ -326,10 +327,10 @@
 
             // sum the count of the appropriate feature bin of every feature
             // for the given address
-            let private sumFeatureCounts(addr: AST.Address)(sel: Scope.Selector)(ftable: FreqTable)(scores: FlatScoreTable)(config: FeatureConf)(dag: Depends.DAG) : int =
+            let private sumFeatureCounts(addr: AST.Address)(sel: Scope.Selector)(ftable: FreqTable)(scores: FlatScoreTable)(selcache: Scope.SelectorCache)(config: FeatureConf)(dag: Depends.DAG) : int =
                 Array.sumBy (fun fname -> 
                     // get selector ID
-                    let sID = sel.id addr dag
+                    let sID = sel.id addr dag selcache
                     // get feature score
                     let fscore = scores.[fname,addr]
                     // get score count
@@ -340,7 +341,7 @@
             // find the bin height for the cell, then sum all
             // of these bin heights to produce a total ranking score
             // THIS IS WHERE ALL THE ACTION HAPPENS, FOLKS
-            let private totalHistoSums(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(csstable: ConditioningSetSizeTable)(config: FeatureConf)(progress: Depends.Progress)(dag: Depends.DAG) : Ranking =
+            let private totalHistoSums(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(csstable: ConditioningSetSizeTable)(selcache: Scope.SelectorCache)(config: FeatureConf)(progress: Depends.Progress)(dag: Depends.DAG) : Ranking =
                 let fscores = makeFastScoreTable scores
 
                 // get sums for every given cell
@@ -355,7 +356,7 @@
                                       let beta_sel_i = conditioningSetWeight addr sel csstable config
 
                                       // this is the conditional count
-                                      let count = sumFeatureCounts addr sel ftable fscores config dag
+                                      let count = sumFeatureCounts addr sel ftable fscores selcache config dag
 
                                       // weigh
                                       beta_sel_i * (double count)
@@ -408,7 +409,7 @@
                     fname, fvals
                 ) |> adict
 
-            let private buildFrequencyTable(data: ScoreTable)(progress: Depends.Progress)(dag: Depends.DAG)(config: FeatureConf): FreqTable =
+            let private buildFrequencyTable(scoretable: ScoreTable)(selcache: Scope.SelectorCache)(progress: Depends.Progress)(dag: Depends.DAG)(config: FeatureConf): FreqTable =
                 let d = new Dict<HistoBin,int>()
                 Array.iter (fun fname ->
                     Array.iter (fun (sel: Scope.Selector) ->
@@ -416,19 +417,19 @@
                             if progress.IsCancelled() then
                                 raise AnalysisCancelled
 
-                            let sID = sel.id addr dag
+                            let sID = sel.id addr dag selcache
                             if d.ContainsKey (fname,sID,score) then
                                 let freq = d.[(fname,sID,score)]
                                 d.[(fname,sID,score)] <- freq + 1
                             else
                                 d.Add((fname,sID,score), 1)
                             progress.IncrementCounter()
-                        ) (data.[fname])
+                        ) (scoretable.[fname])
                     ) (config.EnabledScopes)
                 ) (config.EnabledFeatures)
                 d
 
-            let private buildCSSTable(cells: AST.Address[])(progress: Depends.Progress)(dag: Depends.DAG)(config: FeatureConf): ConditioningSetSizeTable =
+            let private buildCSSTable(cells: AST.Address[])(progress: Depends.Progress)(dag: Depends.DAG)(selcache: Scope.SelectorCache)(config: FeatureConf): ConditioningSetSizeTable =
                 let d = new ConditioningSetSizeTable()
                 Array.iter (fun (sel: Scope.Selector) ->
                     Array.iter (fun cell ->
@@ -438,7 +439,7 @@
                         progress.IncrementCounter()
 
                         // size of cell's conditioning set when conditioned on sel
-                        let n = sizeOfConditioningSet cell cells sel dag
+                        let n = sizeOfConditioningSet cell cells sel selcache dag
 
                         // initialize nested storage, if necessary
                         if not (d.ContainsKey sel) then
@@ -478,6 +479,9 @@
                     // get new DAG
                     let dag' = dag.CopyWithUpdatedFormulas(mutants, app, true, progress)
 
+                    // new selector cache
+                    let selcache = Scope.SelectorCache()
+
                     // get the set of buckets
                     let mutBuckets = runEnabledFeatures (
                                         Array.map (fun (kvp: KeyValuePair<AST.Address,string>) ->
@@ -486,9 +490,9 @@
                                      ) dag' config nop
 
                     // compute frequency tables
-                    let mutFtable = buildFrequencyTable mutBuckets nop dag' config
+                    let mutFtable = buildFrequencyTable mutBuckets selcache nop dag' config
                     
-                    { mutants = mutants; scores = mutBuckets; freqtable = mutFtable }
+                    { mutants = mutants; scores = mutBuckets; freqtable = mutFtable; selcache = selcache }
                 ) fsT
 
 
@@ -505,7 +509,8 @@
                                             kvp.Key
                                         ) ref_fs
                                      ) dag config nop
-                let def_freq = buildFrequencyTable def_buckets nop dag config
+                let def_selcache = Scope.SelectorCache()
+                let def_freq = buildFrequencyTable def_buckets def_selcache nop dag config
                 let def_count = countBuckets def_freq
 
                 // find the variants that minimize the bucket count
@@ -521,7 +526,7 @@
                 if mutant_counts.[mode_idx] < def_count then
                     css.[mode_idx]
                 else
-                    { mutants = ref_fs; scores = def_buckets; freqtable = def_freq; }
+                    { mutants = ref_fs; scores = def_buckets; freqtable = def_freq; selcache = def_selcache }
 
             let private inferAddressModes(input: Input)(analysis: Analysis) : AnalysisOutcome =
                 if input.config.IsEnabled "InferAddressModes" then
@@ -560,23 +565,24 @@
                                            accdag
                                    ) input.dag crank
 
+                        // initialize selector cache
+                        let selcache = Scope.SelectorCache()
 
                         // score
                         let scores = runEnabledFeatures cells dag' input.config input.progress
 
                         // count freqs
-                        let freqs = buildFrequencyTable scores input.progress dag' input.config
+                        let freqs = buildFrequencyTable scores selcache input.progress dag' input.config
 
                         // compute conditioning set size
-                        let csstable = buildCSSTable cells input.progress dag' input.config
+                        let csstable = buildCSSTable cells input.progress dag' selcache input.config
 
                         // rerank
-                        let ranking = totalHistoSums cells freqs scores csstable input.config input.progress input.dag
+                        let ranking = totalHistoSums cells freqs scores csstable selcache input.config input.progress input.dag
 
                         // get causes
-                        let causes = causes cells freqs scores csstable input.config input.progress input.dag
+                        let causes = causes cells freqs scores csstable selcache input.config input.progress input.dag
 
-                        // TODO: we shouldn't just blindly pass along old _time numbers
                         Success({ analysis with scores = scores; ftable = freqs; ranking = ranking; causes = causes; })
                     with
                     | AnalysisCancelled -> Cancellation
@@ -592,6 +598,9 @@
 
             let private runModel(input: Input) : AnalysisOutcome =
                 try
+                    // initialize selector cache
+                    let selcache = Scope.SelectorCache()
+
                     let cells = (analysisBase input.config input.dag)
 
                     let _runf = fun () -> runEnabledFeatures cells input.dag input.config input.progress
@@ -600,19 +609,19 @@
                     let (scores: ScoreTable,score_time: int64) = PerfUtils.runMillis _runf ()
 
                     // build frequency table: (featurename, selector, score) -> freq
-                    let _freqf = fun () -> buildFrequencyTable scores input.progress input.dag input.config
+                    let _freqf = fun () -> buildFrequencyTable scores selcache input.progress input.dag input.config
                     let ftable,ftable_time = PerfUtils.runMillis _freqf ()
 
                     // build conditioning set size table
-                    let _cssf = fun () -> buildCSSTable cells input.progress input.dag input.config
+                    let _cssf = fun () -> buildCSSTable cells input.progress input.dag selcache input.config
                     let csstable,csstable_time = PerfUtils.runMillis _cssf ()
 
                     // rank
-                    let _rankf = fun () -> totalHistoSums cells ftable scores csstable input.config input.progress input.dag
+                    let _rankf = fun () -> totalHistoSums cells ftable scores csstable selcache input.config input.progress input.dag
                     let ranking,ranking_time = PerfUtils.runMillis _rankf ()
 
                     // save causes
-                    let _causef = fun () -> causes cells ftable scores csstable input.config input.progress input.dag
+                    let _causef = fun () -> causes cells ftable scores csstable selcache input.config input.progress input.dag
                     let causes,causes_time = PerfUtils.runMillis _causef ()
 
                     Success(

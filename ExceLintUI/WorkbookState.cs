@@ -125,7 +125,7 @@ namespace ExceLintUI
             set { _debug_mode = value; }
         }
 
-        public void getSelected(ExceLint.FeatureConf config, Scope.Selector sel, Boolean forceDAGBuild)
+        public void getSelected(ExceLint.FeatureConf config, ExceLint.Scope.Selector sel, Boolean forceDAGBuild)
         {
             // Disable screen updating during analysis to speed things up
             _app.ScreenUpdating = false;

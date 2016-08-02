@@ -49,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Utils.fs" />
     <Compile Include="BasicStats.fs" />
     <Compile Include="Scope.fs" />
     <Compile Include="Feature.fs" />
