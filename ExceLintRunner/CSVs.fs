@@ -11,3 +11,8 @@ type ExceLintStats =
 
 type WorkbookStats =
     CsvProvider<Schema = "flaggedCellAddr (string), rank (int), score (float)", HasHeaders=false>
+
+let ExceLintStatsHeaders = "benchmark_name,num_cells,num_formulas,sig_thresh,dep_time_ms,score_time_ms,\
+freq_time_ms,ranking_time_ms,causes_time_ms,conditioning_set_sz_time_ms,num_anom,opt_cond_all_cells,\
+opt_cond_rows,opt_cond_cols,opt_cond_levels,opt_addrmode_inference,opt_weight_intrinsic_anom,\
+opt_weight_condition_set_sz"

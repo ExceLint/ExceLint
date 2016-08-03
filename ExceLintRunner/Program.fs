@@ -18,6 +18,10 @@ open ExceLint
 
         using (new StreamWriter(config.csv)) (fun sw ->
             
+            // write headers
+            sw.Write(CSV.ExceLintStatsHeaders)
+            sw.Flush()
+
             for file in config.files do
                 let shortf = (System.IO.Path.GetFileName file)
 
