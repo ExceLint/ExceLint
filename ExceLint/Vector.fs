@@ -1,5 +1,4 @@
 ﻿namespace ExceLint
-    open COMWrapper
     open Depends
     open Feature
     open System

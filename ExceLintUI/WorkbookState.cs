@@ -6,12 +6,33 @@ using FullyQualifiedVector = ExceLint.Vector.FullyQualifiedVector;
 using RelativeVector = System.Tuple<int, int, int>;
 using Score = System.Collections.Generic.KeyValuePair<AST.Address, double>;
 using Microsoft.FSharp.Core;
+using System.Runtime.InteropServices;
 
 namespace ExceLintUI
 {
     public class AnalysisCancelled : Exception { }
 
-    public class WorkbookState
+    [ComVisible(true)]
+    public struct Analysis
+    {
+        public bool hasRun;
+        public Score[] scores;
+        public bool ranOK;
+        public int cutoff;
+        public Depends.DAG dag;
+        public ExceLint.ErrorModel model;
+    }
+
+    [ComVisible(true)]
+    [InterfaceType(ComInterfaceType.InterfaceIsDual)]
+    public interface IWorkbookState
+    {
+        Analysis inProcessAnalysis(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean forceDAGBuild, Depends.Progress p);
+    }
+
+    [ComVisible(true)]
+    [ClassInterface(ClassInterfaceType.None)]
+    public class WorkbookState : StandardOleMarshalObject, IWorkbookState
     {
         #region CONSTANTS
         // e * 1000
@@ -37,15 +58,7 @@ namespace ExceLintUI
         private bool _debug_mode = false;
         private bool _dag_changed = false;
 
-        public struct Analysis
-        {
-            public bool hasRun;
-            public Score[] scores;
-            public bool ranOK;
-            public int cutoff;
-            public Depends.DAG dag;
-            public ExceLint.ErrorModel model;
-        }
+
         #endregion DATASTRUCTURES
 
         #region BUTTON_STATE
@@ -414,6 +427,44 @@ namespace ExceLintUI
             return shade;
         }
 
+        public Analysis inProcessAnalysis(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean forceDAGBuild, Depends.Progress p)
+        {
+            // update if necessary
+            RefreshDAG(forceDAGBuild, p);
+
+            // sanity check
+            if (_dag.getAllFormulaAddrs().Length == 0)
+            {
+                return new Analysis { scores = null, ranOK = false, cutoff = 0 };
+            }
+            else
+            {
+                // run analysis
+                var mopt = ExceLint.ModelBuilder.analyze(_app, config, _dag, _tool_significance, p);
+                if (FSharpOption<ExceLint.ErrorModel>.get_IsNone(mopt))
+                {
+                    throw new AnalysisCancelled();
+                }
+                else
+                {
+                    var model = mopt.Value;
+                    Score[] scores = model.rankByFeatureSum();
+                    int cutoff = model.getSignificanceCutoff;
+                    return new Analysis { scores = scores, ranOK = true, cutoff = cutoff, model = model, hasRun = true, dag = _dag };
+                }
+            }
+        }
+
+        public Analysis rawAnalysis(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean forceDAGBuild, ProgBar pb)
+        {
+            Func<Depends.Progress, Analysis> f = (Depends.Progress p) =>
+            {
+                return inProcessAnalysis(max_duration_in_ms, config, forceDAGBuild, p);
+            };
+
+            return buildDAGAndDoStuff(forceDAGBuild, f, 3, pb);
+        }
+
         public void analyze(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean forceDAGBuild, ProgBar pb)
         {
             var sw = new System.Diagnostics.Stopwatch();
@@ -429,51 +480,30 @@ namespace ExceLintUI
             // build data dependence graph
             try
             {
-                Func<Depends.Progress, Analysis> f = (Depends.Progress p) =>
-                {
-                    // sanity check
-                    if (_dag.getAllFormulaAddrs().Length == 0)
-                    {
-                        System.Windows.Forms.MessageBox.Show("This spreadsheet contains no formulas.");
-                        _app.ScreenUpdating = true;
-                        return new Analysis { scores = null, ranOK = false, cutoff = 0 };
-                    }
-                    else
-                    {
-                        // run analysis
-                        var mopt = ExceLint.ModelBuilder.analyze(_app, config, _dag, _tool_significance, p);
-                        if (FSharpOption<ExceLint.ErrorModel>.get_IsNone(mopt))
-                        {
-                            throw new AnalysisCancelled();
-                        }
-                        else
-                        {
-                            var model = mopt.Value;
-                            Score[] scores = model.rankByFeatureSum();
-                            int cutoff = model.getSignificanceCutoff;
-                            return new Analysis { scores = scores, ranOK = true, cutoff = cutoff, model = model, hasRun = true, dag = _dag };
-                        }
-                    }
-                };
-
-                _analysis = buildDAGAndDoStuff(forceDAGBuild, f, 3, pb);
+                _analysis = rawAnalysis(max_duration_in_ms, config, forceDAGBuild, pb);
 
                 if (!_analysis.ranOK)
                 {
+                    System.Windows.Forms.MessageBox.Show("This spreadsheet contains no formulas.");
                     return;
                 }
+            }
+            catch (Parcel.ParseException e)
+            {
+                // UI cleanup repeated here since the throw
+                // below will cause the finally clause to be skipped
+                _app.DisplayAlerts = true;
+                _app.ScreenUpdating = true;
 
+                throw e;
+            }
+            finally
+            {
                 // Re-enable alerts
                 _app.DisplayAlerts = true;
 
                 // Enable screen updating when we're done
                 _app.ScreenUpdating = true;
-            }
-            catch (Parcel.ParseException e)
-            {
-                // cleanup UI and then rethrow
-                _app.ScreenUpdating = true;
-                throw e;
             }
 
             sw.Stop();

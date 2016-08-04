@@ -3,6 +3,7 @@ open System
 open System.IO
 open System.Collections.Generic
 open ExceLint
+open ExceLintUI
 
     [<EntryPoint>]
     let main argv = 
@@ -27,64 +28,67 @@ open ExceLint
 
                 printfn "Opening: %A" shortf
                 let wb = app.OpenWorkbook(file)
+
+                printfn "Initializing ExceLint state for: %A" shortf
+                let wbs = app.WorkbookState;
             
                 printfn "Building dependence graph: %A" shortf
                 let graph = wb.buildDependenceGraph()
 
                 printfn "Running ExceLint analysis: %A" shortf
-                let model_opt = ExceLint.ModelBuilder.analyze (app.XLApplication()) config.FeatureConf graph thresh (Depends.Progress.NOPProgress())
+                let analysis = wbs.inProcessAnalysis(10000000L, config.FeatureConf, true, Depends.Progress.NOPProgress())
 
-                match model_opt with
-                | Some(model) ->
-                    // global stats
-                    let row = CSV.ExceLintStats.Row(
-                                benchmarkName = shortf,
-                                numCells = graph.allCells().Length,
-                                numFormulas = graph.getAllFormulaAddrs().Length,
-                                sigThresh = thresh,
-                                depTimeMs = graph.AnalysisMilliseconds,
-                                scoreTimeMs = model.ScoreTimeInMilliseconds,
-                                freqTimeMs = model.FrequencyTableTimeInMilliseconds,
-                                rankingTimeMs = model.RankingTimeInMilliseconds,
-                                causesTimeMs = model.CausesTimeInMilliseconds,
-                                conditioningSetSzTimeMs = model.ConditioningSetSizeTimeInMilliseconds,
-                                numAnom = model.getSignificanceCutoff,
-                                optCondAllCells = config.FeatureConf.IsEnabledOptCondAllCells,
-                                optCondRows = config.FeatureConf.IsEnabledOptCondRows,
-                                optCondCols = config.FeatureConf.IsEnabledOptCondCols,
-                                optCondLevels = config.FeatureConf.IsEnabledOptCondLevels,
-                                optAddrmodeInference = config.FeatureConf.IsEnabledOptAddrmodeInference,
-                                optWeightIntrinsicAnom = config.FeatureConf.IsEnabledOptWeightIntrinsicAnomalousness,
-                                optWeightConditionSetSz = config.FeatureConf.IsEnabledOptWeightConditioningSetSize
-                              )
+                let model = analysis.model
 
-                    // append to streamwriter & flush stream
-                    sw.Write (csv.Append([row]).SaveToString())
-                    sw.Flush()
+                // global stats
+                let row = CSV.ExceLintStats.Row(
+                            benchmarkName = shortf,
+                            numCells = graph.allCells().Length,
+                            numFormulas = graph.getAllFormulaAddrs().Length,
+                            sigThresh = thresh,
+                            depTimeMs = graph.AnalysisMilliseconds,
+                            scoreTimeMs = model.ScoreTimeInMilliseconds,
+                            freqTimeMs = model.FrequencyTableTimeInMilliseconds,
+                            rankingTimeMs = model.RankingTimeInMilliseconds,
+                            causesTimeMs = model.CausesTimeInMilliseconds,
+                            conditioningSetSzTimeMs = model.ConditioningSetSizeTimeInMilliseconds,
+                            numAnom = model.getSignificanceCutoff,
+                            optCondAllCells = config.FeatureConf.IsEnabledOptCondAllCells,
+                            optCondRows = config.FeatureConf.IsEnabledOptCondRows,
+                            optCondCols = config.FeatureConf.IsEnabledOptCondCols,
+                            optCondLevels = config.FeatureConf.IsEnabledOptCondLevels,
+                            optAddrmodeInference = config.FeatureConf.IsEnabledOptAddrmodeInference,
+                            optWeightIntrinsicAnom = config.FeatureConf.IsEnabledOptWeightIntrinsicAnomalousness,
+                            optWeightConditionSetSz = config.FeatureConf.IsEnabledOptWeightConditioningSetSize
+                            )
 
-                    // per-workbook stats
-                    if (config.isVerbose) then
-                        let per_csv = new CSV.WorkbookStats([])
+                // append to streamwriter & flush stream
+                sw.Write (csv.Append([row]).SaveToString())
+                sw.Flush()
 
-                        using (new StreamWriter(config.verbose_csv shortf)) (fun per_sw ->
-                            let ranking = model.rankByFeatureSum()
+                // per-workbook stats
+                if (config.isVerbose) then
+                    let per_csv = new CSV.WorkbookStats([])
 
-                            Array.mapi (fun i (kvp: KeyValuePair<AST.Address,double>) ->
-                                let per_row = CSV.WorkbookStats.Row(
-                                                    flaggedCellAddr = kvp.Key.A1FullyQualified(),
-                                                    rank = i,
-                                                    score = kvp.Value
-                                                )
+                    using (new StreamWriter(config.verbose_csv shortf)) (fun per_sw ->
+                        let ranking = model.rankByFeatureSum()
 
-                                // append to streamwriter
-                                per_sw.Write (per_csv.Append([per_row]).SaveToString())
-                            ) ranking |> ignore
-                        )
+                        Array.mapi (fun i (kvp: KeyValuePair<AST.Address,double>) ->
+                            let per_row = CSV.WorkbookStats.Row(
+                                                flaggedCellAddr = kvp.Key.A1FullyQualified(),
+                                                rank = i,
+                                                score = kvp.Value
+                                            )
 
-                    printfn "Analysis complete: %A" shortf
+                            // append to streamwriter
+                            per_sw.Write (per_csv.Append([per_row]).SaveToString())
+                        ) ranking |> ignore
+                    )
+
+                printfn "Analysis complete: %A" shortf
                                 
-                | None ->
-                    printfn "Analysis failed: %A" shortf
+//                | None ->
+//                    printfn "Analysis failed: %A" shortf
         )
 
         printfn "Batch complete.  Press Enter to continue."

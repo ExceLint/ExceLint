@@ -23,6 +23,13 @@ namespace ExceLintUI
             currentWorkbook.getMixedFormulaVectors(forceDAGBuild: forceBuildDAG.Checked);
         }
 
+        public WorkbookState CurrentWorkbook { 
+            get
+            {
+                return currentWorkbook;
+            }
+        }
+
         private void AnalyzeButton_Click(object sender, RibbonControlEventArgs e)
         {
             // check for debug checkbox
@@ -47,7 +54,7 @@ namespace ExceLintUI
             DoAnalysis(sig, currentWorkbook, getConfig(), this.forceBuildDAG.Checked, updateWorkbook, pb);
         }
 
-        private static void DoAnalysis(FSharpOption<double> sigThresh, WorkbookState wbs, ExceLint.FeatureConf conf, bool forceBuildDAG, Action<WorkbookState> updateState, ProgBar pb)
+        public static void DoAnalysis(FSharpOption<double> sigThresh, WorkbookState wbs, ExceLint.FeatureConf conf, bool forceBuildDAG, Action<WorkbookState> updateState, ProgBar pb)
         {
             if (sigThresh == FSharpOption<double>.None)
             {
@@ -110,7 +117,7 @@ namespace ExceLintUI
         {
             var a = wbs.getAnalysis();
 
-            if (FSharpOption<WorkbookState.Analysis>.get_IsNone(a))
+            if (FSharpOption<Analysis>.get_IsNone(a))
             {
                 return "";
             }
@@ -152,7 +159,7 @@ namespace ExceLintUI
         {
             var a = wbs.getAnalysis();
 
-            if (FSharpOption<WorkbookState.Analysis>.get_IsNone(a))
+            if (FSharpOption<Analysis>.get_IsNone(a))
             {
                 return "";
             }
@@ -387,7 +394,7 @@ namespace ExceLintUI
             Globals.ThisAddIn.Application.SheetChange += SheetChange;
             Globals.ThisAddIn.Application.WorkbookAfterSave += WorkbookAfterSave;
 
-            // sometimes the default blank workbook opens *before* the CheckCell
+            // sometimes the default blank workbook opens *before* the ExceLint
             // add-in is loaded so we have to handle sheet state specially.
             if (currentWorkbook == null)
             {

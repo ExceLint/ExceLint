@@ -1,6 +1,4 @@
 module Feature
-
-    open COMWrapper
     open Depends
 
     type ConfigKind =

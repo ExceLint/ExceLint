@@ -1,5 +1,4 @@
 ﻿module Degree
-    open COMWrapper
     open Depends
     open Feature
 

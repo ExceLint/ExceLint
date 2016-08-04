@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Xml.Linq;
+﻿using System.Collections.Generic;
+using System.Collections.Concurrent;
 using Excel = Microsoft.Office.Interop.Excel;
-using Office = Microsoft.Office.Core;
-using Microsoft.Office.Tools.Excel;
 
 namespace ExceLintUI
 {
@@ -19,6 +14,17 @@ namespace ExceLintUI
         {
         }
 
+        protected override object RequestComAddInAutomationService()
+        {
+            if (Globals.Ribbons.ExceLintRibbon.CurrentWorkbook == null)
+            {
+                return new WorkbookState(Globals.ThisAddIn.Application, Globals.ThisAddIn.Application.ActiveWorkbook);
+            } else
+            {
+                return Globals.Ribbons.ExceLintRibbon.CurrentWorkbook;
+            }
+        }
+
         #region VSTO generated code
 
         /// <summary>
@@ -30,7 +36,6 @@ namespace ExceLintUI
             this.Startup += new System.EventHandler(ThisAddIn_Startup);
             this.Shutdown += new System.EventHandler(ThisAddIn_Shutdown);
         }
-        
         #endregion
     }
 }
