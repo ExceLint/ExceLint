@@ -6,8 +6,10 @@
     open ConfUtils
     open Pipeline
 
-    type ErrorModel(input: Input, analysis: Analysis) =
+    type ErrorModel(input: Input, analysis: Analysis, config: FeatureConf) =
         member self.ScoreTimeInMilliseconds : int64 = analysis.score_time
+
+        member self.FrequencyTable : Pipeline.FreqTable = analysis.ftable
 
         member self.FrequencyTableTimeInMilliseconds : int64 = analysis.ftable_time
 
@@ -24,6 +26,10 @@
         member self.NumFreqEntries : int = analysis.ftable.Count
 
         member self.NumRankedEntries : int = analysis.ranking.Length
+
+        member self.Scopes : Scope.Selector[] = config.EnabledScopes
+
+        member self.Features : string[] = config.EnabledFeatures
 
         member self.causeOf(addr: AST.Address) : KeyValuePair<HistoBin,Tuple<int,double>>[] =
             Array.map (fun cause ->

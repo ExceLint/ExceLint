@@ -55,6 +55,13 @@ module Scope =
     | ColumnID of XYPath
     | RowID of XYPath
     | LevelID of Set<Level>
+        member self.IsKind : Selector =
+            match self with
+            | AllID -> Selector.AllCells
+            | ColumnID _ -> Selector.SameColumn
+            | RowID _ -> Selector.SameRow
+            | LevelID _ -> Selector.SameLevel
+            
         override self.Equals(obj: obj) : bool =
             let other = obj :?> SelectID
 
@@ -95,23 +102,8 @@ module Scope =
                     else
                         1
                 | _,_ -> failwith "incomparable"
-        
-    let levelsOf(input: AST.Address)(dag: Depends.DAG) : Set<Level> =
-        let terminal_formulas = new HashSet<AST.Address>(dag.terminalFormulaNodes false)
-        let unfilt_refdepts = dag.AllRefDistancesFromInput input
-        let refdepths = Seq.filter (fun (kvp: KeyValuePair<AST.Address,HashSet<int>>) ->
-                            terminal_formulas.Contains kvp.Key
-                        ) unfilt_refdepts
 
-        Seq.map (fun (kvp: KeyValuePair<AST.Address,HashSet<int>>) ->
-            let faddr = kvp.Key;
-            let distances = kvp.Value
-            Seq.map (fun (d: int) ->
-                { fn_x = faddr.X; fn_y = faddr.Y; fn_fullpath = faddr.Path + ":" + faddr.WorkbookName + ":" + faddr.WorksheetName; level = d }
-            ) distances
-        ) refdepths |> Seq.concat |> Set.ofSeq
-
-    type Selector =
+    and Selector =
     | AllCells
     | SameColumn
     | SameRow
@@ -136,6 +128,21 @@ module Scope =
         static member Kinds = [| AllCells; SameColumn; SameRow; SameLevel |]
 
     and SelectorCache() =
+        let levelsOf(input: AST.Address)(dag: Depends.DAG) : Set<Level> =
+            let terminal_formulas = new HashSet<AST.Address>(dag.terminalFormulaNodes false)
+            let unfilt_refdepts = dag.AllRefDistancesFromInput input
+            let refdepths = Seq.filter (fun (kvp: KeyValuePair<AST.Address,HashSet<int>>) ->
+                                terminal_formulas.Contains kvp.Key
+                            ) unfilt_refdepts
+
+            Seq.map (fun (kvp: KeyValuePair<AST.Address,HashSet<int>>) ->
+                let faddr = kvp.Key;
+                let distances = kvp.Value
+                Seq.map (fun (d: int) ->
+                    { fn_x = faddr.X; fn_y = faddr.Y; fn_fullpath = faddr.Path + ":" + faddr.WorkbookName + ":" + faddr.WorksheetName; level = d }
+                ) distances
+            ) refdepths |> Seq.concat |> Set.ofSeq
+
         let _cache = new Dict<Selector,Dict<AST.Address,SelectID>>()
 
         member self.fetchOrStore(addr: AST.Address)(dag: Depends.DAG)(sel: Selector) : SelectID =
@@ -154,4 +161,5 @@ module Scope =
             else
                 _cache.[sel].[addr]
 
-    type SelectIDCache = Dict<SelectID,Set<AST.Address>>
+    and SelectIDCache = Dict<SelectID,Set<AST.Address>>
+

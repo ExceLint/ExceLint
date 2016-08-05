@@ -667,7 +667,7 @@
                                     +> cutoff
 
                     match pipeline input with
-                    | Success(analysis) -> Some (ErrorModel(input, analysis))
+                    | Success(analysis) -> Some (ErrorModel(input, analysis, config))
                     | Cancellation -> None
 
         
