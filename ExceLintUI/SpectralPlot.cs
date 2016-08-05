@@ -88,7 +88,7 @@ namespace ExceLintUI
             double lightness = 1;
             double chroma = saturation * lightness;
             double huePrime = hue / 60;
-            double X = chroma * (1 - (huePrime % 2 - 1));
+            double X = chroma * (1 - Math.Abs(huePrime % 2 - 1));
             double R1 = 0, G1 = 0, B1 = 0;
 
             if (huePrime >= 0 && huePrime < 1)
@@ -129,7 +129,7 @@ namespace ExceLintUI
                 G = Convert.ToInt32(G1 + m),
                 B = Convert.ToInt32(B1 + m);
 
-            return Color.FromArgb(R, G, B);
+            return Color.FromArgb(255, R, G, B);
         }
 
         private void drawBin(HistoBin h, FreqTable freqtable, Color c)
