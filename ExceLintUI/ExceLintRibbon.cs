@@ -725,11 +725,14 @@ namespace ExceLintUI
                 setUIState(currentWorkbook);
             };
 
-            // create progbar in main thread;
-            // worker thread will call Dispose
+            // create progbar
             var pb = new ProgBar();
 
+            // display form, running analysis if necessary
             currentWorkbook.showSpectralPlot(WorkbookState.MAX_DURATION_IN_MS, getConfig(), this.forceBuildDAG.Checked, pb);
+
+            // close progbar
+            pb.Close();
         }
     }
 }

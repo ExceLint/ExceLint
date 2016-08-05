@@ -54,6 +54,7 @@
             this.Controls.Add(this.chart1);
             this.Name = "SpectralPlot";
             this.Text = "SpectralPlot";
+            this.Load += new System.EventHandler(this.SpectralPlot_Load);
             ((System.ComponentModel.ISupportInitialize)(this.chart1)).EndInit();
             this.ResumeLayout(false);
 
