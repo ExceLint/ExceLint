@@ -85,6 +85,7 @@
             this.comboCondition.Name = "comboCondition";
             this.comboCondition.Size = new System.Drawing.Size(221, 21);
             this.comboCondition.TabIndex = 3;
+            this.comboCondition.SelectedIndexChanged += new System.EventHandler(this.comboCondition_SelectedIndexChanged);
             // 
             // SpectralPlot
             // 

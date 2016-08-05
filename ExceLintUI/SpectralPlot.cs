@@ -10,7 +10,7 @@ namespace ExceLintUI
 {
     public partial class SpectralPlot : Form
     {
-        ExceLint.Scope.Selector[] cs;
+        ExceLint.Scope.SelectID[] cs;
         string[] fs;
         ExceLint.ErrorModel m;
 
@@ -22,35 +22,41 @@ namespace ExceLintUI
             m = model;
 
             // init combo box data sources
-            cs = model.Scopes;
-            fs = model.Features;
+            cs = m.FrequencyTable.Keys.Select((HistoBin h) => h.Item2).Distinct().ToArray();
+            fs = m.Features;
 
             // init combo boxes;
-            var selectorNames = cs.Select((ExceLint.Scope.Selector s) => s.ToString()).ToArray();
+            var selectorNames = cs.Select((ExceLint.Scope.SelectID s) => ExceLint.Scope.Selector.ToPretty(s)).ToArray();
             comboCondition.DataSource = selectorNames;
             comboFeature.DataSource = fs;
         }
 
         private void SpectralPlot_Load(object sender, EventArgs e)
         {
+            drawPlot();
+        }
+
+        private void drawPlot()
+        {
             // remove any pre-existing series
             chart1.Series.Clear();
 
             // get combo selections
-            ExceLint.Scope.Selector s = cs[comboCondition.SelectedIndex];
-            string f = fs[comboFeature.SelectedIndex];
+            // choose the first one if nothing is selected
+            ExceLint.Scope.SelectID s = cs[comboCondition.SelectedIndex == -1 ? 0 : comboCondition.SelectedIndex];
+            string f = fs[comboFeature.SelectedIndex == -1 ? 0 : comboFeature.SelectedIndex];
 
             // draw plot
-            drawPlot(f, s);
+            drawBins(f, s);
 
             // draw
             chart1.Invalidate();
         }
 
-        private void drawPlot(string feature, ExceLint.Scope.Selector condition)
+        private void drawBins(string feature, ExceLint.Scope.SelectID condition)
         {
             // which subset of bins to plot?
-            var bins = m.FrequencyTable.Keys.Where((HistoBin h) => h.Item1 == feature && h.Item2.IsKind == condition).ToArray();
+            var bins = m.FrequencyTable.Keys.Where((HistoBin h) => h.Item1 == feature && h.Item2 == condition).ToArray();
 
             // find dynamic range of features
             var fMin = bins.Select((HistoBin h) => h.Item3).Min();
@@ -67,7 +73,16 @@ namespace ExceLintUI
         private static Color getColor(double featureValue, double featureMin, double featureMax)
         {
             // inspired by function found here: https://en.wikipedia.org/wiki/HSL_and_HSV#From_HSV
-            double normedFeature = (featureValue - featureMin) / (featureMax - featureMin);
+
+            double normedFeature;
+            if ((featureMax - featureMin) == 0)
+            {
+                normedFeature = 0;
+            } else
+            {
+                normedFeature = (featureValue - featureMin) / (featureMax - featureMin);
+            }
+            
             double hue = normedFeature * 360;
             double saturation = 1;
             double lightness = 1;
@@ -124,17 +139,18 @@ namespace ExceLintUI
             var count = freqtable[h];
 
             // create series for scatterplot
-            var series1 = new Series
+            var series = new Series
             {
                 Name = binName,
                 Color = c,
                 IsVisibleInLegend = false,
                 IsXValueIndexed = false,
-                ChartType = SeriesChartType.Point
+                ChartType = SeriesChartType.Point,
+                AxisLabel = binName
             };
 
             // add series to chart
-            chart1.Series.Add(series1);
+            chart1.Series.Add(series);
 
             // generate data
             var xData = new double[count];
@@ -147,6 +163,11 @@ namespace ExceLintUI
 
             // bind data to plot
             chart1.Series[binName].Points.DataBindXY(xData, yData);
+        }
+
+        private void comboCondition_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            drawPlot();
         }
     }
 }
