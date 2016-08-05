@@ -125,11 +125,19 @@ namespace ExceLintUI
 
             double m = lightness - chroma;
 
-            int R = Convert.ToInt32(R1 + m),
-                G = Convert.ToInt32(G1 + m),
-                B = Convert.ToInt32(B1 + m);
+            double R = R1 + m,
+                   G = G1 + m,
+                   B = B1 + m;
 
-            return Color.FromArgb(255, R, G, B);
+            System.Diagnostics.Debug.Assert(R >= 0 && R <= 1);
+            System.Diagnostics.Debug.Assert(G >= 0 && G <= 1);
+            System.Diagnostics.Debug.Assert(B >= 0 && B <= 1);
+
+            int r = Convert.ToInt32(R * 255),
+                g = Convert.ToInt32(G * 255),
+                b = Convert.ToInt32(B * 255);
+
+            return Color.FromArgb(255, r, g, b);
         }
 
         private void drawBin(HistoBin h, FreqTable freqtable, Color c)
