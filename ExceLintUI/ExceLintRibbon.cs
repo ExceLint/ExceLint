@@ -709,5 +709,27 @@ namespace ExceLintUI
         {
             currentWorkbook.ConfigChanged();
         }
+
+        private void spectralPlot_Click(object sender, RibbonControlEventArgs e)
+        {
+            // check for debug checkbox
+            currentWorkbook.DebugMode = this.DebugOutput.Checked;
+
+            // get significance threshold
+            var sig = getPercent(this.significanceTextBox.Text, this.significanceTextBox.Label);
+
+            // workbook- and UI-update callback
+            Action<WorkbookState> updateWorkbook = (WorkbookState wbs) =>
+            {
+                this.currentWorkbook = wbs;
+                setUIState(currentWorkbook);
+            };
+
+            // create progbar in main thread;
+            // worker thread will call Dispose
+            var pb = new ProgBar();
+
+            currentWorkbook.showSpectralPlot(WorkbookState.MAX_DURATION_IN_MS, getConfig(), this.forceBuildDAG.Checked, pb);
+        }
     }
 }

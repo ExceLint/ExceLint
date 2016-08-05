@@ -412,6 +412,18 @@ namespace ExceLintUI
             toggleHeatMapSetting();
         }
 
+        public void showSpectralPlot(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean forceDAGBuild, ProgBar pb)
+        {
+                if (!_analysis.hasRun)
+                {
+                    // run analysis
+                    analyze(max_duration_in_ms, config, forceDAGBuild, pb);
+                }
+
+            var plot = new SpectralPlot(_analysis.model);
+            plot.Show();
+        }
+
         private double intensity(double min_score, double max_score, double score)
         {
             var lmax = Math.Log(max_score - min_score + 1);
