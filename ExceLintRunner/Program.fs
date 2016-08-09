@@ -34,6 +34,9 @@ open ExceLint
                 printfn "Running ExceLint analysis: %A" shortf
                 let model_opt = ExceLint.ModelBuilder.analyze (app.XLApplication()) config.FeatureConf graph thresh (Depends.Progress.NOPProgress())
 
+                printfn "Running CUSTODES analysis: %A" shortf
+                let custodes = CUSTODES.Run(file, config.CustodesPath, config.JavaPath)
+
                 match model_opt with
                 | Some(model) ->
                     // global stats

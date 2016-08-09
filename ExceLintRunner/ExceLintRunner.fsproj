@@ -26,7 +26,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DocumentationFile>bin\Debug\ExceLintRunner.XML</DocumentationFile>
     <Prefer32Bit>true</Prefer32Bit>
-    <StartArguments>"../../../../data/analyses/CUSTODES/custodes/example/profiler/" "Z:\dbarowy\Desktop\excelint" true true true true true false false true</StartArguments>
+    <StartArguments>"../../../../data/analyses/CUSTODES/custodes/example/profiler/" "Z:\dbarowy\Desktop\excelint" "C:\ProgramData\Oracle\Java\javapath\java.exe" "C:\Users\dbarowy\Documents\Visual Studio 2015\Projects\ExceLint\data\analyses\CUSTODES2\cc2.jar" true true true true true false false true</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -60,6 +60,8 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Args.fs" />
     <Compile Include="CSVs.fs" />
+    <Compile Include="CUSTODESGrammar.fs" />
+    <Compile Include="CUSTODES.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <Content Include="packages.config" />
@@ -86,6 +88,16 @@
     <ProjectReference Include="..\Depends\Depends\Depends.csproj">
       <Name>Depends</Name>
       <Project>{34fa1bc2-cfd6-44ec-ac0c-dfc62313e4bf}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Depends\parcel\FParsecCS\FParsecCS.csproj">
+      <Name>FParsecCS</Name>
+      <Project>{35888456-3095-4133-92c8-6dd3205f4c2d}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Depends\parcel\FParsec\FParsec.fsproj">
+      <Name>FParsec</Name>
+      <Project>{d8a416fa-be7d-4929-8a6a-da28b206853c}</Project>
       <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="..\Depends\parcel\Parcel\ExcelParser.fsproj">

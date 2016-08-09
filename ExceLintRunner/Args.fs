@@ -3,20 +3,24 @@
 open System.IO
 open System.Text.RegularExpressions
 
-    type Config(dpath: string, opath: string, verbose: bool, csv: string, fc: ExceLint.FeatureConf) =
+    type Config(dpath: string, opath: string, jpath: string, cpath: string, verbose: bool, csv: string, fc: ExceLint.FeatureConf) =
         member self.files: string[] =
             Directory.EnumerateFiles(dpath, "*.xls?", SearchOption.AllDirectories) |> Seq.toArray
         member self.csv: string = csv
         member self.isVerbose : bool = verbose
         member self.verbose_csv(wbname: string) = Path.Combine(opath, Regex.Replace(wbname,"[^A-Za-z0-9_-]","") + ".csv")
         member self.FeatureConf = fc
+        member self.CustodesPath = cpath
+        member self.JavaPath = jpath
 
     let usage() : unit =
-        printfn "ExceLintRunner.exe [input directory] [output path] [opt_verbose] [opt1 ... opt7]"
+        printfn "ExceLintRunner.exe [input directory] [output path] [java path] [opt_verbose] [opt1 ... opt7]"
         printfn 
             "Recursively finds all Excel (*.xls and *.xlsx) files in [input directory], \n\
             opens them, runs ExceLint, and prints output statistics to a file called \n\
             exceline_output.csv in [output path].\n\n\
+            [java path] and [CUSTODES path] are needed in order to conduct a comparison\n\
+            against the CUSTODES tool.\n\n\
             Press Ctrl-C to cancel an analysis."
         printfn "\nwhere\n"
         printfn "opt_verbose = <true> or <false>: log per-spreadsheet flagged cells as separate csvs"
@@ -33,18 +37,21 @@ open System.Text.RegularExpressions
         System.Environment.Exit(1)
 
     let processArgs(argv: string[]) : Config =
-        if argv.Length <> 10 then
+        if argv.Length <> 12 then
             usage()
-        let dpath = argv.[0]
-        let opath = argv.[1]
-        let optVerbose = System.Boolean.Parse(argv.[2])
-        let optCondAllCells = System.Boolean.Parse(argv.[3])
-        let optCondCols = System.Boolean.Parse(argv.[4])
-        let optCondRows = System.Boolean.Parse(argv.[5])
-        let optCondLevels = System.Boolean.Parse(argv.[6])
-        let optAddrMode = System.Boolean.Parse(argv.[7])
-        let optIntrinsicAnom = System.Boolean.Parse(argv.[8])
-        let optCondSetSz = System.Boolean.Parse(argv.[9])
+        let dpath = argv.[0]    // input directory
+        let opath = argv.[1]    // output directory
+        let jpath = argv.[2]    // java path
+        let cpath = argv.[3]    // CUSTODES path
+
+        let optVerbose = System.Boolean.Parse(argv.[4])
+        let optCondAllCells = System.Boolean.Parse(argv.[5])
+        let optCondCols = System.Boolean.Parse(argv.[6])
+        let optCondRows = System.Boolean.Parse(argv.[7])
+        let optCondLevels = System.Boolean.Parse(argv.[8])
+        let optAddrMode = System.Boolean.Parse(argv.[9])
+        let optIntrinsicAnom = System.Boolean.Parse(argv.[10])
+        let optCondSetSz = System.Boolean.Parse(argv.[11])
 
         let csv = Path.Combine(opath, "excelint_output.csv")
 
@@ -59,5 +66,5 @@ open System.Text.RegularExpressions
         featureConf <- if optIntrinsicAnom then featureConf.weightByIntrinsicAnomalousness() else featureConf
         featureConf <- if optCondSetSz then featureConf.weightByConditioningSetSize() else featureConf
 
-        Config(dpath, opath, optVerbose, csv, featureConf)
+        Config(dpath, opath, jpath, cpath, optVerbose, csv, featureConf)
 
