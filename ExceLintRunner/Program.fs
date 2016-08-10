@@ -8,13 +8,15 @@ open ExceLint
     let main argv = 
         let config = Args.processArgs argv
 
-        Console.CancelKeyPress.Add(fun _ -> printfn "Do something")
+//        Console.CancelKeyPress.Add(fun _ -> printfn "Do something")
 
         let app = new Application()
 
         let thresh = 0.05
 
         let csv = new CSV.ExceLintStats([])
+
+        let groundTruth = CSV.CUSTODESGroundTruth.Load(CSV.CUSTODESGroundTruthPath)
 
         using (new StreamWriter(config.csv)) (fun sw ->
             
