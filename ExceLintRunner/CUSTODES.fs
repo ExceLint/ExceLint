@@ -5,6 +5,7 @@
     open CUSTODESGrammar
     open System.Runtime.InteropServices
     open System.Text
+    open System.Threading
 
     [<DllImport("kernel32.dll", CharSet = CharSet.Auto)>]
     extern int GetShortPathName(
@@ -25,48 +26,67 @@
     | STDERR of string
 
     let private runCommand(cpath: string)(args: string[]) : ShellResult =
-        // setup temp file
-//        let tmpdir = IO.Path.GetTempPath()
-//        let tempOutput = IO.Path.Combine(tmpdir, "CUSTODES_STDOUT_STDERR.txt")
+        let timeout = 5000
 
-//        let args' = Array.append args [| ">"; tempOutput; |]
+        using(new Process()) (fun (p) ->
+            p.StartInfo.FileName <- @"c:\windows\system32\cmd.exe"
+            p.StartInfo.Arguments <- "/c \"" + cpath + " " + String.Join(" ", args) + "\" 2>&1"
+            p.StartInfo.UseShellExecute <- false
+            p.StartInfo.RedirectStandardOutput <- true
+            p.StartInfo.RedirectStandardError <- true
 
-        // setup command
-        let p = new Process();
-        p.StartInfo.FileName <- @"c:\windows\system32\cmd.exe";
-        p.StartInfo.Arguments <- "/k \"" + cpath + " " + String.Join(" ", args) + "\""
-        p.StartInfo.UseShellExecute <- false
-        p.StartInfo.RedirectStandardOutput <- true
+            printfn "Invoking: %s %s" (p.StartInfo.FileName) (p.StartInfo.Arguments)
 
-        // DEBUG
-        let DEBUGRUNNING = p.StartInfo.FileName + " " +  p.StartInfo.Arguments
-        printfn "INVOCATION: %s" DEBUGRUNNING
+            let output = new StringBuilder()
+            let error = new StringBuilder()
 
-        // start command
-        let successful = p.Start()
+            using(new AutoResetEvent(false)) (fun oWH ->
+                using(new AutoResetEvent(false)) (fun eWH ->
 
-        let result =
-            if successful then
-                p.BeginOutputReadLine()
-                let output = p.StandardError.ReadToEnd()
+                    // attach event handlers
+                    p.OutputDataReceived.Add
+                        (fun e ->
+                            if (e.Data = null) then
+                                oWH.Set() |> ignore
+                            else
+                                output.AppendLine(e.Data) |> ignore
+                        )
+                    p.ErrorDataReceived.Add
+                        (fun e ->
+                            if (e.Data = null) then
+                                eWH.Set() |> ignore
+                            else
+                                error.AppendLine(e.Data) |> ignore
+                        )
 
-//                let sb = new StringBuilder()
-//                while p.StandardOutput.Peek() > -1 do
-//                    sb.Append(p.StandardOutput.ReadLine()) |> ignore
-//
-//                let output = sb.ToString()
-                STDOUT output
-            else
-                STDERR "no"
+                    // start process
+                    p.Start() |> ignore
 
-        // wait until process terminates
-        p.WaitForExit()
+                    // begin listening
+                    p.BeginOutputReadLine()
+                    p.BeginErrorReadLine()
 
-        result
+                    // wait indefinitely for process to terminate
+                    p.WaitForExit()
+
+                    // wait on handles
+                    if (oWH.WaitOne() && eWH.WaitOne()) then
+                        if p.ExitCode = 0 then
+                            let o = output.ToString()
+                            printfn "%s" o
+                            STDOUT o
+                        else
+                            STDERR (output.ToString())
+                    else
+                        STDERR (output.ToString())
+                )
+            )
+        )
 
     let runCUSTODES(spreadsheet: string)(custodesPath: string)(javaPath: string) : CUSTODESSmells =
         let outputPath = IO.Path.GetTempPath()
-        let invocation = fun () -> runCommand javaPath [| "-jar"; shortPath custodesPath; shortPath spreadsheet; shortPath outputPath; |]
+
+        let invocation = fun () -> runCommand (shortPath javaPath) [| "-jar"; shortPath custodesPath; shortPath spreadsheet; shortPath outputPath; |]
         match invocation() with
         | STDOUT output ->
             // debug
@@ -89,7 +109,7 @@
         let canonicalOutput = Seq.map (fun (pair: KeyValuePair<Worksheet,Address[]>) ->
                                 let worksheetname = pair.Key
                                 Array.map (fun (a: Address) ->
-                                    AST.Address.FromString(a, worksheetname, workbookname, path)
+                                    AST.Address.FromA1String(a, worksheetname, workbookname, path)
                                 ) pair.Value
                               ) cOutput
                               |> Seq.concat |> Seq.toArray
