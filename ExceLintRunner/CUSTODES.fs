@@ -26,8 +26,6 @@
     | STDERR of string
 
     let private runCommand(cpath: string)(args: string[]) : ShellResult =
-        let timeout = 5000
-
         using(new Process()) (fun (p) ->
             p.StartInfo.FileName <- @"c:\windows\system32\cmd.exe"
             p.StartInfo.Arguments <- "/c \"" + cpath + " " + String.Join(" ", args) + "\" 2>&1"
