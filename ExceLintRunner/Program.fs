@@ -91,7 +91,4 @@ open ExceLint
                     printfn "Analysis failed: %A" shortf
         )
 
-        printfn "Batch complete.  Press Enter to continue."
-        System.Console.ReadLine() |> ignore
-
         0

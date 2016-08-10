@@ -26,14 +26,15 @@
     | STDERR of string
 
     let private runCommand(cpath: string)(args: string[]) : ShellResult =
+        STDOUT (COMWrapper.Application.runCommand(cpath, args))
+
+    let private runFSCommand(cpath: string)(args: string[]) : ShellResult =
         using(new Process()) (fun (p) ->
             p.StartInfo.FileName <- @"c:\windows\system32\cmd.exe"
             p.StartInfo.Arguments <- "/c \"" + cpath + " " + String.Join(" ", args) + "\" 2>&1"
             p.StartInfo.UseShellExecute <- false
             p.StartInfo.RedirectStandardOutput <- true
             p.StartInfo.RedirectStandardError <- true
-
-            printfn "Invoking: %s %s" (p.StartInfo.FileName) (p.StartInfo.Arguments)
 
             let output = new StringBuilder()
             let error = new StringBuilder()
@@ -70,9 +71,7 @@
                     // wait on handles
                     if (oWH.WaitOne() && eWH.WaitOne()) then
                         if p.ExitCode = 0 then
-                            let o = output.ToString()
-                            printfn "%s" o
-                            STDOUT o
+                            STDOUT (output.ToString())
                         else
                             STDERR (output.ToString())
                     else
