@@ -35,7 +35,7 @@ open ExceLint
                 let model_opt = ExceLint.ModelBuilder.analyze (app.XLApplication()) config.FeatureConf graph thresh (Depends.Progress.NOPProgress())
 
                 printfn "Running CUSTODES analysis: %A" shortf
-                let custodes = CUSTODES.Run(file, config.CustodesPath, config.JavaPath)
+                let custodes = CUSTODES.Output(file, config.CustodesPath, config.JavaPath)
 
                 match model_opt with
                 | Some(model) ->
@@ -52,6 +52,7 @@ open ExceLint
                                 causesTimeMs = model.CausesTimeInMilliseconds,
                                 conditioningSetSzTimeMs = model.ConditioningSetSizeTimeInMilliseconds,
                                 numAnom = model.getSignificanceCutoff,
+                                numCustodesSmells = custodes.NumSmells,
                                 optCondAllCells = config.FeatureConf.IsEnabledOptCondAllCells,
                                 optCondRows = config.FeatureConf.IsEnabledOptCondRows,
                                 optCondCols = config.FeatureConf.IsEnabledOptCondCols,
