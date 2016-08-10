@@ -16,6 +16,8 @@ let private ExceLintStatsSchema = "benchmark_name (string), num_cells (int), num
 let private WorkbookStatsSchema = "flagged_cell_addr (string), flagged_by_excelint (bool), flagged_by_custodes (bool), rank (int), score (float), custodes_true_smell (bool)"
 
 [<Literal>]
+let CUSTODESGroundTruthSchema = "Index (int),Spreadsheet (string), Worksheet (string), GroundTruth (string), Custodes (string), AmCheck (string), UCheck (string), Dimension (string), Excel (string)"
+
 let CUSTODESGroundTruthPath = "../../../../data/analyses/CUSTODES/smell_detection_result.csv"
 
 type ExceLintStats = 
@@ -24,7 +26,7 @@ type ExceLintStats =
 type WorkbookStats =
     CsvProvider<Schema = WorkbookStatsSchema, HasHeaders=false>
 
-type CUSTODESGroundTruth = CsvProvider<CUSTODESGroundTruthPath>
+type CUSTODESGroundTruth = CsvProvider<Schema = CUSTODESGroundTruthSchema, HasHeaders=false>
 
 let ExceLintStatsHeaders = fsdTypeRegex.Replace(ExceLintStatsSchema, "") + "\n"
 

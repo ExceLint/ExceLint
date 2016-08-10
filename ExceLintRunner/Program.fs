@@ -16,8 +16,6 @@ open ExceLint
 
         let csv = new CSV.ExceLintStats([])
 
-        let groundTruth = CSV.CUSTODESGroundTruth.Load(CSV.CUSTODESGroundTruthPath)
-
         using (new StreamWriter(config.csv)) (fun sw ->
             
             // write headers

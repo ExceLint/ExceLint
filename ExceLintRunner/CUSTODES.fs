@@ -7,6 +7,23 @@
     open System.Text
     open System.Threading
 
+    type Tool =
+    | GroundTruth
+    | CUSTODES
+    | AmCheck
+    | UCheck
+    | Dimension
+    | Excel
+        member self.Accessor(row: CSV.CUSTODESGroundTruth.Row) =
+            match self with
+            | GroundTruth -> row.GroundTruth
+            | CUSTODES -> row.Custodes
+            | AmCheck -> row.AmCheck
+            | UCheck -> row.UCheck
+            | Dimension -> row.Dimension
+            | Excel -> row.Excel
+        static member All = [| GroundTruth; CUSTODES; AmCheck; UCheck; Dimension; Excel |]
+
     [<DllImport("kernel32.dll", CharSet = CharSet.Auto)>]
     extern int GetShortPathName(
         [<MarshalAs(UnmanagedType.LPTStr)>]
@@ -102,3 +119,38 @@
 
         member self.NumSmells = canonicalOutputHS.Count
         member self.Smells = canonicalOutputHS
+
+    let addresses(tool: Tool)(row: CSV.CUSTODESGroundTruth.Row)(path: string) : AST.Address[] =
+        // get cell address array
+        let cells = tool.Accessor(row).Replace(" ", "").Split(',')
+
+        // convert to real address references
+        Array.map (fun straddr ->
+            AST.Address.FromA1String(
+                straddr,
+                row.Worksheet,
+                row.Spreadsheet,
+                path
+            )
+        ) cells
+
+    type GroundTruth(folderPath: string) =
+        let raw = CSV.CUSTODESGroundTruth.Load(CSV.CUSTODESGroundTruthPath)
+
+        let d = new Dictionary<Tool,HashSet<AST.Address>>()
+
+        do
+            Seq.iter (fun (row: CSV.CUSTODESGroundTruth.Row) ->
+                Array.iter (fun tool ->
+                    if not (d.ContainsKey(tool)) then
+                        d.Add(CUSTODES, new HashSet<AST.Address>())
+
+                    let cells = addresses tool row folderPath
+
+                    Array.iter (fun addr ->
+                        d.[CUSTODES].Add(addr) |> ignore
+                    ) cells
+                ) Tool.All
+            ) raw.Rows
+
+        member self.Table = d
