@@ -26,9 +26,6 @@
     | STDERR of string
 
     let private runCommand(cpath: string)(args: string[]) : ShellResult =
-        STDOUT (COMWrapper.Application.runCommand(cpath, args))
-
-    let private runFSCommand(cpath: string)(args: string[]) : ShellResult =
         using(new Process()) (fun (p) ->
             p.StartInfo.FileName <- @"c:\windows\system32\cmd.exe"
             p.StartInfo.Arguments <- "/c \"" + cpath + " " + String.Join(" ", args) + "\" 2>&1"
@@ -37,25 +34,16 @@
             p.StartInfo.RedirectStandardError <- true
 
             let output = new StringBuilder()
-            let error = new StringBuilder()
 
             using(new AutoResetEvent(false)) (fun oWH ->
-                using(new AutoResetEvent(false)) (fun eWH ->
 
-                    // attach event handlers
+                    // attach event handler
                     p.OutputDataReceived.Add
                         (fun e ->
                             if (e.Data = null) then
                                 oWH.Set() |> ignore
                             else
                                 output.AppendLine(e.Data) |> ignore
-                        )
-                    p.ErrorDataReceived.Add
-                        (fun e ->
-                            if (e.Data = null) then
-                                eWH.Set() |> ignore
-                            else
-                                error.AppendLine(e.Data) |> ignore
                         )
 
                     // start process
@@ -68,15 +56,13 @@
                     // wait indefinitely for process to terminate
                     p.WaitForExit()
 
-                    // wait on handles
-                    if (oWH.WaitOne() && eWH.WaitOne()) then
-                        if p.ExitCode = 0 then
-                            STDOUT (output.ToString())
-                        else
-                            STDERR (output.ToString())
+                    // wait on handle
+                    oWH.WaitOne() |> ignore
+
+                    if p.ExitCode = 0 then
+                        STDOUT (output.ToString())
                     else
                         STDERR (output.ToString())
-                )
             )
         )
 
