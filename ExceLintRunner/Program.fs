@@ -73,16 +73,44 @@ open ExceLint
                         using (new StreamWriter(config.verbose_csv shortf)) (fun per_sw ->
                             let ranking = model.rankByFeatureSum()
 
+                            // convert to set
+                            let excelint_flags = new HashSet<AST.Address>(Array.map (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Key ) ranking)
+
+                            // append all ExceLint flagged cells
                             Array.mapi (fun i (kvp: KeyValuePair<AST.Address,double>) ->
+                                let addr = kvp.Key
                                 let per_row = CSV.WorkbookStats.Row(
-                                                    flaggedCellAddr = kvp.Key.A1FullyQualified(),
+                                                    flaggedCellAddr = addr.A1FullyQualified(),
+                                                    flaggedByExcelint = true,
+                                                    flaggedByCustodes = custodes.Smells.Contains(addr),
                                                     rank = i,
-                                                    score = kvp.Value
+                                                    score = kvp.Value,
+                                                    custodesTrueSmell = failwith "dunno"
                                                 )
 
                                 // append to streamwriter
                                 per_sw.Write (per_csv.Append([per_row]).SaveToString())
                             ) ranking |> ignore
+
+                            // HashSet difference is, annoyingly, side-effecting
+                            let except_excelint = new HashSet<AST.Address>(custodes.Smells)
+                            except_excelint.ExceptWith(excelint_flags)
+                            let except_excelint_arr = except_excelint |> Seq.toArray
+
+                            // append all remaining CUSTODES cells
+                            Array.map (fun (addr: AST.Address) ->
+                                let per_row = CSV.WorkbookStats.Row(
+                                                    flaggedCellAddr = addr.A1FullyQualified(),
+                                                    flaggedByExcelint = false,
+                                                    flaggedByCustodes = true,
+                                                    rank = 999999999,
+                                                    score = 0.0,
+                                                    custodesTrueSmell = failwith "dunno"
+                                                )
+
+                                // append to streamwriter
+                                per_sw.Write (per_csv.Append([per_row]).SaveToString())
+                            ) except_excelint_arr |> ignore
                         )
 
                     printfn "Analysis complete: %A" shortf

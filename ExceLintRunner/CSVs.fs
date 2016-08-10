@@ -10,7 +10,7 @@ type ExceLintStats =
     opt_addrmode_inference (bool), opt_weight_intrinsic_anom (bool), opt_weight_condition_set_sz (bool)", HasHeaders=false>
 
 type WorkbookStats =
-    CsvProvider<Schema = "flaggedCellAddr (string), rank (int), score (float)", HasHeaders=false>
+    CsvProvider<Schema = "flagged_cell_addr (string), flagged_by_excelint (bool), flagged_by_custodes (bool), rank (int), score (float), custodes_true_smell (bool)", HasHeaders=false>
 
 let ExceLintStatsHeaders = "benchmark_name,num_cells,num_formulas,sig_thresh,dep_time_ms,score_time_ms,\
 freq_time_ms,ranking_time_ms,causes_time_ms,conditioning_set_sz_time_ms,num_anom,num_custodes_smells,opt_cond_all_cells,\

@@ -97,4 +97,8 @@
                               ) cOutput
                               |> Seq.concat |> Seq.toArray
 
-        member self.NumSmells = cOutput.Count
+        // this will remove duplicates, if there are any
+        let canonicalOutputHS = new HashSet<AST.Address>(canonicalOutput)
+
+        member self.NumSmells = canonicalOutputHS.Count
+        member self.Smells = canonicalOutputHS
