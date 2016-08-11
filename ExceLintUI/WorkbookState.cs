@@ -461,7 +461,7 @@ namespace ExceLintUI
                 {
                     var model = mopt.Value;
                     Score[] scores = model.rankByFeatureSum();
-                    int cutoff = model.getSignificanceCutoff;
+                    int cutoff = model.Cutoff;
                     return new Analysis { scores = scores, ranOK = true, cutoff = cutoff, model = model, hasRun = true, dag = _dag };
                 }
             }

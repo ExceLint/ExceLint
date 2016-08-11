@@ -46,7 +46,8 @@
             else
                 failwith "ERROR: Formula-only analysis returns non-formulas."
 
-        member self.getSignificanceCutoff : int = analysis.cutoff
+        // note that this cutoff is INCLUSIVE
+        member self.Cutoff : int = analysis.cutoff
 
         member self.inspectSelectorFor(addr: AST.Address, sel: Scope.Selector, dag: Depends.DAG) : KeyValuePair<AST.Address,(string*double)[]>[] =
             let selcache = Scope.SelectorCache()
