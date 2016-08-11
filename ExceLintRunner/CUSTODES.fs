@@ -53,33 +53,31 @@
             let output = new StringBuilder()
 
             using(new AutoResetEvent(false)) (fun oWH ->
+                // attach event handler
+                p.OutputDataReceived.Add
+                    (fun e ->
+                        if (e.Data = null) then
+                            oWH.Set() |> ignore
+                        else
+                            output.AppendLine(e.Data) |> ignore
+                    )
 
-                    // attach event handler
-                    p.OutputDataReceived.Add
-                        (fun e ->
-                            if (e.Data = null) then
-                                oWH.Set() |> ignore
-                            else
-                                output.AppendLine(e.Data) |> ignore
-                        )
+                // start process
+                p.Start() |> ignore
 
-                    // start process
-                    p.Start() |> ignore
+                // begin listening
+                p.BeginOutputReadLine()
 
-                    // begin listening
-                    p.BeginOutputReadLine()
-                    p.BeginErrorReadLine()
+                // wait indefinitely for process to terminate
+                p.WaitForExit()
 
-                    // wait indefinitely for process to terminate
-                    p.WaitForExit()
+                // wait on handle
+                oWH.WaitOne() |> ignore
 
-                    // wait on handle
-                    oWH.WaitOne() |> ignore
-
-                    if p.ExitCode = 0 then
-                        STDOUT (output.ToString())
-                    else
-                        STDERR (output.ToString())
+                if p.ExitCode = 0 then
+                    STDOUT (output.ToString())
+                else
+                    STDERR (output.ToString())
             )
         )
 
