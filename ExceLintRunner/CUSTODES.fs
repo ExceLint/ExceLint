@@ -98,7 +98,7 @@
             AST.AddressMode.Absolute,
             AST.AddressMode.Absolute,
             worksheetname,
-            workbookname + ".xls",
+            (if workbookname.EndsWith(".xls") then workbookname else workbookname + ".xls"),
             path
         )
 

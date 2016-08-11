@@ -128,8 +128,11 @@ open ExceLint
                             ) (except_excelint |> Seq.toArray) |> ignore
 
                             // find true smells found by neither tool
-                            let true_smells_not_found_by_excelint = hs_difference truth.TrueSmells excelint_flags
-                            let true_smells_not_found_by_custodes = hs_difference truth.TrueSmells custodes.Smells
+                            let allcells_this_web = Array.filter (fun (addr: AST.Address) -> addr.WorkbookName = shortf) (model.AllCells |> Seq.toArray)
+                            let all_true_smells = Array.filter (fun (addr: AST.Address) -> addr.WorkbookName = shortf) (truth.TrueSmells |> Seq.toArray)
+                            let true_smells_this_wb = hs_intersection truth.TrueSmells model.AllCells
+                            let true_smells_not_found_by_excelint = hs_difference true_smells_this_wb excelint_flags
+                            let true_smells_not_found_by_custodes = hs_difference true_smells_this_wb custodes.Smells
                             let true_smells_not_found = hs_intersection true_smells_not_found_by_excelint true_smells_not_found_by_custodes
 
                             // append all true smells found by neither tool
@@ -153,10 +156,11 @@ open ExceLint
                             ) (true_smells_not_found |> Seq.toArray) |> ignore
 
                             // global stats
-                            let excelint_true_smells = hs_intersection excelint_flags truth.TrueSmells
-                            let custodes_true_smells = hs_intersection custodes.Smells truth.TrueSmells
-                            let excelint_excel_intersect = hs_intersection excelint_flags truth.Excel
-                            let custodes_excel_intersect = hs_intersection custodes.Smells truth.Excel
+                            let excel_this_wb = hs_intersection truth.Excel model.AllCells
+                            let excelint_true_smells = hs_intersection excelint_flags true_smells_this_wb
+                            let custodes_true_smells = hs_intersection custodes.Smells true_smells_this_wb
+                            let excelint_excel_intersect = hs_intersection excelint_flags excel_this_wb
+                            let custodes_excel_intersect = hs_intersection custodes.Smells excel_this_wb
 
                             let row = CSV.ExceLintStats.Row(
                                         benchmarkName = shortf,
@@ -174,11 +178,11 @@ open ExceLint
                                         excelintTrueSmellsFound = excelint_true_smells.Count,
                                         custodesTrueSmellsFound = custodes_true_smells.Count,
                                         excelintCustodesTrueSmellIntersect = (hs_intersection excelint_true_smells custodes_true_smells).Count,
-                                        trueSmellsMissedByBoth = (hs_difference truth.TrueSmells (hs_union excelint_true_smells custodes_true_smells)).Count,
-                                        excelFlags = truth.Excel.Count,
+                                        trueSmellsMissedByBoth = (hs_difference true_smells_this_wb (hs_union excelint_true_smells custodes_true_smells)).Count,
+                                        excelFlags = excel_this_wb.Count,
                                         excelintExcelIntersect = excelint_excel_intersect.Count,
                                         custodesExcelIntersect = custodes_excel_intersect.Count,
-                                        excelFlagsMissedByBoth = (hs_difference truth.Excel (hs_union excelint_excel_intersect custodes_excel_intersect)).Count,
+                                        excelFlagsMissedByBoth = (hs_difference excel_this_wb (hs_union excelint_excel_intersect custodes_excel_intersect)).Count,
                                         optCondAllCells = config.FeatureConf.IsEnabledOptCondAllCells,
                                         optCondRows = config.FeatureConf.IsEnabledOptCondRows,
                                         optCondCols = config.FeatureConf.IsEnabledOptCondCols,
