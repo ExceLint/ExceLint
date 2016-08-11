@@ -106,8 +106,15 @@
         // convert to parcel addresses and flatten
         let canonicalOutput = Seq.map (fun (pair: KeyValuePair<Worksheet,Address[]>) ->
                                 let worksheetname = pair.Key
-                                Array.map (fun (a: Address) ->
-                                    AST.Address.FromA1String(a, worksheetname, workbookname, path)
+                                Array.map (fun (addrstr: Address) ->
+                                    AST.Address.FromA1StringForceMode(
+                                        addrstr.ToUpper(),
+                                        AST.AddressMode.Absolute,
+                                        AST.AddressMode.Absolute,
+                                        worksheetname + ".xls",
+                                        workbookname,
+                                        path
+                                    )
                                 ) pair.Value
                               ) cOutput
                               |> Seq.concat |> Seq.toArray
@@ -128,15 +135,19 @@
             let cells = cells_str.Split(',')
 
             // convert to real address references
-            Array.map (fun straddr ->
-                if String.IsNullOrEmpty(straddr) then
+            Array.map (fun addrstr ->
+                if String.IsNullOrEmpty(addrstr) then
                     None
                 else
                     Some(
-                        AST.Address.FromA1String(
-                            straddr.ToUpper(),
+                        // we force the mode to absolute because
+                        // that's how Depends reads them
+                        AST.Address.FromA1StringForceMode(
+                            addrstr.ToUpper(),
+                            AST.AddressMode.Absolute,
+                            AST.AddressMode.Absolute,
                             row.Worksheet,
-                            row.Spreadsheet,
+                            row.Spreadsheet + ".xls",
                             path
                         )
                     )
