@@ -169,3 +169,9 @@
         member self.isTrueSmell(addr: AST.Address) : bool = d.[Tool.GroundTruth].Contains(addr)
         member self.differs(addr: AST.Address)(custodesFlagged: bool) : bool =
             custodesFlagged = d.[Tool.CUSTODES].Contains(addr) 
+        member self.TrueSmells = self.Table.[Tool.GroundTruth]
+        member self.CUSTODES = self.Table.[Tool.CUSTODES]
+        member self.AmCheck = self.Table.[Tool.AmCheck]
+        member self.UCheck = self.Table.[Tool.UCheck]
+        member self.Dimension = self.Table.[Tool.Dimension]
+        member self.Excel = self.Table.[Tool.Excel]
