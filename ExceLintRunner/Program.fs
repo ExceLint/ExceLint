@@ -128,8 +128,8 @@ open ExceLint
                             ) (except_excelint |> Seq.toArray) |> ignore
 
                             // find true smells found by neither tool
-                            let true_smells_not_found_by_excelint = hs_difference (truth.Table.[CUSTODES.GroundTruth]) excelint_flags
-                            let true_smells_not_found_by_custodes = hs_difference (truth.Table.[CUSTODES.GroundTruth]) custodes.Smells
+                            let true_smells_not_found_by_excelint = hs_difference truth.TrueSmells excelint_flags
+                            let true_smells_not_found_by_custodes = hs_difference truth.TrueSmells custodes.Smells
                             let true_smells_not_found = hs_intersection true_smells_not_found_by_excelint true_smells_not_found_by_custodes
 
                             // append all true smells found by neither tool
