@@ -89,8 +89,6 @@
         let invocation = fun () -> runCommand (shortPath javaPath) [| "-jar"; shortPath custodesPath; shortPath spreadsheet; shortPath outputPath; |]
         match invocation() with
         | STDOUT output ->
-            // debug
-            printfn "DEBUG:\n\n%A" output
             parse output
         | STDERR error -> failwith error
 
@@ -121,18 +119,29 @@
         member self.Smells = canonicalOutputHS
 
     let addresses(tool: Tool)(row: CSV.CUSTODESGroundTruth.Row)(path: string) : AST.Address[] =
-        // get cell address array
-        let cells = tool.Accessor(row).Replace(" ", "").Split(',')
+        let cells_str = tool.Accessor(row).Replace(" ", "")
 
-        // convert to real address references
-        Array.map (fun straddr ->
-            AST.Address.FromA1String(
-                straddr,
-                row.Worksheet,
-                row.Spreadsheet,
-                path
-            )
-        ) cells
+        if String.IsNullOrEmpty(cells_str) then
+            [||]
+        else
+            // get cell address array
+            let cells = cells_str.Split(',')
+
+            // convert to real address references
+            Array.map (fun straddr ->
+                if String.IsNullOrEmpty(straddr) then
+                    None
+                else
+                    Some(
+                        AST.Address.FromA1String(
+                            straddr.ToUpper(),
+                            row.Worksheet,
+                            row.Spreadsheet,
+                            path
+                        )
+                    )
+            ) cells
+            |> Array.choose id
 
     type GroundTruth(folderPath: string) =
         let raw = CSV.CUSTODESGroundTruth.Load(CSV.CUSTODESGroundTruthPath)
@@ -143,14 +152,17 @@
             Seq.iter (fun (row: CSV.CUSTODESGroundTruth.Row) ->
                 Array.iter (fun tool ->
                     if not (d.ContainsKey(tool)) then
-                        d.Add(CUSTODES, new HashSet<AST.Address>())
+                        d.Add(tool, new HashSet<AST.Address>())
 
                     let cells = addresses tool row folderPath
 
                     Array.iter (fun addr ->
-                        d.[CUSTODES].Add(addr) |> ignore
+                        d.[tool].Add(addr) |> ignore
                     ) cells
                 ) Tool.All
             ) raw.Rows
 
         member self.Table = d
+        member self.isTrueSmell(addr: AST.Address) : bool = d.[Tool.GroundTruth].Contains(addr)
+        member self.differs(addr: AST.Address)(custodesFlagged: bool) : bool =
+            custodesFlagged = d.[Tool.CUSTODES].Contains(addr) 

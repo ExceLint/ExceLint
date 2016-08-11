@@ -16,6 +16,8 @@ open ExceLint
 
         let csv = new CSV.ExceLintStats([])
 
+        let truth = new CUSTODES.GroundTruth(config.InputDirectory)
+
         using (new StreamWriter(config.csv)) (fun sw ->
             
             // write headers
@@ -82,10 +84,11 @@ open ExceLint
                                 let per_row = CSV.WorkbookStats.Row(
                                                     flaggedCellAddr = addr.A1FullyQualified(),
                                                     flaggedByExcelint = true,
-                                                    flaggedByCustodes = custodes.Smells.Contains(addr),
+                                                    flaggedByCustodes = custodes.Smells.Contains addr,
+                                                    cliSameAsV1 = truth.differs addr (custodes.Smells.Contains addr),
                                                     rank = i,
                                                     score = kvp.Value,
-                                                    custodesTrueSmell = failwith "dunno"
+                                                    custodesTrueSmell = truth.isTrueSmell addr
                                                 )
 
                                 // append to streamwriter
@@ -103,9 +106,10 @@ open ExceLint
                                                     flaggedCellAddr = addr.A1FullyQualified(),
                                                     flaggedByExcelint = false,
                                                     flaggedByCustodes = true,
+                                                    cliSameAsV1 = truth.differs addr (custodes.Smells.Contains addr),
                                                     rank = 999999999,
                                                     score = 0.0,
-                                                    custodesTrueSmell = failwith "dunno"
+                                                    custodesTrueSmell = truth.isTrueSmell addr
                                                 )
 
                                 // append to streamwriter
