@@ -87,7 +87,10 @@ open ExceLint
                                 Array.mapi (fun i (kvp: KeyValuePair<AST.Address,double>) ->
                                     let addr = kvp.Key
                                     let per_row = CSV.WorkbookStats.Row(
-                                                        flaggedCellAddr = addr.A1FullyQualified(),
+                                                        path = addr.A1Path(),
+                                                        workbook = addr.WorkbookName,
+                                                        worksheet = addr.WorksheetName,
+                                                        addr = addr.A1Local(),
                                                         flaggedByExcelint = true,
                                                         flaggedByCustodes = custodes.Smells.Contains addr,
                                                         cliSameAsV1 = truth.differs addr (custodes.Smells.Contains addr),
@@ -105,10 +108,17 @@ open ExceLint
                                 except_excelint.ExceptWith(excelint_flags)
                                 let except_excelint_arr = except_excelint |> Seq.toArray
 
+                                // warn user if CUSTODES analysis contains cells not analyzed by ExceLint
+                                if except_excelint_arr.Length <> 0 then
+                                    printfn "WARNING: CUSTODES analysis contains %d cells not analyzed by ExceLint." (except_excelint_arr.Length) 
+
                                 // append all remaining CUSTODES cells
                                 Array.map (fun (addr: AST.Address) ->
                                     let per_row = CSV.WorkbookStats.Row(
-                                                        flaggedCellAddr = addr.A1FullyQualified(),
+                                                        path = addr.A1Path(),
+                                                        workbook = addr.WorkbookName,
+                                                        worksheet = addr.WorksheetName,
+                                                        addr = addr.A1Local(),
                                                         flaggedByExcelint = false,
                                                         flaggedByCustodes = true,
                                                         cliSameAsV1 = truth.differs addr (custodes.Smells.Contains addr),
