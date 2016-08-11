@@ -99,7 +99,7 @@
             AST.AddressMode.Absolute,
             worksheetname,
             (if workbookname.EndsWith(".xls") then workbookname else workbookname + ".xls"),
-            path
+            IO.Path.GetFullPath(path)   // ensure absolute path
         )
 
     type Output(spreadsheet: string, custodesPath: string, javaPath: string) =

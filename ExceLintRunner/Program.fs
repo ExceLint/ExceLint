@@ -105,7 +105,12 @@ open ExceLint
 
                             // warn user if CUSTODES analysis contains cells not analyzed by ExceLint
                             if except_excelint.Count <> 0 then
-                                printfn "WARNING: CUSTODES analysis contains %d cells not analyzed by ExceLint." (except_excelint.Count) 
+                                let dag_all_comp = new HashSet<AST.Address>(model.DAG.allComputationCells())
+                                let ee_formula_related = Seq.filter (fun addr -> dag_all_comp.Contains addr) except_excelint |> Seq.toArray
+                                printfn "WARNING: CUSTODES analysis contains %d cells not analyzed by ExceLint," (except_excelint.Count)
+                                printfn "         %d of which are formula-related (either inputs or formulas):" ee_formula_related.Length
+                                if ee_formula_related.Length > 0 then
+                                    Array.iter (fun (addr: AST.Address) -> printfn "MISSING: %A" (addr.A1FullyQualified())) ee_formula_related
 
                             // append all remaining CUSTODES cells
                             Array.map (fun (addr: AST.Address) ->
@@ -128,8 +133,6 @@ open ExceLint
                             ) (except_excelint |> Seq.toArray) |> ignore
 
                             // find true smells found by neither tool
-                            let allcells_this_web = Array.filter (fun (addr: AST.Address) -> addr.WorkbookName = shortf) (model.AllCells |> Seq.toArray)
-                            let all_true_smells = Array.filter (fun (addr: AST.Address) -> addr.WorkbookName = shortf) (truth.TrueSmells |> Seq.toArray)
                             let true_smells_this_wb = hs_intersection truth.TrueSmells model.AllCells
                             let true_smells_not_found_by_excelint = hs_difference true_smells_this_wb excelint_flags
                             let true_smells_not_found_by_custodes = hs_difference true_smells_this_wb custodes.Smells
@@ -199,6 +202,9 @@ open ExceLint
 
                         printfn "Analysis complete: %A" shortf
                                 
+                        printfn "Press Enter to continue."
+                        Console.ReadLine() |> ignore
+
                     | None ->
                         printfn "Analysis failed: %A" shortf
             )

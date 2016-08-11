@@ -9,6 +9,8 @@
     type ErrorModel(input: Input, analysis: Analysis, config: FeatureConf) =
         member self.AllCells : HashSet<AST.Address> = new HashSet<AST.Address>(input.dag.allCells())
 
+        member self.DAG : Depends.DAG = input.dag
+
         member self.ScoreTimeInMilliseconds : int64 = analysis.score_time
 
         member self.FrequencyTable : Pipeline.FreqTable = analysis.ftable
