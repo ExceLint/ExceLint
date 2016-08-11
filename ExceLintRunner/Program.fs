@@ -73,6 +73,11 @@ open ExceLint
                             let per_csv = new CSV.WorkbookStats([])
 
                             using (new StreamWriter(config.verbose_csv shortf)) (fun per_sw ->
+                                // write header
+                                // write headers
+                                per_sw.Write(CSV.WorkbookStatsHeaders)
+                                per_sw.Flush()
+
                                 let ranking = model.rankByFeatureSum()
 
                                 // convert to set
