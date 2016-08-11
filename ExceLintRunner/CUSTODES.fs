@@ -90,6 +90,18 @@
             parse output
         | STDERR error -> failwith error
 
+    let CUSTODESToAddress(addrstr: Address)(worksheetname: string)(workbookname: string)(path: string) : AST.Address =
+        // we force the mode to absolute because
+        // that's how Depends reads them
+        AST.Address.FromA1StringForceMode(
+            addrstr.ToUpper(),
+            AST.AddressMode.Absolute,
+            AST.AddressMode.Absolute,
+            worksheetname,
+            workbookname + ".xls",
+            path
+        )
+
     type Output(spreadsheet: string, custodesPath: string, javaPath: string) =
         let absSpreadsheetPath = IO.Path.GetFullPath(spreadsheet)
         let absCustodesPath = IO.Path.GetFullPath(custodesPath)
@@ -105,14 +117,7 @@
         let canonicalOutput = Seq.map (fun (pair: KeyValuePair<Worksheet,Address[]>) ->
                                 let worksheetname = pair.Key
                                 Array.map (fun (addrstr: Address) ->
-                                    AST.Address.FromA1StringForceMode(
-                                        addrstr.ToUpper(),
-                                        AST.AddressMode.Absolute,
-                                        AST.AddressMode.Absolute,
-                                        worksheetname + ".xls",
-                                        workbookname,
-                                        path
-                                    )
+                                    CUSTODESToAddress addrstr worksheetname workbookname path
                                 ) pair.Value
                               ) cOutput
                               |> Seq.concat |> Seq.toArray
@@ -137,18 +142,7 @@
                 if String.IsNullOrEmpty(addrstr) then
                     None
                 else
-                    Some(
-                        // we force the mode to absolute because
-                        // that's how Depends reads them
-                        AST.Address.FromA1StringForceMode(
-                            addrstr.ToUpper(),
-                            AST.AddressMode.Absolute,
-                            AST.AddressMode.Absolute,
-                            row.Worksheet,
-                            row.Spreadsheet + ".xls",
-                            path
-                        )
-                    )
+                    Some(CUSTODESToAddress addrstr row.Worksheet row.Spreadsheet path)
             ) cells
             |> Array.choose id
 
