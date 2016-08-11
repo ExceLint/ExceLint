@@ -202,12 +202,12 @@ open ExceLint
 
                         printfn "Analysis complete: %A" shortf
                                 
-                        printfn "Press Enter to continue."
-                        Console.ReadLine() |> ignore
-
                     | None ->
                         printfn "Analysis failed: %A" shortf
             )
         )
+
+        printfn "Press Enter to continue."
+        Console.ReadLine() |> ignore
 
         0
