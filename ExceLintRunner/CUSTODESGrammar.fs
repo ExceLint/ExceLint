@@ -69,7 +69,7 @@
         pstring "---Analysis Finished---" .>> spaces
         <!> "smellEnd"
     let private smells : P<Address[]> =
-        smellStart >>. (smellsFound >>. (smellCells .>> smellEnd))
+        smellStart >>. ((attempt smellsFound) >>. (smellCells .>> smellEnd))
         <!> "smells"
 
     let private worksheetSomeSmells : P<CUSTODESSmells> =
