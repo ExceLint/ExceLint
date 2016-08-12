@@ -7,7 +7,9 @@ open ExceLint
     type Stats = {
         shortname: string;
         threshold: double;
-        except_excelint: HashSet<AST.Address>;
+        custodes_flagged: HashSet<AST.Address>;
+        excelint_not_custodes: HashSet<AST.Address>;
+        custodes_not_excelint: HashSet<AST.Address>;
         true_smells_this_wb : HashSet<AST.Address>;
         true_smells_not_found_by_excelint: HashSet<AST.Address>;
         true_smells_not_found_by_custodes: HashSet<AST.Address>;
@@ -34,6 +36,13 @@ open ExceLint
         hs3.UnionWith(hs2)
         hs3
 
+    let rankToSet(ranking: Pipeline.Ranking)(model: ErrorModel) : HashSet<AST.Address> =
+        Array.mapi (fun i (kvp: KeyValuePair<AST.Address,double>) -> (i, kvp.Key)) ranking
+        |> Array.filter (fun (i,e) -> i <= model.Cutoff)
+        |> Array.map (fun (i,e) -> e)
+        |> (fun arr -> new HashSet<AST.Address>(arr))
+
+
     let per_append_excelint(sw: StreamWriter)(csv: CSV.WorkbookStats)(truth: CUSTODES.GroundTruth)(custodes: CUSTODES.Output)(model: ErrorModel)(ranking: Pipeline.Ranking) : unit =
         // append all ExceLint flagged cells
         Array.mapi (fun i (kvp: KeyValuePair<AST.Address,double>) ->
@@ -56,7 +65,7 @@ open ExceLint
             sw.Write (csv.Append([per_row]).SaveToString())
         ) ranking |> ignore
 
-    let per_append_custodes(sw: StreamWriter)(csv: CSV.WorkbookStats)(truth: CUSTODES.GroundTruth)(custodes: CUSTODES.Output)(model: ErrorModel)(ranking: Pipeline.Ranking)(except_excelint: HashSet<AST.Address>) : unit =
+    let per_append_custodes(sw: StreamWriter)(csv: CSV.WorkbookStats)(truth: CUSTODES.GroundTruth)(custodes: CUSTODES.Output)(model: ErrorModel)(ranking: Pipeline.Ranking)(custodes_not_excelint: HashSet<AST.Address>) : unit =
         // append all remaining CUSTODES cells
         Array.map (fun (addr: AST.Address) ->
             let per_row = CSV.WorkbookStats.Row(
@@ -75,7 +84,7 @@ open ExceLint
 
             // append to streamwriter
             sw.Write (csv.Append([per_row]).SaveToString())
-        ) (except_excelint |> Seq.toArray) |> ignore
+        ) (custodes_not_excelint |> Seq.toArray) |> ignore
 
     let per_append_true_smells(sw: StreamWriter)(csv: CSV.WorkbookStats)(truth: CUSTODES.GroundTruth)(custodes: CUSTODES.Output)(model: ErrorModel)(ranking: Pipeline.Ranking)(true_smells_not_found: HashSet<AST.Address>) : unit =
         // append all true smells found by neither tool
@@ -98,15 +107,21 @@ open ExceLint
             sw.Write (csv.Append([per_row]).SaveToString())
         ) (true_smells_not_found |> Seq.toArray) |> ignore
 
-    let per_append_debug(sw: StreamWriter)(csv: CSV.DebugInfo)(graph: Depends.DAG)(except_excelint: HashSet<AST.Address>) : unit =
+    let per_append_debug(sw: StreamWriter)(csv: CSV.DebugInfo)(model: ErrorModel)(custodes_smells: HashSet<AST.Address>)(config: Args.Config)(ranking: Pipeline.Ranking) : unit =
         // warn user if CUSTODES analysis contains cells not analyzed by ExceLint
-        if except_excelint.Count <> 0 then
-            let all_comp = new HashSet<AST.Address>(graph.allComputationCells())
-            let ee_formula_related = Seq.filter (fun addr -> all_comp.Contains addr) except_excelint |> Seq.toArray
-            printfn "WARNING: CUSTODES analysis contains %d cells not analyzed by ExceLint," (except_excelint.Count)
-            printfn "         %d of which are formula-related (either inputs or formulas)." ee_formula_related.Length
-            if ee_formula_related.Length > 0 then
-                printfn "         Writing to debug.csv."
+        let rset = Array.map (fun (kvp: KeyValuePair<AST.Address, double>) -> kvp.Key) ranking
+                   |> (fun arr -> new HashSet<AST.Address>(arr))
+        let not_excelint_at_all = hs_difference custodes_smells rset
+
+        if not_excelint_at_all.Count <> 0 then
+            // are these related to formulas?  if so, this is a sign that something went wrong
+            let all_comp = new HashSet<AST.Address>(model.DependenceGraph.allComputationCells())
+            let missed_formula_related = hs_intersection not_excelint_at_all all_comp
+
+            printfn "WARNING: CUSTODES analysis contains %d cells not analyzed by ExceLint," (not_excelint_at_all.Count)
+            printfn "         %d of which are formula-related (either inputs or formulas)." missed_formula_related.Count
+            if missed_formula_related.Count > 0 then
+                printfn "         Writing to %s" config.DebugPath
 
                 // append all true smells found by neither tool
                 Array.map (fun (addr: AST.Address) ->
@@ -119,7 +134,7 @@ open ExceLint
 
                     // append to streamwriter
                     sw.Write (csv.Append([per_row]).SaveToString())
-                ) (ee_formula_related |> Seq.toArray) |> ignore
+                ) (missed_formula_related |> Seq.toArray) |> ignore
 
     let append_stats(stats: Stats)(sw: StreamWriter)(csv: CSV.ExceLintStats)(custodes: CUSTODES.Output)(model: ErrorModel)(config: Args.Config) : unit =
         // write stats
@@ -135,7 +150,7 @@ open ExceLint
                     causesTimeMs = model.CausesTimeInMilliseconds,
                     conditioningSetSzTimeMs = model.ConditioningSetSizeTimeInMilliseconds,
                     numAnom = model.Cutoff,
-                    numCustodesSmells = custodes.NumSmells,
+                    numCustodesSmells = stats.custodes_flagged.Count,
                     trueSmells = stats.true_smells_this_wb.Count,
                     excelintTrueSmellsFound = stats.excelint_true_smells.Count,
                     custodesTrueSmellsFound = stats.custodes_true_smells.Count,
@@ -158,12 +173,6 @@ open ExceLint
         sw.Write (csv.Append([row]).SaveToString())
         sw.Flush()
 
-    let rankToSet(ranking: Pipeline.Ranking)(model: ErrorModel) : HashSet<AST.Address> =
-        Array.mapi (fun i (kvp: KeyValuePair<AST.Address,double>) -> (i, kvp.Key)) ranking
-        |> Array.filter (fun (i,e) -> i <= model.Cutoff)
-        |> Array.map (fun (i,e) -> e)
-        |> (fun arr -> new HashSet<AST.Address>(arr))
-
     [<EntryPoint>]
     let main argv = 
         let config = Args.processArgs argv
@@ -185,7 +194,7 @@ open ExceLint
             let truth = new CUSTODES.GroundTruth(config.InputDirectory)
 
             using (new StreamWriter(config.csv)) (fun sw ->
-                using (new StreamWriter(IO.Path.Combine(config.OutputPath, "debug.csv"))) (fun debug_sw ->
+                using (new StreamWriter(config.DebugPath)) (fun debug_sw ->
             
                     // write headers
                     sw.Write(CSV.ExceLintStatsHeaders)
@@ -225,8 +234,8 @@ open ExceLint
                                 // get the set of cells flagged by ExceLint
                                 let excelint_flags = rankToSet ranking model
 
-                                // find difference between ExceLint and CUSTODES
-                                let except_excelint = hs_difference excelint_flags custodes.Smells;
+                                // get the set of cells flagged by CUSTODES
+                                let custodes_this_wb = hs_intersection truth.CUSTODES model.AllCells
 
                                 // find true smells found by neither tool
                                 let true_smells_this_wb = hs_intersection truth.TrueSmells model.AllCells
@@ -244,7 +253,9 @@ open ExceLint
                                 let stats = {
                                     shortname = shortf;
                                     threshold = thresh;
-                                    except_excelint = except_excelint;
+                                    custodes_flagged = custodes_this_wb;
+                                    excelint_not_custodes = hs_difference excelint_flags custodes.Smells
+                                    custodes_not_excelint = hs_difference custodes.Smells excelint_flags
                                     true_smells_this_wb = true_smells_this_wb;
                                     true_smells_not_found_by_excelint = true_smells_not_found_by_excelint;
                                     true_smells_not_found_by_custodes = true_smells_not_found_by_custodes;
@@ -258,14 +269,14 @@ open ExceLint
 
                                 // write to per-workbook CSV
                                 per_append_excelint per_sw per_csv truth custodes model ranking
-                                per_append_custodes per_sw per_csv truth custodes model ranking except_excelint
+                                per_append_custodes per_sw per_csv truth custodes model ranking stats.excelint_not_custodes
                                 per_append_true_smells per_sw per_csv truth custodes model ranking true_smells_not_found
 
                                 // write overall stats to CSV
                                 append_stats stats sw csv custodes model config
 
                                 // sanity check
-                                per_append_debug debug_sw debug_csv graph except_excelint
+                                per_append_debug debug_sw debug_csv model stats.custodes_flagged config ranking
                             )
 
                             printfn "Analysis complete: %A" shortf

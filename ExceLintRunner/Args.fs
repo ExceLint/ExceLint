@@ -13,7 +13,7 @@ open System.Text.RegularExpressions
         member self.CustodesPath = cpath
         member self.JavaPath = jpath
         member self.InputDirectory = dpath
-        member self.OutputPath = opath
+        member self.DebugPath = Path.Combine(opath, "debug.csv")
 
     let usage() : unit =
         printfn "ExceLintRunner.exe [input directory] [output path] [java path] [opt_verbose] [opt1 ... opt7]"
