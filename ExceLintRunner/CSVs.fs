@@ -9,6 +9,7 @@ let fsdTypeRegex = new Regex(" \([a-z0-9]+\)", RegexOptions.Compiled)
 let private ExceLintStatsSchema = "benchmark_name (string), num_cells (int), num_formulas (int),\
     sig_thresh (float), dep_time_ms (int64), score_time_ms (int64), freq_time_ms (int64), ranking_time_ms (int64),\
     causes_time_ms (int64), conditioning_set_sz_time_ms (int64), num_anom (int), num_custodes_smells (int),\
+    true_smells (int),\
     excelint_true_smells_found (int), custodes_true_smells_found (int), excelint_custodes_true_smell_intersect (int),\
     true_smells_missed_by_both (int), excel_flags (int), excelint_excel_intersect (int), custodes_excel_intersect (int),\
     excel_flags_missed_by_both (int),\
@@ -19,7 +20,10 @@ let private ExceLintStatsSchema = "benchmark_name (string), num_cells (int), num
 let private WorkbookStatsSchema = "path (string), workbook (string), worksheet (string), addr (string), flagged_by_excelint (bool), flagged_by_custodes (bool), flagged_by_excel (bool), cli_same_as_v1 (bool), rank (int), score (float), custodes_true_smell (bool)"
 
 [<Literal>]
-let CUSTODESGroundTruthSchema = "Index (int),Spreadsheet (string), Worksheet (string), GroundTruth (string), Custodes (string), AmCheck (string), UCheck (string), Dimension (string), Excel (string)"
+let private CUSTODESGroundTruthSchema = "Index (int),Spreadsheet (string), Worksheet (string), GroundTruth (string), Custodes (string), AmCheck (string), UCheck (string), Dimension (string), Excel (string)"
+
+[<Literal>]
+let private DebugInfoSchema = "path (string), workbook (string), worksheet (string), addr (string)"
 
 let CUSTODESGroundTruthPath = "../../../../data/analyses/CUSTODES/smell_detection_result.csv"
 
@@ -31,6 +35,12 @@ type WorkbookStats =
 
 type CUSTODESGroundTruth = CsvProvider<Schema = CUSTODESGroundTruthSchema, HasHeaders=false>
 
-let ExceLintStatsHeaders = fsdTypeRegex.Replace(ExceLintStatsSchema, "") + "\n"
+type DebugInfo = CsvProvider<Schema = DebugInfoSchema, HasHeaders=false>
 
-let WorkbookStatsHeaders = fsdTypeRegex.Replace(WorkbookStatsSchema, "") + "\n"
+let private headers(schema: string) : string = fsdTypeRegex.Replace(schema, "") + "\n"
+
+let ExceLintStatsHeaders = headers ExceLintStatsSchema
+
+let WorkbookStatsHeaders = headers WorkbookStatsSchema
+
+let DebugInfoHeaders = headers DebugInfoSchema
