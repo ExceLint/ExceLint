@@ -54,7 +54,7 @@ open ExceLint
                                 addr = addr.A1Local(),
                                 flaggedByExcelint = (i <= model.Cutoff),
                                 flaggedByCustodes = custodes.Smells.Contains addr,
-                                flaggedByExcel = truth.Excel.Contains addr,
+                                flaggedByExcel = truth.isFlaggedByExcel(addr),
                                 cliSameAsV1 = truth.differs addr (custodes.Smells.Contains addr),
                                 rank = i,
                                 score = kvp.Value,
@@ -75,7 +75,7 @@ open ExceLint
                                 addr = addr.A1Local(),
                                 flaggedByExcelint = false,
                                 flaggedByCustodes = true,
-                                flaggedByExcel = truth.Excel.Contains addr,
+                                flaggedByExcel = truth.isFlaggedByExcel(addr),
                                 cliSameAsV1 = truth.differs addr (custodes.Smells.Contains addr),
                                 rank = 999999999,
                                 score = 0.0,
@@ -96,7 +96,7 @@ open ExceLint
                                 addr = addr.A1Local(),
                                 flaggedByExcelint = false,
                                 flaggedByCustodes = false,
-                                flaggedByExcel = truth.Excel.Contains addr,
+                                flaggedByExcel = truth.isFlaggedByExcel(addr),
                                 cliSameAsV1 = truth.differs addr (custodes.Smells.Contains addr),
                                 rank = 999999999,
                                 score = 0.0,
@@ -234,28 +234,33 @@ open ExceLint
                                 // get the set of cells flagged by ExceLint
                                 let excelint_flags = rankToSet ranking model
 
+                                // get workbook selector
+                                let this_wb = ranking.[0].Key.WorkbookName
+
                                 // get the set of cells flagged by CUSTODES
-                                let custodes_this_wb = hs_intersection truth.CUSTODES model.AllCells
+                                let custodes_flags = custodes.Smells
 
                                 // find true smells found by neither tool
-                                let true_smells_this_wb = hs_intersection truth.TrueSmells model.AllCells
+                                let true_smells_this_wb = truth.TrueSmellsbyWorkbook this_wb
                                 let true_smells_not_found_by_excelint = hs_difference true_smells_this_wb excelint_flags
-                                let true_smells_not_found_by_custodes = hs_difference true_smells_this_wb custodes.Smells
+                                let true_smells_not_found_by_custodes = hs_difference true_smells_this_wb custodes_flags
                                 let true_smells_not_found = hs_intersection true_smells_not_found_by_excelint true_smells_not_found_by_custodes
 
                                 // overall stats
-                                let excel_this_wb = hs_intersection truth.Excel model.AllCells
+                                let excel_this_wb = truth.ExcelbyWorkbook this_wb
                                 let excelint_true_smells = hs_intersection excelint_flags true_smells_this_wb
-                                let custodes_true_smells = hs_intersection custodes.Smells true_smells_this_wb
+                                assert (excelint_true_smells.IsSubsetOf(excelint_flags))
+                                let custodes_true_smells = hs_intersection custodes_flags true_smells_this_wb
+                                assert (custodes_true_smells.IsSubsetOf(custodes_flags))
                                 let excelint_excel_intersect = hs_intersection excelint_flags excel_this_wb
-                                let custodes_excel_intersect = hs_intersection custodes.Smells excel_this_wb
+                                let custodes_excel_intersect = hs_intersection custodes_flags excel_this_wb
 
                                 let stats = {
                                     shortname = shortf;
                                     threshold = thresh;
-                                    custodes_flagged = custodes_this_wb;
-                                    excelint_not_custodes = hs_difference excelint_flags custodes.Smells
-                                    custodes_not_excelint = hs_difference custodes.Smells excelint_flags
+                                    custodes_flagged = custodes_flags;
+                                    excelint_not_custodes = hs_difference excelint_flags custodes_flags;
+                                    custodes_not_excelint = hs_difference custodes_flags excelint_flags;
                                     true_smells_this_wb = true_smells_this_wb;
                                     true_smells_not_found_by_excelint = true_smells_not_found_by_excelint;
                                     true_smells_not_found_by_custodes = true_smells_not_found_by_custodes;
