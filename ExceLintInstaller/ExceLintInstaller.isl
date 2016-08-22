@@ -2629,7 +2629,7 @@
 		<col def="I2">ISSetupLocation</col>
 		<col def="S255">ISReleaseFlags</col>
 		<row><td>_5610F6EE_A9AF_41B5_9F0D_BD10A8516CD0_</td><td>Visual Studio 2010 Tools for Office Runtime.prq</td><td/><td/><td/></row>
-		<row><td>_F6178C51_5E27_4A8B_AEEA_AF51D94D896A_</td><td>Microsoft .NET Framework 4.0 Full.prq</td><td/><td/><td/></row>
+		<row><td>_9890E9C6_3A4A_47E0_A38D_F7A46EC3AE59_</td><td>Microsoft .NET Framework 4.6.1 Full.prq</td><td/><td/><td/></row>
 	</table>
 
 	<table name="ISSetupType">
@@ -4013,7 +4013,7 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>ISTheme</td><td>InstallShield Blue.theme</td></row>
 		<row><td>ISUSLock</td><td>{97422647-874A-4003-8F18-217B3F07CABB}</td></row>
 		<row><td>ISUSSignature</td><td>{6C6D2E51-CCA7-43E9-8180-5215C4A6CF45}</td></row>
-		<row><td>ISVisitedViews</td><td>viewAssistant,viewISToday,viewProject,viewAppFiles,viewShortcuts,viewRelease,viewObjects,viewSystemSearch,viewUpgradePaths</td></row>
+		<row><td>ISVisitedViews</td><td>viewAssistant,viewISToday,viewProject,viewAppFiles,viewShortcuts,viewRelease,viewObjects,viewSystemSearch,viewUpgradePaths,viewCustomActions</td></row>
 		<row><td>Limited</td><td>1</td></row>
 		<row><td>LockPermissionMode</td><td>1</td></row>
 		<row><td>MsiExecCmdLineOptions</td><td/></row>
