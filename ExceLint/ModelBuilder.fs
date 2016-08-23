@@ -545,16 +545,33 @@
                                       |> Array.map (fun (pair: KeyValuePair<AST.Address,double>) -> (pair.Key,pair.Value))
                                       |> toDict
 
+                        let rank_positions = analysis.ranking
+                                             |> Array.mapi (fun i (pair: KeyValuePair<AST.Address,double>) -> (pair.Key, i))
+                                             |> toDict
+
                         // get all the formulas that ref each cell
                         let refss = Array.map (fun i -> i, input.dag.getFormulasThatRefCell i) cells |> toDict
 
                         // rank inputs by their impact on the ranking
-                        let crank = Array.sortBy (fun input ->
-                                        let sum = Array.sumBy (fun formula ->
-                                                      rankmap.[formula]
-                                                  ) (refss.[input])
-                                        -sum
-                                    ) cells
+                        let crank = Array.map (fun input ->
+                                        let anomalous_formulas = Array.filter (
+                                                                    fun formula ->
+                                                                        let pos = rank_positions.[formula]
+                                                                        pos <= analysis.cutoff
+                                                                 ) (refss.[input])
+
+                                        if anomalous_formulas.Length > 0 then
+                                            let sum = Array.sumBy (fun formula ->
+                                                            rankmap.[formula]
+                                                        ) anomalous_formulas
+                                            let average_score = sum / double (anomalous_formulas.Length)
+                                            Some(input, average_score)
+                                        else
+                                            None
+                                    ) cells |>
+                                    Array.choose id |>
+                                    Array.sortBy (fun (input,score) -> score) |>
+                                    Array.map (fun (input,score) -> input)
 
                         // for each input cell, try changing all refs to either abs or rel;
                         // if anomalousness drops, keep new interpretation
@@ -662,11 +679,13 @@
                 else
                     let pipeline = runModel
     //                                +> cancellableWait    // for debugging
-                                    +> inferAddressModes
                                     +> weights
                                     +> reweightRanking
                                     +> canonicalSort
                                     +> significanceThreshold
+                                    +> cutoff
+                                    +> inferAddressModes    // remove anomaly candidates
+                                    +> canonicalSort
                                     +> cutoff
 
                     match pipeline input with
