@@ -594,8 +594,8 @@
                     with
                     | AnalysisCancelled -> Cancellation
                     | e ->
-                        let foo = e.InnerException
-                        failwith "nope"
+                        // for breakpoint-friendliness
+                        raise e
                 else
                     Success(analysis)
 
