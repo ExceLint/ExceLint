@@ -5,14 +5,18 @@
         open System
         open Utils
 
-        type ScoreTable = Dict<string,(AST.Address*double)[]>
-        type FlatScoreTable = Dict<string*AST.Address,double>
-        type ConditioningSetSizeTable = Dict<Scope.Selector,Dict<AST.Address,int>>
-        type HistoBin = string*Scope.SelectID*double
-        type FreqTable = Dict<HistoBin,int>
-        type Weights = IDictionary<AST.Address,double>
-        type Ranking = KeyValuePair<AST.Address,double>[]
-        type Causes = Dict<AST.Address,(HistoBin*int*double)[]>
+        type Weight = double
+        type Score = double
+        type Feature = string
+        type Count = int
+        type ScoreTable = Dict<string,(AST.Address*Score)[]>
+        type FlatScoreTable = Dict<string*AST.Address,Score>
+        type ConditioningSetSizeTable = Dict<Scope.Selector,Dict<AST.Address,Count>>
+        type HistoBin = Feature*Scope.SelectID*Score
+        type FreqTable = Dict<HistoBin,Count>
+        type Weights = IDictionary<AST.Address,Weight>
+        type Ranking = KeyValuePair<AST.Address,Score>[]
+        type Causes = Dict<AST.Address,(HistoBin*Count*Weight)[]>
         type ChangeSet = {
             mutants: KeyValuePair<AST.Address,string>[];
             scores: ScoreTable;

@@ -623,6 +623,53 @@
                     timer <- timer - 1
                 Success(analysis)
 
+            let private computeMergeDistance(P: FreqTable)(feature: string)(big_score: double)(small_score: double): double =
+                // get the number of things in small bin(s)
+                // (if conditional distributions are being used, 
+                //  there will be multiple small and large bins)
+                let qty_dirt = Array.sumBy (fun (bin: KeyValuePair<HistoBin,int>) ->
+                                   let (bin_feat,_,bin_norm) = bin.Key
+                                   if (bin_feat = feature) then
+                                       bin.Value
+                                   else
+                                       0
+                               ) (P |> Array.ofSeq)
+
+                // compute work required to move dirt
+                // amount * distance
+                (double qty_dirt) * Math.Abs(big_score - small_score)
+
+            let private getBinsUnderCutoff(analysis: Analysis)(cutoff: int) : Set<HistoBin> =
+                // find the set of (by definition small) bins that contribute to the highest-ranked cells
+                Array.map (fun (pair: KeyValuePair<AST.Address,Score>) ->
+                                    Array.map (fun (bin,count,weight) -> bin) (analysis.causes.[pair.Key])
+                                ) (analysis.ranking.[..cutoff]) |>
+                                Array.concat |>
+                                Set.ofArray
+
+            let cartesianProduct(xset: Set<'a>)(yset: Set<'a>) : Set<'a*'a> = 
+                let xs = Set.toList xset
+                let ys = Set.toList yset
+                xs
+                |> List.collect (fun x -> ys |> List.map (fun y -> x, y))
+                |> Set.ofList
+
+            let private rankFeatureByEMD(feature: Feature)(analysis: Analysis) : 
+
+            let private rankByEMD(input: Input)(analysis: Analysis) : AnalysisOutcome =
+                let small_bins = getBinsUnderCutoff analysis analysis.cutoff
+                let large_bins = Set.difference (getBinsUnderCutoff analysis (analysis.ranking.Length - 1)) small_bins
+                let pairs = cartesianProduct small_bins large_bins |> Set.toList
+
+                let groups = List.groupBy (fun (small_bin,big_bin) -> small_bin) pairs
+
+                let min_distance_pairs = List.map (fun (small_bin,big_bins) ->
+                                            
+                                             argmin 
+                                         ) groups
+
+                failwith "not yet"
+
             let private runModel(input: Input) : AnalysisOutcome =
                 try
                     // initialize selector cache
@@ -687,6 +734,7 @@
                                     +> inferAddressModes    // remove anomaly candidates
                                     +> canonicalSort
                                     +> cutoff
+                                    +> rankByEMD
 
                     match pipeline input with
                     | Success(analysis) -> Some (ErrorModel(input, analysis, config))
