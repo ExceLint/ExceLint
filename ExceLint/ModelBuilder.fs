@@ -593,6 +593,9 @@
                         Success({ analysis with scores = scores; ftable = freqs; ranking = ranking; causes = causes; })
                     with
                     | AnalysisCancelled -> Cancellation
+                    | e ->
+                        let foo = e.InnerException
+                        failwith "nope"
                 else
                     Success(analysis)
 

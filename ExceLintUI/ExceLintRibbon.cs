@@ -528,6 +528,7 @@ namespace ExceLintUI
             Globals.ThisAddIn.Application.WorkbookBeforeClose += WorkbookBeforeClose;
             Globals.ThisAddIn.Application.SheetChange += SheetChange;
             Globals.ThisAddIn.Application.WorkbookAfterSave += WorkbookAfterSave;
+            Globals.ThisAddIn.Application.ProtectedViewWindowOpen += ProtectedViewWindowOpen;
 
             // sometimes the default blank workbook opens *before* the ExceLint
             // add-in is loaded so we have to handle sheet state specially.
@@ -544,6 +545,12 @@ namespace ExceLintUI
             }
         }
 
+        private void ProtectedViewWindowOpen(Excel.ProtectedViewWindow Pvw)
+        {
+            // set UI as nonfunctional
+            setUIState(null);
+        }
+
         private void WorkbookAfterSave(Excel.Workbook Wb, bool Success)
         {
             currentWorkbook.SerializeDAG(forceDAGBuild: forceBuildDAG.Checked);
@@ -552,8 +559,15 @@ namespace ExceLintUI
         // This event is called when Excel opens a workbook
         private void WorkbookOpen(Excel.Workbook workbook)
         {
-            wbstates.Add(workbook, new WorkbookState(Globals.ThisAddIn.Application, workbook));
+            WorkbookOpenHelper(workbook);
+        }
+
+        private WorkbookState WorkbookOpenHelper(Excel.Workbook workbook)
+        {
+            var wbs = new WorkbookState(Globals.ThisAddIn.Application, workbook);
+            wbstates.Add(workbook, wbs);
             wbShutdown.AddOrUpdate(workbook, false, (k, v) => v);
+            return wbs;
         }
 
         // This event is called when Excel brings an opened workbook
@@ -583,7 +597,7 @@ namespace ExceLintUI
             }
         }
 
-        // This even it called when Excel sends an opened workbook
+        // This event is called when Excel sends an opened workbook
         // to the background
         private void WorkbookDeactivated(Excel.Workbook workbook)
         {
@@ -661,39 +675,89 @@ namespace ExceLintUI
             }
         }
 
+        private void SetTooltips(string text)
+        {
+            this.MarkAsOKButton.ScreenTip = text;
+            this.StartOverButton.ScreenTip = text;
+            this.AnalyzeButton.ScreenTip = text;
+            this.showHeatmap.ScreenTip = text;
+            this.allCellsFreq.ScreenTip = text;
+            this.columnCellsFreq.ScreenTip = text;
+            this.rowCellsFreq.ScreenTip = text;
+            this.levelsFreq.ScreenTip = text;
+            this.DebugOutput.ScreenTip = text;
+            this.forceBuildDAG.ScreenTip = text;
+            this.inferAddrModes.ScreenTip = text;
+            this.allCells.ScreenTip = text;
+            this.weightByIntrinsicAnomalousness.ScreenTip = text;
+            this.significanceTextBox.ScreenTip = text;
+            this.conditioningSetSize.ScreenTip = text;
+        }
+
         private void setUIState(WorkbookState wbs)
         {
-            // enable auditing buttons if an audit has started
-            this.MarkAsOKButton.Enabled = wbs.MarkAsOK_Enabled;
-            this.StartOverButton.Enabled = wbs.ClearColoringButton_Enabled;
-            this.AnalyzeButton.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
-
-            // only enable viewing heatmap if we are not in the middle of an analysis
-            this.showHeatmap.Enabled = wbs.Analyze_Enabled;
-
-            // disable config buttons if we are:
-            // 1. in the middle of an audit, or
-            // 2. we are viewing the heatmap
-            var enable_config = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
-            this.allCellsFreq.Enabled = enable_config;
-            this.columnCellsFreq.Enabled = enable_config;
-            this.rowCellsFreq.Enabled = enable_config;
-            this.levelsFreq.Enabled = enable_config;
-            this.DebugOutput.Enabled = enable_config;
-            this.forceBuildDAG.Enabled = enable_config;
-            this.inferAddrModes.Enabled = enable_config;
-            this.allCells.Enabled = enable_config;
-            this.weightByIntrinsicAnomalousness.Enabled = enable_config;
-            this.significanceTextBox.Enabled = enable_config;
-            this.conditioningSetSize.Enabled = enable_config;
-
-            // toggle the heatmap label depending on the heatmap shown/hidden state
-            if (wbs.HeatMap_Hidden)
+            if (wbs == null || Globals.ThisAddIn.Application.ActiveProtectedViewWindow != null)
             {
-                this.showHeatmap.Label = "Show Heat Map";
+                // disable all controls
+                var disabled = false;
+                var disabled_text = "ExceLint is disabled in protected mode.  Please enable editing to continue.";
+
+                this.MarkAsOKButton.Enabled = disabled;
+                this.StartOverButton.Enabled = disabled;
+                this.AnalyzeButton.Enabled = disabled;
+                this.showHeatmap.Enabled = disabled;
+                this.allCellsFreq.Enabled = disabled;
+                this.columnCellsFreq.Enabled = disabled;
+                this.rowCellsFreq.Enabled = disabled;
+                this.levelsFreq.Enabled = disabled;
+                this.DebugOutput.Enabled = disabled;
+                this.forceBuildDAG.Enabled = disabled;
+                this.inferAddrModes.Enabled = disabled;
+                this.allCells.Enabled = disabled;
+                this.weightByIntrinsicAnomalousness.Enabled = disabled;
+                this.significanceTextBox.Enabled = disabled;
+                this.conditioningSetSize.Enabled = disabled;
+
+                // tell the user ExceLint doesn't work
+                SetTooltips(disabled_text);
             } else
             {
-                this.showHeatmap.Label = "Hide Heat Map";
+                // clear button text
+                SetTooltips("");
+
+                // enable auditing buttons if an audit has started
+                this.MarkAsOKButton.Enabled = wbs.MarkAsOK_Enabled;
+                this.StartOverButton.Enabled = wbs.ClearColoringButton_Enabled;
+                this.AnalyzeButton.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
+
+                // only enable viewing heatmap if we are not in the middle of an analysis
+                this.showHeatmap.Enabled = wbs.Analyze_Enabled;
+
+                // disable config buttons if we are:
+                // 1. in the middle of an audit, or
+                // 2. we are viewing the heatmap
+                var enable_config = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
+                this.allCellsFreq.Enabled = enable_config;
+                this.columnCellsFreq.Enabled = enable_config;
+                this.rowCellsFreq.Enabled = enable_config;
+                this.levelsFreq.Enabled = enable_config;
+                this.DebugOutput.Enabled = enable_config;
+                this.forceBuildDAG.Enabled = enable_config;
+                this.inferAddrModes.Enabled = enable_config;
+                this.allCells.Enabled = enable_config;
+                this.weightByIntrinsicAnomalousness.Enabled = enable_config;
+                this.significanceTextBox.Enabled = enable_config;
+                this.conditioningSetSize.Enabled = enable_config;
+
+                // toggle the heatmap label depending on the heatmap shown/hidden state
+                if (wbs.HeatMap_Hidden)
+                {
+                    this.showHeatmap.Label = "Show Heat Map";
+                }
+                else
+                {
+                    this.showHeatmap.Label = "Hide Heat Map";
+                }
             }
         }
 
