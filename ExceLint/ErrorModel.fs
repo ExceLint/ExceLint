@@ -51,7 +51,7 @@
                 failwith "ERROR: Formula-only analysis returns non-formulas."
 
         // note that this cutoff is INCLUSIVE
-        member self.Cutoff : int = analysis.cutoff
+        member self.Cutoff : int = analysis.cutoff_idx
 
         member self.inspectSelectorFor(addr: AST.Address, sel: Scope.Selector, dag: Depends.DAG) : KeyValuePair<AST.Address,(string*double)[]>[] =
             let selcache = Scope.SelectorCache()

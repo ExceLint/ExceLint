@@ -171,45 +171,30 @@
 
             // returns the index of the last element to KEEP
             // returns -1 if you should keep nothing
-            let private findCutIndex(ranking: Ranking)(thresh: double)(causes: Causes): int =
+            let private findCutIndex(ranking: Ranking)(thresh_idx: int)(causes: Causes): int =
                 // extract totally-ordered score vector
                 let rank_nums = Array.map (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Value) ranking
 
+                // cut it at thresh (inclusive)
+                let rank_nums' = rank_nums.[..thresh_idx]
+
                 // find the index of the "knee"
-                let dderiv_idx = dderiv(rank_nums)
-
-                // cut the ranking at the knee index
-                let knee_cut = if dderiv_idx = 0 then Array.empty else ranking.[0..dderiv_idx]
-
-                // further cut by scaning through the list to find the
-                // index of the last significant score
-                let (cut_idx: int, _) = knee_cut
-                                        |> Array.mapi (fun i elem -> (i,elem))
-                                        |> Array.fold (fun (max_idx: int, mass: double)(i: int, score: KeyValuePair<AST.Address,double>) ->
-                                            let cum_mass = mass + score.Value
-                                            if cum_mass > thresh then
-                                                (max_idx, cum_mass)
-                                            else
-                                                (i, cum_mass)
-                                            ) (-1,0.0)
+                let dderiv_idx = dderiv(rank_nums')
 
                 // does the cut index straddle an equivalence class?
-                seekEquivalenceBoundary ranking causes cut_idx
+                seekEquivalenceBoundary ranking causes dderiv_idx
 
-            let private cutoff(input: Input)(analysis: Analysis) : AnalysisOutcome =
+            let private kneeIndex(input: Input)(analysis: Analysis) : AnalysisOutcome =
                 // compute cutoff
-                let c = findCutIndex analysis.ranking analysis.significance_threshold analysis.causes
-                Success({ analysis with cutoff = c })
+                let c = findCutIndex analysis.ranking analysis.sig_threshold_idx analysis.causes
+                Success({ analysis with cutoff_idx = c })
 
-            let private significanceThreshold(input: Input)(analysis: Analysis) : AnalysisOutcome =
-                let st : double =
-                    // compute total mass of distribution
-                    let total_mass = double analysis.ranking.Length
-                    // compute the index of the maximum element
-                    let idx = int (Math.Floor(total_mass * input.alpha))
-                    // get the score at idx
-                    analysis.ranking.[idx].Value
-                Success({ analysis with significance_threshold = st })
+            let private cutoffIndex(input: Input)(analysis: Analysis) : AnalysisOutcome =
+                // compute total mass of distribution
+                let total_mass = double analysis.ranking.Length
+                // compute the index of the maximum element
+                let idx = int (Math.Floor(total_mass * input.alpha))
+                Success({ analysis with sig_threshold_idx = idx })
 
             let private canonicalSort(input: Input)(analysis: Analysis) : AnalysisOutcome =
                 let r = analysis.ranking
@@ -572,7 +557,7 @@
                                         let anomalous_formulas = Array.filter (
                                                                     fun formula ->
                                                                         let pos = rank_positions.[formula]
-                                                                        pos <= analysis.cutoff
+                                                                        pos <= analysis.cutoff_idx
                                                                  ) (refss.[input])
 
                                         if anomalous_formulas.Length > 0 then
@@ -804,8 +789,8 @@
                             csstable_time = csstable_time;
                             ranking_time = ranking_time;
                             causes_time = causes_time;
-                            significance_threshold = 0.05;
-                            cutoff = 0;
+                            sig_threshold_idx = 0;
+                            cutoff_idx = 0;
                             weights = new Dictionary<AST.Address,double>();
                         }
                     )
@@ -818,16 +803,15 @@
                 if dag.IsCancelled() then
                     None
                 else
-                    let pipeline = runModel
-    //                                +> cancellableWait    // for debugging
-                                    +> weights
-                                    +> reweightRanking
-                                    +> canonicalSort
-                                    +> significanceThreshold
-                                    +> cutoff
+                    let pipeline = runModel                 // produce initial (unsorted) ranking
+                                    +> weights              // compute weights
+                                    +> reweightRanking      // modify ranking scores
+                                    +> canonicalSort        // sort
+                                    +> cutoffIndex          // compute initial cutoff index
+                                    +> kneeIndex            // compute knee index
                                     +> inferAddressModes    // remove anomaly candidates
                                     +> canonicalSort
-                                    +> cutoff
+                                    +> kneeIndex
 
                     match pipeline input with
                     | Success(analysis) -> Some (ErrorModel(input, analysis, config))

@@ -47,8 +47,8 @@
             csstable_time: int64;
             ranking_time: int64;
             causes_time: int64;
-            significance_threshold: double;
-            cutoff: int;
+            sig_threshold_idx: int;
+            cutoff_idx: int;
             weights: Weights;
         }
 
