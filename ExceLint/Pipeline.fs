@@ -9,6 +9,7 @@
         type Hash = double
         type Feature = string
         type Count = int
+        type Distribution = Dict<Feature,Dict<Hash,Set<AST.Address>>>
         type ScoreTable = Dict<string,(AST.Address*Hash)[]>
         type FlatScoreTable = Dict<string*AST.Address,Hash>
         type ConditioningSetSizeTable = Dict<Scope.Selector,Dict<AST.Address,Count>>

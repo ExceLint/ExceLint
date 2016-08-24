@@ -367,8 +367,8 @@
                 Seq.filter (fun (elem: KeyValuePair<HistoBin,int>) -> elem.Value > 0) ftable
                 |> Seq.length
 
-            let private argmin(f: 'a -> int)(xs: 'a[]) : int =
-                let fx = Array.map (fun x -> f x) xs
+            let private crappy_argmin(f: 'a -> int)(xs: 'a[]) : int =
+                let fx = Array.map f xs
 
                 Array.mapi (fun i res -> (i, res)) fx |>
                 Array.fold (fun arg (i, res) ->
@@ -377,6 +377,20 @@
                     else
                         arg
                 ) -1 
+
+            let private argmin(f: 'a -> double)(xs: 'a[]) : 'a =
+                let fxs = Array.map f xs
+
+                let idx = Array.mapi (fun i fx -> (i, fx)) fxs |>
+                          Array.fold (fun arg (i, fx) ->
+                              if arg = -1 || fx < fxs.[arg] then
+                                  i
+                              else
+                                  arg
+                          ) -1
+
+                xs.[idx]
+
 
             let private transpose(mat: 'a[][]) : 'a[][] =
                 // assumes that all subarrays are the same length
@@ -525,7 +539,7 @@
                                         countBuckets mutant.freqtable
                                     ) css
 
-                let mode_idx = argmin (fun mutant ->
+                let mode_idx = crappy_argmin (fun mutant ->
                                    // count histogram buckets
                                    countBuckets mutant.freqtable
                                ) css
@@ -623,24 +637,69 @@
                     timer <- timer - 1
                 Success(analysis)
 
-            let private numberOfCells(P: FreqTable)(feature: Feature)(anom_hash: double) : Count =
-                Array.sumBy (fun (bin: KeyValuePair<HistoBin,Count>) ->
-                    let (bin_feat,bin_scope,bin_hash) = bin.Key
-                    if bin_feat = feature && bin_hash = anom_hash then
-                        bin.Value
-                    else
-                        0
-                ) (P |> Array.ofSeq)
+            let private toDistribution(analysis: Analysis) : Distribution =
+                let causes = analysis.causes
 
-            let private earthMoversDistance(P: FreqTable)(feature: Feature)(other_hash: double)(anom_hash: double): double =
-                // get the number of cells in anomalous bin(s) across all conditional tables
-                let qty_dirt = numberOfCells P feature anom_hash
+                let d = new Distribution()
 
-                failwith "TODO: distance computation should be embedded in x,y,z space and with respect to centroid"
+                for addr_entry in causes do
+                    let addr = addr_entry.Key
+                    for bin_entry in addr_entry.Value do
+                        let (hb,_,_) = bin_entry
+                        let (feat,scope,hash) = hb
+
+                        // init inner dict
+                        if not (d.ContainsKey(feat)) then
+                            d.Add(feat, new Dict<Hash,Set<AST.Address>>())
+
+                        // init address set
+                        if not (d.[feat].ContainsKey(hash)) then
+                            d.[feat].Add(hash, set [])
+
+                        // add address
+                        d.[feat].[hash] <- d.[feat].[hash].Add(addr)
+
+                d
+
+            let private toRawCoords(cells: Set<AST.Address>) : Set<double*double*double> =
+                cells
+                // convert to raw coords
+                // (TODO: I don't know what to do with Z at the moment)
+                |> Set.map (fun cell -> (double cell.X, double cell.Y, 0.0))
+
+            // the mean
+            let private binCentroid(cells: Set<double*double*double>) : double*double*double =
+                let n = double (cells.Count)
+
+                cells
+                |> Set.toArray
+                // add coordinates, element-wise
+                |> Array.fold (fun acc coords ->
+                                    let (x, y, z) = acc
+                                    let (x',y',z') = coords
+                                    (x + x', y + y', z + z')
+                              ) (0.0,0.0,0.0)
+                // normalize by the number of cells
+                |> (fun (x,y,z) -> (double x) / n, (double y) / n, (double z) / n)
+
+            let euclideanDistance(cell1: double*double*double)(cell2: double*double*double) : double =
+                let (x1,y1,z1) = cell1
+                let (x2,y2,z2) = cell2
+                Math.Sqrt(Math.Pow(x1-x2,2.0) + Math.Pow(y1-y2,2.0) + Math.Pow(z1-z2,2.0))
+
+            let private earthMoversDistance(P: Distribution)(feature: Feature)(other_hash: double)(anom_hash: double): double =
+                // get every cell in the named anomalous bin(s) across all conditional tables
+                let dirt = P.[feature].[anom_hash] |> toRawCoords |> Set.toArray
+
+                // get every cell in the named other bin(s) across all conditional tables
+                let other_dirt = P.[feature].[other_hash] |> toRawCoords
+
+                // compute the centroid of the other_hash
+                let centroid = binCentroid other_dirt
 
                 // compute work required to move dirt
                 // amount * distance
-                (double qty_dirt) * Math.Abs(other_hash - anom_hash)
+                Array.sumBy (fun coord -> euclideanDistance coord centroid) dirt
 
             let private binsBelowCutoff(analysis: Analysis)(cutoff: int) : Set<HistoBin> =
                 // find the set of (by definition small) bins that contribute to the highest-ranked cells
@@ -667,24 +726,24 @@
             let private justBins(pairs: seq<KeyValuePair<HistoBin,Count>>) : seq<HistoBin> =
                 Seq.map (fun (pair: KeyValuePair<HistoBin,Count>) -> pair.Key) pairs
 
-            let private EMDsbyFeature(feature: Feature)(analysis: Analysis) : Dict<Hash,double> =
+            let private EMDsbyFeature(feature: Feature)(analysis: Analysis) : Dict<Hash,Hash*double> =
                 // the initial distribution
-                let P = analysis.ftable
+                let P = toDistribution analysis
 
                 // get set of feature hashes from distribution
-                let hashes = P |> justBins |> justHashes |> Set.ofSeq
+                let hashes = analysis.ftable |> justBins |> justHashes |> Set.ofSeq
 
                 // find the distance to move every cell with a given hash to the nearest hash of a larger bin
                 List.map (fun (a: Hash, hs: Hash[]) ->
                     // do not consider smaller bins
-                    let a_count = numberOfCells P feature a
-                    let bigger = Array.filter (fun h -> numberOfCells P feature h > a_count) hs
+                    let a_count = P.[feature].[a].Count
+                    let bigger = Array.filter (fun h -> P.[feature].[h].Count > a_count) hs
 
                     if bigger.Length > 0 then
-                        Some(a, Array.minBy (fun h ->
-                                    earthMoversDistance P feature h a
-                                ) bigger
-                            )
+                        let f = (fun h -> earthMoversDistance P feature h a) 
+                        let min_feat = argmin f bigger
+                        let min_distance = f min_feat
+                        Some(a, (min_feat, min_distance))
                     else
                         None
                 ) (cartesianProductByX hashes hashes)
@@ -699,16 +758,19 @@
                                    let sum = Array.sumBy (fun fname ->
                                                  let feature = input.config.FeatureByName fname
                                                  let hash = feature cell input.dag
-                                                 emds.[fname].[hash]
+                                                 let (min_hash,min_dist) = emds.[fname].[hash]
+                                                 min_dist
                                              ) (input.config.EnabledFeatures)
                                    cell, sum
                                ) analysis.ranking
                                |> Array.sortBy (fun (cell,sum) -> sum)
                                |> Array.map (fun (cell,sum) -> new KeyValuePair<AST.Address,double>(cell,sum))
 
-                failwith "expected error threshold"
+                let expected_num_errors = int (Math.Floor(double (input.dag.getAllFormulaAddrs().Length) * input.alpha))
 
-                Success({ analysis with ranking = ranking' })
+                let ranking'' = ranking'.[..expected_num_errors]
+
+                Success({ analysis with ranking = ranking'' })
 
             let private runModel(input: Input) : AnalysisOutcome =
                 try
