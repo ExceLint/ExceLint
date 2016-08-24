@@ -636,6 +636,8 @@
                 // get the number of cells in anomalous bin(s) across all conditional tables
                 let qty_dirt = numberOfCells P feature anom_hash
 
+                failwith "TODO: distance computation should be embedded in x,y,z space and with respect to centroid"
+
                 // compute work required to move dirt
                 // amount * distance
                 (double qty_dirt) * Math.Abs(other_hash - anom_hash)
@@ -703,6 +705,8 @@
                                ) analysis.ranking
                                |> Array.sortBy (fun (cell,sum) -> sum)
                                |> Array.map (fun (cell,sum) -> new KeyValuePair<AST.Address,double>(cell,sum))
+
+                failwith "expected error threshold"
 
                 Success({ analysis with ranking = ranking' })
 
