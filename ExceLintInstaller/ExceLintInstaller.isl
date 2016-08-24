@@ -2629,7 +2629,7 @@
 		<col def="I2">ISSetupLocation</col>
 		<col def="S255">ISReleaseFlags</col>
 		<row><td>_5610F6EE_A9AF_41B5_9F0D_BD10A8516CD0_</td><td>Visual Studio 2010 Tools for Office Runtime.prq</td><td/><td/><td/></row>
-		<row><td>_9890E9C6_3A4A_47E0_A38D_F7A46EC3AE59_</td><td>Microsoft .NET Framework 4.6.1 Full.prq</td><td/><td/><td/></row>
+		<row><td>_ADB0E1D0_59DC_4B3A_B3BD_EFDC09BEC446_</td><td>Microsoft .NET Framework 4.6.1 Full.prq</td><td/><td/><td/></row>
 	</table>
 
 	<table name="ISSetupType">
@@ -4387,7 +4387,7 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS</td><td>##IDS_PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS##</td><td/></row>
 		<row><td>ProductCode</td><td>{75358FED-928E-4DC6-A469-629B45283011}</td><td/></row>
 		<row><td>ProductName</td><td>ExceLint</td><td/></row>
-		<row><td>ProductVersion</td><td>1.00.0013</td><td/></row>
+		<row><td>ProductVersion</td><td>1.00.0014</td><td/></row>
 		<row><td>ProgressType0</td><td>install</td><td/></row>
 		<row><td>ProgressType1</td><td>Installing</td><td/></row>
 		<row><td>ProgressType2</td><td>installed</td><td/></row>
