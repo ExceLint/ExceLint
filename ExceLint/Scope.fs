@@ -64,6 +64,7 @@ module Scope =
             | ColumnID _ -> Selector.SameColumn
             | RowID _ -> Selector.SameRow
             | LevelID _ -> Selector.SameLevel
+            | SheetID _ -> Selector.SameSheet
             
         override self.Equals(obj: obj) : bool =
             let other = obj :?> SelectID
@@ -92,6 +93,7 @@ module Scope =
             | ColumnID(xyp) -> xyp.GetHashCode()
             | RowID(xyp) -> xyp.GetHashCode()
             | LevelID(lv) -> lv.GetHashCode()
+            | SheetID(p) -> p.GetHashCode()
         interface System.IComparable with
             member self.CompareTo(obj: obj) : int =
                 let other = obj :?> SelectID
