@@ -179,15 +179,19 @@
                 let rank_nums' = rank_nums.[..thresh_idx]
 
                 // find the index of the "knee"
-                let dderiv_idx = dderiv(rank_nums')
+                dderiv(rank_nums')
 
+            let private kneeIndexOpt(input: Input)(analysis: Analysis) : AnalysisOutcome =
+                let idx =
+                    if input.config.IsEnabledSpectralRanking then
+                        // compute knee cutoff
+                        findCutIndex analysis.ranking analysis.sig_threshold_idx analysis.causes
+                    else
+                        // stick with total %
+                        analysis.sig_threshold_idx
                 // does the cut index straddle an equivalence class?
-                seekEquivalenceBoundary ranking causes dderiv_idx
-
-            let private kneeIndex(input: Input)(analysis: Analysis) : AnalysisOutcome =
-                // compute cutoff
-                let c = findCutIndex analysis.ranking analysis.sig_threshold_idx analysis.causes
-                Success({ analysis with cutoff_idx = c })
+                let ce = seekEquivalenceBoundary analysis.ranking analysis.causes idx
+                Success({ analysis with cutoff_idx = ce })
 
             let private cutoffIndex(input: Input)(analysis: Analysis) : AnalysisOutcome =
                 // compute total mass of distribution
@@ -735,7 +739,11 @@
                                    let sum = Array.sumBy (fun fname ->
                                                  let feature = input.config.FeatureByName fname
                                                  let hash = feature cell input.dag
-                                                 let (min_hash,min_dist) = emds.[fname].[hash]
+                                                 let (min_hash,min_dist) =
+                                                    if not (emds.[fname].ContainsKey(hash)) then
+                                                        hash, 0.0
+                                                    else
+                                                        emds.[fname].[hash]
                                                  min_dist
                                              ) (input.config.EnabledFeatures)
                                    cell, sum
@@ -808,10 +816,10 @@
                                     +> reweightRanking      // modify ranking scores
                                     +> canonicalSort        // sort
                                     +> cutoffIndex          // compute initial cutoff index
-                                    +> kneeIndex            // compute knee index
+                                    +> kneeIndexOpt            // compute knee index
                                     +> inferAddressModes    // remove anomaly candidates
                                     +> canonicalSort
-                                    +> kneeIndex
+                                    +> kneeIndexOpt
 
                     match pipeline input with
                     | Success(analysis) -> Some (ErrorModel(input, analysis, config))
