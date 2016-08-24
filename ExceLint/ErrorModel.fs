@@ -99,17 +99,20 @@
                     let (hb,_,_) = bin_entry
                     let (feat,scope,hash) = hb
 
-                    // init inner dict
+                    // init outer dict
                     if not (d.ContainsKey(feat)) then
-                        d.Add(feat, new Dict<Hash,Set<AST.Address>>())
+                        d.Add(feat, new Dict<Scope.SelectID,Dict<Hash,Set<AST.Address>>>())
+
+                    // init inner dict
+                    if not (d.[feat].ContainsKey(scope)) then
+                        d.[feat].Add(scope, new Dict<Hash,Set<AST.Address>>())
 
                     // init address set
-                    if not (d.[feat].ContainsKey(hash)) then
-                        d.[feat].Add(hash, set [])
+                    if not (d.[feat].[scope].ContainsKey(hash)) then
+                        d.[feat].[scope].Add(hash, set [])
 
                     // add address
-                    d.[feat].[hash] <- d.[feat].[hash].Add(addr)
-
+                    d.[feat].[scope].[hash] <- d.[feat].[scope].[hash].Add(addr)
             d
 
         static member private rankingIsSane(r: Ranking)(dag: Depends.DAG)(formulasOnly: bool) : bool =

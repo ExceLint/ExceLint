@@ -627,42 +627,37 @@
                     timer <- timer - 1
                 Success(analysis)
 
-            // TODO: pretty arbitrary at the moment
-            let private worksheetIndices(cells: Set<AST.Address>) : Dict<string,int> =
-                let sheets = Set.map (fun (cell: AST.Address) -> cell.WorksheetName) cells |> Set.toArray |> Array.sort
-                Array.mapi (fun i sheet -> sheet, i) sheets |> adict
-
-            let private toRawCoords(wsindices: Dict<string,int>)(cells: Set<AST.Address>) : Set<double*double*double> =
+            let private toRawCoords(cells: Set<AST.Address>) : Set<double*double> =
                 cells
                 // convert to raw coords
-                |> Set.map (fun cell -> (double cell.X, double cell.Y, double (wsindices.[cell.WorksheetName])))
+                |> Set.map (fun cell -> (double cell.X, double cell.Y))
 
             // the mean
-            let private binCentroid(cells: Set<double*double*double>) : double*double*double =
+            let private binCentroid(cells: Set<double*double>) : double*double =
                 let n = double (cells.Count)
 
                 cells
                 |> Set.toArray
                 // add coordinates, element-wise
                 |> Array.fold (fun acc coords ->
-                                    let (x, y, z) = acc
-                                    let (x',y',z') = coords
-                                    (x + x', y + y', z + z')
-                              ) (0.0,0.0,0.0)
+                                    let (x, y) = acc
+                                    let (x',y') = coords
+                                    (x + x', y + y')
+                              ) (0.0,0.0)
                 // normalize by the number of cells
-                |> (fun (x,y,z) -> (double x) / n, (double y) / n, (double z) / n)
+                |> (fun (x,y) -> (double x) / n, (double y) / n)
 
-            let euclideanDistance(cell1: double*double*double)(cell2: double*double*double) : double =
-                let (x1,y1,z1) = cell1
-                let (x2,y2,z2) = cell2
-                Math.Sqrt(Math.Pow(x1-x2,2.0) + Math.Pow(y1-y2,2.0) + Math.Pow(z1-z2,2.0))
+            let euclideanDistance(cell1: double*double)(cell2: double*double) : double =
+                let (x1,y1) = cell1
+                let (x2,y2) = cell2
+                Math.Sqrt(Math.Pow(x1-x2,2.0) + Math.Pow(y1-y2,2.0))
 
-            let private earthMoversDistance(P: Distribution)(wsindices: Dict<string,int>)(feature: Feature)(other_hash: double)(anom_hash: double): double =
-                // get every cell in the named anomalous bin(s) across all conditional tables
-                let dirt = P.[feature].[anom_hash] |> toRawCoords wsindices |> Set.toArray
+            let private earthMoversDistance(P: Distribution)(feature: Feature)(scope: Scope.SelectID)(other_hash: double)(anom_hash: double): double =
+                // get every cell in the named anomalous bin in the sheets conditional table only
+                let dirt = P.[feature].[scope].[anom_hash] |> toRawCoords |> Set.toArray
 
                 // get every cell in the named other bin(s) across all conditional tables
-                let other_dirt = P.[feature].[other_hash] |> toRawCoords wsindices
+                let other_dirt = P.[feature].[scope].[other_hash] |> toRawCoords
 
                 // compute the centroid of the other_hash
                 let centroid = binCentroid other_dirt
@@ -684,40 +679,51 @@
                 // excluding the element itself
                 Set.map (fun x -> x, (Set.difference yset (Set.ofList [x])) |> Set.toArray) xset |> Set.toList
 
-            let private justHashes(P: Distribution)(feature: Feature) : Set<Hash> =
+            let private justHashes(P: Distribution)(feature: Feature)(scope: Scope.SelectID) : Set<Hash> =
+                let mutable s = set[]
+                for hash_row in P.[feature].[scope] do
+                    s <- s.Add(hash_row.Key)
+                s
+
+            let private justScopes(P: Distribution)(feature: Feature) : Set<Scope.SelectID> =
                 let mutable s = set[]
                 for hash_row in P.[feature] do
                     s <- s.Add(hash_row.Key)
                 s
 
-            let private EMDsbyFeature(feature: Feature)(causes: Causes)(wsindices: Dict<string,int>) : Dict<Hash,Hash*double> =
+            let private EMDsbyFeature(feature: Feature)(causes: Causes) : Dict<Hash,Hash*double> =
                 // the initial distribution
                 let P = ErrorModel.toDistribution causes
 
-                // get set of feature hashes from distribution
-                let hashes = justHashes P feature
+                // get all sheet scopes
+                let scopes = justScopes P feature
+                assert (Set.forall (fun (scope: Scope.SelectID) -> scope.IsKind = Scope.SameSheet) scopes)
 
                 // find the distance to move every cell with a given hash to the nearest hash of a larger bin
-                List.map (fun (a: Hash, hs: Hash[]) ->
-                    // do not consider smaller bins
-                    let a_count = P.[feature].[a].Count
-                    let bigger = Array.filter (fun h -> P.[feature].[h].Count > a_count) hs
+                List.map (fun scope -> 
+                    // get set of feature hashes from distribution
+                    let hashes = justHashes P feature scope
 
-                    if bigger.Length > 0 then
-                        let f = (fun h -> earthMoversDistance P wsindices feature h a) 
-                        let min_feat = argmin f bigger
-                        let min_distance = f min_feat
-                        Some(a, (min_feat, min_distance))
-                    else
-                        None
-                ) (cartesianProductByX hashes hashes)
+                    List.map (fun (a: Hash, hs: Hash[]) ->
+                        // do not consider smaller bins
+                        let a_count = P.[feature].[scope].[a].Count
+                        let bigger = Array.filter (fun h -> P.[feature].[scope].[h].Count > a_count) hs
+
+                        if bigger.Length > 0 then
+                            let f = (fun h -> earthMoversDistance P feature scope h a) 
+                            let min_feat = argmin f bigger
+                            let min_distance = f min_feat
+                            Some(a, (min_feat, min_distance))
+                        else
+                            None
+                    ) (cartesianProductByX hashes hashes)
+                ) (scopes |> Set.toList)
+                |> List.concat
                 |> List.choose id
                 |> adict
 
             let private rankByEMD(cells: AST.Address[])(input: Input)(causes: Causes) : Ranking =
-                let wsindices = worksheetIndices (cells |> Set.ofArray)
-
-                let emds = Array.map (fun f -> f, EMDsbyFeature f causes wsindices) (input.config.EnabledFeatures) |> adict
+                let emds = Array.map (fun f -> f, EMDsbyFeature f causes) (input.config.EnabledFeatures) |> adict
 
                 let ranking' = Array.map (fun (cell: AST.Address) ->
                                    let sum = Array.sumBy (fun fname ->

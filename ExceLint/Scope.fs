@@ -82,6 +82,10 @@ module Scope =
                 match other with
                 | LevelID(lv2) -> not (Set.isEmpty (Set.intersect lv1 lv2))
                 | _ -> false
+            | SheetID(p1) ->
+                match other with
+                | SheetID(p2) -> p1 = p2
+                | _ -> false
         override self.GetHashCode() : int =
             match self with
             | AllID -> 0

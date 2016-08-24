@@ -5,7 +5,7 @@ using System.Linq;
 using HistoBin = System.Tuple<string, ExceLint.Scope.SelectID, double>;
 using FreqTable = System.Collections.Generic.Dictionary<System.Tuple<string, ExceLint.Scope.SelectID, double>, int>;
 using Color = System.Drawing.Color;
-using Distribution = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<double, Microsoft.FSharp.Collections.FSharpSet<AST.Address>>>;
+using Distribution = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<ExceLint.Scope.SelectID, System.Collections.Generic.Dictionary<double, Microsoft.FSharp.Collections.FSharpSet<AST.Address>>>>;
 using XYInfo = System.Collections.Generic.Dictionary<System.Tuple<double,double>,AST.Address>;
 
 namespace ExceLintUI
@@ -84,7 +84,7 @@ namespace ExceLintUI
             int i = 0;
             foreach (HistoBin h in bins)
             {
-                drawBin(feature, h, m.FrequencyTable, getColor(h.Item3, fMin, fMax));
+                drawBin(feature, condition, h, m.FrequencyTable, getColor(h.Item3, fMin, fMax));
             }
         }
 
@@ -158,11 +158,11 @@ namespace ExceLintUI
             return Color.FromArgb(255, r, g, b);
         }
 
-        private void drawBin(string feature, HistoBin h, FreqTable freqtable, Color c)
+        private void drawBin(string feature, ExceLint.Scope.SelectID sid, HistoBin h, FreqTable freqtable, Color c)
         {
             var binName = h.Item3.ToString();
             var hashValue = h.Item3;
-            var addresses = d[feature][hashValue].ToArray();
+            var addresses = d[feature][sid][hashValue].ToArray();
             var count = freqtable[h];
 
             // create series for scatterplot
