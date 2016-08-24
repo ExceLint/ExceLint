@@ -623,52 +623,88 @@
                     timer <- timer - 1
                 Success(analysis)
 
-            let private computeMergeDistance(P: FreqTable)(feature: string)(big_score: double)(small_score: double): double =
-                // get the number of things in small bin(s)
-                // (if conditional distributions are being used, 
-                //  there will be multiple small and large bins)
-                let qty_dirt = Array.sumBy (fun (bin: KeyValuePair<HistoBin,int>) ->
-                                   let (bin_feat,_,bin_norm) = bin.Key
-                                   if (bin_feat = feature) then
-                                       bin.Value
-                                   else
-                                       0
-                               ) (P |> Array.ofSeq)
+            let private numberOfCells(P: FreqTable)(feature: Feature)(anom_hash: double) : Count =
+                Array.sumBy (fun (bin: KeyValuePair<HistoBin,Count>) ->
+                    let (bin_feat,bin_scope,bin_hash) = bin.Key
+                    if bin_feat = feature && bin_hash = anom_hash then
+                        bin.Value
+                    else
+                        0
+                ) (P |> Array.ofSeq)
+
+            let private earthMoversDistance(P: FreqTable)(feature: Feature)(other_hash: double)(anom_hash: double): double =
+                // get the number of cells in anomalous bin(s) across all conditional tables
+                let qty_dirt = numberOfCells P feature anom_hash
 
                 // compute work required to move dirt
                 // amount * distance
-                (double qty_dirt) * Math.Abs(big_score - small_score)
+                (double qty_dirt) * Math.Abs(other_hash - anom_hash)
 
-            let private getBinsUnderCutoff(analysis: Analysis)(cutoff: int) : Set<HistoBin> =
+            let private binsBelowCutoff(analysis: Analysis)(cutoff: int) : Set<HistoBin> =
                 // find the set of (by definition small) bins that contribute to the highest-ranked cells
-                Array.map (fun (pair: KeyValuePair<AST.Address,Score>) ->
+                Array.map (fun (pair: KeyValuePair<AST.Address,Hash>) ->
                                     Array.map (fun (bin,count,weight) -> bin) (analysis.causes.[pair.Key])
                                 ) (analysis.ranking.[..cutoff]) |>
                                 Array.concat |>
                                 Set.ofArray
 
-            let cartesianProduct(xset: Set<'a>)(yset: Set<'a>) : Set<'a*'a> = 
-                let xs = Set.toList xset
-                let ys = Set.toList yset
-                xs
-                |> List.collect (fun x -> ys |> List.map (fun y -> x, y))
-                |> Set.ofList
+            let private justHash(bin: HistoBin) : double =
+                let (_,_,hash) = bin
+                hash
 
-            let private rankFeatureByEMD(feature: Feature)(analysis: Analysis) : 
+            let private justHashes(bins: seq<HistoBin>) : seq<Hash> =
+                Seq.map justHash bins
+
+            let private cartesianProductByX(xset: Set<'a>)(yset: Set<'a>) : ('a*'a[]) list =
+                // cartesian product, grouped by the first element,
+                // excluding the element itself
+                Set.map (fun x -> x, (Set.difference yset (Set.ofList [x])) |> Set.toArray) xset |> Set.toList
+
+            let private justAddress(pair: KeyValuePair<AST.Address,double>) : AST.Address = pair.Key
+
+            let private justBins(pairs: seq<KeyValuePair<HistoBin,Count>>) : seq<HistoBin> =
+                Seq.map (fun (pair: KeyValuePair<HistoBin,Count>) -> pair.Key) pairs
+
+            let private EMDsbyFeature(feature: Feature)(analysis: Analysis) : Dict<Hash,double> =
+                // the initial distribution
+                let P = analysis.ftable
+
+                // get set of feature hashes from distribution
+                let hashes = P |> justBins |> justHashes |> Set.ofSeq
+
+                // find the distance to move every cell with a given hash to the nearest hash of a larger bin
+                List.map (fun (a: Hash, hs: Hash[]) ->
+                    // do not consider smaller bins
+                    let a_count = numberOfCells P feature a
+                    let bigger = Array.filter (fun h -> numberOfCells P feature h > a_count) hs
+
+                    if bigger.Length > 0 then
+                        Some(a, Array.minBy (fun h ->
+                                    earthMoversDistance P feature h a
+                                ) bigger
+                            )
+                    else
+                        None
+                ) (cartesianProductByX hashes hashes)
+                |> List.choose id
+                |> adict
 
             let private rankByEMD(input: Input)(analysis: Analysis) : AnalysisOutcome =
-                let small_bins = getBinsUnderCutoff analysis analysis.cutoff
-                let large_bins = Set.difference (getBinsUnderCutoff analysis (analysis.ranking.Length - 1)) small_bins
-                let pairs = cartesianProduct small_bins large_bins |> Set.toList
+                let emds = Array.map (fun f -> f, EMDsbyFeature f analysis) (input.config.EnabledFeatures) |> adict
 
-                let groups = List.groupBy (fun (small_bin,big_bin) -> small_bin) pairs
+                let ranking' = Array.map (fun (pair: KeyValuePair<AST.Address,double>) ->
+                                   let cell = pair.Key
+                                   let sum = Array.sumBy (fun fname ->
+                                                 let feature = input.config.FeatureByName fname
+                                                 let hash = feature cell input.dag
+                                                 emds.[fname].[hash]
+                                             ) (input.config.EnabledFeatures)
+                                   cell, sum
+                               ) analysis.ranking
+                               |> Array.sortBy (fun (cell,sum) -> sum)
+                               |> Array.map (fun (cell,sum) -> new KeyValuePair<AST.Address,double>(cell,sum))
 
-                let min_distance_pairs = List.map (fun (small_bin,big_bins) ->
-                                            
-                                             argmin 
-                                         ) groups
-
-                failwith "not yet"
+                Success({ analysis with ranking = ranking' })
 
             let private runModel(input: Input) : AnalysisOutcome =
                 try

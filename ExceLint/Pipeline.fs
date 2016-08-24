@@ -6,16 +6,16 @@
         open Utils
 
         type Weight = double
-        type Score = double
+        type Hash = double
         type Feature = string
         type Count = int
-        type ScoreTable = Dict<string,(AST.Address*Score)[]>
-        type FlatScoreTable = Dict<string*AST.Address,Score>
+        type ScoreTable = Dict<string,(AST.Address*Hash)[]>
+        type FlatScoreTable = Dict<string*AST.Address,Hash>
         type ConditioningSetSizeTable = Dict<Scope.Selector,Dict<AST.Address,Count>>
-        type HistoBin = Feature*Scope.SelectID*Score
+        type HistoBin = Feature*Scope.SelectID*Hash
         type FreqTable = Dict<HistoBin,Count>
         type Weights = IDictionary<AST.Address,Weight>
-        type Ranking = KeyValuePair<AST.Address,Score>[]
+        type Ranking = KeyValuePair<AST.Address,double>[]
         type Causes = Dict<AST.Address,(HistoBin*Count*Weight)[]>
         type ChangeSet = {
             mutants: KeyValuePair<AST.Address,string>[];
