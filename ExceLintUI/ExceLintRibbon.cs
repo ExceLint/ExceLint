@@ -484,6 +484,22 @@ namespace ExceLintUI
 
         private void spectralRanking_Click(object sender, RibbonControlEventArgs e)
         {
+            if (this.spectralRanking.Checked)
+            {
+                this.allCellsFreq.Checked = false;
+                this.rowCellsFreq.Checked = false;
+                this.columnCellsFreq.Checked = false;
+                this.levelsFreq.Checked = false;
+            } else
+            {
+                this.allCellsFreq.Checked = true;
+                this.rowCellsFreq.Checked = true;
+                this.columnCellsFreq.Checked = true;
+                this.levelsFreq.Checked = false;
+            }
+
+            setUIState(this.currentWorkbook);
+
             currentWorkbook.ConfigChanged();
         }
 
@@ -742,12 +758,13 @@ namespace ExceLintUI
 
                 // disable config buttons if we are:
                 // 1. in the middle of an audit, or
-                // 2. we are viewing the heatmap
+                // 2. we are viewing the heatmap, or
+                // 3. if spectral ranking is checked, disable scopes
                 var enable_config = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
-                this.allCellsFreq.Enabled = enable_config;
-                this.columnCellsFreq.Enabled = enable_config;
-                this.rowCellsFreq.Enabled = enable_config;
-                this.levelsFreq.Enabled = enable_config;
+                this.allCellsFreq.Enabled = enable_config && !this.spectralRanking.Checked;
+                this.columnCellsFreq.Enabled = enable_config && !this.spectralRanking.Checked;
+                this.rowCellsFreq.Enabled = enable_config && !this.spectralRanking.Checked;
+                this.levelsFreq.Enabled = enable_config && !this.spectralRanking.Checked;
                 this.DebugOutput.Enabled = enable_config;
                 this.forceBuildDAG.Enabled = enable_config;
                 this.inferAddrModes.Enabled = enable_config;

@@ -167,6 +167,12 @@
                 let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Scope; runner = nop}
                 _config.Add(name, cap)
             )
+        member self.analyzeRelativeToSheet() : FeatureConf =
+            FeatureConf(
+                let name = "ScopeSheets"
+                let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Scope; runner = nop}
+                _config.Add(name, cap)
+            )
         member self.inferAddressModes() : FeatureConf =
             FeatureConf(
                 let name = "InferAddressModes"
@@ -220,6 +226,7 @@
                                         | "ScopeColumns" -> Some Scope.SameColumn
                                         | "ScopeRows" -> Some Scope.SameRow
                                         | "ScopeLevels" -> Some Scope.SameLevel
+                                        | "ScopeSheets" -> Some Scope.SameSheet
                                         | _ -> failwith "Unknown scope selector."
                                     else None)
 
@@ -231,6 +238,7 @@
         member self.IsEnabledOptCondRows : bool = _config.ContainsKey "ScopeRows" && _config.["ScopeRows"].enabled
         member self.IsEnabledOptCondCols : bool = _config.ContainsKey "ScopeColumns" && _config.["ScopeColumns"].enabled
         member self.IsEnabledOptCondLevels : bool = _config.ContainsKey "ScopeLevels" && _config.["ScopeLevels"].enabled
+        member self.IsEnabledOptCondSheets : bool = _config.ContainsKey "ScopeSheets" && _config.["ScopeSheets"].enabled
         member self.IsEnabledOptAddrmodeInference : bool = _config.ContainsKey "InferAddressModes" && _config.["InferAddressModes"].enabled
         member self.IsEnabledOptWeightIntrinsicAnomalousness : bool = _config.ContainsKey "WeightByIntrinsicAnomalousness" && _config.["WeightByIntrinsicAnomalousness"].enabled
         member self.IsEnabledOptWeightConditioningSetSize : bool = _config.ContainsKey "WeightByConditioningSetSize" && _config.["WeightByConditioningSetSize"].enabled
