@@ -4,6 +4,8 @@ module Scope =
     open System.Collections.Generic
     open Utils
 
+    type Path = string
+
     [<CustomEquality; CustomComparison>]
     type XYPath = {
         x: int option;
@@ -55,6 +57,7 @@ module Scope =
     | ColumnID of XYPath
     | RowID of XYPath
     | LevelID of Set<Level>
+    | SheetID of Path
         member self.IsKind : Selector =
             match self with
             | AllID -> Selector.AllCells
@@ -108,6 +111,7 @@ module Scope =
     | SameColumn
     | SameRow
     | SameLevel
+    | SameSheet
         // the selector ID is a hash value that says how to
         // compute conditional distributions.  E.g., if addr1
         // and addr2 have the same SameColumn ID, then they are
@@ -125,6 +129,7 @@ module Scope =
                 else
                     let lstrs = Set.map (fun l -> l.ToString()) levels |> Set.toList
                     "Levels [" + (List.reduce (fun (acc: string)(l: string) -> acc + ", " + l.ToString()) lstrs) + "]"
+            | SheetID(p) -> "Sheet: " + p
         static member Kinds = [| AllCells; SameColumn; SameRow; SameLevel |]
         override self.ToString() : string =
             match self with
@@ -132,6 +137,7 @@ module Scope =
             | SameColumn -> "Same Column"
             | SameRow -> "Same Row"
             | SameLevel -> "Same Level"
+            | SameSheet -> "Same Sheet"
 
     and SelectorCache() =
         let levelsOf(input: AST.Address)(dag: Depends.DAG) : Set<Level> =
@@ -151,6 +157,9 @@ module Scope =
 
         let _cache = new Dict<Selector,Dict<AST.Address,SelectID>>()
 
+        let fullpath(addr: AST.Address) : Path =
+            addr.Path + ":" + addr.WorkbookName + ":" + addr.WorksheetName
+
         member self.fetchOrStore(addr: AST.Address)(dag: Depends.DAG)(sel: Selector) : SelectID =
             if not (_cache.ContainsKey(sel)) then
                 _cache.Add(sel, new Dict<AST.Address,SelectID>())
@@ -158,9 +167,10 @@ module Scope =
             if not (_cache.[sel].ContainsKey(addr)) then
                 let sID = match sel with
                             | AllCells -> AllID
-                            | SameColumn -> ColumnID { x = Some addr.X; y = None; fullpath = Some (addr.Path + ":" + addr.WorkbookName + ":" + addr.WorksheetName) }
-                            | SameRow -> RowID { x = None; y = Some addr.Y; fullpath = Some (addr.Path + ":" + addr.WorkbookName + ":" + addr.WorksheetName)}
+                            | SameColumn -> ColumnID { x = Some addr.X; y = None; fullpath = Some (fullpath addr) }
+                            | SameRow -> RowID { x = None; y = Some addr.Y; fullpath = Some (fullpath addr)}
                             | SameLevel -> LevelID (levelsOf addr dag)
+                            | SameSheet -> SheetID (fullpath addr)
                 _cache.[sel].Add(addr, sID)
 
                 sID
