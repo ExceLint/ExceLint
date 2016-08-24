@@ -191,6 +191,12 @@
                 let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Misc; runner = nop }
                 _config.Add(name, cap)
             )
+        member self.spectralRanking() : FeatureConf =
+            FeatureConf(
+                let name = "SpectralRanking"
+                let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Misc; runner = nop }
+                _config.Add(name, cap)
+            )
 
         // getters
         member self.FeatureByName
@@ -217,6 +223,7 @@
                                         | _ -> failwith "Unknown scope selector."
                                     else None)
 
+
         member self.IsEnabled(name: string) : bool =
             _config.ContainsKey name && _config.[name].enabled
 
@@ -227,3 +234,4 @@
         member self.IsEnabledOptAddrmodeInference : bool = _config.ContainsKey "InferAddressModes" && _config.["InferAddressModes"].enabled
         member self.IsEnabledOptWeightIntrinsicAnomalousness : bool = _config.ContainsKey "WeightByIntrinsicAnomalousness" && _config.["WeightByIntrinsicAnomalousness"].enabled
         member self.IsEnabledOptWeightConditioningSetSize : bool = _config.ContainsKey "WeightByConditioningSetSize" && _config.["WeightByConditioningSetSize"].enabled
+        member self.IsEnabledSpectralRanking : bool = _config.ContainsKey "SpectralRanking" && _config.["SpectralRanking"].enabled

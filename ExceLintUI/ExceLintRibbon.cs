@@ -482,6 +482,11 @@ namespace ExceLintUI
             currentWorkbook.ConfigChanged();
         }
 
+        private void spectralRanking_Click(object sender, RibbonControlEventArgs e)
+        {
+            currentWorkbook.ConfigChanged();
+        }
+
         private void spectralPlot_Click(object sender, RibbonControlEventArgs e)
         {
             // check for debug checkbox
@@ -692,6 +697,7 @@ namespace ExceLintUI
             this.weightByIntrinsicAnomalousness.ScreenTip = text;
             this.significanceTextBox.ScreenTip = text;
             this.conditioningSetSize.ScreenTip = text;
+            this.spectralRanking.ScreenTip = text;
         }
 
         private void setUIState(WorkbookState wbs)
@@ -717,6 +723,7 @@ namespace ExceLintUI
                 this.weightByIntrinsicAnomalousness.Enabled = disabled;
                 this.significanceTextBox.Enabled = disabled;
                 this.conditioningSetSize.Enabled = disabled;
+                this.spectralRanking.Enabled = disabled;
 
                 // tell the user ExceLint doesn't work
                 SetTooltips(disabled_text);
@@ -748,6 +755,7 @@ namespace ExceLintUI
                 this.weightByIntrinsicAnomalousness.Enabled = enable_config;
                 this.significanceTextBox.Enabled = enable_config;
                 this.conditioningSetSize.Enabled = enable_config;
+                this.spectralRanking.Enabled = enable_config;
 
                 // toggle the heatmap label depending on the heatmap shown/hidden state
                 if (wbs.HeatMap_Hidden)
@@ -794,11 +802,13 @@ namespace ExceLintUI
             if (this.weightByIntrinsicAnomalousness.Checked) { c = c.weightByIntrinsicAnomalousness(); }
             if (this.conditioningSetSize.Checked) { c = c.weightByConditioningSetSize(); }
 
+            // ranking type
+            if (this.spectralRanking.Checked) { c.spectralRanking(); }
+
             return c;
         }
 
-        #endregion UTILITY_FUNCTIONS
 
-       
+        #endregion UTILITY_FUNCTIONS
     }
 }

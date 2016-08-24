@@ -125,11 +125,11 @@
                 Array.filter (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Value > 0.0) r
 
             // "AngleMin" algorithm
-            let private dderiv(y: int[]) : int =
-                let mutable anglemin = 1
+            let private dderiv(y: double[]) : int =
+                let mutable anglemin = 1.0
                 let mutable angleminindex = 0
                 for index in 0..(y.Length - 3) do
-                    let angle = y.[index] + y.[index + 2] - 2 * y.[index + 1]
+                    let angle = y.[index] + y.[index + 2] - 2.0 * y.[index + 1]
                     if angle < anglemin then
                         anglemin <- angle
                         angleminindex <- index
@@ -172,8 +172,8 @@
             // returns the index of the last element to KEEP
             // returns -1 if you should keep nothing
             let private findCutIndex(ranking: Ranking)(thresh: double)(causes: Causes): int =
-                // compute total order
-                let rank_nums = Array.map (fun (kvp: KeyValuePair<AST.Address,double>) -> int(kvp.Value)) ranking
+                // extract totally-ordered score vector
+                let rank_nums = Array.map (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Value) ranking
 
                 // find the index of the "knee"
                 let dderiv_idx = dderiv(rank_nums)
@@ -204,11 +204,12 @@
             let private significanceThreshold(input: Input)(analysis: Analysis) : AnalysisOutcome =
                 let st : double =
                     // compute total mass of distribution
-                    let total_mass = Array.sumBy (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Value) analysis.ranking
-                    // compute the maximum score allowable
-                    total_mass * input.alpha
+                    let total_mass = double analysis.ranking.Length
+                    // compute the index of the maximum element
+                    let idx = int (Math.Floor(total_mass * input.alpha))
+                    // get the score at idx
+                    analysis.ranking.[idx].Value
                 Success({ analysis with significance_threshold = st })
-
 
             let private canonicalSort(input: Input)(analysis: Analysis) : AnalysisOutcome =
                 let r = analysis.ranking
@@ -637,9 +638,7 @@
                     timer <- timer - 1
                 Success(analysis)
 
-            let private toDistribution(analysis: Analysis) : Distribution =
-                let causes = analysis.causes
-
+            let private toDistribution(causes: Causes) : Distribution =
                 let d = new Distribution()
 
                 for addr_entry in causes do
@@ -709,29 +708,23 @@
                                 Array.concat |>
                                 Set.ofArray
 
-            let private justHash(bin: HistoBin) : double =
-                let (_,_,hash) = bin
-                hash
-
-            let private justHashes(bins: seq<HistoBin>) : seq<Hash> =
-                Seq.map justHash bins
-
             let private cartesianProductByX(xset: Set<'a>)(yset: Set<'a>) : ('a*'a[]) list =
                 // cartesian product, grouped by the first element,
                 // excluding the element itself
                 Set.map (fun x -> x, (Set.difference yset (Set.ofList [x])) |> Set.toArray) xset |> Set.toList
 
-            let private justAddress(pair: KeyValuePair<AST.Address,double>) : AST.Address = pair.Key
+            let private justHashes(P: Distribution)(feature: Feature) : Set<Hash> =
+                let mutable s = set[]
+                for hash_row in P.[feature] do
+                    s <- s.Add(hash_row.Key)
+                s
 
-            let private justBins(pairs: seq<KeyValuePair<HistoBin,Count>>) : seq<HistoBin> =
-                Seq.map (fun (pair: KeyValuePair<HistoBin,Count>) -> pair.Key) pairs
-
-            let private EMDsbyFeature(feature: Feature)(analysis: Analysis) : Dict<Hash,Hash*double> =
+            let private EMDsbyFeature(feature: Feature)(causes: Causes) : Dict<Hash,Hash*double> =
                 // the initial distribution
-                let P = toDistribution analysis
+                let P = toDistribution causes
 
                 // get set of feature hashes from distribution
-                let hashes = analysis.ftable |> justBins |> justHashes |> Set.ofSeq
+                let hashes = justHashes P feature
 
                 // find the distance to move every cell with a given hash to the nearest hash of a larger bin
                 List.map (fun (a: Hash, hs: Hash[]) ->
@@ -750,11 +743,10 @@
                 |> List.choose id
                 |> adict
 
-            let private rankByEMD(input: Input)(analysis: Analysis) : AnalysisOutcome =
-                let emds = Array.map (fun f -> f, EMDsbyFeature f analysis) (input.config.EnabledFeatures) |> adict
+            let private rankByEMD(cells: AST.Address[])(input: Input)(causes: Causes) : Ranking =
+                let emds = Array.map (fun f -> f, EMDsbyFeature f causes) (input.config.EnabledFeatures) |> adict
 
-                let ranking' = Array.map (fun (pair: KeyValuePair<AST.Address,double>) ->
-                                   let cell = pair.Key
+                let ranking' = Array.map (fun (cell: AST.Address) ->
                                    let sum = Array.sumBy (fun fname ->
                                                  let feature = input.config.FeatureByName fname
                                                  let hash = feature cell input.dag
@@ -762,15 +754,11 @@
                                                  min_dist
                                              ) (input.config.EnabledFeatures)
                                    cell, sum
-                               ) analysis.ranking
+                               ) cells
                                |> Array.sortBy (fun (cell,sum) -> sum)
                                |> Array.map (fun (cell,sum) -> new KeyValuePair<AST.Address,double>(cell,sum))
 
-                let expected_num_errors = int (Math.Floor(double (input.dag.getAllFormulaAddrs().Length) * input.alpha))
-
-                let ranking'' = ranking'.[..expected_num_errors]
-
-                Success({ analysis with ranking = ranking'' })
+                ranking'
 
             let private runModel(input: Input) : AnalysisOutcome =
                 try
@@ -792,13 +780,17 @@
                     let _cssf = fun () -> buildCSSTable cells input.progress input.dag selcache sidcache input.config
                     let csstable,csstable_time = PerfUtils.runMillis _cssf ()
 
-                    // rank
-                    let _rankf = fun () -> totalHistoSums cells ftable scores csstable selcache input.config input.progress input.dag
-                    let ranking,ranking_time = PerfUtils.runMillis _rankf ()
-
                     // save causes
                     let _causef = fun () -> causes cells ftable scores csstable selcache input.config input.progress input.dag
                     let causes,causes_time = PerfUtils.runMillis _causef ()
+
+                    // rank
+                    let _rankf = fun () ->
+                                    if input.config.IsEnabledSpectralRanking then
+                                        rankByEMD cells input causes
+                                    else
+                                        totalHistoSums cells ftable scores csstable selcache input.config input.progress input.dag
+                    let ranking,ranking_time = PerfUtils.runMillis _rankf ()
 
                     Success(
                         {
@@ -836,7 +828,6 @@
                                     +> inferAddressModes    // remove anomaly candidates
                                     +> canonicalSort
                                     +> cutoff
-                                    +> rankByEMD
 
                     match pipeline input with
                     | Success(analysis) -> Some (ErrorModel(input, analysis, config))
