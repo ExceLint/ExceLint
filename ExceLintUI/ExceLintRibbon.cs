@@ -803,7 +803,7 @@ namespace ExceLintUI
             if (this.conditioningSetSize.Checked) { c = c.weightByConditioningSetSize(); }
 
             // ranking type
-            if (this.spectralRanking.Checked) { c.spectralRanking(); }
+            if (this.spectralRanking.Checked) { c = c.spectralRanking(); }
 
             return c;
         }
