@@ -5,6 +5,8 @@ using System.Linq;
 using HistoBin = System.Tuple<string, ExceLint.Scope.SelectID, double>;
 using FreqTable = System.Collections.Generic.Dictionary<System.Tuple<string, ExceLint.Scope.SelectID, double>, int>;
 using Color = System.Drawing.Color;
+using Distribution = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<double, Microsoft.FSharp.Collections.FSharpSet<AST.Address>>>;
+using XYInfo = System.Collections.Generic.Dictionary<System.Tuple<double,double>,AST.Address>;
 
 namespace ExceLintUI
 {
@@ -13,6 +15,10 @@ namespace ExceLintUI
         ExceLint.Scope.SelectID[] cs;
         string[] fs;
         ExceLint.ErrorModel m;
+        bool drawn = false;
+        ToolTip tooltip = new ToolTip();
+        Distribution d;
+        XYInfo xyinfo;
 
         public SpectralPlot(ExceLint.ErrorModel model)
         {
@@ -20,6 +26,12 @@ namespace ExceLintUI
 
             // init model
             m = model;
+
+            // init distribution
+            d = m.Distribution;
+
+            // init mouseover info
+            xyinfo = new XYInfo();
 
             // init combo box data sources
             cs = m.FrequencyTable.Keys.Select((HistoBin h) => h.Item2).Distinct().ToArray();
@@ -30,6 +42,7 @@ namespace ExceLintUI
             comboCondition.DataSource = selectorNames;
             comboFeature.DataSource = fs;
         }
+
 
         private void SpectralPlot_Load(object sender, EventArgs e)
         {
@@ -51,10 +64,15 @@ namespace ExceLintUI
 
             // draw
             chart1.Invalidate();
+
+            drawn = true;
         }
 
         private void drawBins(string feature, ExceLint.Scope.SelectID condition)
         {
+            // clear xyinfo
+            xyinfo.Clear();
+
             // which subset of bins to plot?
             var bins = m.FrequencyTable.Keys.Where((HistoBin h) => h.Item1 == feature && h.Item2 == condition).ToArray();
 
@@ -66,7 +84,7 @@ namespace ExceLintUI
             int i = 0;
             foreach (HistoBin h in bins)
             {
-                drawBin(h, m.FrequencyTable, getColor(h.Item3, fMin, fMax));
+                drawBin(feature, h, m.FrequencyTable, getColor(h.Item3, fMin, fMax));
             }
         }
 
@@ -140,10 +158,11 @@ namespace ExceLintUI
             return Color.FromArgb(255, r, g, b);
         }
 
-        private void drawBin(HistoBin h, FreqTable freqtable, Color c)
+        private void drawBin(string feature, HistoBin h, FreqTable freqtable, Color c)
         {
             var binName = h.Item3.ToString();
             var hashValue = h.Item3;
+            var addresses = d[feature][hashValue].ToArray();
             var count = freqtable[h];
 
             // create series for scatterplot
@@ -169,6 +188,13 @@ namespace ExceLintUI
                 yData[i-1] = i;
             }
 
+            //// generate map for mouseover
+            //for (int i = 0; i < count; i++)
+            //{
+            //    var xy = new Tuple<double, double>(xData[i], yData[i]);
+            //    xyinfo.Add(xy, addresses[i]);
+            //}
+
             // bind data to plot
             chart1.Series[binName].Points.DataBindXY(xData, yData);
         }
@@ -176,6 +202,51 @@ namespace ExceLintUI
         private void comboCondition_SelectedIndexChanged(object sender, EventArgs e)
         {
             drawPlot();
+        }
+
+        private void chart1_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (!drawn)
+            {
+                return;
+            }
+
+            // get combo selections
+            // choose the first one if nothing is selected
+            ExceLint.Scope.SelectID s = cs[comboCondition.SelectedIndex == -1 ? 0 : comboCondition.SelectedIndex];
+            string f = fs[comboFeature.SelectedIndex == -1 ? 0 : comboFeature.SelectedIndex];
+
+            var pos = e.Location;
+
+            var results = chart1.HitTest(pos.X, pos.Y, false,
+                                    ChartElementType.DataPoint);
+            foreach (var result in results)
+            {
+                if (result.ChartElementType == ChartElementType.DataPoint)
+                {
+                    var prop = result.Object as DataPoint;
+                    if (prop != null)
+                    {
+                        var pointXPixel = result.ChartArea.AxisX.ValueToPixelPosition(prop.XValue);
+                        var pointYPixel = result.ChartArea.AxisY.ValueToPixelPosition(prop.YValues[0]);
+
+                        // check if the cursor is really close to the point (2 pixels around the point)
+                        if (Math.Abs(pos.X - pointXPixel) < 2 &&
+                            Math.Abs(pos.Y - pointYPixel) < 2)
+                        {
+                            //var xy = new Tuple<double, double>(pointXPixel, pointYPixel);
+                            //var addr = xyinfo[xy];
+
+                            tooltip.Show("hash = " + prop.XValue,
+                                         //+ "\r\n" + addr.A1FullyQualified(),
+                                         this.chart1,
+                                         pos.X,
+                                         pos.Y - 15
+                                        );
+                        }
+                    }
+                }
+            }
         }
     }
 }

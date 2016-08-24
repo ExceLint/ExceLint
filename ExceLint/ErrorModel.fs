@@ -53,6 +53,8 @@
         // note that this cutoff is INCLUSIVE
         member self.Cutoff : int = analysis.cutoff_idx
 
+        member self.Distribution : Distribution = ErrorModel.toDistribution analysis.causes
+
         member self.inspectSelectorFor(addr: AST.Address, sel: Scope.Selector, dag: Depends.DAG) : KeyValuePair<AST.Address,(string*double)[]>[] =
             let selcache = Scope.SelectorCache()
             let sID = sel.id addr dag selcache
@@ -87,6 +89,28 @@
                                     ) d
 
             debug |> Seq.toArray
+
+        static member toDistribution(causes: Causes) : Distribution =
+            let d = new Distribution()
+
+            for addr_entry in causes do
+                let addr = addr_entry.Key
+                for bin_entry in addr_entry.Value do
+                    let (hb,_,_) = bin_entry
+                    let (feat,scope,hash) = hb
+
+                    // init inner dict
+                    if not (d.ContainsKey(feat)) then
+                        d.Add(feat, new Dict<Hash,Set<AST.Address>>())
+
+                    // init address set
+                    if not (d.[feat].ContainsKey(hash)) then
+                        d.[feat].Add(hash, set [])
+
+                    // add address
+                    d.[feat].[hash] <- d.[feat].[hash].Add(addr)
+
+            d
 
         static member private rankingIsSane(r: Ranking)(dag: Depends.DAG)(formulasOnly: bool) : bool =
             if formulasOnly then

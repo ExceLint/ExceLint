@@ -627,33 +627,15 @@
                     timer <- timer - 1
                 Success(analysis)
 
-            let private toDistribution(causes: Causes) : Distribution =
-                let d = new Distribution()
+            // TODO: pretty arbitrary at the moment
+            let private worksheetIndices(cells: Set<AST.Address>) : Dict<string,int> =
+                let sheets = Set.map (fun (cell: AST.Address) -> cell.WorksheetName) cells |> Set.toArray |> Array.sort
+                Array.mapi (fun i sheet -> sheet, i) sheets |> adict
 
-                for addr_entry in causes do
-                    let addr = addr_entry.Key
-                    for bin_entry in addr_entry.Value do
-                        let (hb,_,_) = bin_entry
-                        let (feat,scope,hash) = hb
-
-                        // init inner dict
-                        if not (d.ContainsKey(feat)) then
-                            d.Add(feat, new Dict<Hash,Set<AST.Address>>())
-
-                        // init address set
-                        if not (d.[feat].ContainsKey(hash)) then
-                            d.[feat].Add(hash, set [])
-
-                        // add address
-                        d.[feat].[hash] <- d.[feat].[hash].Add(addr)
-
-                d
-
-            let private toRawCoords(cells: Set<AST.Address>) : Set<double*double*double> =
+            let private toRawCoords(wsindices: Dict<string,int>)(cells: Set<AST.Address>) : Set<double*double*double> =
                 cells
                 // convert to raw coords
-                // (TODO: I don't know what to do with Z at the moment)
-                |> Set.map (fun cell -> (double cell.X, double cell.Y, 0.0))
+                |> Set.map (fun cell -> (double cell.X, double cell.Y, double (wsindices.[cell.WorksheetName])))
 
             // the mean
             let private binCentroid(cells: Set<double*double*double>) : double*double*double =
@@ -675,12 +657,12 @@
                 let (x2,y2,z2) = cell2
                 Math.Sqrt(Math.Pow(x1-x2,2.0) + Math.Pow(y1-y2,2.0) + Math.Pow(z1-z2,2.0))
 
-            let private earthMoversDistance(P: Distribution)(feature: Feature)(other_hash: double)(anom_hash: double): double =
+            let private earthMoversDistance(P: Distribution)(wsindices: Dict<string,int>)(feature: Feature)(other_hash: double)(anom_hash: double): double =
                 // get every cell in the named anomalous bin(s) across all conditional tables
-                let dirt = P.[feature].[anom_hash] |> toRawCoords |> Set.toArray
+                let dirt = P.[feature].[anom_hash] |> toRawCoords wsindices |> Set.toArray
 
                 // get every cell in the named other bin(s) across all conditional tables
-                let other_dirt = P.[feature].[other_hash] |> toRawCoords
+                let other_dirt = P.[feature].[other_hash] |> toRawCoords wsindices
 
                 // compute the centroid of the other_hash
                 let centroid = binCentroid other_dirt
@@ -708,9 +690,9 @@
                     s <- s.Add(hash_row.Key)
                 s
 
-            let private EMDsbyFeature(feature: Feature)(causes: Causes) : Dict<Hash,Hash*double> =
+            let private EMDsbyFeature(feature: Feature)(causes: Causes)(wsindices: Dict<string,int>) : Dict<Hash,Hash*double> =
                 // the initial distribution
-                let P = toDistribution causes
+                let P = ErrorModel.toDistribution causes
 
                 // get set of feature hashes from distribution
                 let hashes = justHashes P feature
@@ -722,7 +704,7 @@
                     let bigger = Array.filter (fun h -> P.[feature].[h].Count > a_count) hs
 
                     if bigger.Length > 0 then
-                        let f = (fun h -> earthMoversDistance P feature h a) 
+                        let f = (fun h -> earthMoversDistance P wsindices feature h a) 
                         let min_feat = argmin f bigger
                         let min_distance = f min_feat
                         Some(a, (min_feat, min_distance))
@@ -733,7 +715,9 @@
                 |> adict
 
             let private rankByEMD(cells: AST.Address[])(input: Input)(causes: Causes) : Ranking =
-                let emds = Array.map (fun f -> f, EMDsbyFeature f causes) (input.config.EnabledFeatures) |> adict
+                let wsindices = worksheetIndices (cells |> Set.ofArray)
+
+                let emds = Array.map (fun f -> f, EMDsbyFeature f causes wsindices) (input.config.EnabledFeatures) |> adict
 
                 let ranking' = Array.map (fun (cell: AST.Address) ->
                                    let sum = Array.sumBy (fun fname ->
@@ -816,7 +800,7 @@
                                     +> reweightRanking      // modify ranking scores
                                     +> canonicalSort        // sort
                                     +> cutoffIndex          // compute initial cutoff index
-                                    +> kneeIndexOpt            // compute knee index
+                                    +> kneeIndexOpt         // optionally compute knee index
                                     +> inferAddressModes    // remove anomaly candidates
                                     +> canonicalSort
                                     +> kneeIndexOpt
