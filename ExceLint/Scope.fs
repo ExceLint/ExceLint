@@ -110,6 +110,7 @@ module Scope =
                         0
                     else
                         1
+                | SheetID(p1),SheetID(p2) -> p1.CompareTo(p2)
                 | _,_ -> failwith "incomparable"
 
     and Selector =
