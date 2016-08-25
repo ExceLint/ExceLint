@@ -6,7 +6,8 @@ using HistoBin = System.Tuple<string, ExceLint.Scope.SelectID, double>;
 using FreqTable = System.Collections.Generic.Dictionary<System.Tuple<string, ExceLint.Scope.SelectID, double>, int>;
 using Color = System.Drawing.Color;
 using Distribution = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<ExceLint.Scope.SelectID, System.Collections.Generic.Dictionary<double, Microsoft.FSharp.Collections.FSharpSet<AST.Address>>>>;
-using XYInfo = System.Collections.Generic.Dictionary<System.Tuple<double,double>,AST.Address>;
+using XYInfo = System.Collections.Generic.Dictionary<System.Tuple<double, double>, AST.Address>;
+using Microsoft.FSharp.Collections;
 
 namespace ExceLintUI
 {
@@ -74,23 +75,19 @@ namespace ExceLintUI
             xyinfo.Clear();
 
             // which subset of bins to plot?
-            var bins = m.FrequencyTable.Keys.Where((HistoBin h) => {
-                string h_feat = h.Item1;
-                ExceLint.Scope.SelectID h_cond = h.Item2;
-                var sameFeature = h_feat == feature;
-                var sameScope = h_cond.Equals(condition);
-                return sameFeature && sameScope;
-            }).ToArray();
+            var bins = d[feature][condition];
 
             // find dynamic range of features
-            var fMin = bins.Select((HistoBin h) => h.Item3).Min();
-            var fMax = bins.Select((HistoBin h) => h.Item3).Max();
+            var fMin = bins.Select((pair) => pair.Key).Min();
+            var fMax = bins.Select((pair) => pair.Key).Max();
 
             // plot them
-            int i = 0;
-            foreach (HistoBin h in bins)
+            foreach (var pair in bins)
             {
-                drawBin(feature, condition, h, m.FrequencyTable, getColor(h.Item3, fMin, fMax));
+                var hashValue = pair.Key;
+                var addresses = pair.Value;
+                var s = drawBin(addresses, hashValue, getColor(hashValue, fMin, fMax));
+                chart1.Series.Add(s);
             }
         }
 
@@ -164,12 +161,9 @@ namespace ExceLintUI
             return Color.FromArgb(255, r, g, b);
         }
 
-        private void drawBin(string feature, ExceLint.Scope.SelectID sid, HistoBin h, FreqTable freqtable, Color c)
+        private static Series drawBin(FSharpSet<AST.Address> addresses, double hashValue, Color c)
         {
-            var binName = h.Item3.ToString();
-            var hashValue = h.Item3;
-            var addresses = d[feature][sid][hashValue].ToArray();
-            var count = freqtable[h];
+            var binName = hashValue.ToString();
 
             // create series for scatterplot
             var series = new Series
@@ -182,27 +176,19 @@ namespace ExceLintUI
                 AxisLabel = binName
             };
 
-            // add series to chart
-            chart1.Series.Add(series);
-
             // generate data
-            var xData = new double[count];
-            var yData = new double[count];
-            for (int i = 1; i <= count; i++)
+            var xData = new double[addresses.Count];
+            var yData = new double[addresses.Count];
+            for (int i = 0; i < addresses.Count; i++)
             {
-                xData[i-1] = hashValue;
-                yData[i-1] = i;
+                xData[i] = hashValue;
+                yData[i] = i;
             }
 
-            //// generate map for mouseover
-            //for (int i = 0; i < count; i++)
-            //{
-            //    var xy = new Tuple<double, double>(xData[i], yData[i]);
-            //    xyinfo.Add(xy, addresses[i]);
-            //}
-
             // bind data to plot
-            chart1.Series[binName].Points.DataBindXY(xData, yData);
+            series.Points.DataBindXY(xData, yData);
+
+            return series;
         }
 
         private void comboCondition_SelectedIndexChanged(object sender, EventArgs e)
