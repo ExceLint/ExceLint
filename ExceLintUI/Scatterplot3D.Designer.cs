@@ -28,9 +28,9 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea3 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
-            System.Windows.Forms.DataVisualization.Charting.Legend legend3 = new System.Windows.Forms.DataVisualization.Charting.Legend();
-            System.Windows.Forms.DataVisualization.Charting.Series series3 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea4 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Legend legend4 = new System.Windows.Forms.DataVisualization.Charting.Legend();
+            System.Windows.Forms.DataVisualization.Charting.Series series4 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.chart1 = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.labelCondition = new System.Windows.Forms.Label();
             this.comboCondition = new System.Windows.Forms.ComboBox();
@@ -41,18 +41,18 @@
             // 
             // chart1
             // 
-            chartArea3.Area3DStyle.Enable3D = true;
-            chartArea3.Name = "ChartArea1";
-            this.chart1.ChartAreas.Add(chartArea3);
-            legend3.Name = "Legend1";
-            this.chart1.Legends.Add(legend3);
+            chartArea4.Area3DStyle.Enable3D = true;
+            chartArea4.Name = "ChartArea1";
+            this.chart1.ChartAreas.Add(chartArea4);
+            legend4.Name = "Legend1";
+            this.chart1.Legends.Add(legend4);
             this.chart1.Location = new System.Drawing.Point(52, 27);
             this.chart1.Name = "chart1";
-            series3.ChartArea = "ChartArea1";
-            series3.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Point;
-            series3.Legend = "Legend1";
-            series3.Name = "Series1";
-            this.chart1.Series.Add(series3);
+            series4.ChartArea = "ChartArea1";
+            series4.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Point;
+            series4.Legend = "Legend1";
+            series4.Name = "Series1";
+            this.chart1.Series.Add(series4);
             this.chart1.Size = new System.Drawing.Size(658, 420);
             this.chart1.TabIndex = 0;
             this.chart1.Text = "scatterplot";
@@ -74,6 +74,7 @@
             this.comboCondition.Name = "comboCondition";
             this.comboCondition.Size = new System.Drawing.Size(221, 21);
             this.comboCondition.TabIndex = 7;
+            this.comboCondition.SelectedIndexChanged += new System.EventHandler(this.comboCondition_SelectedIndexChanged);
             // 
             // labelFeature
             // 
@@ -92,8 +93,9 @@
             this.comboFeature.Name = "comboFeature";
             this.comboFeature.Size = new System.Drawing.Size(221, 21);
             this.comboFeature.TabIndex = 5;
+            this.comboFeature.SelectedIndexChanged += new System.EventHandler(this.comboCondition_SelectedIndexChanged);
             // 
-            // Scaterplot3D
+            // Scatterplot3D
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -103,8 +105,8 @@
             this.Controls.Add(this.labelFeature);
             this.Controls.Add(this.comboFeature);
             this.Controls.Add(this.chart1);
-            this.Name = "Scaterplot3D";
-            this.Text = "Scaterplot3D";
+            this.Name = "Scatterplot3D";
+            this.Text = "Scatterplot3D";
             this.Load += new System.EventHandler(this.Scaterplot3D_Load);
             ((System.ComponentModel.ISupportInitialize)(this.chart1)).EndInit();
             this.ResumeLayout(false);

@@ -75,24 +75,18 @@ namespace ExceLintUI
             xyinfo.Clear();
 
             // which subset of bins to plot?
-            var bins = m.FrequencyTable.Keys.Where((HistoBin h) => {
-                string h_feat = h.Item1;
-                ExceLint.Scope.SelectID h_cond = h.Item2;
-                var sameFeature = h_feat == feature;
-                var sameScope = h_cond.Equals(condition);
-                return sameFeature && sameScope;
-            }).OrderBy((HistoBin h) => h.Item3).ToArray(); // order by hash value
+            var pairs = d[feature][condition].OrderBy(pair => pair.Key); // order by hash value
 
             // find dynamic range of hashes
-            var fMin = bins.Select((HistoBin h) => h.Item3).Min();
-            var fMax = bins.Select((HistoBin h) => h.Item3).Max();
+            var fMin = pairs.Select(pair => pair.Key).Min();
+            var fMax = pairs.Select(pair => pair.Key).Max();
 
             // plot them
-            var serieses = new Series[bins.Length];
-            for (int i = 0; i < bins.Length; i++)
+            foreach (var pair in pairs)
             {
-                HistoBin h = bins[i];
-                var s = drawBin(feature, condition, h, m.FrequencyTable, getColor(h.Item3, fMin, fMax));
+                var hash = pair.Key;
+                var bin = new HistoBin(feature, condition, hash);
+                var s = drawBin(feature, condition, bin, m.FrequencyTable, getColor(hash, fMin, fMax));
                 chart1.Series.Add(s);
             }
         }
