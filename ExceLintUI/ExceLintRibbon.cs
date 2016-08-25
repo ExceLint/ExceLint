@@ -528,6 +528,31 @@ namespace ExceLintUI
             pb.Close();
         }
 
+        private void scatter3D_Click(object sender, RibbonControlEventArgs e)
+        {
+            // check for debug checkbox
+            currentWorkbook.DebugMode = this.DebugOutput.Checked;
+
+            // get significance threshold
+            var sig = getPercent(this.significanceTextBox.Text, this.significanceTextBox.Label);
+
+            // workbook- and UI-update callback
+            Action<WorkbookState> updateWorkbook = (WorkbookState wbs) =>
+            {
+                this.currentWorkbook = wbs;
+                setUIState(currentWorkbook);
+            };
+
+            // create progbar
+            var pb = new ProgBar();
+
+            // display form, running analysis if necessary
+            currentWorkbook.show3DScatterPlot(WorkbookState.MAX_DURATION_IN_MS, getConfig(), this.forceBuildDAG.Checked, pb);
+
+            // close progbar
+            pb.Close();
+        }
+
         #endregion BUTTON_HANDLERS
 
         #region EVENTS

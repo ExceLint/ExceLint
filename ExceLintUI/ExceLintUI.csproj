@@ -198,6 +198,12 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="RibbonHelper.cs" />
+    <Compile Include="Scatterplot3D.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Scatterplot3D.Designer.cs">
+      <DependentUpon>Scatterplot3D.cs</DependentUpon>
+    </Compile>
     <Compile Include="SpectralPlot.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -221,6 +227,9 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
+    <EmbeddedResource Include="Scatterplot3D.resx">
+      <DependentUpon>Scatterplot3D.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="SpectralPlot.resx">
       <DependentUpon>SpectralPlot.cs</DependentUpon>
     </EmbeddedResource>

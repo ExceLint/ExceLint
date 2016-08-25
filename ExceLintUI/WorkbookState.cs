@@ -424,6 +424,18 @@ namespace ExceLintUI
             plot.Show();
         }
 
+        public void show3DScatterPlot(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean forceDAGBuild, ProgBar pb)
+        {
+            if (!_analysis.hasRun)
+            {
+                // run analysis
+                analyze(max_duration_in_ms, config, forceDAGBuild, pb);
+            }
+
+            var plot = new Scatterplot3D(_analysis.model);
+            plot.Show();
+        }
+
         private double intensity(double min_score, double max_score, double score)
         {
             var lmax = Math.Log(max_score - min_score + 1);
