@@ -74,7 +74,13 @@ namespace ExceLintUI
             xyinfo.Clear();
 
             // which subset of bins to plot?
-            var bins = m.FrequencyTable.Keys.Where((HistoBin h) => h.Item1 == feature && h.Item2 == condition).ToArray();
+            var bins = m.FrequencyTable.Keys.Where((HistoBin h) => {
+                string h_feat = h.Item1;
+                ExceLint.Scope.SelectID h_cond = h.Item2;
+                var sameFeature = h_feat == feature;
+                var sameScope = h_cond.Equals(condition);
+                return sameFeature && sameScope;
+            }).ToArray();
 
             // find dynamic range of features
             var fMin = bins.Select((HistoBin h) => h.Item3).Min();
