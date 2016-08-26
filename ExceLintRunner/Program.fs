@@ -43,7 +43,11 @@ open ExceLint
         |> (fun arr -> new HashSet<AST.Address>(arr))
 
 
-    let per_append_excelint(sw: StreamWriter)(csv: CSV.WorkbookStats)(truth: CUSTODES.GroundTruth)(custodes: CUSTODES.Output)(model: ErrorModel)(ranking: Pipeline.Ranking) : unit =
+    let per_append_excelint(sw: StreamWriter)(csv: CSV.WorkbookStats)(truth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: Pipeline.Ranking) : unit =
+        let smells = match custodes with
+                     | CUSTODES.OKOutput c -> c.Smells
+                     | _ -> new HashSet<AST.Address>()
+
         // append all ExceLint flagged cells
         Array.mapi (fun i (kvp: KeyValuePair<AST.Address,double>) ->
             let addr = kvp.Key
@@ -53,9 +57,9 @@ open ExceLint
                                 worksheet = addr.WorksheetName,
                                 addr = addr.A1Local(),
                                 flaggedByExcelint = (i <= model.Cutoff),
-                                flaggedByCustodes = custodes.Smells.Contains addr,
+                                flaggedByCustodes = smells.Contains addr,
                                 flaggedByExcel = truth.isFlaggedByExcel(addr),
-                                cliSameAsV1 = truth.differs addr (custodes.Smells.Contains addr),
+                                cliSameAsV1 = truth.differs addr (smells.Contains addr),
                                 rank = i,
                                 score = kvp.Value,
                                 custodesTrueSmell = truth.isTrueSmell addr
@@ -65,7 +69,11 @@ open ExceLint
             sw.Write (csv.Append([per_row]).SaveToString())
         ) ranking |> ignore
 
-    let per_append_custodes(sw: StreamWriter)(csv: CSV.WorkbookStats)(truth: CUSTODES.GroundTruth)(custodes: CUSTODES.Output)(model: ErrorModel)(ranking: Pipeline.Ranking)(custodes_not_excelint: HashSet<AST.Address>) : unit =
+    let per_append_custodes(sw: StreamWriter)(csv: CSV.WorkbookStats)(truth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: Pipeline.Ranking)(custodes_not_excelint: HashSet<AST.Address>) : unit =
+        let smells = match custodes with
+                     | CUSTODES.OKOutput c -> c.Smells
+                     | _ -> new HashSet<AST.Address>()
+
         // append all remaining CUSTODES cells
         Array.map (fun (addr: AST.Address) ->
             let per_row = CSV.WorkbookStats.Row(
@@ -76,7 +84,7 @@ open ExceLint
                                 flaggedByExcelint = false,
                                 flaggedByCustodes = true,
                                 flaggedByExcel = truth.isFlaggedByExcel(addr),
-                                cliSameAsV1 = truth.differs addr (custodes.Smells.Contains addr),
+                                cliSameAsV1 = truth.differs addr (smells.Contains addr),
                                 rank = 999999999,
                                 score = 0.0,
                                 custodesTrueSmell = truth.isTrueSmell addr
@@ -86,7 +94,11 @@ open ExceLint
             sw.Write (csv.Append([per_row]).SaveToString())
         ) (custodes_not_excelint |> Seq.toArray) |> ignore
 
-    let per_append_true_smells(sw: StreamWriter)(csv: CSV.WorkbookStats)(truth: CUSTODES.GroundTruth)(custodes: CUSTODES.Output)(model: ErrorModel)(ranking: Pipeline.Ranking)(true_smells_not_found: HashSet<AST.Address>) : unit =
+    let per_append_true_smells(sw: StreamWriter)(csv: CSV.WorkbookStats)(truth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: Pipeline.Ranking)(true_smells_not_found: HashSet<AST.Address>) : unit =
+        let smells = match custodes with
+                     | CUSTODES.OKOutput c -> c.Smells
+                     | _ -> new HashSet<AST.Address>()
+
         // append all true smells found by neither tool
         Array.map (fun (addr: AST.Address) ->
             let per_row = CSV.WorkbookStats.Row(
@@ -97,7 +109,7 @@ open ExceLint
                                 flaggedByExcelint = false,
                                 flaggedByCustodes = false,
                                 flaggedByExcel = truth.isFlaggedByExcel(addr),
-                                cliSameAsV1 = truth.differs addr (custodes.Smells.Contains addr),
+                                cliSameAsV1 = truth.differs addr (smells.Contains addr),
                                 rank = 999999999,
                                 score = 0.0,
                                 custodesTrueSmell = true
@@ -136,7 +148,7 @@ open ExceLint
                     sw.Write (csv.Append([per_row]).SaveToString())
                 ) (missed_formula_related |> Seq.toArray) |> ignore
 
-    let append_stats(stats: Stats)(sw: StreamWriter)(csv: CSV.ExceLintStats)(custodes: CUSTODES.Output)(model: ErrorModel)(config: Args.Config) : unit =
+    let append_stats(stats: Stats)(sw: StreamWriter)(csv: CSV.ExceLintStats)(model: ErrorModel)(custodes: CUSTODES.OutputResult)(config: Args.Config) : unit =
         // write stats
         let row = CSV.ExceLintStats.Row(
                     benchmarkName = stats.shortname,
@@ -150,6 +162,8 @@ open ExceLint
                     causesTimeMs = model.CausesTimeInMilliseconds,
                     conditioningSetSzTimeMs = model.ConditioningSetSizeTimeInMilliseconds,
                     numAnom = model.Cutoff,
+                    custodesFail = (match custodes with | CUSTODES.BadOutput _ -> true | _ -> false),
+                    custodesFailMsg = (match custodes with | CUSTODES.BadOutput msg -> msg | _ -> ""),
                     numCustodesSmells = stats.custodes_flagged.Count,
                     trueSmells = stats.true_smells_this_wb.Count,
                     excelintTrueSmellsFound = stats.excelint_true_smells.Count,
@@ -216,7 +230,7 @@ open ExceLint
                         let model_opt = ExceLint.ModelBuilder.analyze (app.XLApplication()) config.FeatureConf graph thresh (Depends.Progress.NOPProgress())
 
                         printfn "Running CUSTODES analysis: %A" shortf
-                        let custodes = CUSTODES.Output(file, config.CustodesPath, config.JavaPath)
+                        let custodes = CUSTODES.getOutput(file, config.CustodesPath, config.JavaPath)
 
                         match model_opt with
                         | Some(model) ->
@@ -238,7 +252,9 @@ open ExceLint
                                 let this_wb = ranking.[0].Key.WorkbookName
 
                                 // get the set of cells flagged by CUSTODES
-                                let custodes_flags = custodes.Smells
+                                let custodes_flags = match custodes with
+                                                     | CUSTODES.OKOutput c -> c.Smells
+                                                     | CUSTODES.BadOutput _ -> new HashSet<AST.Address>()
 
                                 // find true smells found by neither tool
                                 let true_smells_this_wb = truth.TrueSmellsbyWorkbook this_wb
@@ -278,7 +294,7 @@ open ExceLint
                                 per_append_true_smells per_sw per_csv truth custodes model ranking true_smells_not_found
 
                                 // write overall stats to CSV
-                                append_stats stats sw csv custodes model config
+                                append_stats stats sw csv model custodes config
 
                                 // sanity check
                                 per_append_debug debug_sw debug_csv model stats.custodes_flagged config ranking

@@ -113,7 +113,24 @@
         worksheets .>> eof
         <!> "start"
 
-    let parse(output: string) : CUSTODESSmells =
-        match run start output with
-        | Success(res,_,_) -> res
-        | Failure(err,_,_) -> failwith err
+    let private exceptionParser : P<string> =
+        skipManyTill anyChar (pstring "Exception in thread") >>.
+            (
+                (many1 anyChar) |>>
+                (fun stacktrace -> "Exception in thread " + System.String.Join("", stacktrace))
+            )
+        <!> "exceptionParser"
+
+    type CUSTODESParse =
+    | CSuccess of CUSTODESSmells
+    | CFailure of string
+
+    let parse(output: string) : CUSTODESParse =
+        // before parsing, look for exceptions
+        match run exceptionParser output with
+        | Success(excptn,_,_) -> CFailure(excptn)
+        | Failure(noexcptn,_,_) -> 
+            // good, now parse output
+            match run start output with
+            | Success(smells,_,_) -> CSuccess(smells)
+            | Failure(err,_,_) -> CFailure(err)

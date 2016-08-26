@@ -81,13 +81,20 @@
             )
         )
 
-    let runCUSTODES(spreadsheet: string)(custodesPath: string)(javaPath: string) : CUSTODESSmells =
+    type Output(canonicalOutputHS: HashSet<AST.Address>) =
+        member self.NumSmells = canonicalOutputHS.Count
+        member self.Smells = canonicalOutputHS
+
+    type OutputResult =
+    | OKOutput of Output
+    | BadOutput of string
+
+    let runCUSTODES(spreadsheet: string)(custodesPath: string)(javaPath: string) : CUSTODESParse =
         let outputPath = IO.Path.GetTempPath()
 
         let invocation = fun () -> runCommand (shortPath javaPath) [| "-jar"; shortPath custodesPath; shortPath spreadsheet; shortPath outputPath; |]
         match invocation() with
-        | STDOUT output ->
-            parse output
+        | STDOUT output -> parse output
         | STDERR error -> failwith error
 
     let CUSTODESToAddress(addrstr: Address)(worksheetname: string)(workbookname: string)(path: string) : AST.Address =
@@ -102,7 +109,7 @@
             IO.Path.GetFullPath(path)   // ensure absolute path
         )
 
-    type Output(spreadsheet: string, custodesPath: string, javaPath: string) =
+    let getOutput(spreadsheet: string, custodesPath: string, javaPath: string) : OutputResult =
         let absSpreadsheetPath = IO.Path.GetFullPath(spreadsheet)
         let absCustodesPath = IO.Path.GetFullPath(custodesPath)
         let absJavaPath = IO.Path.GetFullPath(javaPath)
@@ -113,20 +120,22 @@
         // run custodes
         let cOutput = runCUSTODES absSpreadsheetPath absCustodesPath absJavaPath
 
-        // convert to parcel addresses and flatten
-        let canonicalOutput = Seq.map (fun (pair: KeyValuePair<Worksheet,Address[]>) ->
-                                let worksheetname = pair.Key
-                                Array.map (fun (addrstr: Address) ->
-                                    CUSTODESToAddress addrstr worksheetname workbookname path
-                                ) pair.Value
-                              ) cOutput
-                              |> Seq.concat |> Seq.toArray
+        match cOutput with
+        | CFailure(err) -> BadOutput(err)
+        | CSuccess(o) ->
+            // convert to parcel addresses and flatten
+            let canonicalOutput = Seq.map (fun (pair: KeyValuePair<Worksheet,Address[]>) ->
+                                    let worksheetname = pair.Key
+                                    Array.map (fun (addrstr: Address) ->
+                                        CUSTODESToAddress addrstr worksheetname workbookname path
+                                    ) pair.Value
+                                  ) o
+                                  |> Seq.concat |> Seq.toArray
 
-        // this will remove duplicates, if there are any
-        let canonicalOutputHS = new HashSet<AST.Address>(canonicalOutput)
+            // this will remove duplicates, if there are any
+            let canonicalOutputHS = new HashSet<AST.Address>(canonicalOutput)
 
-        member self.NumSmells = canonicalOutputHS.Count
-        member self.Smells = canonicalOutputHS
+            OKOutput (Output(canonicalOutputHS))
 
     let addresses(tool: Tool)(row: CSV.CUSTODESGroundTruth.Row)(path: string) : AST.Address[] =
         let cells_str = tool.Accessor(row).Replace(" ", "")
