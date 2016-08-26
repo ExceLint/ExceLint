@@ -187,6 +187,94 @@ open ExceLint
         sw.Write (csv.Append([row]).SaveToString())
         sw.Flush()
 
+    let analyze (file: String)(thresh: double)(app: Application)(config: Args.Config)(truth: CUSTODES.GroundTruth)(csv: CSV.ExceLintStats)(debug_csv: CSV.DebugInfo)(sw: StreamWriter)(debug_sw: StreamWriter) =
+        let shortf = (System.IO.Path.GetFileName file)
+
+        printfn "Opening: %A" shortf
+
+        let wb = app.OpenWorkbook(file)
+            
+        printfn "Building dependence graph: %A" shortf
+        let graph = wb.buildDependenceGraph()
+
+        printfn "Running ExceLint analysis: %A" shortf
+        let model_opt = ExceLint.ModelBuilder.analyze (app.XLApplication()) config.FeatureConf graph thresh (Depends.Progress.NOPProgress())
+
+        printfn "Running CUSTODES analysis: %A" shortf
+        let custodes = CUSTODES.getOutput(file, config.CustodesPath, config.JavaPath)
+
+        match model_opt with
+        | Some(model) ->
+            // per-workbook stats
+            let per_csv = new CSV.WorkbookStats([])
+
+            using (new StreamWriter(config.verbose_csv shortf)) (fun per_sw ->
+                // write header
+                // write headers
+                per_sw.Write(CSV.WorkbookStatsHeaders)
+                per_sw.Flush()
+
+                let ranking = model.rankByFeatureSum()
+
+                // get the set of cells flagged by ExceLint
+                let excelint_flags = rankToSet ranking model
+
+                // get workbook selector
+                let this_wb = ranking.[0].Key.WorkbookName
+
+                // get the set of cells flagged by CUSTODES
+                let custodes_flags = match custodes with
+                                        | CUSTODES.OKOutput c -> c.Smells
+                                        | CUSTODES.BadOutput _ -> new HashSet<AST.Address>()
+
+                // find true smells found by neither tool
+                let true_smells_this_wb = truth.TrueSmellsbyWorkbook this_wb
+                let true_smells_not_found_by_excelint = hs_difference true_smells_this_wb excelint_flags
+                let true_smells_not_found_by_custodes = hs_difference true_smells_this_wb custodes_flags
+                let true_smells_not_found = hs_intersection true_smells_not_found_by_excelint true_smells_not_found_by_custodes
+
+                // overall stats
+                let excel_this_wb = truth.ExcelbyWorkbook this_wb
+                let excelint_true_smells = hs_intersection excelint_flags true_smells_this_wb
+                assert (excelint_true_smells.IsSubsetOf(excelint_flags))
+                let custodes_true_smells = hs_intersection custodes_flags true_smells_this_wb
+                assert (custodes_true_smells.IsSubsetOf(custodes_flags))
+                let excelint_excel_intersect = hs_intersection excelint_flags excel_this_wb
+                let custodes_excel_intersect = hs_intersection custodes_flags excel_this_wb
+
+                let stats = {
+                    shortname = shortf;
+                    threshold = thresh;
+                    custodes_flagged = custodes_flags;
+                    excelint_not_custodes = hs_difference excelint_flags custodes_flags;
+                    custodes_not_excelint = hs_difference custodes_flags excelint_flags;
+                    true_smells_this_wb = true_smells_this_wb;
+                    true_smells_not_found_by_excelint = true_smells_not_found_by_excelint;
+                    true_smells_not_found_by_custodes = true_smells_not_found_by_custodes;
+                    true_smells_not_found = true_smells_not_found;
+                    excel_this_wb =  excel_this_wb;
+                    excelint_true_smells = excelint_true_smells;
+                    custodes_true_smells = custodes_true_smells;
+                    excelint_excel_intersect = excelint_excel_intersect;
+                    custodes_excel_intersect = custodes_excel_intersect;
+                }
+
+                // write to per-workbook CSV
+                per_append_excelint per_sw per_csv truth custodes model ranking
+                per_append_custodes per_sw per_csv truth custodes model ranking stats.excelint_not_custodes
+                per_append_true_smells per_sw per_csv truth custodes model ranking true_smells_not_found
+
+                // write overall stats to CSV
+                append_stats stats sw csv model custodes config
+
+                // sanity check
+                per_append_debug debug_sw debug_csv model stats.custodes_flagged config ranking
+            )
+
+            printfn "Analysis complete: %A" shortf
+        | None ->
+            printfn "Analysis failed: %A" shortf
+
     [<EntryPoint>]
     let main argv = 
         let config = Args.processArgs argv
@@ -218,92 +306,13 @@ open ExceLint
                     debug_sw.Flush()
 
                     for file in config.files do
+                        
                         let shortf = (System.IO.Path.GetFileName file)
 
-                        printfn "Opening: %A" shortf
-                        let wb = app.OpenWorkbook(file)
-            
-                        printfn "Building dependence graph: %A" shortf
-                        let graph = wb.buildDependenceGraph()
-
-                        printfn "Running ExceLint analysis: %A" shortf
-                        let model_opt = ExceLint.ModelBuilder.analyze (app.XLApplication()) config.FeatureConf graph thresh (Depends.Progress.NOPProgress())
-
-                        printfn "Running CUSTODES analysis: %A" shortf
-                        let custodes = CUSTODES.getOutput(file, config.CustodesPath, config.JavaPath)
-
-                        match model_opt with
-                        | Some(model) ->
-                            // per-workbook stats
-                            let per_csv = new CSV.WorkbookStats([])
-
-                            using (new StreamWriter(config.verbose_csv shortf)) (fun per_sw ->
-                                // write header
-                                // write headers
-                                per_sw.Write(CSV.WorkbookStatsHeaders)
-                                per_sw.Flush()
-
-                                let ranking = model.rankByFeatureSum()
-
-                                // get the set of cells flagged by ExceLint
-                                let excelint_flags = rankToSet ranking model
-
-                                // get workbook selector
-                                let this_wb = ranking.[0].Key.WorkbookName
-
-                                // get the set of cells flagged by CUSTODES
-                                let custodes_flags = match custodes with
-                                                     | CUSTODES.OKOutput c -> c.Smells
-                                                     | CUSTODES.BadOutput _ -> new HashSet<AST.Address>()
-
-                                // find true smells found by neither tool
-                                let true_smells_this_wb = truth.TrueSmellsbyWorkbook this_wb
-                                let true_smells_not_found_by_excelint = hs_difference true_smells_this_wb excelint_flags
-                                let true_smells_not_found_by_custodes = hs_difference true_smells_this_wb custodes_flags
-                                let true_smells_not_found = hs_intersection true_smells_not_found_by_excelint true_smells_not_found_by_custodes
-
-                                // overall stats
-                                let excel_this_wb = truth.ExcelbyWorkbook this_wb
-                                let excelint_true_smells = hs_intersection excelint_flags true_smells_this_wb
-                                assert (excelint_true_smells.IsSubsetOf(excelint_flags))
-                                let custodes_true_smells = hs_intersection custodes_flags true_smells_this_wb
-                                assert (custodes_true_smells.IsSubsetOf(custodes_flags))
-                                let excelint_excel_intersect = hs_intersection excelint_flags excel_this_wb
-                                let custodes_excel_intersect = hs_intersection custodes_flags excel_this_wb
-
-                                let stats = {
-                                    shortname = shortf;
-                                    threshold = thresh;
-                                    custodes_flagged = custodes_flags;
-                                    excelint_not_custodes = hs_difference excelint_flags custodes_flags;
-                                    custodes_not_excelint = hs_difference custodes_flags excelint_flags;
-                                    true_smells_this_wb = true_smells_this_wb;
-                                    true_smells_not_found_by_excelint = true_smells_not_found_by_excelint;
-                                    true_smells_not_found_by_custodes = true_smells_not_found_by_custodes;
-                                    true_smells_not_found = true_smells_not_found;
-                                    excel_this_wb =  excel_this_wb;
-                                    excelint_true_smells = excelint_true_smells;
-                                    custodes_true_smells = custodes_true_smells;
-                                    excelint_excel_intersect = excelint_excel_intersect;
-                                    custodes_excel_intersect = custodes_excel_intersect;
-                                }
-
-                                // write to per-workbook CSV
-                                per_append_excelint per_sw per_csv truth custodes model ranking
-                                per_append_custodes per_sw per_csv truth custodes model ranking stats.excelint_not_custodes
-                                per_append_true_smells per_sw per_csv truth custodes model ranking true_smells_not_found
-
-                                // write overall stats to CSV
-                                append_stats stats sw csv model custodes config
-
-                                // sanity check
-                                per_append_debug debug_sw debug_csv model stats.custodes_flagged config ranking
-                            )
-
-                            printfn "Analysis complete: %A" shortf
-                                
-                        | None ->
-                            printfn "Analysis failed: %A" shortf
+                        try
+                            analyze file thresh app config truth csv debug_csv sw debug_sw
+                        with
+                        | e -> printfn "Cannot open workbook %A because:\n%A" shortf e.Message
                 )
             )
         )
