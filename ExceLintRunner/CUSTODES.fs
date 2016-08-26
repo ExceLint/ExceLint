@@ -95,7 +95,7 @@
         let invocation = fun () -> runCommand (shortPath javaPath) [| "-jar"; shortPath custodesPath; shortPath spreadsheet; shortPath outputPath; |]
         match invocation() with
         | STDOUT output -> parse output
-        | STDERR error -> failwith error
+        | STDERR error -> parseException error
 
     let CUSTODESToAddress(addrstr: Address)(worksheetname: string)(workbookname: string)(path: string) : AST.Address =
         // we force the mode to absolute because

@@ -113,7 +113,7 @@
         worksheets .>> eof
         <!> "start"
 
-    let private exceptionParser : P<string> =
+    let exceptionParser : P<string> =
         skipManyTill anyChar (pstring "Exception in thread") >>.
             (
                 (many1 anyChar) |>>
@@ -124,6 +124,11 @@
     type CUSTODESParse =
     | CSuccess of CUSTODESSmells
     | CFailure of string
+
+    let parseException(output: string) : CUSTODESParse =
+        match run exceptionParser output with
+        | Success(excptn,_,_) -> CFailure(excptn)
+        | Failure(other_failure,_,_) -> CFailure(other_failure)
 
     let parse(output: string) : CUSTODESParse =
         // before parsing, look for exceptions
