@@ -125,10 +125,10 @@
     | CSuccess of CUSTODESSmells
     | CFailure of string
 
-    let parseException(output: string) : CUSTODESParse =
+    let parseException(output: string) : string option =
         match run exceptionParser output with
-        | Success(excptn,_,_) -> CFailure(excptn)
-        | Failure(other_failure,_,_) -> CFailure(other_failure)
+        | Success(excptn,_,_) -> Some(excptn)
+        | Failure(other_failure,_,_) -> None
 
     let parse(output: string) : CUSTODESParse =
         // before parsing, look for exceptions

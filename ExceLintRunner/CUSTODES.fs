@@ -92,10 +92,13 @@
     let runCUSTODES(spreadsheet: string)(custodesPath: string)(javaPath: string) : CUSTODESParse =
         let outputPath = IO.Path.GetTempPath()
 
-        let invocation = fun () -> runCommand (shortPath javaPath) [| "-jar"; "-Xms2g"; "-Xmx4g"; shortPath custodesPath; shortPath spreadsheet; shortPath outputPath; |]
+        let invocation = fun () -> runCommand (shortPath javaPath) [| "-jar"; "-d64"; "-Xms2g"; "-Xmx4g"; shortPath custodesPath; shortPath spreadsheet; shortPath outputPath; |]
         match invocation() with
         | STDOUT output -> parse output
-        | STDERR error -> parseException error
+        | STDERR error ->
+            match parseException error with
+            | Some (ex) -> CFailure(ex)
+            | None -> CFailure(error)
 
     let CUSTODESToAddress(addrstr: Address)(worksheetname: string)(workbookname: string)(path: string) : AST.Address =
         // we force the mode to absolute because
