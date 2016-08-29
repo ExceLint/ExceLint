@@ -18,20 +18,24 @@ open System.Text.RegularExpressions
         member self.CustodesGroundTruthCSV = gpath
 
     let usage() : unit =
-        printfn "ExceLintRunner.exe <input directory> <output directory> <ground truth CSV> <java path> [flags]"
+        printfn "ExceLintRunner.exe <input directory> <output directory> <ground truth CSV> <java path> <CUSTODES JAR> [flags]"
         printfn 
             "Recursively finds all Excel (*.xls and *.xlsx) files in <input directory>, \n\
             opens them, runs ExceLint, and prints output statistics to a file called \n\
-            exceline_output.csv in <output directory>. The file <ground truth CSV> is\n\n\
-            used to compute false positive rates with respect to CUSTODES ground truth.\
-            <java path> and <CUSTODES path> are needed in order to conduct a comparison\n\
-            against the CUSTODES tool.\n\n\
+            exceline_output.csv in <output directory>. The file <ground truth CSV> is\n\
+            used to compute false positive rates with respect to CUSTODES ground truth.\n\
+            You can obtain this file from the ExceLint repository at:\n\
+            \"ExceLint\\data\\analyses\\CUSTODES\"\n\n\
+            <java path> and <CUSTODES JAR> are needed in order to conduct a comparison\n\
+            against the CUSTODES tool. The CUSTODES JAR is available in the ExceLint\n\
+            repository at:\n\
+            \"ExceLint\\data\\analyses\\CUSTODES2\cc2.jar\"\n\n\
             Press Ctrl-C to cancel an analysis."
         printfn "\nwhere\n"
         printfn "[flags] consists of any of the following options, which are TRUE when"
         printfn "present and FALSE when omitted:"
         printfn "\n"
-        printfn "-verbose    log per-spreadsheet flagged cells as separate csvs"
+        printfn "-verbose    log per-spreadsheet flagged cells as separate CSVs"
         printfn "-noexit     prompt user to press a key before exiting"
         printfn "-spectral   use spectral outliers, otherwise use summation outliers;"
         printfn "            forces the use of -sheets below and disables -allcells,"
@@ -45,7 +49,7 @@ open System.Text.RegularExpressions
         printfn "-intrinsic  weigh by intrinsic anomalousness"
         printfn "-css        weigh by conditioning set size"
         printfn "\nExample:\n"
-        printfn "ExceLintRunner.exe \"C:\\data\" \"C:\\output\" \"C:\\CUSTODES2\\smell_detection_result.csv\" \"C:\\ProgramData\\Oracle\\Java\\javapath\\java.exe\" \"C:\\CUSTODES2\\cc2.jar\" -verbose -allcells -rows -columns -levels -css"
+        printfn "ExceLintRunner.exe \"C:\\data\" \"C:\\output\" \"C:\\CUSTODES\\smell_detection_result.csv\" \"C:\\ProgramData\\Oracle\\Java\\javapath\\java.exe\" \"C:\\CUSTODES\\cc2.jar\" -verbose -allcells -rows -columns -levels -css"
         printfn "\nHelp:\n"
         printfn "ExceLintRunner.exe -help"
 
