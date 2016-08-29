@@ -277,12 +277,19 @@ open ExceLint
 
     [<EntryPoint>]
     let main argv = 
-        let config = Args.processArgs argv
+        let config =
+            try
+                Args.processArgs argv
+            with
+            | e ->
+                printfn "%A" e.Message
+                System.Environment.Exit 1
+                failwith "never gets called but keeps F# happy"
 
         Console.CancelKeyPress.Add(
             (fun _ ->
                 printfn "Ctrl-C received.  Cancelling..."
-                System.Environment.Exit(1)
+                System.Environment.Exit 1
             )
         )
 
