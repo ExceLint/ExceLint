@@ -293,7 +293,7 @@ open ExceLint
             let csv = new CSV.ExceLintStats([])
             let debug_csv = new CSV.DebugInfo([])
 
-            let truth = new CUSTODES.GroundTruth(config.InputDirectory)
+            let truth = new CUSTODES.GroundTruth(config.InputDirectory, config.CustodesGroundTruthCSV)
 
             using (new StreamWriter(config.csv)) (fun sw ->
                 using (new StreamWriter(config.DebugPath)) (fun debug_sw ->

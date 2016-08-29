@@ -158,8 +158,8 @@
             ) cells
             |> Array.choose id
 
-    type GroundTruth(folderPath: string) =
-        let raw = CSV.CUSTODESGroundTruth.Load(CSV.CUSTODESGroundTruthPath)
+    type GroundTruth(folderPath: string, gtpath: string) =
+        let raw = CSV.CUSTODESGroundTruth.Load(gtpath)
 
         let d = new Dictionary<Tool,HashSet<AST.Address>>()
 
