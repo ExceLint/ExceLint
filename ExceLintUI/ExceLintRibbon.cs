@@ -816,36 +816,36 @@ namespace ExceLintUI
             var c = new ExceLint.FeatureConf();
 
             // reference counts
-            if (this.inDegree.Checked) { c = c.enableInDegree(); }
-            if (this.outDegree.Checked) { c = c.enableOutDegree(); }
-            if (this.combinedDegree.Checked) { c = c.enableCombinedDegree(); }
+            if (this.inDegree.Checked) { c = c.enableInDegree(true); }
+            if (this.outDegree.Checked) { c = c.enableOutDegree(true); }
+            if (this.combinedDegree.Checked) { c = c.enableCombinedDegree(true); }
 
             // spatiostructual vectors
-            if (this.inVectors.Checked) { c = c.enableShallowInputVectorMixedL2NormSum(); }
-            if (this.outVectors.Checked) { c = c.enableShallowOutputVectorMixedL2NormSum(); }
-            if (this.inVectorsAbs.Checked) { c = c.enableShallowInputVectorAbsoluteL2NormSum(); }
-            if (this.outVectorsAbs.Checked) { c = c.enableShallowOutputVectorAbsoluteL2NormSum(); }
+            if (this.inVectors.Checked) { c = c.enableShallowInputVectorMixedL2NormSum(true); }
+            if (this.outVectors.Checked) { c = c.enableShallowOutputVectorMixedL2NormSum(true); }
+            if (this.inVectorsAbs.Checked) { c = c.enableShallowInputVectorAbsoluteL2NormSum(true); }
+            if (this.outVectorsAbs.Checked) { c = c.enableShallowOutputVectorAbsoluteL2NormSum(true); }
 
             // locality
-            if (this.ProximityAbove.Checked) { c = c.enableProximityAbove(); }
-            if (this.ProximityBelow.Checked) { c = c.enableProximityBelow(); }
-            if (this.ProximityLeft.Checked) { c = c.enableProximityLeft(); }
-            if (this.ProximityRight.Checked) { c = c.enableProximityRight(); }
+            if (this.ProximityAbove.Checked) { c = c.enableProximityAbove(true); }
+            if (this.ProximityBelow.Checked) { c = c.enableProximityBelow(true); }
+            if (this.ProximityLeft.Checked) { c = c.enableProximityLeft(true); }
+            if (this.ProximityRight.Checked) { c = c.enableProximityRight(true); }
 
             // Scopes (i.e., conditioned analysis)
-            if (this.allCellsFreq.Checked) { c = c.analyzeRelativeToAllCells(); }
-            if (this.columnCellsFreq.Checked) { c = c.analyzeRelativeToColumns(); }
-            if (this.rowCellsFreq.Checked) { c = c.analyzeRelativeToRows(); }
-            if (this.levelsFreq.Checked) { c = c.analyzeRelativeToLevels(); }
+            if (this.allCellsFreq.Checked) { c = c.analyzeRelativeToAllCells(true); }
+            if (this.columnCellsFreq.Checked) { c = c.analyzeRelativeToColumns(true); }
+            if (this.rowCellsFreq.Checked) { c = c.analyzeRelativeToRows(true); }
+            if (this.levelsFreq.Checked) { c = c.analyzeRelativeToLevels(true); }
 
             // weighting / program resynthesis
-            if (this.inferAddrModes.Checked) { c = c.inferAddressModes();  }
-            if (!this.allCells.Checked) { c = c.analyzeOnlyFormulas();  }
-            if (this.weightByIntrinsicAnomalousness.Checked) { c = c.weightByIntrinsicAnomalousness(); }
-            if (this.conditioningSetSize.Checked) { c = c.weightByConditioningSetSize(); }
+            if (this.inferAddrModes.Checked) { c = c.inferAddressModes(true);  }
+            if (!this.allCells.Checked) { c = c.analyzeOnlyFormulas(true);  }
+            if (this.weightByIntrinsicAnomalousness.Checked) { c = c.weightByIntrinsicAnomalousness(true); }
+            if (this.conditioningSetSize.Checked) { c = c.weightByConditioningSetSize(true); }
 
             // ranking type
-            if (this.spectralRanking.Checked) { c = c.spectralRanking().analyzeRelativeToSheet(); }
+            if (this.spectralRanking.Checked) { c = c.spectralRanking(true).analyzeRelativeToSheet(true); }
 
             return c;
         }

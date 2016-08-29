@@ -270,7 +270,10 @@
                 let sID = sel.id addr dag selcache
 
                 // get number of cells with matching sID
-                if sidcache.ContainsKey sID then sidcache.[sID].Count else failwith ("sID cache is missing sID " + sID.ToString())
+                if sidcache.ContainsKey sID then
+                    sidcache.[sID].Count
+                else
+                    failwith ("sID cache is missing sID " + sID.ToString())
              
             let private conditioningSetWeight(addr: AST.Address)(sel: Scope.Selector)(csstable: ConditioningSetSizeTable)(config: FeatureConf) : double =
                 if config.IsEnabled "WeightByConditioningSetSize" then

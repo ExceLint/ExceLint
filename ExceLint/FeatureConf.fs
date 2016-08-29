@@ -48,161 +48,377 @@
         new() = FeatureConf(Map.empty)
 
         // fluent constructors
-        member self.enableInDegree() : FeatureConf =
+        member self.enableInDegree(on: bool) : FeatureConf =
+            let (name,cap) = Degree.InDegree.capability
+            if on then
+                FeatureConf(
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.enableOutDegree(on: bool) : FeatureConf =
+            let (name,cap) = Degree.OutDegree.capability
+            if on then
+                FeatureConf(
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.enableCombinedDegree(on: bool) : FeatureConf =
+            let (name,cap) = Degree.CombinedDegree.capability
+            if on then
+                FeatureConf(
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.enableDeepInputVectorRelativeL2NormSum(on: bool) : FeatureConf =
+            let (name,cap) = Vector.DeepInputVectorRelativeL2NormSum.capability
+            if on then
+                FeatureConf(
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.enableDeepOutputVectorRelativeL2NormSum(on: bool) : FeatureConf =
+            let (name,cap) = Vector.DeepOutputVectorRelativeL2NormSum.capability
+            if on then
+                FeatureConf(
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.enableDeepInputVectorAbsoluteL2NormSum(on: bool) : FeatureConf =
+            let (name,cap) = Vector.DeepInputVectorAbsoluteL2NormSum.capability
             FeatureConf(
-                let (name,cap) = Degree.InDegree.capability
                 _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
             )
-        member self.enableOutDegree() : FeatureConf =
+        member self.enableDeepOutputVectorAbsoluteL2NormSum(on: bool) : FeatureConf =
+            let (name,cap) = Vector.DeepOutputVectorAbsoluteL2NormSum.capability
+            if on then
+                FeatureConf(
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.enableDeepInputVectorMixedL2NormSum(on: bool) : FeatureConf =
+            let (name,cap) = Vector.DeepInputVectorMixedL2NormSum.capability
+            if on then
+                FeatureConf(
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.enableDeepOutputVectorMixedL2NormSum(on: bool) : FeatureConf =
+            let (name,cap) = Vector.DeepOutputVectorMixedL2NormSum.capability
+            if on then
+                FeatureConf(
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.enableShallowInputVectorRelativeL2NormSum(on: bool) : FeatureConf =
+            let (name,cap) = Vector.ShallowInputVectorRelativeL2NormSum.capability
             FeatureConf(
-                let (name,cap) = Degree.OutDegree.capability
                 _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
             )
-        member self.enableCombinedDegree() : FeatureConf =
-            FeatureConf(
-                let (name,cap) = Degree.CombinedDegree.capability
-                _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
-            )
-        member self.enableDeepInputVectorRelativeL2NormSum() : FeatureConf =
-            FeatureConf(
-                let (name,cap) = Vector.DeepInputVectorRelativeL2NormSum.capability
-                _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
-            )
-        member self.enableDeepOutputVectorRelativeL2NormSum() : FeatureConf =
-            FeatureConf(
-                let (name,cap) = Vector.DeepOutputVectorRelativeL2NormSum.capability
-                _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
-            )
-        member self.enableDeepInputVectorAbsoluteL2NormSum() : FeatureConf =
-            FeatureConf(
-                let (name,cap) = Vector.DeepInputVectorAbsoluteL2NormSum.capability
-                _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
-            )
-        member self.enableDeepOutputVectorAbsoluteL2NormSum() : FeatureConf =
-            FeatureConf(
-                let (name,cap) = Vector.DeepOutputVectorAbsoluteL2NormSum.capability
-                _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
-            )
-        member self.enableDeepInputVectorMixedL2NormSum() : FeatureConf =
-            FeatureConf(
-                let (name,cap) = Vector.DeepInputVectorMixedL2NormSum.capability
-                _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
-            )
-        member self.enableDeepOutputVectorMixedL2NormSum() : FeatureConf =
-            FeatureConf(
-                let (name,cap) = Vector.DeepOutputVectorMixedL2NormSum.capability
-                _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
-            )
-        member self.enableShallowInputVectorRelativeL2NormSum() : FeatureConf =
-            FeatureConf(
-                let (name,cap) = Vector.ShallowInputVectorRelativeL2NormSum.capability
-                _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
-            )
-        member self.enableShallowOutputVectorRelativeL2NormSum() : FeatureConf =
-            FeatureConf(
-                let (name,cap) = Vector.ShallowOutputVectorRelativeL2NormSum.capability
-                _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
-            )
-        member self.enableShallowInputVectorAbsoluteL2NormSum() : FeatureConf =
-            FeatureConf(
-                let (name,cap) = Vector.ShallowInputVectorAbsoluteL2NormSum.capability
-                _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
-            )
-        member self.enableShallowOutputVectorAbsoluteL2NormSum() : FeatureConf =
-            FeatureConf(
-                let (name,cap) = Vector.ShallowOutputVectorAbsoluteL2NormSum.capability
-                _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
-            )
-        member self.enableShallowInputVectorMixedL2NormSum() : FeatureConf =
-            FeatureConf(
-                let (name,cap) = Vector.ShallowInputVectorMixedL2NormSum.capability
-                _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
-            )
-        member self.enableShallowOutputVectorMixedL2NormSum() : FeatureConf =
-            FeatureConf(
-                let (name,cap) = Vector.ShallowOutputVectorMixedL2NormSum.capability
-                _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
-            )
-        member self.enableProximityAbove() : FeatureConf =
-            FeatureConf(
-                let (name,cap) = Proximity.Above.capability
-                _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
-            )
-        member self.enableProximityBelow() : FeatureConf =
-            FeatureConf(
-                let (name,cap) = Proximity.Below.capability
-                _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
-            )
-        member self.enableProximityLeft() : FeatureConf =
-            FeatureConf(
-                let (name,cap) = Proximity.Left.capability
-                _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
-            )
-        member self.enableProximityRight() : FeatureConf =
-            FeatureConf(
-                let (name,cap) = Proximity.Right.capability
-                _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
-            )
-        member self.analyzeRelativeToAllCells() : FeatureConf =
-            FeatureConf(
-                let name = "ScopeAllCells"
-                let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Scope; runner = nop}
-                _config.Add(name, cap)
-            )
-        member self.analyzeRelativeToColumns() : FeatureConf =
-            FeatureConf(
-                let name = "ScopeColumns"
-                let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Scope; runner = nop}
-                _config.Add(name, cap)
-            )
-        member self.analyzeRelativeToRows() : FeatureConf =
-            FeatureConf(
-                let name = "ScopeRows"
-                let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Scope; runner = nop}
-                _config.Add(name, cap)
-            )
-        member self.analyzeRelativeToLevels() : FeatureConf =
-            FeatureConf(
-                let name = "ScopeLevels"
-                let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Scope; runner = nop}
-                _config.Add(name, cap)
-            )
-        member self.analyzeRelativeToSheet() : FeatureConf =
-            FeatureConf(
-                let name = "ScopeSheets"
-                let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Scope; runner = nop}
-                _config.Add(name, cap)
-            )
-        member self.inferAddressModes() : FeatureConf =
-            FeatureConf(
-                let name = "InferAddressModes"
-                let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Misc; runner = nop }
-                _config.Add(name, cap)
-            )
-        member self.analyzeOnlyFormulas() : FeatureConf =
-            FeatureConf(
-                let name = "AnalyzeOnlyFormulas"
-                let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Misc; runner = nop }
-                _config.Add(name, cap)
-            )
-        member self.weightByIntrinsicAnomalousness() : FeatureConf =
-            FeatureConf(
-                let name = "WeightByIntrinsicAnomalousness"
-                let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Misc; runner = nop }
-                _config.Add(name, cap)
-            )
-        member self.weightByConditioningSetSize() : FeatureConf =
-            FeatureConf(
-                let name = "WeightByConditioningSetSize"
-                let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Misc; runner = nop }
-                _config.Add(name, cap)
-            )
-        member self.spectralRanking() : FeatureConf =
-            FeatureConf(
-                let name = "SpectralRanking"
-                let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Misc; runner = nop }
-                _config.Add(name, cap)
-            )
+        member self.enableShallowOutputVectorRelativeL2NormSum(on: bool) : FeatureConf =
+            let (name,cap) = Vector.ShallowOutputVectorRelativeL2NormSum.capability
+            if on then
+                FeatureConf(
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.enableShallowInputVectorAbsoluteL2NormSum(on: bool) : FeatureConf =
+            let (name,cap) = Vector.ShallowInputVectorAbsoluteL2NormSum.capability
+            if on then
+                FeatureConf(
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.enableShallowOutputVectorAbsoluteL2NormSum(on: bool) : FeatureConf =
+            let (name,cap) = Vector.ShallowOutputVectorAbsoluteL2NormSum.capability
+            if on then
+                FeatureConf(
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.enableShallowInputVectorMixedL2NormSum(on: bool) : FeatureConf =
+            let (name,cap) = Vector.ShallowInputVectorMixedL2NormSum.capability
+            if on then
+                FeatureConf(
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.enableShallowOutputVectorMixedL2NormSum(on: bool) : FeatureConf =
+            let (name,cap) = Vector.ShallowOutputVectorMixedL2NormSum.capability
+            if on then
+                FeatureConf(
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.enableProximityAbove(on: bool) : FeatureConf =
+            let (name,cap) = Proximity.Above.capability
+            if on then
+                FeatureConf(
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.enableProximityBelow(on: bool) : FeatureConf =
+            let (name,cap) = Proximity.Below.capability
+            if on then
+                FeatureConf(
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.enableProximityLeft(on: bool) : FeatureConf =
+            let (name,cap) = Proximity.Left.capability
+            if on then
+                FeatureConf(
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.enableProximityRight(on: bool) : FeatureConf =
+            let (name,cap) = Proximity.Right.capability
+            if on then
+                FeatureConf(
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.analyzeRelativeToAllCells(on: bool) : FeatureConf =
+            let name = "ScopeAllCells"
+            let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Scope; runner = nop}
+            if on then
+                FeatureConf(
+                    _config.Add(name, cap)
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.analyzeRelativeToColumns(on: bool) : FeatureConf =
+            let name = "ScopeColumns"
+            let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Scope; runner = nop}
+            if on then
+                FeatureConf(
+                    _config.Add(name, cap)
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.analyzeRelativeToRows(on: bool) : FeatureConf =
+            let name = "ScopeRows"
+            let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Scope; runner = nop}
+            if on then
+                FeatureConf(
+                    _config.Add(name, cap)
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.analyzeRelativeToLevels(on: bool) : FeatureConf =
+            let name = "ScopeLevels"
+            let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Scope; runner = nop}
+            if on then
+                FeatureConf(
+                    _config.Add(name, cap)
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.analyzeRelativeToSheet(on: bool) : FeatureConf =
+            let name = "ScopeSheets"
+            let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Scope; runner = nop}
+            if on then
+                FeatureConf(
+                    _config.Add(name, cap)
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.inferAddressModes(on: bool) : FeatureConf =
+            let name = "InferAddressModes"
+            let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Misc; runner = nop }
+            if on then
+                FeatureConf(
+                    _config.Add(name, cap)
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.analyzeOnlyFormulas(on: bool) : FeatureConf =
+            let name = "AnalyzeOnlyFormulas"
+            let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Misc; runner = nop }
+            if on then
+                FeatureConf(
+                    _config.Add(name, cap)
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.weightByIntrinsicAnomalousness(on: bool) : FeatureConf =
+            let name = "WeightByIntrinsicAnomalousness"
+            let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Misc; runner = nop }
+            if on then
+                FeatureConf(
+                    _config.Add(name, cap)
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.weightByConditioningSetSize(on: bool) : FeatureConf =
+            let name = "WeightByConditioningSetSize"
+            let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Misc; runner = nop }
+            if on then
+                FeatureConf(
+                    _config.Add(name, cap)
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.spectralRanking(on: bool) : FeatureConf =
+            let name = "SpectralRanking"
+            let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Misc; runner = nop }
+            if on then
+                FeatureConf(
+                    _config.Add(name, cap)
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
 
         // getters
         member self.FeatureByName
@@ -243,3 +459,40 @@
         member self.IsEnabledOptWeightIntrinsicAnomalousness : bool = _config.ContainsKey "WeightByIntrinsicAnomalousness" && _config.["WeightByIntrinsicAnomalousness"].enabled
         member self.IsEnabledOptWeightConditioningSetSize : bool = _config.ContainsKey "WeightByConditioningSetSize" && _config.["WeightByConditioningSetSize"].enabled
         member self.IsEnabledSpectralRanking : bool = _config.ContainsKey "SpectralRanking" && _config.["SpectralRanking"].enabled
+
+        // make sure that config option combinations make sense;
+        // returns a 'corrected' config
+        member self.validate : FeatureConf =
+            if self.IsEnabledSpectralRanking then
+                self.analyzeRelativeToAllCells(false)
+                    .analyzeRelativeToRows(false)
+                    .analyzeRelativeToColumns(false)
+                    .analyzeRelativeToLevels(false)
+                    .analyzeRelativeToSheet(true)
+            else
+                // the default feature is the mixed shallow L2 norm
+                self.enableShallowInputVectorMixedL2NormSum(true)
+
+        member self.rawConf = _config
+
+        /// Returns the (set of changed options, set of removed options, set of added options)
+        member self.diff(otherconf: FeatureConf) : Set<string>*Set<string>*Set<string> =
+            let my_keys = _config |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+            let your_keys = otherconf.rawConf |> Map.toSeq |> Seq.map fst |> Set.ofSeq
+            let all_keys = Set.union my_keys your_keys
+
+            // return
+            // 1. keys changed by you
+            // 2. keys no longer present in you
+            // 3. keys introduced in you
+            let changed = Set.filter (fun (k: string) -> _config.[k].enabled <> otherconf.IsEnabled(k)) (Set.intersect my_keys your_keys)
+            let added = Set.difference your_keys my_keys
+            let removed = Set.difference my_keys your_keys
+            (changed, removed, added)
+
+        static member simpleConf(m: Map<string,Feature.Capability>) : Map<string,bool> =
+            Map.map (fun (k: string)(v: Feature.Capability) -> v.enabled) m
+
+        override self.Equals(obj: Object) : bool =
+            let other_fc = obj :?> FeatureConf
+            (FeatureConf.simpleConf _config) = (FeatureConf.simpleConf other_fc.rawConf)

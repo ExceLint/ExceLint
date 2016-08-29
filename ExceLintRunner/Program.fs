@@ -312,7 +312,9 @@ open ExceLint
                         try
                             analyze file thresh app config truth csv debug_csv sw debug_sw
                         with
-                        | e -> printfn "Cannot analyze workbook %A because:\n%A" shortf e.Message
+                        | e ->
+                            printfn "Cannot analyze workbook %A because:\n%A" shortf e.Message
+                            printfn "Stacktrace:\n%A" e.StackTrace
                 )
             )
         )

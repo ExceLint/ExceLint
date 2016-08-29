@@ -65,17 +65,40 @@ open System.Text.RegularExpressions
                                         match flag with
                                         | "-verbose" -> true, noExit, conf
                                         | "-noexit" -> isVerb, true, conf
-                                        | "-spectral" -> isVerb, noExit, conf.spectralRanking()
-                                        | "-allcells" -> isVerb, noExit, if conf.IsEnabledSpectralRanking then conf else conf.analyzeRelativeToAllCells()
-                                        | "-columns" -> isVerb, noExit, if conf.IsEnabledSpectralRanking then conf else conf.analyzeRelativeToColumns()
-                                        | "-rows" -> isVerb, noExit, if conf.IsEnabledSpectralRanking then conf else conf.analyzeRelativeToRows()
-                                        | "-levels" -> isVerb, noExit, if conf.IsEnabledSpectralRanking then conf else conf.analyzeRelativeToLevels()
-                                        | "-sheets" -> isVerb, noExit, if conf.IsEnabledSpectralRanking then conf.analyzeRelativeToSheet() else conf
-                                        | "-addrmode" -> isVerb, noExit, conf.inferAddressModes()
-                                        | "-intrinsic" -> isVerb, noExit, conf.weightByIntrinsicAnomalousness()
-                                        | "-css" -> isVerb, noExit, conf.weightByConditioningSetSize()
+                                        | "-spectral" -> isVerb, noExit, conf.spectralRanking(true)
+                                        | "-allcells" -> isVerb, noExit, conf.analyzeRelativeToAllCells(true)
+                                        | "-columns" -> isVerb, noExit, conf.analyzeRelativeToColumns(true)
+                                        | "-rows" -> isVerb, noExit, conf.analyzeRelativeToRows(true)
+                                        | "-levels" -> isVerb, noExit, conf.analyzeRelativeToLevels(true)
+                                        | "-sheets" -> isVerb, noExit, conf.analyzeRelativeToSheet(true)
+                                        | "-addrmode" -> isVerb, noExit, conf.inferAddressModes(true)
+                                        | "-intrinsic" -> isVerb, noExit, conf.weightByIntrinsicAnomalousness(true)
+                                        | "-css" -> isVerb, noExit, conf.weightByConditioningSetSize(true)
                                         | s -> failwith ("Unrecognized option: " + s)
                                     ) (false,false,new ExceLint.FeatureConf()) flags
 
-        Config(dpath, opath, jpath, cpath, isVerb, noExit, csv, fConf)
+        let fConf' = fConf.validate
+
+        if fConf <> fConf' then
+            let (changed,removed,added) = fConf.diff fConf'
+
+            if changed.Count > 0 || removed.Count > 0 || added.Count > 0 then
+                printfn "Some options changed to conform with internal constraints:"
+
+            if changed.Count > 0 then
+                Set.iter (fun k ->
+                    printfn "'%s' changed from %b to %b" k (fConf.IsEnabled k) (fConf'.IsEnabled k)
+                ) changed
+
+            if removed.Count > 0 then
+                Set.iter (fun k ->
+                    printfn "'%s' disabled." k
+                ) changed
+
+            if added.Count > 0 then
+                Set.iter (fun k ->
+                    printfn "'%s' enabled." k
+                ) changed
+
+        Config(dpath, opath, jpath, cpath, isVerb, noExit, csv, fConf')
 
