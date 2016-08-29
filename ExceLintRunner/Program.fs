@@ -312,12 +312,13 @@ open ExceLint
                         try
                             analyze file thresh app config truth csv debug_csv sw debug_sw
                         with
-                        | e -> printfn "Cannot open workbook %A because:\n%A" shortf e.Message
+                        | e -> printfn "Cannot analyze workbook %A because:\n%A" shortf e.Message
                 )
             )
         )
 
-        printfn "Press Enter to continue."
-        Console.ReadLine() |> ignore
+        if config.DontExitWithoutKeystroke then
+            printfn "Press Enter to continue."
+            Console.ReadLine() |> ignore
 
         0
