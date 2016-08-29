@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="3.5" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 	<PropertyGroup>
 		<!-- Select a Product Configuration -->
 		<InstallShieldProductConfiguration>Express</InstallShieldProductConfiguration>
@@ -40,6 +40,10 @@
 		<ProjectReference Include="..\ExceLint\ExceLint.fsproj">
 			<Name>ExceLint</Name>
 			<Project>{A62BCA5A-EB55-46ED-A49A-FDB34771B605}</Project>
+		</ProjectReference>
+		<ProjectReference Include="..\ExceLintRunner\ExceLintRunner.fsproj">
+			<Name>ExceLintRunner</Name>
+			<Project>{95BB2692-05A3-4CFE-A10D-376C7139D649}</Project>
 		</ProjectReference>
 		<ProjectReference Include="..\ExceLintUI\ExceLintUI.csproj">
 			<Name>ExceLintUI</Name>
