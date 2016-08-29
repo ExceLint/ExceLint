@@ -156,7 +156,12 @@
                     // get the equivalence class of the element at the cut index (inclusive)
                     let cutEC = ecs.[ranking.[cut_idx].Key]
 
-                    if cutEC = ecs.[ranking.[cut_idx + 1].Key] then
+                    // the last index in the ranking is
+                    let lastidx = ranking.Length - 1
+
+                    // if there is a "next element" in the ranking after the cut,
+                    // is it in the same equivalence class?
+                    if lastidx >= cut_idx + 1 && cutEC = ecs.[ranking.[cut_idx + 1].Key] then
                         // find the first index that is different by scanning backward
                         if cut_idx <= 0 then
                             -1
