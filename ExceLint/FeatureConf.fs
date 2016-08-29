@@ -463,15 +463,17 @@
         // make sure that config option combinations make sense;
         // returns a 'corrected' config
         member self.validate : FeatureConf =
-            if self.IsEnabledSpectralRanking then
-                self.analyzeRelativeToAllCells(false)
-                    .analyzeRelativeToRows(false)
-                    .analyzeRelativeToColumns(false)
-                    .analyzeRelativeToLevels(false)
-                    .analyzeRelativeToSheet(true)
-            else
-                // the default feature is the mixed shallow L2 norm
-                self.enableShallowInputVectorMixedL2NormSum(true)
+            let config = if self.IsEnabledSpectralRanking then
+                            self.analyzeRelativeToAllCells(false)
+                                .analyzeRelativeToRows(false)
+                                .analyzeRelativeToColumns(false)
+                                .analyzeRelativeToLevels(false)
+                                .analyzeRelativeToSheet(true)
+                         else
+                            self
+
+            // for now, our feature is always the mixed shallow L2 norm
+            config.enableShallowInputVectorMixedL2NormSum(true)
 
         member self.rawConf = _config
 
