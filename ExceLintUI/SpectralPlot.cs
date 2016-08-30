@@ -86,7 +86,9 @@ namespace ExceLintUI
             {
                 var hashValue = pair.Key;
                 var addresses = pair.Value;
-                var s = drawBin(addresses, hashValue, getColor(hashValue, fMin, fMax));
+                var sxy = drawBin(addresses, hashValue, getColor(hashValue, fMin, fMax), xyinfo);
+                var s = sxy.Item1;
+                xyinfo = sxy.Item2;
                 chart1.Series.Add(s);
             }
         }
@@ -161,7 +163,7 @@ namespace ExceLintUI
             return Color.FromArgb(255, r, g, b);
         }
 
-        private static Series drawBin(FSharpSet<AST.Address> addresses, double hashValue, Color c)
+        private static Tuple<Series,XYInfo> drawBin(FSharpSet<AST.Address> addresses, double hashValue, Color c, XYInfo xyinfo)
         {
             var binName = hashValue.ToString();
 
@@ -179,16 +181,18 @@ namespace ExceLintUI
             // generate data
             var xData = new double[addresses.Count];
             var yData = new double[addresses.Count];
+            var addrs = addresses.ToArray();
             for (int i = 0; i < addresses.Count; i++)
             {
                 xData[i] = hashValue;
                 yData[i] = i;
+                xyinfo.Add(new Tuple<double, double>(hashValue, i), addrs[i]);
             }
 
             // bind data to plot
             series.Points.DataBindXY(xData, yData);
 
-            return series;
+            return new Tuple<Series,XYInfo>(series, xyinfo);
         }
 
         private void comboCondition_SelectedIndexChanged(object sender, EventArgs e)
@@ -223,14 +227,14 @@ namespace ExceLintUI
                         var pointYPixel = result.ChartArea.AxisY.ValueToPixelPosition(prop.YValues[0]);
 
                         // check if the cursor is really close to the point (2 pixels around the point)
-                        if (Math.Abs(pos.X - pointXPixel) < 2 &&
-                            Math.Abs(pos.Y - pointYPixel) < 2)
+                        if (Math.Abs(pos.X - pointXPixel) <= 1 &&
+                            Math.Abs(pos.Y - pointYPixel) <= 1)
                         {
-                            //var xy = new Tuple<double, double>(pointXPixel, pointYPixel);
-                            //var addr = xyinfo[xy];
+                            var xy = new Tuple<double, double>(prop.XValue, prop.YValues[0]);
+                            var addr = xyinfo[xy];
 
-                            tooltip.Show("hash = " + prop.XValue,
-                                         //+ "\r\n" + addr.A1FullyQualified(),
+                            tooltip.Show("hash = " + prop.XValue
+                                         + "\r\n" + addr.A1Worksheet() + "!" + addr.A1Local(),
                                          this.chart1,
                                          pos.X,
                                          pos.Y - 15
