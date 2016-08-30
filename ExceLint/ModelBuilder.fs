@@ -334,7 +334,7 @@
             // find the bin height for the cell, then sum all
             // of these bin heights to produce a total ranking score
             // THIS IS WHERE ALL THE ACTION HAPPENS, FOLKS
-            let private totalHistoSums(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(csstable: ConditioningSetSizeTable)(selcache: Scope.SelectorCache)(config: FeatureConf)(progress: Depends.Progress)(dag: Depends.DAG) : Ranking =
+            let private totalHistoSums(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(csstable: ConditioningSetSizeTable)(selcache: Scope.SelectorCache)(config: FeatureConf)(progress: Depends.Progress)(dag: Depends.DAG) : Ranking*HypothesizedFixes option =
                 let fscores = makeFastScoreTable scores
 
                 // get sums for every given cell
@@ -358,7 +358,9 @@
                     ) cells
 
                 // return KeyValuePairs
-                Array.map (fun (addr,sum) -> new KeyValuePair<AST.Address,double>(addr,double sum)) addrSums
+                let ranking = Array.map (fun (addr,sum) -> new KeyValuePair<AST.Address,double>(addr,double sum)) addrSums
+
+                ranking, None
 
             let private countBuckets(ftable: FreqTable) : int =
                 // get total number of non-zero buckets in the entire table
@@ -614,7 +616,7 @@
                         let csstable = buildCSSTable cells input.progress dag' selcache sidcache input.config
 
                         // rerank
-                        let ranking = totalHistoSums cells freqs scores csstable selcache input.config input.progress input.dag
+                        let (ranking,_) = totalHistoSums cells freqs scores csstable selcache input.config input.progress input.dag
 
                         // get causes
                         let causes = causes cells freqs scores csstable selcache input.config input.progress input.dag
@@ -730,13 +732,16 @@
                 |> List.choose id
                 |> adict
 
-            let private rankByEMD(cells: AST.Address[])(input: Input)(causes: Causes) : Ranking =
+            let private rankByEMD(cells: AST.Address[])(input: Input)(causes: Causes) : Ranking*HypothesizedFixes option =
                 let emds = Array.map (fun f -> f, EMDsbyFeature f causes) (input.config.EnabledFeatures) |> adict
 
                 let ranking' = Array.map (fun (cell: AST.Address) ->
                                    let sum = Array.sumBy (fun fname ->
+                                                 // get feature function
                                                  let feature = input.config.FeatureByName fname
+                                                 // compute the hash of the cell using feature
                                                  let hash = feature cell input.dag
+                                                 // find the EMD to the closest hash
                                                  let (min_hash,min_dist) =
                                                     if not (emds.[fname].ContainsKey(hash)) then
                                                         hash, 0.0
@@ -749,7 +754,31 @@
                                |> Array.sortBy (fun (cell,sum) -> sum)
                                |> Array.map (fun (cell,sum) -> new KeyValuePair<AST.Address,double>(cell,sum))
 
-                ranking'
+                let hf = new HypothesizedFixes()
+                Array.iter (fun (cell: AST.Address) ->
+                    Array.iter (fun fname ->
+                        // get feature function
+                        let feature = input.config.FeatureByName fname
+                        // compute the hash of the cell using feature
+                        let hash = feature cell input.dag
+                        // find the closest hash
+                        let (min_hash,_) =
+                            if not (emds.[fname].ContainsKey(hash)) then
+                                hash, 0.0
+                            else
+                                emds.[fname].[hash]
+
+                        // add entry for cell, if necessary
+                        if not (hf.ContainsKey(cell)) then
+                            hf.Add(cell, new Dict<Feature,Hash>())
+
+                        // add closest hash
+                        hf.[cell].Add(fname, min_hash)
+
+                    ) (input.config.EnabledFeatures)
+                ) cells
+
+                (ranking', Some hf)
 
             let private runModel(input: Input) : AnalysisOutcome =
                 try
@@ -781,7 +810,7 @@
                                         rankByEMD cells input causes
                                     else
                                         totalHistoSums cells ftable scores csstable selcache input.config input.progress input.dag
-                    let ranking,ranking_time = PerfUtils.runMillis _rankf ()
+                    let (ranking,fixes),ranking_time = PerfUtils.runMillis _rankf ()
 
                     Success(
                         {
@@ -790,6 +819,7 @@
                             csstable = csstable;
                             ranking = ranking;
                             causes = causes;
+                            fixes = fixes;
                             score_time = score_time;
                             ftable_time = ftable_time;
                             csstable_time = csstable_time;

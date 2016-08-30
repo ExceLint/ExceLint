@@ -35,6 +35,8 @@
 
         member self.Features : string[] = config.EnabledFeatures
 
+        member self.Fixes : HypothesizedFixes option = analysis.fixes
+
         member self.causeOf(addr: AST.Address) : KeyValuePair<HistoBin,Tuple<int,double>>[] =
             Array.map (fun cause ->
                 let (bin,count,beta) = cause

@@ -17,6 +17,7 @@
         type FreqTable = Dict<HistoBin,Count>
         type Weights = IDictionary<AST.Address,Weight>
         type Ranking = KeyValuePair<AST.Address,double>[]
+        type HypothesizedFixes = Dict<AST.Address,Dict<Feature,Hash>>
         type Causes = Dict<AST.Address,(HistoBin*Count*Weight)[]>
         type ChangeSet = {
             mutants: KeyValuePair<AST.Address,string>[];
@@ -42,6 +43,7 @@
             csstable: ConditioningSetSizeTable;
             ranking: Ranking;
             causes: Causes;
+            fixes: HypothesizedFixes option;
             score_time: int64;
             ftable_time: int64;
             csstable_time: int64;
