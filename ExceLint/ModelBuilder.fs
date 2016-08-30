@@ -177,14 +177,17 @@
             // returns the index of the last element to KEEP
             // returns -1 if you should keep nothing
             let private findCutIndex(ranking: Ranking)(thresh_idx: int)(causes: Causes): int =
-                // extract totally-ordered score vector
-                let rank_nums = Array.map (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Value) ranking
+                if ranking.Length = 0 then
+                    -1
+                else
+                    // extract totally-ordered score vector
+                    let rank_nums = Array.map (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Value) ranking
 
-                // cut it at thresh (inclusive)
-                let rank_nums' = rank_nums.[..thresh_idx]
+                    // cut it at thresh (inclusive)
+                    let rank_nums' = rank_nums.[..thresh_idx]
 
-                // find the index of the "knee"
-                dderiv(rank_nums')
+                    // find the index of the "knee"
+                    dderiv(rank_nums')
 
             let private kneeIndexOpt(input: Input)(analysis: Analysis) : AnalysisOutcome =
                 let idx =

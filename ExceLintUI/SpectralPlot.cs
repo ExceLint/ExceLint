@@ -3,11 +3,11 @@ using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
 using System.Linq;
 using HistoBin = System.Tuple<string, ExceLint.Scope.SelectID, double>;
-using FreqTable = System.Collections.Generic.Dictionary<System.Tuple<string, ExceLint.Scope.SelectID, double>, int>;
 using Color = System.Drawing.Color;
 using Distribution = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<ExceLint.Scope.SelectID, System.Collections.Generic.Dictionary<double, Microsoft.FSharp.Collections.FSharpSet<AST.Address>>>>;
-using XYInfo = System.Collections.Generic.Dictionary<System.Tuple<double, double>, AST.Address>;
+using XYInfo = System.Collections.Generic.Dictionary<double,System.Collections.Generic.Dictionary<double, System.Tuple<AST.Address,bool,string>>>;
 using Microsoft.FSharp.Collections;
+using System.Collections.Generic;
 
 namespace ExceLintUI
 {
@@ -81,12 +81,33 @@ namespace ExceLintUI
             var fMin = bins.Select((pair) => pair.Key).Min();
             var fMax = bins.Select((pair) => pair.Key).Max();
 
-            // plot them
+            // store all anomalies in separate set
+            var anoms = new Dictionary<AST.Address, double>();
+            foreach (var pair in m.rankByFeatureSum().Take(m.Cutoff + 1))
+            {
+                anoms.Add(pair.Key, pair.Value);
+            }
+
+            // plot them, sans anomalies
             foreach (var pair in bins)
             {
                 var hashValue = pair.Key;
                 var addresses = pair.Value;
-                var sxy = drawBin(addresses, hashValue, getColor(hashValue, fMin, fMax), xyinfo);
+                var sxy = drawBin(addresses, hashValue, Color.Black, xyinfo, anoms, feature);
+                var s = sxy.Item1;
+                xyinfo = sxy.Item2;
+                chart1.Series.Add(s);
+            }
+
+            // finally, plot anomalies, one bin at a time
+            var mtanoms = new Dictionary<AST.Address, double>();
+            var anom_grps = anoms.GroupBy(pair => pair.Value).ToDictionary(grouping => grouping.Key, grouping => grouping.Select(pair => pair.Key));
+            foreach (var pair in anom_grps)
+            {
+                var hashValue = pair.Key;
+                var addrs = pair.Value;
+                var addresses = new FSharpSet<AST.Address>(addrs);
+                var sxy = drawBin(addresses, hashValue, getColor(hashValue, fMin, fMax), xyinfo, mtanoms, feature);
                 var s = sxy.Item1;
                 xyinfo = sxy.Item2;
                 chart1.Series.Add(s);
@@ -163,14 +184,16 @@ namespace ExceLintUI
             return Color.FromArgb(255, r, g, b);
         }
 
-        private static Tuple<Series,XYInfo> drawBin(FSharpSet<AST.Address> addresses, double hashValue, Color c, XYInfo xyinfo)
+        private static Tuple<Series,XYInfo> drawBin(FSharpSet<AST.Address> addresses, double hashValue, Color c, XYInfo xyinfo, Dictionary<AST.Address, double> anoms, string feature)
         {
             var binName = hashValue.ToString();
+
+            bool isAnom = anoms.Count == 0;
 
             // create series for scatterplot
             var series = new Series
             {
-                Name = binName,
+                Name = isAnom ? binName : binName + "anom",
                 Color = c,
                 IsVisibleInLegend = false,
                 IsXValueIndexed = false,
@@ -181,12 +204,29 @@ namespace ExceLintUI
             // generate data
             var xData = new double[addresses.Count];
             var yData = new double[addresses.Count];
+
             var addrs = addresses.ToArray();
-            for (int i = 0; i < addresses.Count; i++)
+            for (int i = 0; i < addrs.Length; i++)
             {
-                xData[i] = hashValue;
-                yData[i] = i;
-                xyinfo.Add(new Tuple<double, double>(hashValue, i), addrs[i]);
+                var addr = addrs[i];
+                double y = 0;
+                if (xyinfo.ContainsKey(hashValue))
+                {
+                    // find the height of the bin and add one
+                    var bin = xyinfo[hashValue].Select(pair => pair.Key);
+                    var max_y = bin.Count() > 0 ? bin.Max() : 0;
+                    y = max_y + 1;
+                } else
+                {
+                    xyinfo.Add(hashValue, new Dictionary<double, Tuple<AST.Address,bool,string>>());
+                }
+
+                if (!anoms.ContainsKey(addr))
+                {
+                    xData[i] = hashValue;
+                    yData[i] = y;
+                    xyinfo[hashValue].Add(y, new Tuple<AST.Address,bool,string>(addr, isAnom, feature));
+                }
             }
 
             // bind data to plot
@@ -230,11 +270,21 @@ namespace ExceLintUI
                         if (Math.Abs(pos.X - pointXPixel) <= 1 &&
                             Math.Abs(pos.Y - pointYPixel) <= 1)
                         {
-                            var xy = new Tuple<double, double>(prop.XValue, prop.YValues[0]);
-                            var addr = xyinfo[xy];
+                            var addr = xyinfo[prop.XValue][prop.YValues[0]].Item1;
+                            var isAnom = xyinfo[prop.XValue][prop.YValues[0]].Item2;
+                            var feature = xyinfo[prop.XValue][prop.YValues[0]].Item3;
 
-                            tooltip.Show("hash = " + prop.XValue
-                                         + "\r\n" + addr.A1Worksheet() + "!" + addr.A1Local(),
+                            var ttstr = "hash: " + prop.XValue
+                                         + "\r\n" + addr.A1Worksheet() + "!" + addr.A1Local();
+                            if (m.Fixes != null && isAnom)
+                            {
+                                var fixes = m.Fixes.Value;
+                                var fix = fixes[addr][feature];
+                                ttstr = ttstr + "\r\nfix: " + fix;
+                                
+                            }
+
+                            tooltip.Show(ttstr,
                                          this.chart1,
                                          pos.X,
                                          pos.Y - 15

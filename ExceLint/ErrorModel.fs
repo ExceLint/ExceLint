@@ -7,6 +7,11 @@
     open Pipeline
 
     type ErrorModel(input: Input, analysis: Analysis, config: FeatureConf) =
+        let rankByAddress = Array.mapi (fun rank (pair: KeyValuePair<AST.Address,double>) ->
+                                let addr = pair.Key
+                                addr, rank
+                            ) (analysis.ranking) |> adict
+
         member self.AllCells : HashSet<AST.Address> = new HashSet<AST.Address>(input.dag.allCells())
 
         member self.DependenceGraph : Depends.DAG = input.dag
@@ -43,6 +48,12 @@
                 let tup = new Tuple<int,double>(count,beta)
                 new KeyValuePair<HistoBin,Tuple<int,double>>(bin,tup)
             ) analysis.causes.[addr]
+
+        member self.isAnomalous(addr: AST.Address) : bool =
+            if not (rankByAddress.ContainsKey addr) then
+                false
+            else
+                rankByAddress.[addr] <= self.Cutoff
 
         member self.weightOf(addr: AST.Address) : double = analysis.weights.[addr]
 
