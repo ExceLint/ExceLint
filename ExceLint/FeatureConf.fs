@@ -459,6 +459,8 @@
         member self.IsEnabledOptWeightIntrinsicAnomalousness : bool = _config.ContainsKey "WeightByIntrinsicAnomalousness" && _config.["WeightByIntrinsicAnomalousness"].enabled
         member self.IsEnabledOptWeightConditioningSetSize : bool = _config.ContainsKey "WeightByConditioningSetSize" && _config.["WeightByConditioningSetSize"].enabled
         member self.IsEnabledSpectralRanking : bool = _config.ContainsKey "SpectralRanking" && _config.["SpectralRanking"].enabled
+        member self.IsEnabledAnalyzeOnlyFormulas : bool = _config.ContainsKey "AnalyzeOnlyFormulas" && _config.["AnalyzeOnlyFormulas"].enabled
+        member self.IsEnabledAnalyzeAllCells : bool = _config.ContainsKey "AnalyzeOnlyFormulas" && not (_config.["AnalyzeOnlyFormulas"].enabled)
 
         // make sure that config option combinations make sense;
         // returns a 'corrected' config
@@ -472,8 +474,15 @@
                          else
                             self
 
+            // if the user did not explicitly ask to analyze
+            // all cells, the default is to analyze only formulas
+            let config' = if not config.IsEnabledAnalyzeAllCells then
+                              config.analyzeOnlyFormulas(true)
+                          else
+                              config
+
             // for now, our feature is always the mixed shallow L2 norm
-            config.enableShallowInputVectorMixedL2NormSum(true)
+            config'.enableShallowInputVectorMixedL2NormSum(true)
 
         member self.rawConf = _config
 

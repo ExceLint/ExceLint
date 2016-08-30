@@ -804,7 +804,9 @@
                 | AnalysisCancelled -> Cancellation
 
             let analyze(app: Microsoft.Office.Interop.Excel.Application)(config: FeatureConf)(dag: Depends.DAG)(alpha: double)(progress: Depends.Progress) =
-                let input : Input = { app = app; config = config; dag = dag; alpha = alpha; progress = progress; }
+                let config' = config.validate
+
+                let input : Input = { app = app; config = config'; dag = dag; alpha = alpha; progress = progress; }
 
                 if dag.IsCancelled() then
                     None
@@ -820,7 +822,7 @@
                                     +> kneeIndexOpt
 
                     match pipeline input with
-                    | Success(analysis) -> Some (ErrorModel(input, analysis, config))
+                    | Success(analysis) -> Some (ErrorModel(input, analysis, config'))
                     | Cancellation -> None
 
         

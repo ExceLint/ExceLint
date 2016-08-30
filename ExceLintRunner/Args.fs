@@ -48,6 +48,8 @@ open System.Text.RegularExpressions
         printfn "-addrmode   infer address modes"
         printfn "-intrinsic  weigh by intrinsic anomalousness"
         printfn "-css        weigh by conditioning set size"
+        printfn "-inputstoo  analyze inputs as well; by default ExceLint only"
+        printfn "            analyzes formulas"
         printfn "\nExample:\n"
         printfn "ExceLintRunner.exe \"C:\\data\" \"C:\\output\" \"C:\\CUSTODES\\smell_detection_result.csv\" \"C:\\ProgramData\\Oracle\\Java\\javapath\\java.exe\" \"C:\\CUSTODES\\cc2.jar\" -verbose -allcells -rows -columns -levels -css"
         printfn "\nHelp:\n"
@@ -81,6 +83,7 @@ open System.Text.RegularExpressions
                                         | "-addrmode" -> isVerb, noExit, conf.inferAddressModes(true)
                                         | "-intrinsic" -> isVerb, noExit, conf.weightByIntrinsicAnomalousness(true)
                                         | "-css" -> isVerb, noExit, conf.weightByConditioningSetSize(true)
+                                        | "-inputstoo" -> isVerb, noExit, conf.analyzeOnlyFormulas(false)
                                         | s -> failwith ("Unrecognized option: " + s)
                                     ) (false,false,new ExceLint.FeatureConf()) flags
 
