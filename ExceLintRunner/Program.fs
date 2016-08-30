@@ -161,7 +161,7 @@ open ExceLint
                     rankingTimeMs = model.RankingTimeInMilliseconds,
                     causesTimeMs = model.CausesTimeInMilliseconds,
                     conditioningSetSzTimeMs = model.ConditioningSetSizeTimeInMilliseconds,
-                    numAnom = model.Cutoff,
+                    numAnom = model.Cutoff + 1,
                     custodesFail = (match custodes with | CUSTODES.BadOutput _ -> true | _ -> false),
                     custodesFailMsg = (match custodes with | CUSTODES.BadOutput msg -> msg | _ -> ""),
                     numCustodesSmells = stats.custodes_flagged.Count,
