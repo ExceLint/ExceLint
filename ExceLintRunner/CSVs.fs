@@ -13,7 +13,8 @@ let private ExceLintStatsSchema = "benchmark_name (string), num_cells (int), num
     excelint_true_smells_found (int), custodes_true_smells_found (int), excelint_custodes_true_smell_intersect (int),\
     true_smells_missed_by_both (int), excel_flags (int), excelint_excel_intersect (int), custodes_excel_intersect (int),\
     excel_flags_missed_by_both (int),\
-    opt_cond_all_cells (bool), opt_cond_rows (bool), opt_cond_cols (bool), opt_cond_levels (bool),\
+    opt_spectral (bool),\
+    opt_cond_all_cells (bool), opt_cond_rows (bool), opt_cond_cols (bool), opt_cond_levels (bool),opt_cond_sheets (bool),\
     opt_addrmode_inference (bool), opt_weight_intrinsic_anom (bool), opt_weight_condition_set_sz (bool)"
 
 [<Literal>]

@@ -174,10 +174,12 @@ open ExceLint
                     excelintExcelIntersect = stats.excelint_excel_intersect.Count,
                     custodesExcelIntersect = stats.custodes_excel_intersect.Count,
                     excelFlagsMissedByBoth = (hs_difference stats.excel_this_wb (hs_union stats.excelint_excel_intersect stats.custodes_excel_intersect)).Count,
+                    optSpectral = config.FeatureConf.IsEnabledSpectralRanking,
                     optCondAllCells = config.FeatureConf.IsEnabledOptCondAllCells,
                     optCondRows = config.FeatureConf.IsEnabledOptCondRows,
                     optCondCols = config.FeatureConf.IsEnabledOptCondCols,
                     optCondLevels = config.FeatureConf.IsEnabledOptCondLevels,
+                    optCondSheets = config.FeatureConf.IsEnabledOptCondSheets,
                     optAddrmodeInference = config.FeatureConf.IsEnabledOptAddrmodeInference,
                     optWeightIntrinsicAnom = config.FeatureConf.IsEnabledOptWeightIntrinsicAnomalousness,
                     optWeightConditionSetSz = config.FeatureConf.IsEnabledOptWeightConditioningSetSize
