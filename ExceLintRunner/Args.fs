@@ -3,7 +3,7 @@
 open System.IO
 open System.Text.RegularExpressions
 
-    type Config(dpath: string, opath: string, jpath: string, cpath: string, gpath: string, verbose: bool, noexit: bool, csv: string, fc: ExceLint.FeatureConf) =
+    type Config(dpath: string, opath: string, jpath: string, cpath: string, gpath: string, verbose: bool, noexit: bool, alpha: double, csv: string, fc: ExceLint.FeatureConf) =
         member self.files: string[] =
             Directory.EnumerateFiles(dpath, "*.xls?", SearchOption.AllDirectories) |> Seq.toArray
         member self.csv: string = csv
@@ -16,6 +16,9 @@ open System.Text.RegularExpressions
         member self.DebugPath = Path.Combine(opath, "debug.csv")
         member self.DontExitWithoutKeystroke = noexit
         member self.CustodesGroundTruthCSV = gpath
+        member self.alpha = alpha
+
+    type Knobs = { verbose: bool; dont_exit: bool; alpha: double }
 
     let usage() : unit =
         printfn "ExceLintRunner.exe <input directory> <output directory> <ground truth CSV> <java path> <CUSTODES JAR> [flags]"
@@ -50,6 +53,7 @@ open System.Text.RegularExpressions
         printfn "-css        weigh by conditioning set size"
         printfn "-inputstoo  analyze inputs as well; by default ExceLint only"
         printfn "            analyzes formulas"
+        printfn "-thresh <n> sets max %% to inspect at n%%; default 5%%"
         printfn "\nExample:\n"
         printfn "ExceLintRunner.exe \"C:\\data\" \"C:\\output\" \"C:\\CUSTODES\\smell_detection_result.csv\" \"C:\\ProgramData\\Oracle\\Java\\javapath\\java.exe\" \"C:\\CUSTODES\\cc2.jar\" -verbose -allcells -rows -columns -levels -css"
         printfn "\nHelp:\n"
@@ -68,24 +72,32 @@ open System.Text.RegularExpressions
 
         let csv = Path.Combine(opath, "excelint_output.csv")
 
-        let flags = argv.[5 .. argv.Length - 1]
+        let flags = argv.[5 .. argv.Length - 1] |> Array.toList
 
-        let (isVerb,noExit,fConf) = Array.fold (fun (isVerb: bool, noExit: bool, conf: ExceLint.FeatureConf) flag ->
-                                        match flag with
-                                        | "-verbose" -> true, noExit, conf
-                                        | "-noexit" -> isVerb, true, conf
-                                        | "-spectral" -> isVerb, noExit, conf.spectralRanking(true)
-                                        | "-allcells" -> isVerb, noExit, conf.analyzeRelativeToAllCells(true)
-                                        | "-columns" -> isVerb, noExit, conf.analyzeRelativeToColumns(true)
-                                        | "-rows" -> isVerb, noExit, conf.analyzeRelativeToRows(true)
-                                        | "-levels" -> isVerb, noExit, conf.analyzeRelativeToLevels(true)
-                                        | "-sheets" -> isVerb, noExit, conf.analyzeRelativeToSheet(true)
-                                        | "-addrmode" -> isVerb, noExit, conf.inferAddressModes(true)
-                                        | "-intrinsic" -> isVerb, noExit, conf.weightByIntrinsicAnomalousness(true)
-                                        | "-css" -> isVerb, noExit, conf.weightByConditioningSetSize(true)
-                                        | "-inputstoo" -> isVerb, noExit, conf.analyzeOnlyFormulas(false)
-                                        | s -> failwith ("Unrecognized option: " + s)
-                                    ) (false,false,new ExceLint.FeatureConf()) flags
+        let rec optParse = (fun (args: string list)(knobs: Knobs)(conf: ExceLint.FeatureConf) ->
+                               match args with
+                               | [] -> knobs.verbose, knobs.dont_exit, knobs.alpha, conf
+                               | "-verbose" :: rest -> optParse rest { knobs with verbose = true } conf
+                               | "-noexit" :: rest -> optParse rest { knobs with dont_exit = true } conf
+                               | "-spectral" :: rest -> optParse rest knobs (conf.spectralRanking true)
+                               | "-allcells" :: rest -> optParse rest knobs (conf.analyzeRelativeToAllCells true)
+                               | "-columns" :: rest -> optParse rest knobs (conf.analyzeRelativeToColumns true)
+                               | "-rows" :: rest -> optParse rest knobs (conf.analyzeRelativeToRows true)
+                               | "-levels" :: rest -> optParse rest knobs (conf.analyzeRelativeToLevels true)
+                               | "-sheets" :: rest -> optParse rest knobs (conf.analyzeRelativeToSheet true)
+                               | "-addrmode" :: rest -> optParse rest knobs (conf.inferAddressModes true)
+                               | "-intrinsic" :: rest -> optParse rest knobs (conf.weightByIntrinsicAnomalousness true)
+                               | "-css" :: rest -> optParse rest knobs (conf.weightByConditioningSetSize true)
+                               | "-inputstoo" :: rest -> optParse rest knobs (conf.analyzeOnlyFormulas false)
+                               | "-thresh" :: d :: rest ->
+                                   let alpha = System.Convert.ToDouble d / 100.0
+                                   if alpha < 0.0 || alpha > 1.0 then
+                                       failwith "Threshold must be between 0 and 100."
+                                   optParse rest { knobs with alpha = alpha } conf
+                               | s :: rest -> failwith ("Unrecognized option: " + s)
+                           )
+
+        let (isVerb,noExit,alpha,fConf) = optParse flags { verbose = false; dont_exit = false; alpha = 0.05 } (new ExceLint.FeatureConf())
 
         let fConf' = fConf.validate
 
@@ -110,5 +122,5 @@ open System.Text.RegularExpressions
                     printfn "'%s' enabled." k
                 ) changed
 
-        Config(dpath, opath, jpath, cpath, gpath, isVerb, noExit, csv, fConf')
+        Config(dpath, opath, jpath, cpath, gpath, isVerb, noExit, alpha, csv, fConf')
 

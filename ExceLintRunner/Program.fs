@@ -189,7 +189,7 @@ open ExceLint
         sw.Write (csv.Append([row]).SaveToString())
         sw.Flush()
 
-    let analyze (file: String)(thresh: double)(app: Application)(config: Args.Config)(truth: CUSTODES.GroundTruth)(csv: CSV.ExceLintStats)(debug_csv: CSV.DebugInfo)(sw: StreamWriter)(debug_sw: StreamWriter) =
+    let analyze (file: String)(app: Application)(config: Args.Config)(truth: CUSTODES.GroundTruth)(csv: CSV.ExceLintStats)(debug_csv: CSV.DebugInfo)(sw: StreamWriter)(debug_sw: StreamWriter) =
         let shortf = (System.IO.Path.GetFileName file)
 
         printfn "Opening: %A" shortf
@@ -200,7 +200,7 @@ open ExceLint
         let graph = wb.buildDependenceGraph()
 
         printfn "Running ExceLint analysis: %A" shortf
-        let model_opt = ExceLint.ModelBuilder.analyze (app.XLApplication()) config.FeatureConf graph thresh (Depends.Progress.NOPProgress())
+        let model_opt = ExceLint.ModelBuilder.analyze (app.XLApplication()) config.FeatureConf graph (config.alpha) (Depends.Progress.NOPProgress())
 
         printfn "Running CUSTODES analysis: %A" shortf
         let custodes = CUSTODES.getOutput(file, config.CustodesPath, config.JavaPath)
@@ -246,7 +246,7 @@ open ExceLint
 
                 let stats = {
                     shortname = shortf;
-                    threshold = thresh;
+                    threshold = config.alpha;
                     custodes_flagged = custodes_flags;
                     excelint_not_custodes = hs_difference excelint_flags custodes_flags;
                     custodes_not_excelint = hs_difference custodes_flags excelint_flags;
@@ -297,8 +297,6 @@ open ExceLint
 
         using(new Application()) (fun app ->
 
-            let thresh = 0.05
-
             let csv = new CSV.ExceLintStats([])
             let debug_csv = new CSV.DebugInfo([])
 
@@ -319,7 +317,7 @@ open ExceLint
                         let shortf = (System.IO.Path.GetFileName file)
 
                         try
-                            analyze file thresh app config truth csv debug_csv sw debug_sw
+                            analyze file app config truth csv debug_csv sw debug_sw
                         with
                         | e ->
                             printfn "Cannot analyze workbook %A because:\n%A" shortf e.Message
