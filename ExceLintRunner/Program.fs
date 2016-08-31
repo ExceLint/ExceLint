@@ -216,7 +216,7 @@ open ExceLint
                 per_sw.Write(CSV.WorkbookStatsHeaders)
                 per_sw.Flush()
 
-                let ranking = model.rankByFeatureSum()
+                let ranking = model.ranking()
 
                 // get the set of cells flagged by ExceLint
                 let excelint_flags = rankToSet ranking model

@@ -83,7 +83,7 @@ namespace ExceLintUI
 
             // store all anomalies in separate set
             var anoms = new Dictionary<AST.Address, double>();
-            foreach (var pair in m.rankByFeatureSum().Take(m.Cutoff + 1))
+            foreach (var pair in m.ranking().Take(m.Cutoff + 1))
             {
                 anoms.Add(pair.Key, pair.Value);
             }

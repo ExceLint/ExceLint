@@ -57,7 +57,7 @@
 
         member self.weightOf(addr: AST.Address) : double = analysis.weights.[addr]
 
-        member self.rankByFeatureSum() : Ranking =
+        member self.ranking() : Ranking =
             if ErrorModel.rankingIsSane analysis.ranking input.dag (input.config.IsEnabled "AnalyzeOnlyFormulas") then
                 analysis.ranking
             else
