@@ -4,6 +4,22 @@ open System.IO
 open System.Text.RegularExpressions
 
     type Config(dpath: string, opath: string, jpath: string, cpath: string, gpath: string, verbose: bool, noexit: bool, alpha: double, csv: string, fc: ExceLint.FeatureConf) =
+        do
+            printfn "\n------------------------------------"
+            printfn "Running with the following options: "
+            printfn "------------------------------------"
+            printfn "Input directory: %s" dpath
+            printfn "Output directory: %s" opath
+            printfn "Output stats CSV: %s" csv
+            printfn "Ground truth CSV: %s" gpath
+            printfn "Java path: %s" jpath
+            printfn "CUSTODES JAR path: %s" cpath
+            printfn "Verbose mode: %b" verbose
+            printfn "No-exit mode: %b" noexit
+            printfn "Threshold: %f" alpha
+            Array.iter (fun (opt,enabled) -> printfn "%s: %b" opt enabled) (ExceLint.FeatureConf.simpleConf(fc.rawConf) |> Map.toArray)
+            printfn "------------------------------------\n"
+
         member self.files: string[] =
             Directory.EnumerateFiles(dpath, "*.xls?", SearchOption.AllDirectories) |> Seq.toArray
         member self.csv: string = csv
@@ -64,11 +80,11 @@ open System.Text.RegularExpressions
     let processArgs(argv: string[]) : Config =
         if argv.Length < 5 || argv.Length > 15 || (Array.contains "-help" argv) || (Array.contains "--help" argv) then
             usage()
-        let dpath = argv.[0]    // input directory
-        let opath = argv.[1]    // output directory
-        let gpath = argv.[2]    // path to ground truth CSV
-        let jpath = argv.[3]    // java path
-        let cpath = argv.[4]    // CUSTODES path
+        let dpath = System.IO.Path.GetFullPath argv.[0]    // input directory
+        let opath = System.IO.Path.GetFullPath argv.[1]    // output directory
+        let gpath = System.IO.Path.GetFullPath argv.[2]    // path to ground truth CSV
+        let jpath = System.IO.Path.GetFullPath argv.[3]    // java path
+        let cpath = System.IO.Path.GetFullPath argv.[4]    // CUSTODES path
 
         let csv = Path.Combine(opath, "excelint_output.csv")
 
