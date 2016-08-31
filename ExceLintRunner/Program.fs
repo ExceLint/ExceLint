@@ -43,7 +43,7 @@ open ExceLint
         |> (fun arr -> new HashSet<AST.Address>(arr))
 
 
-    let per_append_excelint(sw: StreamWriter)(csv: CSV.WorkbookStats)(truth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: Pipeline.Ranking) : unit =
+    let per_append_excelint(sw: StreamWriter)(csv: CSV.WorkbookStats)(truth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: Pipeline.Ranking)(dag: Depends.DAG) : unit =
         let smells = match custodes with
                      | CUSTODES.OKOutput c -> c.Smells
                      | _ -> new HashSet<AST.Address>()
@@ -56,6 +56,7 @@ open ExceLint
                                 workbook = addr.WorkbookName,
                                 worksheet = addr.WorksheetName,
                                 addr = addr.A1Local(),
+                                isFormula = dag.isFormula addr,
                                 flaggedByExcelint = (i <= model.Cutoff),
                                 flaggedByCustodes = smells.Contains addr,
                                 flaggedByExcel = truth.isFlaggedByExcel(addr),
@@ -69,7 +70,7 @@ open ExceLint
             sw.Write (csv.Append([per_row]).SaveToString())
         ) ranking |> ignore
 
-    let per_append_custodes(sw: StreamWriter)(csv: CSV.WorkbookStats)(truth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: Pipeline.Ranking)(custodes_not_excelint: HashSet<AST.Address>) : unit =
+    let per_append_custodes(sw: StreamWriter)(csv: CSV.WorkbookStats)(truth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: Pipeline.Ranking)(custodes_not_excelint: HashSet<AST.Address>)(dag: Depends.DAG) : unit =
         let smells = match custodes with
                      | CUSTODES.OKOutput c -> c.Smells
                      | _ -> new HashSet<AST.Address>()
@@ -81,6 +82,7 @@ open ExceLint
                                 workbook = addr.WorkbookName,
                                 worksheet = addr.WorksheetName,
                                 addr = addr.A1Local(),
+                                isFormula = dag.isFormula addr,
                                 flaggedByExcelint = false,
                                 flaggedByCustodes = true,
                                 flaggedByExcel = truth.isFlaggedByExcel(addr),
@@ -94,7 +96,7 @@ open ExceLint
             sw.Write (csv.Append([per_row]).SaveToString())
         ) (custodes_not_excelint |> Seq.toArray) |> ignore
 
-    let per_append_true_smells(sw: StreamWriter)(csv: CSV.WorkbookStats)(truth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: Pipeline.Ranking)(true_smells_not_found: HashSet<AST.Address>) : unit =
+    let per_append_true_smells(sw: StreamWriter)(csv: CSV.WorkbookStats)(truth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: Pipeline.Ranking)(true_smells_not_found: HashSet<AST.Address>)(dag: Depends.DAG) : unit =
         let smells = match custodes with
                      | CUSTODES.OKOutput c -> c.Smells
                      | _ -> new HashSet<AST.Address>()
@@ -106,6 +108,7 @@ open ExceLint
                                 workbook = addr.WorkbookName,
                                 worksheet = addr.WorksheetName,
                                 addr = addr.A1Local(),
+                                isFormula = dag.isFormula addr,
                                 flaggedByExcelint = false,
                                 flaggedByCustodes = false,
                                 flaggedByExcel = truth.isFlaggedByExcel(addr),
@@ -262,9 +265,9 @@ open ExceLint
                 }
 
                 // write to per-workbook CSV
-                per_append_excelint per_sw per_csv truth custodes model ranking
-                per_append_custodes per_sw per_csv truth custodes model ranking stats.excelint_not_custodes
-                per_append_true_smells per_sw per_csv truth custodes model ranking true_smells_not_found
+                per_append_excelint per_sw per_csv truth custodes model ranking graph
+                per_append_custodes per_sw per_csv truth custodes model ranking stats.excelint_not_custodes graph
+                per_append_true_smells per_sw per_csv truth custodes model ranking true_smells_not_found graph
 
                 // write overall stats to CSV
                 append_stats stats sw csv model custodes config

@@ -18,7 +18,7 @@ let private ExceLintStatsSchema = "benchmark_name (string), num_cells (int), num
     opt_addrmode_inference (bool), opt_weight_intrinsic_anom (bool), opt_weight_condition_set_sz (bool)"
 
 [<Literal>]
-let private WorkbookStatsSchema = "path (string), workbook (string), worksheet (string), addr (string), flagged_by_excelint (bool), flagged_by_custodes (bool), flagged_by_excel (bool), cli_same_as_v1 (bool), rank (int), score (float), custodes_true_smell (bool)"
+let private WorkbookStatsSchema = "path (string), workbook (string), worksheet (string), addr (string), is_formula (bool), flagged_by_excelint (bool), flagged_by_custodes (bool), flagged_by_excel (bool), cli_same_as_v1 (bool), rank (int), score (float), custodes_true_smell (bool)"
 
 [<Literal>]
 let private CUSTODESGroundTruthSchema = "Index (int),Spreadsheet (string), Worksheet (string), GroundTruth (string), Custodes (string), AmCheck (string), UCheck (string), Dimension (string), Excel (string)"
@@ -38,7 +38,7 @@ type CUSTODESGroundTruth = CsvProvider<Schema = CUSTODESGroundTruthSchema, HasHe
 
 type DebugInfo = CsvProvider<Schema = DebugInfoSchema, HasHeaders=false>
 
-let private headers(schema: string) : string = fsdTypeRegex.Replace(schema, "") + "\n"
+let private headers(schema: string) : string = (fsdTypeRegex.Replace(schema, "") + "\n").Replace(" ", "")
 
 let ExceLintStatsHeaders = headers ExceLintStatsSchema
 
