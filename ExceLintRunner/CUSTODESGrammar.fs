@@ -2,8 +2,6 @@
     open FParsec
     open System.Collections.Generic
 
-    let private DEBUG_MODE = false
-
     // a convenient type alias
     type P<'t> = Parser<'t, unit>  
 
@@ -11,12 +9,12 @@
     let private (<!>) (p: P<_>) label : P<_> =
         #if DEBUG
             fun stream ->
-                let s = String.replicate (int (stream.Position.Column)) " "
-                let pre = sprintf "%d%sTrying %s(\"%s\")" (stream.Index) s label (stream.PeekString 1000)
-                System.Diagnostics.Debug.WriteLine(pre)
+                let before = stream.PeekString 1000000
                 let reply = p stream
-                let post = sprintf "%d%s%s(\"%s\") (%A)" (stream.Index) s label (stream.PeekString 1000) reply.Status
-                System.Diagnostics.Debug.WriteLine(post)
+                let after = stream.PeekString 1000000
+                let consumed = before.[0..before.Length - after.Length - 1]
+                let consumed_msg = sprintf "%d %s consumed \"%s\" (%A)" (stream.Index) label consumed reply.Status
+                System.Diagnostics.Debug.WriteLine(consumed_msg)
                 reply
         #else
             p 
@@ -27,12 +25,25 @@
     type Address = string
     type CUSTODESSmells = Dictionary<Worksheet,Address[]>
 
+    let private assStart = pstring "----procesing worksheet '" <!> "assStart"
+    let private assEnd = pstring "'----" .>> spaces <!> "assEnd"
+//    let private assMiddle = many1CharsTill anyChar newline <!> "assMiddle"
+//    let private assMiddle = manyChars (noneOf "'") <!> "assMiddle"
+//    let private assMiddle = charsTillString "'----" false 100 <!> "assMiddle"
+    let private assMiddle = charsTillString "'----" false 100 <!> "assMiddle"
     let private analysisStart : P<Worksheet> =
         between
-            (pstring "----procesing worksheet '")
-            (pstring "'----" .>> spaces)
-            (manyChars (noneOf "'"))
+            assStart
+            assEnd
+            assMiddle
         <!> "analysisStart"
+
+//    let private analysisStart : P<Worksheet> =
+//        between
+//            (pstring "----procesing worksheet '")
+//            (pstring "'----" .>> spaces)
+//            (manyChars (noneOf "'"))
+//        <!> "analysisStart"
 
     let private clusterStart : P<string> =
         pstring "---- Stage I clustering begined ----" .>> spaces
