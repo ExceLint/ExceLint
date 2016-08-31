@@ -38,7 +38,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DocumentationFile>bin\Release\ExceLintRunner.XML</DocumentationFile>
     <Prefer32Bit>true</Prefer32Bit>
-    <StartArguments>"../../../../data/analyses/CUSTODES/custodes/example/input_spreadsheets/" "Z:\dbarowy\Desktop\excelint" "C:\ProgramData\Oracle\Java\javapath\java.exe" "C:\Users\dbarowy\Documents\Visual Studio 2015\Projects\ExceLint\data\analyses\CUSTODES2\cc2.jar" -verbose -allcells -rows -columns -levels -css</StartArguments>
+    <StartArguments>"C:\Users\dbarowy\Documents\Visual Studio 2015\Projects\ExceLint\data\spreadsheets\venron10" "Z:\dbarowy\Desktop\excelint" "C:\ProgramData\Oracle\Java\javapath\java.exe" "C:\Users\dbarowy\Documents\Visual Studio 2015\Projects\ExceLint\data\analyses\CUSTODES2\cc2.jar" -verbose -allcells -rows -columns -levels -css</StartArguments>
   </PropertyGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
