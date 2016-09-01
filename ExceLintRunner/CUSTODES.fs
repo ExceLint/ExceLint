@@ -140,7 +140,7 @@
 
             OKOutput (Output(canonicalOutputHS))
 
-    let addresses(tool: Tool)(row: CSV.CUSTODESGroundTruth.Row)(path: string) : AST.Address[] =
+    let addresses(tool: Tool)(row: CSV.CUSTODESGroundTruth.Row)(workbook_paths: Dictionary<string, string>) : AST.Address[] =
         let cells_str = tool.Accessor(row).Replace(" ", "")
 
         if String.IsNullOrEmpty(cells_str) then
@@ -154,11 +154,18 @@
                 if String.IsNullOrEmpty(addrstr) then
                     None
                 else
-                    Some(CUSTODESToAddress addrstr row.Worksheet row.Spreadsheet path)
+                    if not (workbook_paths.ContainsKey row.Spreadsheet) then
+                        None
+                    else
+                        // get workbook absolute path
+                        let path = workbook_paths.[row.Spreadsheet]
+
+                        // get address
+                        Some(CUSTODESToAddress addrstr row.Worksheet row.Spreadsheet path)
             ) cells
             |> Array.choose id
 
-    type GroundTruth(folderPath: string, gtpath: string) =
+    type GroundTruth(workbook_paths: Dictionary<string,string>, gtpath: string) =
         let raw = CSV.CUSTODESGroundTruth.Load(gtpath)
 
         let d = new Dictionary<Tool,HashSet<AST.Address>>()
@@ -169,7 +176,7 @@
                     if not (d.ContainsKey(tool)) then
                         d.Add(tool, new HashSet<AST.Address>())
 
-                    let cells = addresses tool row folderPath
+                    let cells = addresses tool row workbook_paths
 
                     Array.iter (fun addr ->
                         d.[tool].Add(addr) |> ignore

@@ -3,6 +3,7 @@ open System
 open System.IO
 open System.Collections.Generic
 open ExceLint
+open ExceLint.Utils
 
     type Stats = {
         shortname: string;
@@ -303,7 +304,13 @@ open ExceLint
             let csv = new CSV.ExceLintStats([])
             let debug_csv = new CSV.DebugInfo([])
 
-            let truth = new CUSTODES.GroundTruth(config.InputDirectory, config.CustodesGroundTruthCSV)
+            let workbook_paths = Array.map (fun fname ->
+                                     let wbname = System.IO.Path.GetFileName fname
+                                     let path = System.IO.Path.GetDirectoryName fname
+                                     wbname, path
+                                 ) (config.files) |> adict
+
+            let truth = new CUSTODES.GroundTruth(workbook_paths, config.CustodesGroundTruthCSV)
 
             using (new StreamWriter(config.csv)) (fun sw ->
                 using (new StreamWriter(config.DebugPath)) (fun debug_sw ->
