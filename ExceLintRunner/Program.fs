@@ -37,12 +37,11 @@ open ExceLint.Utils
         hs3.UnionWith(hs2)
         hs3
 
-    let rankToSet(ranking: Pipeline.Ranking)(model: ErrorModel) : HashSet<AST.Address> =
+    let rankToSet(ranking: Pipeline.Ranking)(cutoff: int) : HashSet<AST.Address> =
         Array.mapi (fun i (kvp: KeyValuePair<AST.Address,double>) -> (i, kvp.Key)) ranking
-        |> Array.filter (fun (i,e) -> i <= model.Cutoff)
+        |> Array.filter (fun (i,e) -> i <= cutoff)
         |> Array.map (fun (i,e) -> e)
         |> (fun arr -> new HashSet<AST.Address>(arr))
-
 
     let per_append_excelint(sw: StreamWriter)(csv: CSV.WorkbookStats)(truth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: Pipeline.Ranking)(dag: Depends.DAG) : unit =
         let smells = match custodes with
@@ -223,7 +222,9 @@ open ExceLint.Utils
                 let ranking = model.ranking()
 
                 // get the set of cells flagged by ExceLint
-                let excelint_flags = rankToSet ranking model
+                let excelint_flags = rankToSet ranking model.Cutoff
+                // get the set of cells in ExceLint's ranking
+                let excelint_analyzed = rankToSet ranking (ranking.Length - 1)
 
                 // get workbook selector
                 let this_wb = ranking.[0].Key.WorkbookName
@@ -267,8 +268,10 @@ open ExceLint.Utils
 
                 // write to per-workbook CSV
                 per_append_excelint per_sw per_csv truth custodes model ranking graph
-                per_append_custodes per_sw per_csv truth custodes model ranking stats.excelint_not_custodes graph
-                per_append_true_smells per_sw per_csv truth custodes model ranking true_smells_not_found graph
+                let custodes_not_in_ranking = hs_difference (stats.excelint_not_custodes) excelint_analyzed
+                per_append_custodes per_sw per_csv truth custodes model ranking custodes_not_in_ranking graph
+                let true_smells_not_in_ranking = hs_difference true_smells_not_found excelint_analyzed
+                per_append_true_smells per_sw per_csv truth custodes model ranking true_smells_not_in_ranking graph
 
                 // write overall stats to CSV
                 append_stats stats sw csv model custodes config
