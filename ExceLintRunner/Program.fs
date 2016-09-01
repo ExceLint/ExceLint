@@ -270,13 +270,16 @@ open ExceLint.Utils
                 per_append_excelint per_sw per_csv truth custodes model ranking graph
                 let custodes_not_in_ranking = hs_difference (stats.excelint_not_custodes) excelint_analyzed
                 per_append_custodes per_sw per_csv truth custodes model ranking custodes_not_in_ranking graph
-                let true_smells_not_in_ranking = hs_difference true_smells_not_found excelint_analyzed
+                let true_smells_not_in_ranking = hs_difference (hs_difference true_smells_not_found excelint_analyzed) custodes_not_in_ranking
                 per_append_true_smells per_sw per_csv truth custodes model ranking true_smells_not_in_ranking graph
 
                 // write overall stats to CSV
                 append_stats stats sw csv model custodes config
 
-                // sanity check
+                // sanity checks
+                assert ((hs_intersection excelint_analyzed custodes_not_in_ranking).Count = 0)
+                assert ((hs_intersection excelint_analyzed true_smells_not_in_ranking).Count = 0)
+                assert ((hs_intersection custodes_not_in_ranking true_smells_not_in_ranking).Count = 0)
                 per_append_debug debug_sw debug_csv model stats.custodes_flagged config ranking
             )
 
