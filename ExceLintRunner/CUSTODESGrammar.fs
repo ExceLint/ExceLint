@@ -6,51 +6,38 @@
     type P<'t> = Parser<'t, unit>  
 
     // a debug parser
-//    let private (<!>) (p: P<_>) label : P<_> =
-//        #if DEBUG
-//            fun stream ->
-//                let before = stream.PeekString 1000000
-//                let reply = p stream
-//                let after = stream.PeekString 1000000
-//                let consumed = before.[0..before.Length - after.Length - 1]
-//                let consumed_msg = sprintf "%d %s consumed \"%s\" (%A)" (stream.Index) label consumed reply.Status
-//                System.Diagnostics.Debug.WriteLine(consumed_msg)
-//                reply
-//        #else
-//            p 
-//        #endif
+    let private (<!>) (p: P<_>) label : P<_> =
+        #if DEBUG
+            fun stream ->
+                let before = stream.PeekString 1000000
+                let reply = p stream
+                let after = stream.PeekString 1000000
+                let consumed = before.[0..before.Length - after.Length - 1]
+                let consumed_msg = sprintf "%d %s consumed \"%s\" (%A)" (stream.Index) label consumed reply.Status
+                System.Diagnostics.Debug.WriteLine(consumed_msg)
+                reply
+        #else
+            p 
+        #endif
 
-    let (<!>) (p: Parser<_,_>) label : Parser<_,_> =
-        fun stream ->
-            System.Diagnostics.Debug.WriteLine(sprintf "%A: Entering %s" stream.Position label)
-            let reply = p stream
-            System.Diagnostics.Debug.WriteLine(sprintf "%A: Leaving %s (%A)" stream.Position label reply.Status)
-            reply
+//    let (<!>) (p: Parser<_,_>) label : Parser<_,_> =
+//        fun stream ->
+//            System.Diagnostics.Debug.WriteLine(sprintf "%A: Entering %s" stream.Position label)
+//            let reply = p stream
+//            System.Diagnostics.Debug.WriteLine(sprintf "%A: Leaving %s (%A)" stream.Position label reply.Status)
+//            reply
 
     // CUSTODES output datatypes
     type Worksheet = string
     type Address = string
     type CUSTODESSmells = Dictionary<Worksheet,Address[]>
 
-    let private assStart = pstring "----procesing worksheet '" <!> "assStart"
-    let private assEnd = pstring "'----" .>> spaces <!> "assEnd"
-//    let private assMiddle = many1CharsTill anyChar newline <!> "assMiddle"
-//    let private assMiddle = manyChars (noneOf "'") <!> "assMiddle"
-//    let private assMiddle = charsTillString "'----" false 100 <!> "assMiddle"
-    let private assMiddle = charsTillString "'----" false 100 <!> "assMiddle"
     let private analysisStart : P<Worksheet> =
         between
-            assStart
-            assEnd
-            assMiddle
+            (pstring "----procesing worksheet '")
+            (pstring "'----" .>> spaces)
+            (charsTillString "'----" false 100)
         <!> "analysisStart"
-
-//    let private analysisStart : P<Worksheet> =
-//        between
-//            (pstring "----procesing worksheet '")
-//            (pstring "'----" .>> spaces)
-//            (manyChars (noneOf "'"))
-//        <!> "analysisStart"
 
     let private clusterStart : P<string> =
         pstring "---- Stage I clustering begined ----" .>> spaces

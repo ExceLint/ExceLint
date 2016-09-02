@@ -138,124 +138,75 @@ namespace ExceLintRunnerTests
         [TestMethod]
         public void CUSTODESShouldParse()
         {
-            //            var output = @"----procesing worksheet 'Section C-1 to C-4'----
-            //----procesing worksheet 'C-5.1'----
-            //----procesing worksheet 'C-5.1FY Wrkld by month'----
-            //---- Stage I clustering begined ----
-            //---- Stage I finished ----
-            //found 3 clusters
-            //---- Stage II begined ----
-            //detected 0 smells:
-            //---Analysis Finished---
-            //----procesing worksheet 'C-5.3'----
-            //---- Stage I clustering begined ----
-            //---- Stage I finished ----
-            //found 7 clusters
-            //---- Stage II begined ----
-            //detected 0 smells:
-            //---Analysis Finished---
-            //----procesing worksheet 'C-5.3 Wrkld By Discrete Categor'----
-            //---- Stage I clustering begined ----
-            //---- Stage I finished ----
-            //found 4 clusters
-            //---- Stage II begined ----
-            //detected 0 smells:
-            //---Analysis Finished---
-            //----procesing worksheet 'Breakout by receipt type'----
-            //----procesing worksheet 'C-5.4'----
-            //---- Stage I clustering begined ----
-            //---- Stage I finished ----
-            //found 2 clusters
-            //---- Stage II begined ----
-            //detected 0 smells:
-            //---Analysis Finished---
-            //----procesing worksheet 'C-5.5'----
-            //---- Stage I clustering begined ----
-            //---- Stage I finished ----
-            //found 4 clusters
-            //---- Stage II begined ----
-            //detected 5 smells:
-            //E97
-            //F97
-            //E86
-            //G86
-            //G97
-            //---Analysis Finished---
-            //----procesing worksheet 'C-5.6'----
-            //---- Stage I clustering begined ----
-            //---- Stage I finished ----
-            //found 5 clusters
-            //---- Stage II begined ----
-            //detected 0 smells:
-            //---Analysis Finished---
-            //----procesing worksheet 'C-5.6 Wrkld By Discrete Categor'----
-            //---- Stage I clustering begined ----
-            //---- Stage I finished ----
-            //found 6 clusters
-            //---- Stage II begined ----
-            //detected 3 smells:
-            //E8
-            //C8
-            //D8
-            //---Analysis Finished---
-            //----procesing worksheet 'C-5.7'----
-            //---- Stage I clustering begined ----
-            //---- Stage I finished ----
-            //found 3 clusters
-            //---- Stage II begined ----
-            //detected 1 smells:
-            //D26
-            //---Analysis Finished---
-            //----procesing worksheet 'C-5.8'----
-            //---- Stage I clustering begined ----
-            //---- Stage I finished ----
-            //found 3 clusters
-            //---- Stage II begined ----
-            //---Analysis Finished---
-            //----procesing worksheet 'C-5.9'----
-            //---- Stage I clustering begined ----
-            //---- Stage I finished ----
-            //found 2 clusters
-            //---- Stage II begined ----
-            //detected 0 smells:
-            //---Analysis Finished---
-            //----procesing worksheet 'C-5.10'----
-            //---- Stage I clustering begined ----
-            //---- Stage I finished ----
-            //found 9 clusters
-            //---- Stage II begined ----
-            //detected 0 smells:
-            //---Analysis Finished---
-            //----procesing worksheet 'C-5.10 FY Wrkld by month'----
-            //---- Stage I clustering begined ----
-            //---- Stage I finished ----
-            //found 3 clusters
-            //---- Stage II begined ----
-            //detected 0 smells:
-            //---Analysis Finished---
-            //----procesing worksheet 'C-5.12'----
-            //---- Stage I clustering begined ----
-            //---- Stage I finished ----
-            //found 4 clusters
-            //---- Stage II begined ----
-            //detected 0 smells:
-            //---Analysis Finished---
-            //----procesing worksheet 'C-5.12 FY Wrkld by month'----
-            //---- Stage I clustering begined ----
-            //---- Stage I finished ----
-            //found 3 clusters
-            //---- Stage II begined ----
-            //detected 0 smells:
-            //---Analysis Finished---
-            //----procesing worksheet 'C-5.13'----
-            //---- Stage I clustering begined ----
-            //---- Stage I finished ----
-            //found 1 clusters
-            //---- Stage II begined ----
-            //detected 0 smells:
-            //---Analysis Finished---";
-
-            var output = @"----procesing worksheet 'C-5.8'----
+            var output = @"----procesing worksheet 'Section C-1 to C-4'----
+----procesing worksheet 'C-5.1'----
+----procesing worksheet 'C-5.1FY Wrkld by month'----
+---- Stage I clustering begined ----
+---- Stage I finished ----
+found 3 clusters
+---- Stage II begined ----
+detected 0 smells:
+---Analysis Finished---
+----procesing worksheet 'C-5.3'----
+---- Stage I clustering begined ----
+---- Stage I finished ----
+found 7 clusters
+---- Stage II begined ----
+detected 0 smells:
+---Analysis Finished---
+----procesing worksheet 'C-5.3 Wrkld By Discrete Categor'----
+---- Stage I clustering begined ----
+---- Stage I finished ----
+found 4 clusters
+---- Stage II begined ----
+detected 0 smells:
+---Analysis Finished---
+----procesing worksheet 'Breakout by receipt type'----
+----procesing worksheet 'C-5.4'----
+---- Stage I clustering begined ----
+---- Stage I finished ----
+found 2 clusters
+---- Stage II begined ----
+detected 0 smells:
+---Analysis Finished---
+----procesing worksheet 'C-5.5'----
+---- Stage I clustering begined ----
+---- Stage I finished ----
+found 4 clusters
+---- Stage II begined ----
+detected 5 smells:
+E97
+F97
+E86
+G86
+G97
+---Analysis Finished---
+----procesing worksheet 'C-5.6'----
+---- Stage I clustering begined ----
+---- Stage I finished ----
+found 5 clusters
+---- Stage II begined ----
+detected 0 smells:
+---Analysis Finished---
+----procesing worksheet 'C-5.6 Wrkld By Discrete Categor'----
+---- Stage I clustering begined ----
+---- Stage I finished ----
+found 6 clusters
+---- Stage II begined ----
+detected 3 smells:
+E8
+C8
+D8
+---Analysis Finished---
+----procesing worksheet 'C-5.7'----
+---- Stage I clustering begined ----
+---- Stage I finished ----
+found 3 clusters
+---- Stage II begined ----
+detected 1 smells:
+D26
+---Analysis Finished---
+----procesing worksheet 'C-5.8'----
 ---- Stage I clustering begined ----
 ---- Stage I finished ----
 found 3 clusters
@@ -309,12 +260,41 @@ detected 0 smells:
             if (r.IsCSuccess)
             {
                 var results = ((CUSTODESGrammar.CUSTODESParse.CSuccess)r).Item;
-                Assert.IsTrue(results.Count > 0);
+                Assert.IsTrue(results.Count == 18);
+                Assert.IsTrue(results.ContainsKey("Section C-1 to C-4") && results["Section C-1 to C-4"].Length == 0);
+                Assert.IsTrue(results.ContainsKey("C-5.1") && results["C-5.1"].Length == 0);
+                Assert.IsTrue(results.ContainsKey("C-5.1FY Wrkld by month") && results["C-5.1FY Wrkld by month"].Length == 0);
+                Assert.IsTrue(results.ContainsKey("C-5.3") && results["C-5.3"].Length == 0);
+                Assert.IsTrue(results.ContainsKey("C-5.3 Wrkld By Discrete Categor") && results["C-5.3 Wrkld By Discrete Categor"].Length == 0);
+                Assert.IsTrue(results.ContainsKey("Breakout by receipt type") && results["Breakout by receipt type"].Length == 0);
+                Assert.IsTrue(results.ContainsKey("C-5.4") && results["C-5.4"].Length == 0);
+                Assert.IsTrue(results.ContainsKey("C-5.5") && results["C-5.5"].Length == 5);
+                Assert.IsTrue(results.ContainsKey("C-5.6") && results["C-5.6"].Length == 0);
+                Assert.IsTrue(results.ContainsKey("C-5.6 Wrkld By Discrete Categor") && results["C-5.6 Wrkld By Discrete Categor"].Length == 3);
+                Assert.IsTrue(results.ContainsKey("C-5.7") && results["C-5.7"].Length == 1);
+                Assert.IsTrue(results.ContainsKey("C-5.8") && results["C-5.8"].Length == 0);
+                Assert.IsTrue(results.ContainsKey("C-5.9") && results["C-5.9"].Length == 0);
+                Assert.IsTrue(results.ContainsKey("C-5.10") && results["C-5.10"].Length == 0);
+                Assert.IsTrue(results.ContainsKey("C-5.10 FY Wrkld by month") && results["C-5.10 FY Wrkld by month"].Length == 0);
+                Assert.IsTrue(results.ContainsKey("C-5.12") && results["C-5.12"].Length == 0);
+                Assert.IsTrue(results.ContainsKey("C-5.12 FY Wrkld by month") && results["C-5.12 FY Wrkld by month"].Length == 0);
+                Assert.IsTrue(results.ContainsKey("C-5.13") && results["C-5.13"].Length == 0);
 
+                Assert.IsTrue(Array.IndexOf<string>(results["C-5.5"], "E97") != -1);
+                Assert.IsTrue(Array.IndexOf<string>(results["C-5.5"], "F97") != -1);
+                Assert.IsTrue(Array.IndexOf<string>(results["C-5.5"], "E86") != -1);
+                Assert.IsTrue(Array.IndexOf<string>(results["C-5.5"], "G86") != -1);
+                Assert.IsTrue(Array.IndexOf<string>(results["C-5.5"], "G97") != -1);
+
+                Assert.IsTrue(Array.IndexOf<string>(results["C-5.6 Wrkld By Discrete Categor"], "E8") != -1);
+                Assert.IsTrue(Array.IndexOf<string>(results["C-5.6 Wrkld By Discrete Categor"], "C8") != -1);
+                Assert.IsTrue(Array.IndexOf<string>(results["C-5.6 Wrkld By Discrete Categor"], "D8") != -1);
+
+                Assert.IsTrue(Array.IndexOf<string>(results["C-5.7"], "D26") != -1);
             }
             else
             {
-                Assert.Fail("This test should never fail.");
+                Assert.Fail();
             }
         }
     }
