@@ -6,19 +6,26 @@
     type P<'t> = Parser<'t, unit>  
 
     // a debug parser
-    let private (<!>) (p: P<_>) label : P<_> =
-        #if DEBUG
-            fun stream ->
-                let before = stream.PeekString 1000000
-                let reply = p stream
-                let after = stream.PeekString 1000000
-                let consumed = before.[0..before.Length - after.Length - 1]
-                let consumed_msg = sprintf "%d %s consumed \"%s\" (%A)" (stream.Index) label consumed reply.Status
-                System.Diagnostics.Debug.WriteLine(consumed_msg)
-                reply
-        #else
-            p 
-        #endif
+//    let private (<!>) (p: P<_>) label : P<_> =
+//        #if DEBUG
+//            fun stream ->
+//                let before = stream.PeekString 1000000
+//                let reply = p stream
+//                let after = stream.PeekString 1000000
+//                let consumed = before.[0..before.Length - after.Length - 1]
+//                let consumed_msg = sprintf "%d %s consumed \"%s\" (%A)" (stream.Index) label consumed reply.Status
+//                System.Diagnostics.Debug.WriteLine(consumed_msg)
+//                reply
+//        #else
+//            p 
+//        #endif
+
+    let (<!>) (p: Parser<_,_>) label : Parser<_,_> =
+        fun stream ->
+            System.Diagnostics.Debug.WriteLine(sprintf "%A: Entering %s" stream.Position label)
+            let reply = p stream
+            System.Diagnostics.Debug.WriteLine(sprintf "%A: Leaving %s (%A)" stream.Position label reply.Status)
+            reply
 
     // CUSTODES output datatypes
     type Worksheet = string
@@ -79,8 +86,13 @@
     let private smellEnd : P<string> =
         pstring "---Analysis Finished---" .>> spaces
         <!> "smellEnd"
+    let private noSmells : P<Address[]> = (fun _ -> Reply [||]) <!> "noSmells"
     let private smells : P<Address[]> =
-        smellStart >>. ((attempt smellsFound) >>. (smellCells .>> smellEnd))
+        smellStart >>.
+            (
+                (attempt (smellsFound >>. (smellCells .>> smellEnd)))
+                <|> (noSmells .>> smellEnd)
+            )
         <!> "smells"
 
     let private worksheetSomeSmells : P<CUSTODESSmells> =
