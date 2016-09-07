@@ -121,8 +121,8 @@
                         outcome <- false
                 outcome
 
-            let private nonzero(r: Ranking) : Ranking =
-                Array.filter (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Value > 0.0) r
+            let private shouldNotHaveZeros(r: Ranking) : bool =
+                Array.TrueForAll (r, fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Value > 0.0)
 
             // "AngleMin" algorithm
             let private dderiv(y: double[]) : int =
@@ -215,6 +215,7 @@
                                               let a_score: double = a.Value
                                               let b_addr: AST.Address = b.Key
                                               let b_score: double = b.Value
+
                                               if a_score < b_score then
                                                   -1
                                               elif a_score = b_score then
@@ -243,7 +244,6 @@
                         let score = kvp.Value
                         new KeyValuePair<AST.Address,double>(addr, analysis.weights.[addr] * score)
                       )
-                    |> nonzero
 
                 Pipeline.Success({ analysis with ranking = ranking })
 
@@ -570,19 +570,24 @@
                         let refss = Array.map (fun i -> i, input.dag.getFormulasThatRefCell i) cells |> toDict
 
                         // rank inputs by their impact on the ranking
-                        let crank = Array.map (fun input ->
+                        let crank = Array.map (fun input_addr ->
                                         let anomalous_formulas = Array.filter (
-                                                                    fun formula ->
-                                                                        let pos = rank_positions.[formula]
+                                                                    fun formula_addr ->
+                                                                        let pos = try
+                                                                                    rank_positions.[formula_addr]
+                                                                                  with
+                                                                                  | e ->
+                                                                                     let is_formula = input.dag.isFormula formula_addr
+                                                                                     analysis.cutoff_idx + 1
                                                                         pos <= analysis.cutoff_idx
-                                                                 ) (refss.[input])
+                                                                 ) (refss.[input_addr])
 
                                         if anomalous_formulas.Length > 0 then
                                             let sum = Array.sumBy (fun formula ->
                                                             rankmap.[formula]
                                                         ) anomalous_formulas
                                             let average_score = sum / double (anomalous_formulas.Length)
-                                            Some(input, average_score)
+                                            Some(input_addr, average_score)
                                         else
                                             None
                                     ) cells |>
@@ -726,13 +731,16 @@
                             let f = (fun h -> earthMoversDistance P feature scope h a) 
                             let min_feat = argmin f bigger
                             let min_distance = f min_feat
-                            Some(a, (min_feat, min_distance))
+                            a, (min_feat, min_distance)
                         else
-                            None
+                            // If there is no closest hash, then we say that
+                            // the closest hash is itself with a distance
+                            // of positive infinity in order to put it at the
+                            // end of the ranking.  Seems a bit like a hack.
+                            a, (a, Double.PositiveInfinity)
                     ) (cartesianProductByX hashes hashes)
                 ) (scopes |> Set.toList)
                 |> List.concat
-                |> List.choose id
                 |> adict
 
             let private rankByEMD(cells: AST.Address[])(input: Input)(causes: Causes) : Ranking*HypothesizedFixes option =
@@ -745,11 +753,7 @@
                                                  // compute the hash of the cell using feature
                                                  let hash = feature cell input.dag
                                                  // find the EMD to the closest hash
-                                                 let (min_hash,min_dist) =
-                                                    if not (emds.[fname].ContainsKey(hash)) then
-                                                        hash, 0.0
-                                                    else
-                                                        emds.[fname].[hash]
+                                                 let (min_hash,min_dist) = emds.[fname].[hash]
                                                  min_dist
                                              ) (input.config.EnabledFeatures)
                                    cell, sum
@@ -765,11 +769,7 @@
                         // compute the hash of the cell using feature
                         let hash = feature cell input.dag
                         // find the closest hash
-                        let (min_hash,_) =
-                            if not (emds.[fname].ContainsKey(hash)) then
-                                hash, 0.0
-                            else
-                                emds.[fname].[hash]
+                        let (min_hash,_) = emds.[fname].[hash]
 
                         // add entry for cell, if necessary
                         if not (hf.ContainsKey(cell)) then
@@ -814,6 +814,9 @@
                                     else
                                         totalHistoSums cells ftable scores csstable selcache input.config input.progress input.dag
                     let (ranking,fixes),ranking_time = PerfUtils.runMillis _rankf ()
+
+                    let nonzero = shouldNotHaveZeros ranking
+                    assert nonzero
 
                     Success(
                         {
