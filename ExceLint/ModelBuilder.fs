@@ -666,11 +666,16 @@
                 |> (fun (x,y) -> (double x) / n, (double y) / n)
 
             let euclideanDistance(cell1: double*double)(cell2: double*double) : double =
+                // note that it is possible for the two cells to be the same;
+                // like when the cell happens to be the exact centroid
                 let (x1,y1) = cell1
                 let (x2,y2) = cell2
-                Math.Sqrt(Math.Pow(x1-x2,2.0) + Math.Pow(y1-y2,2.0))
+                let dist = Math.Sqrt(Math.Pow(x1-x2,2.0) + Math.Pow(y1-y2,2.0))
+                dist
 
             let private earthMoversDistance(P: Distribution)(feature: Feature)(scope: Scope.SelectID)(other_hash: double)(anom_hash: double): double =
+                assert (other_hash <> anom_hash)
+
                 // get every cell in the named anomalous bin in the sheets conditional table only
                 let dirt = P.[feature].[scope].[anom_hash] |> toRawCoords |> Set.toArray
 
@@ -682,7 +687,9 @@
 
                 // compute work required to move dirt
                 // amount * distance
-                Array.sumBy (fun coord -> euclideanDistance coord centroid) dirt
+                let dist = Array.sumBy (fun coord -> euclideanDistance coord centroid) dirt
+
+                dist
 
             let private binsBelowCutoff(analysis: Analysis)(cutoff: int) : Set<HistoBin> =
                 // find the set of (by definition small) bins that contribute to the highest-ranked cells
@@ -810,13 +817,13 @@
                     // rank
                     let _rankf = fun () ->
                                     if input.config.IsEnabledSpectralRanking then
+                                        // note that zero scores are OK here
                                         rankByEMD cells input causes
                                     else
-                                        totalHistoSums cells ftable scores csstable selcache input.config input.progress input.dag
+                                        let (r,hfo) = totalHistoSums cells ftable scores csstable selcache input.config input.progress input.dag
+                                        assert shouldNotHaveZeros r
+                                        r, hfo
                     let (ranking,fixes),ranking_time = PerfUtils.runMillis _rankf ()
-
-                    let nonzero = shouldNotHaveZeros ranking
-                    assert nonzero
 
                     Success(
                         {
