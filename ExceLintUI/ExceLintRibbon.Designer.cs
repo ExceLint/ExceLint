@@ -46,6 +46,7 @@
             this.ToDOT = this.Factory.CreateRibbonButton();
             this.showVectors = this.Factory.CreateRibbonButton();
             this.spectralPlot = this.Factory.CreateRibbonButton();
+            this.scatter3D = this.Factory.CreateRibbonButton();
             this.significanceTextBox = this.Factory.CreateRibbonEditBox();
             this.spectralRanking = this.Factory.CreateRibbonCheckBox();
             this.separator1 = this.Factory.CreateRibbonSeparator();
@@ -72,7 +73,7 @@
             this.allCells = this.Factory.CreateRibbonCheckBox();
             this.weightByIntrinsicAnomalousness = this.Factory.CreateRibbonCheckBox();
             this.conditioningSetSize = this.Factory.CreateRibbonCheckBox();
-            this.scatter3D = this.Factory.CreateRibbonButton();
+            this.showFixes = this.Factory.CreateRibbonCheckBox();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -96,6 +97,7 @@
             this.CheckCellGroup.Items.Add(this.box1);
             this.CheckCellGroup.Items.Add(this.significanceTextBox);
             this.CheckCellGroup.Items.Add(this.spectralRanking);
+            this.CheckCellGroup.Items.Add(this.showFixes);
             this.CheckCellGroup.Items.Add(this.separator1);
             this.CheckCellGroup.Items.Add(this.inDegree);
             this.CheckCellGroup.Items.Add(this.outDegree);
@@ -197,6 +199,15 @@
             this.spectralPlot.Name = "spectralPlot";
             this.spectralPlot.ShowImage = true;
             this.spectralPlot.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.spectralPlot_Click);
+            // 
+            // scatter3D
+            // 
+            this.scatter3D.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.scatter3D.Image = global::ExceLintUI.Properties.Resources.spectral_plot_32;
+            this.scatter3D.Label = "3D Scatterplot";
+            this.scatter3D.Name = "scatter3D";
+            this.scatter3D.ShowImage = true;
+            this.scatter3D.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.scatter3D_Click);
             // 
             // significanceTextBox
             // 
@@ -367,14 +378,11 @@
             this.conditioningSetSize.Name = "conditioningSetSize";
             this.conditioningSetSize.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.conditioningSetSize_Click);
             // 
-            // scatter3D
+            // showFixes
             // 
-            this.scatter3D.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.scatter3D.Image = global::ExceLintUI.Properties.Resources.spectral_plot_32;
-            this.scatter3D.Label = "3D Scatterplot";
-            this.scatter3D.Name = "scatter3D";
-            this.scatter3D.ShowImage = true;
-            this.scatter3D.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.scatter3D_Click);
+            this.showFixes.Enabled = false;
+            this.showFixes.Label = "Show Fixes";
+            this.showFixes.Name = "showFixes";
             // 
             // ExceLintRibbon
             // 
@@ -435,6 +443,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton spectralPlot;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox spectralRanking;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton scatter3D;
+        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox showFixes;
     }
 
     partial class ThisRibbonCollection
