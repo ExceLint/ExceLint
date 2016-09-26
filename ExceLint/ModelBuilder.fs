@@ -707,7 +707,12 @@
             let private justHashes(P: Distribution)(feature: Feature)(scope: Scope.SelectID) : Set<Hash> =
                 let mutable s = set[]
                 for hash_row in P.[feature].[scope] do
-                    s <- s.Add(hash_row.Key)
+                    let hash = hash_row.Key
+                    let addr = hash_row.Value |> Set.toList |> List.head
+                    let other_addresses = Seq.map (fun (pair: KeyValuePair<Hash,Set<AST.Address>>) -> pair.Value |> Set.toList) (P.[feature].[scope]) |> Seq.toList |> List.concat |> List.distinct
+                    let allsame = List.forall (fun (other_addr: AST.Address) -> other_addr.A1Worksheet() = addr.A1Worksheet()) other_addresses
+                    assert allsame
+                    s <- s.Add(hash)
                 s
 
             let private justScopes(P: Distribution)(feature: Feature) : Set<Scope.SelectID> =
@@ -720,7 +725,7 @@
                 // the initial distribution
                 let P = ErrorModel.toDistribution causes
 
-                // get all sheet scopes
+                // get all sheet scopes 
                 let scopes = justScopes P feature
                 assert (Set.forall (fun (scope: Scope.SelectID) -> scope.IsKind = Scope.SameSheet) scopes)
 
@@ -818,7 +823,7 @@
                     let _rankf = fun () ->
                                     if input.config.IsEnabledSpectralRanking then
                                         // note that zero scores are OK here
-                                        rankByEMD cells input causes
+                                        rankByEMD cells input causes scores
                                     else
                                         let (r,hfo) = totalHistoSums cells ftable scores csstable selcache input.config input.progress input.dag
                                         assert shouldNotHaveZeros r
