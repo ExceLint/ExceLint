@@ -673,8 +673,22 @@
                 let dist = Math.Sqrt(Math.Pow(x1-x2,2.0) + Math.Pow(y1-y2,2.0))
                 dist
 
+            let sameSheet(P: Distribution)(feature: Feature)(scope: Scope.SelectID)(other_hash: double)(anom_hash: double) =
+                let acells = P.[feature].[scope].[anom_hash]
+                let ocells = P.[feature].[scope].[other_hash]
+                let bothcells = Set.union acells ocells |> Set.toList
+                let (allsame,_) = List.fold (fun (is_same: bool, ws_opt: string option)(addr: AST.Address) ->
+                                      match ws_opt with
+                                      | Some(ws) ->
+                                         let wssame = ws = addr.A1Worksheet()
+                                         (is_same && wssame, Some ws)
+                                      | None -> (is_same, Some(addr.A1Worksheet()))
+                                  ) (true,None) bothcells
+                allsame
+
             let private earthMoversDistance(P: Distribution)(feature: Feature)(scope: Scope.SelectID)(other_hash: double)(anom_hash: double): double =
                 assert (other_hash <> anom_hash)
+                assert (sameSheet P feature scope other_hash anom_hash)
 
                 // get every cell in the named anomalous bin in the sheets conditional table only
                 let dirt = P.[feature].[scope].[anom_hash] |> toRawCoords |> Set.toArray
@@ -741,9 +755,10 @@
 
                         if bigger.Length > 0 then
                             let f = (fun h -> earthMoversDistance P feature scope h a) 
-                            let min_feat = argmin f bigger
-                            let min_distance = f min_feat
-                            a, (min_feat, min_distance)
+                            let min_hash = argmin f bigger
+                            let min_distance = f min_hash
+                            assert (sameSheet P feature scope a min_hash)
+                            a, (min_hash, min_distance)
                         else
                             // If there is no closest hash, then we say that
                             // the closest hash is itself with a distance
@@ -823,7 +838,7 @@
                     let _rankf = fun () ->
                                     if input.config.IsEnabledSpectralRanking then
                                         // note that zero scores are OK here
-                                        rankByEMD cells input causes scores
+                                        rankByEMD cells input causes
                                     else
                                         let (r,hfo) = totalHistoSums cells ftable scores csstable selcache input.config input.progress input.dag
                                         assert shouldNotHaveZeros r
