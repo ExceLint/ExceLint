@@ -64,6 +64,7 @@
     <Compile Include="ErrorModel.fs" />
     <Compile Include="ModelBuilder.fs" />
     <None Include="App.config" />
+    <Compile Include="BugKind.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Depends\Depends\Depends.csproj">

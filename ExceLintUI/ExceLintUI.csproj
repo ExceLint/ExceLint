@@ -188,6 +188,12 @@
     <Compile Include="ExceLintRibbon.Designer.cs">
       <DependentUpon>ExceLintRibbon.cs</DependentUpon>
     </Compile>
+    <Compile Include="MarkAsBugForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MarkAsBugForm.Designer.cs">
+      <DependentUpon>MarkAsBugForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="ProgBar.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -213,6 +219,9 @@
     <Compile Include="WorkbookState.cs" />
     <EmbeddedResource Include="ExceLintRibbon.resx">
       <DependentUpon>ExceLintRibbon.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MarkAsBugForm.resx">
+      <DependentUpon>MarkAsBugForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="ProgBar.resx">
       <DependentUpon>ProgBar.cs</DependentUpon>
