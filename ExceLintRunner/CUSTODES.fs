@@ -190,7 +190,6 @@
         member self.differs(addr: AST.Address)(custodesFlagged: bool) : bool =
             custodesFlagged = d.[Tool.CUSTODES].Contains(addr) 
         member self.TrueSmellsbyWorkbook(workbookname: string) = new HashSet<AST.Address>(Seq.filter (fun (addr: AST.Address) -> addr.WorkbookName = workbookname) (self.Table.[Tool.GroundTruth]))
-//        member self.CUSTODESbyWorkbook(workbookname: string) = new HashSet<AST.Address>(Seq.filter (fun (addr: AST.Address) -> addr.WorkbookName = workbookname) (self.Table.[Tool.CUSTODES]))
         member self.AmCheckbyWorkbook(workbookname: string) = new HashSet<AST.Address>(Seq.filter (fun (addr: AST.Address) -> addr.WorkbookName = workbookname) (self.Table.[Tool.AmCheck]))
         member self.UCheckbyWorkbook(workbookname: string) = new HashSet<AST.Address>(Seq.filter (fun (addr: AST.Address) -> addr.WorkbookName = workbookname) (self.Table.[Tool.UCheck]))
         member self.DimensionbyWorkbook(workbookname: string) = new HashSet<AST.Address>(Seq.filter (fun (addr: AST.Address) -> addr.WorkbookName = workbookname) (self.Table.[Tool.Dimension]))

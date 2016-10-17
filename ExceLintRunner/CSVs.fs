@@ -8,7 +8,7 @@ let fsdTypeRegex = new Regex(" \([a-z0-9]+\)", RegexOptions.Compiled)
 [<Literal>]
 let private ExceLintStatsSchema = "benchmark_name (string), num_cells (int), num_formulas (int),\
     sig_thresh (float), dep_time_ms (int64), score_time_ms (int64), freq_time_ms (int64), ranking_time_ms (int64),\
-    causes_time_ms (int64), conditioning_set_sz_time_ms (int64), num_anom (int), min_anom_score (float), custodes_fail (bool),\
+    causes_time_ms (int64), conditioning_set_sz_time_ms (int64), excelint_flags (int), min_anom_score (float), custodes_fail (bool),\
     custodes_fail_msg (string), num_custodes_smells (int), true_smells (int),\
     excelint_true_smells_found (int), custodes_true_smells_found (int), excelint_custodes_true_smell_intersect (int),\
     true_smells_missed_by_both (int), excel_flags (int), excelint_excel_intersect (int), custodes_excel_intersect (int),\
@@ -18,10 +18,13 @@ let private ExceLintStatsSchema = "benchmark_name (string), num_cells (int), num
     opt_addrmode_inference (bool), opt_weight_intrinsic_anom (bool), opt_weight_condition_set_sz (bool)"
 
 [<Literal>]
-let private WorkbookStatsSchema = "path (string), workbook (string), worksheet (string), addr (string), is_formula (bool), flagged_by_excelint (bool), flagged_by_custodes (bool), flagged_by_excel (bool), cli_same_as_v1 (bool), rank (int), score (float), custodes_true_smell (bool)"
+let private WorkbookStatsSchema = "path (string), workbook (string), worksheet (string), addr (string), is_formula (bool), flagged_by_excelint (bool), flagged_by_custodes (bool), flagged_by_excel (bool), cli_same_as_v1 (bool), rank (int), score (float), excelint_true_bug (bool), custodes_true_smell (bool)"
 
 [<Literal>]
 let private CUSTODESGroundTruthSchema = "Index (int),Spreadsheet (string), Worksheet (string), GroundTruth (string), Custodes (string), AmCheck (string), UCheck (string), Dimension (string), Excel (string)"
+
+[<Literal>]
+let private OurGroundTruthSchema = "path (string), workbook (string), worksheet (string), addr (string), bug_kind (string), notes (string)"
 
 [<Literal>]
 let private DebugInfoSchema = "path (string), workbook (string), worksheet (string), addr (string)"
@@ -35,6 +38,8 @@ type WorkbookStats =
     CsvProvider<Schema = WorkbookStatsSchema, HasHeaders=false>
 
 type CUSTODESGroundTruth = CsvProvider<Schema = CUSTODESGroundTruthSchema, HasHeaders=false>
+
+type OurGroundTruth = CsvProvider<Schema = OurGroundTruthSchema, HasHeaders=false>
 
 type DebugInfo = CsvProvider<Schema = DebugInfoSchema, HasHeaders=false>
 

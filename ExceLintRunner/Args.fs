@@ -3,7 +3,7 @@
 open System.IO
 open System.Text.RegularExpressions
 
-    type Config(dpath: string, opath: string, jpath: string, cpath: string, gpath: string, verbose: bool, noexit: bool, alpha: double, csv: string, fc: ExceLint.FeatureConf) =
+    type Config(dpath: string, opath: string, jpath: string, cpath: string, egpath: string, gpath: string, verbose: bool, noexit: bool, alpha: double, csv: string, fc: ExceLint.FeatureConf) =
         do
             printfn "\n------------------------------------"
             printfn "Running with the following options: "
@@ -32,12 +32,13 @@ open System.Text.RegularExpressions
         member self.DebugPath = Path.Combine(opath, "debug.csv")
         member self.DontExitWithoutKeystroke = noexit
         member self.CustodesGroundTruthCSV = gpath
+        member self.ExceLintGroundTruthCSV = egpath
         member self.alpha = alpha
 
     type Knobs = { verbose: bool; dont_exit: bool; alpha: double }
 
     let usage() : unit =
-        printfn "ExceLintRunner.exe <input directory> <output directory> <ground truth CSV> <java path> <CUSTODES JAR> [flags]"
+        printfn "ExceLintRunner.exe <input directory> <output directory> <ExceLint ground truth CSV> <CUSTODES ground truth CSV> <java path> <CUSTODES JAR> [flags]"
         printfn 
             "Recursively finds all Excel (*.xls and *.xlsx) files in <input directory>, \n\
             opens them, runs ExceLint, and prints output statistics to a file called \n\
@@ -78,34 +79,35 @@ open System.Text.RegularExpressions
         System.Environment.Exit(1)
 
     let processArgs(argv: string[]) : Config =
-        if argv.Length < 5 || argv.Length > 15 || (Array.contains "-help" argv) || (Array.contains "--help" argv) then
+        if argv.Length < 6 || argv.Length > 16 || (Array.contains "-help" argv) || (Array.contains "--help" argv) then
             usage()
-        let dpath = System.IO.Path.GetFullPath argv.[0]    // input directory
-        let opath = System.IO.Path.GetFullPath argv.[1]    // output directory
-        let gpath = System.IO.Path.GetFullPath argv.[2]    // path to ground truth CSV
-        let jpath = System.IO.Path.GetFullPath argv.[3]    // java path
-        let cpath = System.IO.Path.GetFullPath argv.[4]    // CUSTODES path
+        let dpath  = System.IO.Path.GetFullPath argv.[0]   // input directory
+        let opath  = System.IO.Path.GetFullPath argv.[1]   // output directory
+        let egpath = System.IO.Path.GetFullPath argv.[2]   // path to ExceLint ground truth CSV
+        let gpath  = System.IO.Path.GetFullPath argv.[3]   // path to CUSTODES ground truth CSV
+        let jpath  = System.IO.Path.GetFullPath argv.[4]   // java path
+        let cpath  = System.IO.Path.GetFullPath argv.[5]   // CUSTODES path
 
         let csv = Path.Combine(opath, "excelint_output.csv")
 
-        let flags = argv.[5 .. argv.Length - 1] |> Array.toList
+        let flags = argv.[6 .. argv.Length - 1] |> Array.toList
 
         let rec optParse = (fun (args: string list)(knobs: Knobs)(conf: ExceLint.FeatureConf) ->
                                match args with
                                | [] -> knobs.verbose, knobs.dont_exit, knobs.alpha, conf
-                               | "-verbose" :: rest -> optParse rest { knobs with verbose = true } conf
-                               | "-noexit" :: rest -> optParse rest { knobs with dont_exit = true } conf
-                               | "-spectral" :: rest -> optParse rest knobs (conf.spectralRanking true)
-                               | "-allcells" :: rest -> optParse rest knobs (conf.analyzeRelativeToAllCells true)
-                               | "-columns" :: rest -> optParse rest knobs (conf.analyzeRelativeToColumns true)
-                               | "-rows" :: rest -> optParse rest knobs (conf.analyzeRelativeToRows true)
-                               | "-levels" :: rest -> optParse rest knobs (conf.analyzeRelativeToLevels true)
-                               | "-sheets" :: rest -> optParse rest knobs (conf.analyzeRelativeToSheet true)
-                               | "-addrmode" :: rest -> optParse rest knobs (conf.inferAddressModes true)
+                               | "-verbose"   :: rest -> optParse rest { knobs with verbose = true } conf
+                               | "-noexit"    :: rest -> optParse rest { knobs with dont_exit = true } conf
+                               | "-spectral"  :: rest -> optParse rest knobs (conf.spectralRanking true)
+                               | "-allcells"  :: rest -> optParse rest knobs (conf.analyzeRelativeToAllCells true)
+                               | "-columns"   :: rest -> optParse rest knobs (conf.analyzeRelativeToColumns true)
+                               | "-rows"      :: rest -> optParse rest knobs (conf.analyzeRelativeToRows true)
+                               | "-levels"    :: rest -> optParse rest knobs (conf.analyzeRelativeToLevels true)
+                               | "-sheets"    :: rest -> optParse rest knobs (conf.analyzeRelativeToSheet true)
+                               | "-addrmode"  :: rest -> optParse rest knobs (conf.inferAddressModes true)
                                | "-intrinsic" :: rest -> optParse rest knobs (conf.weightByIntrinsicAnomalousness true)
-                               | "-css" :: rest -> optParse rest knobs (conf.weightByConditioningSetSize true)
+                               | "-css"       :: rest -> optParse rest knobs (conf.weightByConditioningSetSize true)
                                | "-inputstoo" :: rest -> optParse rest knobs (conf.analyzeOnlyFormulas false)
-                               | "-thresh" :: d :: rest ->
+                               | "-thresh"    :: d :: rest ->
                                    let alpha = System.Convert.ToDouble d / 100.0
                                    if alpha < 0.0 || alpha > 1.0 then
                                        failwith "Threshold must be between 0 and 100."
@@ -138,5 +140,5 @@ open System.Text.RegularExpressions
                     printfn "'%s' enabled." k
                 ) changed
 
-        Config(dpath, opath, jpath, cpath, gpath, isVerb, noExit, alpha, csv, fConf')
+        Config(dpath, opath, jpath, cpath, egpath, gpath, isVerb, noExit, alpha, csv, fConf')
 
