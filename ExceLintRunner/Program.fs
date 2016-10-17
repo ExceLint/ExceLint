@@ -152,6 +152,8 @@ open ExceLint.Utils
                 ) (missed_formula_related |> Seq.toArray) |> ignore
 
     let append_stats(stats: Stats)(sw: StreamWriter)(csv: CSV.ExceLintStats)(model: ErrorModel)(custodes: CUSTODES.OutputResult)(config: Args.Config) : unit =
+        let min_excelint_score = Array.map (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Value) (model.ranking()) |> Array.min
+
         // write stats
         let row = CSV.ExceLintStats.Row(
                     benchmarkName = stats.shortname,
@@ -165,6 +167,7 @@ open ExceLint.Utils
                     causesTimeMs = model.CausesTimeInMilliseconds,
                     conditioningSetSzTimeMs = model.ConditioningSetSizeTimeInMilliseconds,
                     numAnom = model.Cutoff + 1,
+                    minAnomScore = min_excelint_score,
                     custodesFail = (match custodes with | CUSTODES.BadOutput _ -> true | _ -> false),
                     custodesFailMsg = (match custodes with | CUSTODES.BadOutput msg -> msg | _ -> ""),
                     numCustodesSmells = stats.custodes_flagged.Count,

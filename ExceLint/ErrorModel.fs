@@ -42,6 +42,8 @@
 
         member self.Fixes : HypothesizedFixes option = analysis.fixes
 
+        member self.Scores : ScoreTable = analysis.scores
+
         member self.causeOf(addr: AST.Address) : KeyValuePair<HistoBin,Tuple<int,double>>[] =
             Array.map (fun cause ->
                 let (bin,count,beta) = cause
@@ -126,6 +128,14 @@
 
                     // add address
                     d.[feat].[scope].[hash] <- d.[feat].[scope].[hash].Add(addr)
+
+                    (* DEBUG *)
+                    let addrs = Seq.map (fun (kvp: KeyValuePair<Hash,Set<AST.Address>>) -> kvp.Value |> Set.toList) (d.[feat].[scope]) |> Seq.toList |> List.concat |> List.distinct
+                    let fst_addr = List.head addrs
+                    let allsame = List.forall (fun (addr: AST.Address) -> addr.A1Worksheet() = addr.A1Worksheet()) addrs
+                    assert allsame
+
+
             d
 
         static member private rankingIsSane(r: Ranking)(dag: Depends.DAG)(formulasOnly: bool) : bool =

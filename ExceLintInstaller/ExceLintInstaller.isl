@@ -4393,7 +4393,7 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS</td><td>##IDS_PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS##</td><td/></row>
 		<row><td>ProductCode</td><td>{75358FED-928E-4DC6-A469-629B45283011}</td><td/></row>
 		<row><td>ProductName</td><td>ExceLint</td><td/></row>
-		<row><td>ProductVersion</td><td>1.00.0018</td><td/></row>
+		<row><td>ProductVersion</td><td>1.00.0019</td><td/></row>
 		<row><td>ProgressType0</td><td>install</td><td/></row>
 		<row><td>ProgressType1</td><td>Installing</td><td/></row>
 		<row><td>ProgressType2</td><td>installed</td><td/></row>

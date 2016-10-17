@@ -666,11 +666,30 @@
                 |> (fun (x,y) -> (double x) / n, (double y) / n)
 
             let euclideanDistance(cell1: double*double)(cell2: double*double) : double =
+                // note that it is possible for the two cells to be the same;
+                // like when the cell happens to be the exact centroid
                 let (x1,y1) = cell1
                 let (x2,y2) = cell2
-                Math.Sqrt(Math.Pow(x1-x2,2.0) + Math.Pow(y1-y2,2.0))
+                let dist = Math.Sqrt(Math.Pow(x1-x2,2.0) + Math.Pow(y1-y2,2.0))
+                dist
+
+            let sameSheet(P: Distribution)(feature: Feature)(scope: Scope.SelectID)(other_hash: double)(anom_hash: double) =
+                let acells = P.[feature].[scope].[anom_hash]
+                let ocells = P.[feature].[scope].[other_hash]
+                let bothcells = Set.union acells ocells |> Set.toList
+                let (allsame,_) = List.fold (fun (is_same: bool, ws_opt: string option)(addr: AST.Address) ->
+                                      match ws_opt with
+                                      | Some(ws) ->
+                                         let wssame = ws = addr.A1Worksheet()
+                                         (is_same && wssame, Some ws)
+                                      | None -> (is_same, Some(addr.A1Worksheet()))
+                                  ) (true,None) bothcells
+                allsame
 
             let private earthMoversDistance(P: Distribution)(feature: Feature)(scope: Scope.SelectID)(other_hash: double)(anom_hash: double): double =
+                assert (other_hash <> anom_hash)
+                assert (sameSheet P feature scope other_hash anom_hash)
+
                 // get every cell in the named anomalous bin in the sheets conditional table only
                 let dirt = P.[feature].[scope].[anom_hash] |> toRawCoords |> Set.toArray
 
@@ -682,7 +701,9 @@
 
                 // compute work required to move dirt
                 // amount * distance
-                Array.sumBy (fun coord -> euclideanDistance coord centroid) dirt
+                let dist = Array.sumBy (fun coord -> euclideanDistance coord centroid) dirt
+
+                dist
 
             let private binsBelowCutoff(analysis: Analysis)(cutoff: int) : Set<HistoBin> =
                 // find the set of (by definition small) bins that contribute to the highest-ranked cells
@@ -700,7 +721,12 @@
             let private justHashes(P: Distribution)(feature: Feature)(scope: Scope.SelectID) : Set<Hash> =
                 let mutable s = set[]
                 for hash_row in P.[feature].[scope] do
-                    s <- s.Add(hash_row.Key)
+                    let hash = hash_row.Key
+                    let addr = hash_row.Value |> Set.toList |> List.head
+                    let other_addresses = Seq.map (fun (pair: KeyValuePair<Hash,Set<AST.Address>>) -> pair.Value |> Set.toList) (P.[feature].[scope]) |> Seq.toList |> List.concat |> List.distinct
+                    let allsame = List.forall (fun (other_addr: AST.Address) -> other_addr.A1Worksheet() = addr.A1Worksheet()) other_addresses
+                    assert allsame
+                    s <- s.Add(hash)
                 s
 
             let private justScopes(P: Distribution)(feature: Feature) : Set<Scope.SelectID> =
@@ -713,7 +739,7 @@
                 // the initial distribution
                 let P = ErrorModel.toDistribution causes
 
-                // get all sheet scopes
+                // get all sheet scopes 
                 let scopes = justScopes P feature
                 assert (Set.forall (fun (scope: Scope.SelectID) -> scope.IsKind = Scope.SameSheet) scopes)
 
@@ -729,9 +755,10 @@
 
                         if bigger.Length > 0 then
                             let f = (fun h -> earthMoversDistance P feature scope h a) 
-                            let min_feat = argmin f bigger
-                            let min_distance = f min_feat
-                            a, (min_feat, min_distance)
+                            let min_hash = argmin f bigger
+                            let min_distance = f min_hash
+                            assert (sameSheet P feature scope a min_hash)
+                            a, (min_hash, min_distance)
                         else
                             // If there is no closest hash, then we say that
                             // the closest hash is itself with a distance
@@ -810,13 +837,13 @@
                     // rank
                     let _rankf = fun () ->
                                     if input.config.IsEnabledSpectralRanking then
+                                        // note that zero scores are OK here
                                         rankByEMD cells input causes
                                     else
-                                        totalHistoSums cells ftable scores csstable selcache input.config input.progress input.dag
+                                        let (r,hfo) = totalHistoSums cells ftable scores csstable selcache input.config input.progress input.dag
+                                        assert shouldNotHaveZeros r
+                                        r, hfo
                     let (ranking,fixes),ranking_time = PerfUtils.runMillis _rankf ()
-
-                    let nonzero = shouldNotHaveZeros ranking
-                    assert nonzero
 
                     Success(
                         {

@@ -51,10 +51,10 @@ namespace ExceLintUI
 
             // call task in new thread and do not wait
             //Task t = Task.Run(() => DoAnalysis(sig, currentWorkbook, getConfig(), this.forceBuildDAG.Checked, updateWorkbook, pb));
-            DoAnalysis(sig, currentWorkbook, getConfig(), this.forceBuildDAG.Checked, updateWorkbook, pb);
+            DoAnalysis(sig, currentWorkbook, getConfig(), this.forceBuildDAG.Checked, updateWorkbook, pb, showFixes.Checked);
         }
 
-        public static void DoAnalysis(FSharpOption<double> sigThresh, WorkbookState wbs, ExceLint.FeatureConf conf, bool forceBuildDAG, Action<WorkbookState> updateState, ProgBar pb)
+        public static void DoAnalysis(FSharpOption<double> sigThresh, WorkbookState wbs, ExceLint.FeatureConf conf, bool forceBuildDAG, Action<WorkbookState> updateState, ProgBar pb, bool showFixes)
         {
             if (sigThresh == FSharpOption<double>.None)
             {
@@ -66,7 +66,7 @@ namespace ExceLintUI
                 try
                 {
                     wbs.analyze(WorkbookState.MAX_DURATION_IN_MS, conf, forceBuildDAG, pb);
-                    wbs.flag();
+                    wbs.flag(showFixes);
                     updateState(wbs);
 
                     // debug output
@@ -211,7 +211,7 @@ namespace ExceLintUI
 
         private void MarkAsOKButton_Click(object sender, RibbonControlEventArgs e)
         {
-            currentWorkbook.markAsOK();
+            currentWorkbook.markAsOK(showFixes.Checked);
             setUIState(currentWorkbook);
         }
 
@@ -490,12 +490,14 @@ namespace ExceLintUI
                 this.rowCellsFreq.Checked = false;
                 this.columnCellsFreq.Checked = false;
                 this.levelsFreq.Checked = false;
+                this.showFixes.Enabled = true;
             } else
             {
                 this.allCellsFreq.Checked = true;
                 this.rowCellsFreq.Checked = true;
                 this.columnCellsFreq.Checked = true;
                 this.levelsFreq.Checked = false;
+                this.showFixes.Enabled = false;
             }
 
             setUIState(this.currentWorkbook);
@@ -765,6 +767,7 @@ namespace ExceLintUI
                 this.significanceTextBox.Enabled = disabled;
                 this.conditioningSetSize.Enabled = disabled;
                 this.spectralRanking.Enabled = disabled;
+                this.showFixes.Enabled = disabled;
 
                 // tell the user ExceLint doesn't work
                 SetTooltips(disabled_text);
@@ -798,6 +801,7 @@ namespace ExceLintUI
                 this.significanceTextBox.Enabled = enable_config;
                 this.conditioningSetSize.Enabled = enable_config;
                 this.spectralRanking.Enabled = enable_config;
+                this.showFixes.Enabled = enable_config && this.spectralRanking.Checked;
 
                 // toggle the heatmap label depending on the heatmap shown/hidden state
                 if (wbs.HeatMap_Hidden)

@@ -5,8 +5,10 @@ using Excel = Microsoft.Office.Interop.Excel;
 using FullyQualifiedVector = ExceLint.Vector.FullyQualifiedVector;
 using RelativeVector = System.Tuple<int, int, int>;
 using Score = System.Collections.Generic.KeyValuePair<AST.Address, double>;
+using HypothesizedFixes = System.Collections.Generic.Dictionary<AST.Address, System.Collections.Generic.Dictionary<string, double>>;
 using Microsoft.FSharp.Core;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace ExceLintUI
 {
@@ -49,7 +51,6 @@ namespace ExceLintUI
         private Excel.Workbook _workbook;
         private double _tool_significance = 0.05;
         private ColorDict _colors = new ColorDict();
-        private HashSet<AST.Address> _tool_highlights = new HashSet<AST.Address>();
         private HashSet<AST.Address> _output_highlights = new HashSet<AST.Address>();
         private HashSet<AST.Address> _audited = new HashSet<AST.Address>();
         private Analysis _analysis;
@@ -598,7 +599,21 @@ namespace ExceLintUI
             app.ScreenUpdating = true;
         }
 
-        public void flag()
+        public static AST.Address[] hypothesizedFixes(AST.Address cell, ExceLint.ErrorModel model)
+        {
+            if (FSharpOption<HypothesizedFixes>.get_IsSome(model.Fixes))
+            {
+                var fixes = model.Fixes.Value[cell];
+                return fixes.SelectMany(pair =>
+                           model.Scores[pair.Key].Where(tup => tup.Item2 == pair.Value)
+                       ).Select(tup => tup.Item1).ToArray();
+            } else
+            {
+                return new AST.Address[] { };
+            }
+        }
+
+        public void flag(bool showFixes)
         {
             // filter known_good & cut by cutoff index
             var flaggable = _analysis.scores
@@ -633,13 +648,51 @@ namespace ExceLintUI
 
                 // highlight cell
                 com.Interior.Color = System.Drawing.Color.Red;
-                _tool_highlights.Add(_flagged_cell);
 
                 // go to highlighted cell
                 activateAndCenterOn(_flagged_cell, _app);
 
                 // enable auditing buttons
                 setTool(active: true);
+
+                // if the user wants to see fixes, show them now
+                if (showFixes)
+                {
+                    var fixes = hypothesizedFixes(_flagged_cell, _analysis.model);
+                    if (fixes.Length > 0)
+                    {
+                        var sb = new StringBuilder();
+
+                        sb.AppendLine("ExceLint thinks that");
+                        sb.AppendLine(_dag.getFormulaAtAddress(_flagged_cell));
+                        sb.AppendLine("should look more like");
+
+                        for (int i = 0; i < fixes.Length; i++)
+                        {
+                            // get formula at fix address
+                            var f = _dag.getFormulaAtAddress(fixes[i]);
+                            if (i > 0)
+                            {
+                                sb.Append("or ");
+                            }
+                            sb.AppendLine("address: " + fixes[i].A1Local().ToString() + ", formula: " + f);
+
+                            // get cell COM object
+                            var fix_com = ParcelCOMShim.Address.GetCOMObject(fixes[i], _app);
+
+                            // save old color
+                            _colors.saveColorAt(
+                                fixes[i],
+                                new CellColor { ColorIndex = (int)fix_com.Interior.ColorIndex, Color = (double)fix_com.Interior.Color }
+                            );
+
+                            // set color
+                            fix_com.Interior.Color = System.Drawing.Color.Green;
+                        }
+
+                        System.Windows.Forms.MessageBox.Show(sb.ToString());
+                    }
+                }
             }
         }
 
@@ -740,7 +793,7 @@ namespace ExceLintUI
             _button_showHeatMap_on = !_button_showHeatMap_on;
         }
 
-        internal void markAsOK()
+        internal void markAsOK(bool showFixes)
         {
             // the user told us that the cell was OK
             _audited.Add(_flagged_cell);
@@ -753,7 +806,7 @@ namespace ExceLintUI
             restoreOutputColors();
 
             // flag another value
-            flag();
+            flag(showFixes);
         }
 
         public string ToDOT()
