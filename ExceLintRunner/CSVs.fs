@@ -9,7 +9,9 @@ let fsdTypeRegex = new Regex(" \([a-z0-9]+\)", RegexOptions.Compiled)
 let private ExceLintStatsSchema = "benchmark_name (string), num_cells (int), num_formulas (int),\
     sig_thresh (float), dep_time_ms (int64), score_time_ms (int64), freq_time_ms (int64), ranking_time_ms (int64),\
     causes_time_ms (int64), conditioning_set_sz_time_ms (int64), excelint_flags (int), min_anom_score (float), custodes_fail (bool),\
-    custodes_fail_msg (string), num_custodes_smells (int), true_smells (int),\
+    custodes_fail_msg (string),\
+    excelint_true_ref_bugs_found (int), custodes_true_ref_bugs_found (int),\
+    num_custodes_smells (int), true_smells (int),\
     excelint_true_smells_found (int), custodes_true_smells_found (int), excelint_custodes_true_smell_intersect (int),\
     true_smells_missed_by_both (int), excel_flags (int), excelint_excel_intersect (int), custodes_excel_intersect (int),\
     excel_flags_missed_by_both (int),\

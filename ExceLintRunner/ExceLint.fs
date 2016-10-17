@@ -17,7 +17,7 @@
             | "no" -> NotABug
             | "ref" -> ReferenceBug
             | "cwfe" -> ConstantWhereFormulaExpected
-            | _ -> failwith "Unknown bug type '" + kindstr + "'"
+            | _ -> failwith ("Unknown bug type '" + kindstr + "'")
 
     let ExceLintGTToAddress(addrstr: Address)(worksheetname: Worksheet)(workbookname: Workbook)(path: Path) : AST.Address =
         // we force the mode to absolute because

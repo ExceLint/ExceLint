@@ -176,6 +176,8 @@ open ExceLint.Utils
                     minAnomScore = min_excelint_score,
                     custodesFail = (match custodes with | CUSTODES.BadOutput _ -> true | _ -> false),
                     custodesFailMsg = (match custodes with | CUSTODES.BadOutput msg -> msg | _ -> ""),
+                    excelintTrueRefBugsFound = stats.excelint_true_ref_bugs.Count,
+                    custodesTrueRefBugsFound = stats.custodes_true_ref_bugs.Count,
                     numCustodesSmells = stats.custodes_flagged.Count,
                     trueSmells = stats.true_smells_this_wb.Count,
                     excelintTrueSmellsFound = stats.excelint_true_smells.Count,
