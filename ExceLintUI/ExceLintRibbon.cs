@@ -555,6 +555,72 @@ namespace ExceLintUI
             pb.Close();
         }
 
+        private string normalizeFileName(string fileName)
+        {
+            // just alphanumerics
+            var r = new System.Text.RegularExpressions.Regex(
+                        "[^a-zA-Z0-9-_. ]",
+                        System.Text.RegularExpressions.RegexOptions.Compiled
+                    );
+
+            return r.Replace(fileName, "");
+        }
+
+        private void annotate_Click(object sender, RibbonControlEventArgs e)
+        {
+            // if we are not currently in annotation mode:
+            if (!currentWorkbook.AnnotationMode)
+            {
+                // file open dialog
+                var sfd = new System.Windows.Forms.SaveFileDialog();
+                sfd.OverwritePrompt = false;
+                sfd.DefaultExt = "csv";
+                sfd.FileName = normalizeFileName(currentWorkbook.WorkbookName) + "_annotations." + sfd.DefaultExt;
+
+                var result = sfd.ShowDialog();
+
+                if (result == System.Windows.Forms.DialogResult.OK)
+                {
+                    var fileName = sfd.FileName;
+                    if (System.IO.File.Exists(fileName))
+                    {
+                        // file exists, overwrite or append?
+                        var ooa = new OverwriteOrAppend();
+                        ooa.Text = "The file '" + fileName + "' already exists. Overwrite or append?";
+                        var ooaResult = ooa.ShowDialog();
+
+                        if (ooaResult == System.Windows.Forms.DialogResult.OK)
+                        {
+                            // this means append
+                            // try to read the file
+                            currentWorkbook.Annotations = new ExceLint.GroundTruth.GroundTruth(fileName);
+                        } else
+                        {
+                            // this means overwrite
+                            // just create a new one
+                            currentWorkbook.Annotations = ExceLint.GroundTruth.GroundTruth.Create(fileName);
+                        }
+                    }
+                    else
+                    {
+                        // otherwise, create the file
+                        currentWorkbook.Annotations = ExceLint.GroundTruth.GroundTruth.Create(fileName);
+                    }
+
+                    // set the button as "stop" annotation
+                    setUIState(currentWorkbook);
+                }
+            }
+            else
+            {
+                // write data to file
+                currentWorkbook.Annotations.Write();
+
+                // set the button to "start" annotation
+                setUIState(currentWorkbook);
+            }
+        }
+
         #endregion BUTTON_HANDLERS
 
         #region EVENTS
@@ -768,6 +834,7 @@ namespace ExceLintUI
                 this.conditioningSetSize.Enabled = disabled;
                 this.spectralRanking.Enabled = disabled;
                 this.showFixes.Enabled = disabled;
+                this.annotate.Enabled = disabled;
 
                 // tell the user ExceLint doesn't work
                 SetTooltips(disabled_text);
@@ -811,6 +878,16 @@ namespace ExceLintUI
                 else
                 {
                     this.showHeatmap.Label = "Hide Heat Map";
+                }
+
+                // toggle the annotation button depending on whether we have
+                // an annotation datastructure open or not
+                if (wbs.AnnotationMode)
+                {
+                    this.annotate.Label = "Stop Annotating";
+                } else
+                {
+                    this.annotate.Label = "Annotate";
                 }
             }
         }

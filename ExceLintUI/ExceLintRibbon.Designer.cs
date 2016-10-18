@@ -49,6 +49,7 @@
             this.scatter3D = this.Factory.CreateRibbonButton();
             this.significanceTextBox = this.Factory.CreateRibbonEditBox();
             this.spectralRanking = this.Factory.CreateRibbonCheckBox();
+            this.showFixes = this.Factory.CreateRibbonCheckBox();
             this.separator1 = this.Factory.CreateRibbonSeparator();
             this.inDegree = this.Factory.CreateRibbonCheckBox();
             this.outDegree = this.Factory.CreateRibbonCheckBox();
@@ -73,7 +74,8 @@
             this.allCells = this.Factory.CreateRibbonCheckBox();
             this.weightByIntrinsicAnomalousness = this.Factory.CreateRibbonCheckBox();
             this.conditioningSetSize = this.Factory.CreateRibbonCheckBox();
-            this.showFixes = this.Factory.CreateRibbonCheckBox();
+            this.separator4 = this.Factory.CreateRibbonSeparator();
+            this.annotate = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -122,6 +124,8 @@
             this.CheckCellGroup.Items.Add(this.allCells);
             this.CheckCellGroup.Items.Add(this.weightByIntrinsicAnomalousness);
             this.CheckCellGroup.Items.Add(this.conditioningSetSize);
+            this.CheckCellGroup.Items.Add(this.separator4);
+            this.CheckCellGroup.Items.Add(this.annotate);
             this.CheckCellGroup.Name = "CheckCellGroup";
             // 
             // box1
@@ -222,6 +226,12 @@
             this.spectralRanking.Label = "Use Spectral Rank";
             this.spectralRanking.Name = "spectralRanking";
             this.spectralRanking.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.spectralRanking_Click);
+            // 
+            // showFixes
+            // 
+            this.showFixes.Enabled = false;
+            this.showFixes.Label = "Show Fixes";
+            this.showFixes.Name = "showFixes";
             // 
             // separator1
             // 
@@ -378,11 +388,18 @@
             this.conditioningSetSize.Name = "conditioningSetSize";
             this.conditioningSetSize.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.conditioningSetSize_Click);
             // 
-            // showFixes
+            // separator4
             // 
-            this.showFixes.Enabled = false;
-            this.showFixes.Label = "Show Fixes";
-            this.showFixes.Name = "showFixes";
+            this.separator4.Name = "separator4";
+            // 
+            // annotate
+            // 
+            this.annotate.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.annotate.Image = global::ExceLintUI.Properties.Resources.correct_small;
+            this.annotate.Label = "Annotate";
+            this.annotate.Name = "annotate";
+            this.annotate.ShowImage = true;
+            this.annotate.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotate_Click);
             // 
             // ExceLintRibbon
             // 
@@ -444,6 +461,8 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox spectralRanking;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton scatter3D;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox showFixes;
+        internal Microsoft.Office.Tools.Ribbon.RibbonSeparator separator4;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton annotate;
     }
 
     partial class ThisRibbonCollection

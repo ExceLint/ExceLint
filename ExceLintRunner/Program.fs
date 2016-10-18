@@ -46,7 +46,7 @@ open ExceLint.Utils
         |> Array.map (fun (i,e) -> e)
         |> (fun arr -> new HashSet<AST.Address>(arr))
 
-    let per_append_excelint(sw: StreamWriter)(csv: CSV.WorkbookStats)(etruth: ExceLint.GroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: Pipeline.Ranking)(dag: Depends.DAG) : unit =
+    let per_append_excelint(sw: StreamWriter)(csv: CSV.WorkbookStats)(etruth: ExceLint.GroundTruth.GroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: Pipeline.Ranking)(dag: Depends.DAG) : unit =
         let smells = match custodes with
                      | CUSTODES.OKOutput c -> c.Smells
                      | _ -> new HashSet<AST.Address>()
@@ -74,7 +74,7 @@ open ExceLint.Utils
             sw.Write (csv.Append([per_row]).SaveToString())
         ) ranking |> ignore
 
-    let per_append_custodes(sw: StreamWriter)(csv: CSV.WorkbookStats)(etruth: ExceLint.GroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: Pipeline.Ranking)(custodes_not_excelint: HashSet<AST.Address>)(dag: Depends.DAG) : unit =
+    let per_append_custodes(sw: StreamWriter)(csv: CSV.WorkbookStats)(etruth: ExceLint.GroundTruth.GroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: Pipeline.Ranking)(custodes_not_excelint: HashSet<AST.Address>)(dag: Depends.DAG) : unit =
         let smells = match custodes with
                      | CUSTODES.OKOutput c -> c.Smells
                      | _ -> new HashSet<AST.Address>()
@@ -101,7 +101,7 @@ open ExceLint.Utils
             sw.Write (csv.Append([per_row]).SaveToString())
         ) (custodes_not_excelint |> Seq.toArray) |> ignore
 
-    let per_append_true_smells(sw: StreamWriter)(csv: CSV.WorkbookStats)(etruth: ExceLint.GroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: Pipeline.Ranking)(true_smells_not_found: HashSet<AST.Address>)(dag: Depends.DAG) : unit =
+    let per_append_true_smells(sw: StreamWriter)(csv: CSV.WorkbookStats)(etruth: ExceLint.GroundTruth.GroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: Pipeline.Ranking)(true_smells_not_found: HashSet<AST.Address>)(dag: Depends.DAG) : unit =
         let smells = match custodes with
                      | CUSTODES.OKOutput c -> c.Smells
                      | _ -> new HashSet<AST.Address>()
@@ -203,7 +203,7 @@ open ExceLint.Utils
         sw.Write (csv.Append([row]).SaveToString())
         sw.Flush()
 
-    let analyze (file: String)(app: Application)(config: Args.Config)(etruth: ExceLint.GroundTruth)(ctruth: CUSTODES.GroundTruth)(csv: CSV.ExceLintStats)(debug_csv: CSV.DebugInfo)(sw: StreamWriter)(debug_sw: StreamWriter) =
+    let analyze (file: String)(app: Application)(config: Args.Config)(etruth: ExceLint.GroundTruth.GroundTruth)(ctruth: CUSTODES.GroundTruth)(csv: CSV.ExceLintStats)(debug_csv: CSV.DebugInfo)(sw: StreamWriter)(debug_sw: StreamWriter) =
         let shortf = (System.IO.Path.GetFileName file)
 
         printfn "Opening: %A" shortf
@@ -336,7 +336,7 @@ open ExceLint.Utils
                                  ) (config.files) |> adict
 
             let custodes_gt = new CUSTODES.GroundTruth(workbook_paths, config.CustodesGroundTruthCSV)
-            let excelint_gt = new ExceLint.GroundTruth(config.ExceLintGroundTruthCSV)
+            let excelint_gt = new ExceLint.GroundTruth.GroundTruth(config.ExceLintGroundTruthCSV)
 
             using (new StreamWriter(config.csv)) (fun sw ->
                 using (new StreamWriter(config.DebugPath)) (fun debug_sw ->

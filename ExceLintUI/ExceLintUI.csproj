@@ -194,6 +194,12 @@
     <Compile Include="MarkAsBugForm.Designer.cs">
       <DependentUpon>MarkAsBugForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="OverwriteOrAppend.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="OverwriteOrAppend.Designer.cs">
+      <DependentUpon>OverwriteOrAppend.cs</DependentUpon>
+    </Compile>
     <Compile Include="ProgBar.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -222,6 +228,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="MarkAsBugForm.resx">
       <DependentUpon>MarkAsBugForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="OverwriteOrAppend.resx">
+      <DependentUpon>OverwriteOrAppend.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="ProgBar.resx">
       <DependentUpon>ProgBar.cs</DependentUpon>
