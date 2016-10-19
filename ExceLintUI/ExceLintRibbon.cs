@@ -4,8 +4,8 @@ using Microsoft.Office.Tools.Ribbon;
 using Microsoft.FSharp.Core;
 using Excel = Microsoft.Office.Interop.Excel;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Threading;
+using ExceLintFileFormats;
 
 namespace ExceLintUI
 {
@@ -593,18 +593,18 @@ namespace ExceLintUI
                         {
                             // this means append
                             // try to read the file
-                            currentWorkbook.Annotations = new ExceLint.GroundTruth.GroundTruth(fileName);
+                            currentWorkbook.Annotations = ExceLintGroundTruth.Load(fileName);
                         } else
                         {
                             // this means overwrite
                             // just create a new one
-                            currentWorkbook.Annotations = ExceLint.GroundTruth.GroundTruth.Create(fileName);
+                            currentWorkbook.Annotations = ExceLintGroundTruth.Create(fileName);
                         }
                     }
                     else
                     {
                         // otherwise, create the file
-                        currentWorkbook.Annotations = ExceLint.GroundTruth.GroundTruth.Create(fileName);
+                        currentWorkbook.Annotations = ExceLintGroundTruth.Create(fileName);
                     }
 
                     // set the button as "stop" annotation

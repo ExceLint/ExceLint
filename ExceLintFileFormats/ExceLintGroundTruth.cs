@@ -3,22 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using CsvHelper;
 
-
-
-
-//        [< Literal >]
-
-//        let DebugInfoHeaders = headers DebugInfoSchema
-
-//        type DebugInfo = CsvProvider<Schema = DebugInfoSchema, HasHeaders=false>
-
-
 namespace ExceLintFileFormats
 {
-    class ExceLintGroundTruth
+    public class ExceLintGroundTruth
     {
-        public Dictionary<AST.Address, BugKind> _bugs = new Dictionary<AST.Address, BugKind>();
-        public Dictionary<AST.Address, string> _notes = new Dictionary<AST.Address, string>();
+        private string _path;
+        private Dictionary<AST.Address, BugKind> _bugs = new Dictionary<AST.Address, BugKind>();
+        private Dictionary<AST.Address, string> _notes = new Dictionary<AST.Address, string>();
 
         private AST.Address Address(string addrStr, string worksheetName, string workbookName, string path)
         {
@@ -34,8 +25,10 @@ namespace ExceLintFileFormats
             );
         }
 
-        private ExceLintGroundTruth(ExceLintGroundTruthRow[] rows)
+        private ExceLintGroundTruth(string path, ExceLintGroundTruthRow[] rows)
         {
+            _path = path;
+
             foreach (var row in rows)
             {
                 AST.Address addr = Address(row.Address, row.Worksheet, row.Workbook, row.Path);
@@ -44,13 +37,51 @@ namespace ExceLintFileFormats
             }
         }
 
-        public static ExceLintGroundTruth Load(string gtpath)
+        public void Write()
         {
-            using (var sr = new StreamReader(gtpath))
+            using (StreamWriter sw = new StreamWriter(_path))
+            {
+                using (CsvWriter cw = new CsvWriter(sw))
+                {
+                    cw.WriteHeader<ExceLintGroundTruthRow>();
+
+                    foreach(var pair in _bugs)
+                    {
+                        var row = new ExceLintGroundTruthRow();
+                        row.Address = pair.Key.A1Local();
+                        row.Worksheet = pair.Key.A1Worksheet();
+                        row.Workbook = pair.Key.A1Workbook();
+                        row.Path = pair.Key.A1Path();
+                        row.BugKind = pair.Value.ToLog();
+                        row.Notes = _notes[pair.Key];
+
+                        cw.WriteRecord(row);
+                    }
+                }
+            }
+        }
+
+        public bool IsABug(AST.Address addr)
+        {
+            return _bugs.ContainsKey(addr) && _bugs[addr] != BugKind.NotABug;
+        }
+
+        public HashSet<AST.Address> TrueRefBugsByWorkbook(string wbname)
+        {
+            return new HashSet<AST.Address>(
+                _bugs
+                    .Where(pair => pair.Key.A1Workbook() == wbname)
+                    .Select(pair => pair.Key)
+                );
+        }
+
+        public static ExceLintGroundTruth Load(string path)
+        {
+            using (var sr = new StreamReader(path))
             {
                 var rows = new CsvReader(sr).GetRecords<ExceLintGroundTruthRow>().ToArray();
 
-                return new ExceLintGroundTruth(rows);
+                return new ExceLintGroundTruth(path, rows);
             }
         }
 

@@ -9,6 +9,7 @@ using HypothesizedFixes = System.Collections.Generic.Dictionary<AST.Address, Sys
 using Microsoft.FSharp.Core;
 using System.Runtime.InteropServices;
 using System.Text;
+using ExceLintFileFormats;
 
 namespace ExceLintUI
 {
@@ -58,7 +59,7 @@ namespace ExceLintUI
         private Depends.DAG _dag;
         private bool _debug_mode = false;
         private bool _dag_changed = false;
-        private ExceLint.GroundTruth.GroundTruth _annotations = null;
+        private ExceLintGroundTruth _annotations = null;
 
         #endregion DATASTRUCTURES
 
@@ -149,7 +150,7 @@ namespace ExceLintUI
             get { return _annotations != null; }
         }
 
-        public ExceLint.GroundTruth.GroundTruth Annotations
+        public ExceLintGroundTruth Annotations
         {
             get { return _annotations; }
             set { _annotations = value; }

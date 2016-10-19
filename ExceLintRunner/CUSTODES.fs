@@ -7,6 +7,7 @@
     open System.Text
     open System.Threading
     open ExceLint
+    open ExceLintFileFormats
 
     type Tool =
     | GroundTruth
@@ -15,7 +16,7 @@
     | UCheck
     | Dimension
     | Excel
-        member self.Accessor(row: CSV.CUSTODESGroundTruth.Row) =
+        member self.Accessor(row: CUSTODESGroundTruthRow) =
             match self with
             | GroundTruth -> row.GroundTruth
             | CUSTODES -> row.Custodes
@@ -141,7 +142,7 @@
 
             OKOutput (Output(canonicalOutputHS))
 
-    let addresses(tool: Tool)(row: CSV.CUSTODESGroundTruth.Row)(workbook_paths: Dictionary<string, string>) : AST.Address[] =
+    let addresses(tool: Tool)(row: CUSTODESGroundTruthRow)(workbook_paths: Dictionary<string, string>) : AST.Address[] =
         let cells_str = tool.Accessor(row).Replace(" ", "")
 
         if String.IsNullOrEmpty(cells_str) then
@@ -167,12 +168,12 @@
             |> Array.choose id
 
     type GroundTruth(workbook_paths: Dictionary<string,string>, gtpath: string) =
-        let raw = CSV.CUSTODESGroundTruth.Load(gtpath)
+        let raw = CUSTODESGroundTruth.Load(gtpath)
 
         let d = new Dictionary<Tool,HashSet<AST.Address>>()
 
         do
-            Seq.iter (fun (row: CSV.CUSTODESGroundTruth.Row) ->
+            Seq.iter (fun (row: CUSTODESGroundTruthRow) ->
                 Array.iter (fun tool ->
                     if not (d.ContainsKey(tool)) then
                         d.Add(tool, new HashSet<AST.Address>())

@@ -1,18 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
+using ExceLintFileFormats;
 
 namespace ExceLintUI
 {
     public struct BugAnnotation
     {
-        public ExceLint.BugKind bugkind;
+        public BugKind bugkind;
         public string notes;
     };
 
@@ -20,11 +17,11 @@ namespace ExceLintUI
     {
         AST.Address _cell;
         Dictionary<AST.Address, BugAnnotation> _ba;
-        ExceLint.BugKind _selected_kind = ExceLint.BugKind.DefaultKind;
+        BugKind _selected_kind = BugKind.DefaultKind;
         string _notes = "";
 
-        ExceLint.BugKind[] _sortedBugKinds = ExceLint.BugKind.AllKinds.OrderBy(bk => bk.ToString()).ToArray();
-        Dictionary<ExceLint.BugKind, int> bkIndices = new Dictionary<ExceLint.BugKind, int>();
+        BugKind[] _sortedBugKinds = BugKind.AllKinds.OrderBy(bk => bk.ToString()).ToArray();
+        Dictionary<BugKind, int> bkIndices = new Dictionary<BugKind, int>();
 
         public MarkAsBugForm(AST.Address cell, Dictionary<AST.Address,BugAnnotation> bugAnnotations)
         {
@@ -56,13 +53,13 @@ namespace ExceLintUI
                 bugNotesTextField.Text = notes;
             } else
             {
-                BugKindsCombo.SelectedIndex = bkIndices[ExceLint.BugKind.NotABug];
+                BugKindsCombo.SelectedIndex = bkIndices[BugKind.NotABug];
             }
 
             InitializeComponent();
         }
 
-        public ExceLint.BugKind BugKind
+        public BugKind BugKind
         {
             get
             {
