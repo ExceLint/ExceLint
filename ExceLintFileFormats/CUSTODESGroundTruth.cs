@@ -23,7 +23,11 @@ namespace ExceLintFileFormats
         {
             using (var sr = new StreamReader(path))
             {
-                var rows = new CsvReader(sr).GetRecords<CUSTODESGroundTruthRow>().ToArray();
+                var csv = new CsvReader(sr);
+
+                csv.Configuration.RegisterClassMap<CUSTODESGroundTruthRowMap>();
+
+                var rows = csv.GetRecords<CUSTODESGroundTruthRow>().ToArray();
 
                 return new CUSTODESGroundTruth(rows);
             }
