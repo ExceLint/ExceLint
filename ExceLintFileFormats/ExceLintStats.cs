@@ -12,6 +12,7 @@ namespace ExceLintFileFormats
         public ExceLintStats(string path)
         {
             _sw = new StreamWriter(path);
+            _sw.AutoFlush = true;
             _cw = new CsvWriter(_sw);
 
             // write header
