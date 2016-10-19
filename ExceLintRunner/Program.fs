@@ -193,7 +193,7 @@ open ExceLintFileFormats
 
         csv.WriteRow row
 
-    let analyze (file: String)(app: Application)(config: Args.Config)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(csv: ExceLintStats)(debug_csv: DebugInfo)(sw: StreamWriter)(debug_sw: StreamWriter) =
+    let analyze (file: String)(app: Application)(config: Args.Config)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(csv: ExceLintStats)(debug_csv: DebugInfo) =
         let shortf = (System.IO.Path.GetFileName file)
 
         printfn "Opening: %A" shortf
@@ -321,21 +321,16 @@ open ExceLintFileFormats
             let custodes_gt = new CUSTODES.GroundTruth(workbook_paths, config.CustodesGroundTruthCSV)
             let excelint_gt = ExceLintGroundTruth.Load(config.ExceLintGroundTruthCSV)
 
-            using (new StreamWriter(config.csv)) (fun sw ->
-                using (new StreamWriter(config.DebugPath)) (fun debug_sw ->
-            
-                    for file in config.files do
+            for file in config.files do
                         
-                        let shortf = (System.IO.Path.GetFileName file)
+                let shortf = (System.IO.Path.GetFileName file)
 
-                        try
-                            analyze file app config excelint_gt custodes_gt csv debug_csv sw debug_sw
-                        with
-                        | e ->
-                            printfn "Cannot analyze workbook %A because:\n%A" shortf e.Message
-                            printfn "Stacktrace:\n%A" e.StackTrace
-                )
-            )
+                try
+                    analyze file app config excelint_gt custodes_gt csv debug_csv
+                with
+                | e ->
+                    printfn "Cannot analyze workbook %A because:\n%A" shortf e.Message
+                    printfn "Stacktrace:\n%A" e.StackTrace
         )
 
         if config.DontExitWithoutKeystroke then
