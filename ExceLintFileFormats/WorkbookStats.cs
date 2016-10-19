@@ -35,9 +35,8 @@ namespace ExceLintFileFormats
             {
                 if (disposing)
                 {
-                    _cw.Dispose();
                     _sw.Flush();
-                    _sw.Close();
+                    _cw.Dispose();
 
                     _cw = null;
                     _sw = null;
