@@ -19,7 +19,7 @@
         member self.Accessor(row: CUSTODESGroundTruthRow) =
             match self with
             | GroundTruth -> row.GroundTruth
-            | CUSTODES -> row.Custodes
+            | CUSTODES -> row.CUSTODES
             | AmCheck -> row.AmCheck
             | UCheck -> row.UCheck
             | Dimension -> row.Dimension
