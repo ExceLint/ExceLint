@@ -11,7 +11,8 @@ open System.Text.RegularExpressions
             printfn "Input directory: %s" dpath
             printfn "Output directory: %s" opath
             printfn "Output stats CSV: %s" csv
-            printfn "Ground truth CSV: %s" gpath
+            printfn "ExceLint ground truth CSV: %s" egpath
+            printfn "CUSTODES ground truth CSV: %s" gpath
             printfn "Java path: %s" jpath
             printfn "CUSTODES JAR path: %s" cpath
             printfn "Verbose mode: %b" verbose
