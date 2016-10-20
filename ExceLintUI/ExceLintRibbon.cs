@@ -771,9 +771,12 @@ namespace ExceLintUI
 
         private void SheetChange(object worksheet, Excel.Range target)
         {
-            currentWorkbook.MarkDAGAsChanged();
-            currentWorkbook.resetTool();
-            setUIState(currentWorkbook);
+            if (currentWorkbook != null)
+            {
+                currentWorkbook.MarkDAGAsChanged();
+                currentWorkbook.resetTool();
+                setUIState(currentWorkbook);
+            }
         }
         #endregion EVENTS
 
