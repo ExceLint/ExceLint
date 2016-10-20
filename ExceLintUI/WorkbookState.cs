@@ -82,6 +82,13 @@ namespace ExceLintUI
             {
                 var p = Depends.Progress.NOPProgress();
                 _dag = Depends.DAG.DAGFromCache(false, _app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, CACHEDIRPATH, p);
+
+                // if the the cached DAG does not look like the
+                // spreadsheet we have open, update it
+                if (DAGChanged())
+                {
+                    SerializeDAG(forceDAGBuild: true);
+                }
             }
         }
 
