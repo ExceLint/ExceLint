@@ -31,6 +31,7 @@ namespace ExceLintTests
         }
 
         [TestMethod]
+        [Ignore]
         public void TestAuditRoundTripPerformance()
         {
             var t = Time(() => this.UIMap.AuditRoundTripPerformance());

@@ -76,6 +76,13 @@ namespace ExceLintUI
             _app = app;
             _workbook = workbook;
             _analysis.hasRun = false;
+
+            // if a cached DAG exists, load it eagerly
+            if (Depends.DAG.CachedDAGExists(CACHEDIRPATH, _workbook.Name))
+            {
+                var p = Depends.Progress.NOPProgress();
+                _dag = Depends.DAG.DAGFromCache(false, _app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, CACHEDIRPATH, p);
+            }
         }
 
         public string WorkbookName
@@ -83,9 +90,19 @@ namespace ExceLintUI
             get { return _workbook.Name; }
         }
 
-        public void DAGChanged()
+        public void MarkDAGAsChanged()
         {
             _dag_changed = true;
+        }
+
+        public bool DAGChanged()
+        {
+            // can't have changed if we've never built it before
+            if (_dag == null)
+            {
+                return false;
+            }
+            return _dag.Changed(_workbook);
         }
 
         public void ConfigChanged()
@@ -365,6 +382,11 @@ namespace ExceLintUI
         {
             Func<Depends.Progress,int> f = (Depends.Progress p) => 1;
             buildDAGAndDoStuff(forceDAGBuild, f, 1L, pb);
+        }
+
+        public bool DAGRefreshNeeded(Boolean forceDAGBuild)
+        {
+            return _dag == null || _dag_changed || forceDAGBuild;
         }
 
         private void RefreshDAG(Boolean forceDAGBuild, Depends.Progress p)

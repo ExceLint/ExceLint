@@ -667,7 +667,18 @@ namespace ExceLintUI
 
         private void WorkbookAfterSave(Excel.Workbook Wb, bool Success)
         {
-            currentWorkbook.SerializeDAG(forceDAGBuild: forceBuildDAG.Checked);
+            // this checks whether:
+            // 1. there is a DAG
+            // 2. the DAG changed bit is not set
+            // 3. the force-update bit is not set
+            if (currentWorkbook.DAGRefreshNeeded(forceDAGBuild: forceBuildDAG.Checked))
+            {
+                // Did the workbook really change? Diff it first.
+                if (currentWorkbook.DAGChanged())
+                {
+                    currentWorkbook.SerializeDAG(forceDAGBuild: forceBuildDAG.Checked);
+                }
+            }
         }
 
         // This event is called when Excel opens a workbook
@@ -760,7 +771,7 @@ namespace ExceLintUI
 
         private void SheetChange(object worksheet, Excel.Range target)
         {
-            currentWorkbook.DAGChanged();
+            currentWorkbook.MarkDAGAsChanged();
             currentWorkbook.resetTool();
             setUIState(currentWorkbook);
         }

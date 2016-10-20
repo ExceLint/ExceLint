@@ -18,7 +18,8 @@ namespace ExceLintUI
         {
             if (Globals.Ribbons.ExceLintRibbon.CurrentWorkbook == null)
             {
-                return new WorkbookState(Globals.ThisAddIn.Application, Globals.ThisAddIn.Application.ActiveWorkbook);
+                //return new WorkbookState(Globals.ThisAddIn.Application, Globals.ThisAddIn.Application.ActiveWorkbook);
+                return null;
             } else
             {
                 return Globals.Ribbons.ExceLintRibbon.CurrentWorkbook;
