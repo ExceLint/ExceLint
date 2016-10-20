@@ -97,6 +97,11 @@ namespace ExceLintUI
             get { return _workbook.Name; }
         }
 
+        public string Path
+        {
+            get { return _workbook.Path.TrimEnd(System.IO.Path.DirectorySeparatorChar) + System.IO.Path.DirectorySeparatorChar; }
+        }
+
         public void MarkDAGAsChanged()
         {
             _dag_changed = true;

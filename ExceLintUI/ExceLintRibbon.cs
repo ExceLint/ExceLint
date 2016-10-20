@@ -12,6 +12,7 @@ namespace ExceLintUI
     public partial class ExceLintRibbon
     {
         private static bool USE_MULTITHREADED_UI = false;
+        private static string DEFAULT_GROUND_TRUTH_FILENAME = "ground_truth";
 
         Dictionary<Excel.Workbook, WorkbookState> wbstates = new Dictionary<Excel.Workbook, WorkbookState>();
         System.Collections.Concurrent.ConcurrentDictionary<Excel.Workbook,Boolean> wbShutdown = new System.Collections.Concurrent.ConcurrentDictionary<Excel.Workbook,Boolean>();
@@ -571,22 +572,37 @@ namespace ExceLintUI
             // if we are not currently in annotation mode:
             if (!currentWorkbook.AnnotationMode)
             {
+                // get initial directory from user settings
+                string iDir = (string)Properties.Settings.Default["ExceLintGroundTruthPath"];
+                if (String.IsNullOrWhiteSpace(iDir))
+                {
+                    // default to My Documents
+                    iDir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                }
+
                 // file open dialog
                 var sfd = new System.Windows.Forms.SaveFileDialog();
                 sfd.OverwritePrompt = false;
                 sfd.DefaultExt = "csv";
-                sfd.FileName = normalizeFileName(currentWorkbook.WorkbookName) + "_annotations." + sfd.DefaultExt;
+                sfd.FileName = DEFAULT_GROUND_TRUTH_FILENAME;
+                sfd.InitialDirectory = System.IO.Path.GetFullPath(iDir);
+                sfd.RestoreDirectory = true;
 
                 var result = sfd.ShowDialog();
 
                 if (result == System.Windows.Forms.DialogResult.OK)
                 {
                     var fileName = sfd.FileName;
+
+                    // update user settings
+                    Properties.Settings.Default["ExceLintGroundTruthPath"] = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(fileName));
+                    Properties.Settings.Default.Save();
+
                     if (System.IO.File.Exists(fileName))
                     {
                         // file exists, overwrite or append?
                         var ooa = new OverwriteOrAppend();
-                        ooa.Text = "The file '" + fileName + "' already exists. Overwrite or append?";
+                        ooa.Message = "The file '" + System.IO.Path.GetFileName(fileName) + "' already exists. Overwrite or append?";
                         var ooaResult = ooa.ShowDialog();
 
                         if (ooaResult == System.Windows.Forms.DialogResult.OK)
@@ -607,6 +623,14 @@ namespace ExceLintUI
                         currentWorkbook.Annotations = ExceLintGroundTruth.Create(fileName);
                     }
 
+                    // populate notes
+                    var annots = currentWorkbook.Annotations.AnnotationsFor(currentWorkbook.Path, currentWorkbook.WorkbookName);
+                    foreach (var annot in annots)
+                    {
+                        var rng = ParcelCOMShim.Address.GetCOMObject(annot.Item1, Globals.ThisAddIn.Application);
+                        rng.AddComment(annot.Item2.Comment);
+                    }
+
                     // set the button as "stop" annotation
                     setUIState(currentWorkbook);
                 }
@@ -616,8 +640,49 @@ namespace ExceLintUI
                 // write data to file
                 currentWorkbook.Annotations.Write();
 
+                // de-populate notes
+                var annots = currentWorkbook.Annotations.AnnotationsFor(currentWorkbook.Path, currentWorkbook.WorkbookName);
+                foreach (var annot in annots)
+                {
+                    var rng = ParcelCOMShim.Address.GetCOMObject(annot.Item1, Globals.ThisAddIn.Application);
+                    if (rng.Comment.Text() == annot.Item2.Comment)
+                    {
+                        rng.Comment.Delete();
+                    }
+                }
+
+                // nullify the reference
+                currentWorkbook.Annotations = null;
+
                 // set the button to "start" annotation
                 setUIState(currentWorkbook);
+            }
+        }
+
+        private void annotateThisCell_Click(object sender, RibbonControlEventArgs e)
+        {
+            // get cursor location
+            var cursor = (Excel.Range)Globals.ThisAddIn.Application.Selection;
+            AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, Globals.ThisAddIn.Application.ActiveWorkbook);
+
+            // get bug annotation from database
+            var annot = currentWorkbook.Annotations.AnnotationFor(cursorAddr);
+
+            // populate form and ask user for new data
+            var mabf = new MarkAsBugForm(annot);
+
+            // show form
+            var result = mabf.ShowDialog();
+
+            if (result == System.Windows.Forms.DialogResult.OK)
+            {
+                // update database
+                annot.BugKind = mabf.BugKind;
+                annot.Note = mabf.Notes;
+                currentWorkbook.Annotations.SetAnnotationFor(cursorAddr, annot);
+
+                // stick note into workbook
+                cursor.AddComment(annot.Comment);
             }
         }
 
@@ -899,9 +964,11 @@ namespace ExceLintUI
                 if (wbs.AnnotationMode)
                 {
                     this.annotate.Label = "Stop Annotating";
+                    this.annotateThisCell.Visible = true;
                 } else
                 {
                     this.annotate.Label = "Annotate";
+                    this.annotateThisCell.Visible = false;
                 }
             }
         }

@@ -64,11 +64,11 @@
             this.cancelButton.UseVisualStyleBackColor = true;
             this.cancelButton.Click += new System.EventHandler(this.cancelButton_Click);
             // 
-            // bugNotesCombo
+            // bugNotesTextField
             // 
             this.bugNotesTextField.Location = new System.Drawing.Point(15, 49);
             this.bugNotesTextField.Multiline = true;
-            this.bugNotesTextField.Name = "bugNotesCombo";
+            this.bugNotesTextField.Name = "bugNotesTextField";
             this.bugNotesTextField.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.bugNotesTextField.Size = new System.Drawing.Size(360, 57);
             this.bugNotesTextField.TabIndex = 3;
@@ -105,8 +105,9 @@
             this.Controls.Add(this.cancelButton);
             this.Controls.Add(this.markCellLabel);
             this.Controls.Add(this.BugKindsCombo);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Name = "MarkAsBugForm";
-            this.Text = "MarkAsBugForm";
+            this.Text = "Annotate cell";
             this.ResumeLayout(false);
             this.PerformLayout();
 

@@ -22,5 +22,17 @@ namespace ExceLintUI.Properties {
                 return defaultInstance;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string ExceLintGroundTruthPath {
+            get {
+                return ((string)(this["ExceLintGroundTruthPath"]));
+            }
+            set {
+                this["ExceLintGroundTruthPath"] = value;
+            }
+        }
     }
 }

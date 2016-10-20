@@ -251,6 +251,7 @@
     <EmbeddedResource Include="SpectralPlot.resx">
       <DependentUpon>SpectralPlot.cs</DependentUpon>
     </EmbeddedResource>
+    <None Include="app.config" />
     <None Include="ExceLint.pfx" />
     <None Include="ExceLintUI_3_TemporaryKey.pfx" />
     <None Include="ExceLintUI_TemporaryKey.pfx" />

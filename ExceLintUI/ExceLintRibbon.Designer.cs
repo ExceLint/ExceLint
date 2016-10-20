@@ -76,6 +76,7 @@
             this.conditioningSetSize = this.Factory.CreateRibbonCheckBox();
             this.separator4 = this.Factory.CreateRibbonSeparator();
             this.annotate = this.Factory.CreateRibbonButton();
+            this.annotateThisCell = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -126,6 +127,7 @@
             this.CheckCellGroup.Items.Add(this.conditioningSetSize);
             this.CheckCellGroup.Items.Add(this.separator4);
             this.CheckCellGroup.Items.Add(this.annotate);
+            this.CheckCellGroup.Items.Add(this.annotateThisCell);
             this.CheckCellGroup.Name = "CheckCellGroup";
             // 
             // box1
@@ -401,6 +403,15 @@
             this.annotate.ShowImage = true;
             this.annotate.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotate_Click);
             // 
+            // annotateThisCell
+            // 
+            this.annotateThisCell.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.annotateThisCell.Image = global::ExceLintUI.Properties.Resources.pain;
+            this.annotateThisCell.Label = "Annotate Current Cell";
+            this.annotateThisCell.Name = "annotateThisCell";
+            this.annotateThisCell.ShowImage = true;
+            this.annotateThisCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotateThisCell_Click);
+            // 
             // ExceLintRibbon
             // 
             this.Name = "ExceLintRibbon";
@@ -463,6 +474,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox showFixes;
         internal Microsoft.Office.Tools.Ribbon.RibbonSeparator separator4;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton annotate;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton annotateThisCell;
     }
 
     partial class ThisRibbonCollection

@@ -1,11 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ExceLintUI
@@ -14,12 +7,31 @@ namespace ExceLintUI
     {
         public OverwriteOrAppend()
         {
+            StartPosition = FormStartPosition.CenterScreen;
             InitializeComponent();
         }
 
         public void SetText(string text)
         {
             messageText.Text = text;
+        }
+
+        public string Message
+        {
+            get { return messageText.Text; }
+            set { messageText.Text = value; }
+        }
+
+        private void appendButton_Click_1(object sender, EventArgs e)
+        {
+            this.DialogResult = DialogResult.OK;
+            this.Close();
+        }
+
+        private void overwriteButton_Click_1(object sender, EventArgs e)
+        {
+            this.DialogResult = DialogResult.Cancel;
+            this.Close();
         }
     }
 }

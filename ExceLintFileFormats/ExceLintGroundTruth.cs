@@ -5,6 +5,23 @@ using CsvHelper;
 
 namespace ExceLintFileFormats
 {
+    public struct BugAnnotation
+    {
+        public BugKind BugKind;
+        public string Note;
+
+        public BugAnnotation(BugKind bugKind, string note)
+        {
+            BugKind = bugKind;
+            Note = note;
+        }
+
+        public string Comment
+        {
+            get { return BugKind.ToLog() + ": " + Note; }
+        }
+    };
+
     public class ExceLintGroundTruth
     {
         private string _path;
@@ -34,6 +51,48 @@ namespace ExceLintFileFormats
                 AST.Address addr = Address(row.Address, row.Worksheet, row.Workbook, row.Path);
                 _bugs.Add(addr, BugKind.ToKind(row.BugKind));
                 _notes.Add(addr, row.Notes);
+            }
+        }
+
+        public BugAnnotation AnnotationFor(AST.Address addr)
+        {
+            if (_bugs.ContainsKey(addr))
+            {
+                return new BugAnnotation(_bugs[addr], _notes[addr]);
+            } else
+            {
+                return new BugAnnotation(BugKind.NotABug, "");
+            }
+        }
+
+        public List<System.Tuple<AST.Address,BugAnnotation>> AnnotationsFor(string path, string workbookname)
+        {
+            var output = new List<System.Tuple<AST.Address, BugAnnotation>>();
+
+            foreach (var bug in _bugs)
+            {
+                var addr = bug.Key;
+
+                if (addr.Path == path && addr.WorkbookName == workbookname)
+                {
+                    output.Add(new System.Tuple<AST.Address, BugAnnotation>(addr, new BugAnnotation(bug.Value, _notes[bug.Key])));
+                }
+            }
+
+            return output;
+        }
+
+        public void SetAnnotationFor(AST.Address addr, BugAnnotation annot)
+        {
+            if (_bugs.ContainsKey(addr))
+            {
+                _bugs[addr] = annot.BugKind;
+                _notes[addr] = annot.Note;
+            }
+            else
+            {
+                _bugs.Add(addr, annot.BugKind);
+                _notes.Add(addr, annot.Note);
             }
         }
 
