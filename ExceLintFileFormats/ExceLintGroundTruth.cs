@@ -24,11 +24,11 @@ namespace ExceLintFileFormats
 
     public class ExceLintGroundTruth
     {
-        private string _path;
+        private string _dbpath;
         private Dictionary<AST.Address, BugKind> _bugs = new Dictionary<AST.Address, BugKind>();
         private Dictionary<AST.Address, string> _notes = new Dictionary<AST.Address, string>();
 
-        private AST.Address Address(string addrStr, string worksheetName, string workbookName, string path)
+        private AST.Address Address(string addrStr, string worksheetName, string workbookName)
         {
             // we force the mode to absolute because
             // that's how Depends reads them
@@ -38,17 +38,17 @@ namespace ExceLintFileFormats
                 AST.AddressMode.Absolute,
                 worksheetName,
                 (workbookName.EndsWith(".xls") ? workbookName : workbookName + ".xls"),
-                Path.GetFullPath(path)   // ensure absolute path
+                ""  // we don't care about paths
             );
         }
 
-        private ExceLintGroundTruth(string path, ExceLintGroundTruthRow[] rows)
+        private ExceLintGroundTruth(string dbpath, ExceLintGroundTruthRow[] rows)
         {
-            _path = path;
+            _dbpath = dbpath;
 
             foreach (var row in rows)
             {
-                AST.Address addr = Address(row.Address, row.Worksheet, row.Workbook, row.Path);
+                AST.Address addr = Address(row.Address, row.Worksheet, row.Workbook);
                 _bugs.Add(addr, BugKind.ToKind(row.BugKind));
                 _notes.Add(addr, row.Notes);
             }
@@ -65,7 +65,7 @@ namespace ExceLintFileFormats
             }
         }
 
-        public List<System.Tuple<AST.Address,BugAnnotation>> AnnotationsFor(string path, string workbookname)
+        public List<System.Tuple<AST.Address,BugAnnotation>> AnnotationsFor(string workbookname)
         {
             var output = new List<System.Tuple<AST.Address, BugAnnotation>>();
 
@@ -73,7 +73,7 @@ namespace ExceLintFileFormats
             {
                 var addr = bug.Key;
 
-                if (addr.Path == path && addr.WorkbookName == workbookname)
+                if (addr.WorkbookName == workbookname)
                 {
                     output.Add(new System.Tuple<AST.Address, BugAnnotation>(addr, new BugAnnotation(bug.Value, _notes[bug.Key])));
                 }
@@ -98,7 +98,7 @@ namespace ExceLintFileFormats
 
         public void Write()
         {
-            using (StreamWriter sw = new StreamWriter(_path))
+            using (StreamWriter sw = new StreamWriter(_dbpath))
             {
                 using (CsvWriter cw = new CsvWriter(sw))
                 {
@@ -110,7 +110,6 @@ namespace ExceLintFileFormats
                         row.Address = pair.Key.A1Local();
                         row.Worksheet = pair.Key.A1Worksheet();
                         row.Workbook = pair.Key.A1Workbook();
-                        row.Path = pair.Key.A1Path();
                         row.BugKind = pair.Value.ToLog();
                         row.Notes = _notes[pair.Key];
 
@@ -160,7 +159,6 @@ namespace ExceLintFileFormats
 
     class ExceLintGroundTruthRow
     {
-        public string Path { get; set; }
         public string Workbook { get; set; }
         public string Worksheet { get; set; }
         public string Address { get; set; }

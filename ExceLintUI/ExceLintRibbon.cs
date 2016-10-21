@@ -624,7 +624,7 @@ namespace ExceLintUI
                     }
 
                     // populate notes
-                    var annots = currentWorkbook.Annotations.AnnotationsFor(currentWorkbook.Path, currentWorkbook.WorkbookName);
+                    var annots = currentWorkbook.Annotations.AnnotationsFor(currentWorkbook.WorkbookName);
                     foreach (var annot in annots)
                     {
                         var rng = ParcelCOMShim.Address.GetCOMObject(annot.Item1, Globals.ThisAddIn.Application);
@@ -641,7 +641,7 @@ namespace ExceLintUI
                 currentWorkbook.Annotations.Write();
 
                 // de-populate notes
-                var annots = currentWorkbook.Annotations.AnnotationsFor(currentWorkbook.Path, currentWorkbook.WorkbookName);
+                var annots = currentWorkbook.Annotations.AnnotationsFor(currentWorkbook.WorkbookName);
                 foreach (var annot in annots)
                 {
                     var rng = ParcelCOMShim.Address.GetCOMObject(annot.Item1, Globals.ThisAddIn.Application);
