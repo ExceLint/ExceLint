@@ -675,14 +675,20 @@ namespace ExceLintUI
         {
             if (Annotations != null)
             {
-                var annots = Annotations.AnnotationsFor(workbook.WorkbookName);
-                foreach (var annot in annots)
+                try
                 {
-                    var rng = ParcelCOMShim.Address.GetCOMObject(annot.Item1, Globals.ThisAddIn.Application);
-                    if (rng.Comment != null && rng.Comment.Text() == annot.Item2.Comment)
+                    var annots = Annotations.AnnotationsFor(workbook.WorkbookName);
+                    foreach (var annot in annots)
                     {
-                        rng.Comment.Delete();
+                        var rng = ParcelCOMShim.Address.GetCOMObject(annot.Item1, Globals.ThisAddIn.Application);
+                        if (rng.Comment != null && rng.Comment.Text() == annot.Item2.Comment)
+                        {
+                            rng.Comment.Delete();
+                        }
                     }
+                } catch
+                {
+                    // give up; this can happen as a side-effect of our wbstate removal code (cancellation timeout check)
                 }
             }
             
