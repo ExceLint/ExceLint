@@ -17,6 +17,7 @@ namespace ExceLintUI
         Dictionary<Excel.Workbook, WorkbookState> wbstates = new Dictionary<Excel.Workbook, WorkbookState>();
         System.Collections.Concurrent.ConcurrentDictionary<Excel.Workbook,Boolean> wbShutdown = new System.Collections.Concurrent.ConcurrentDictionary<Excel.Workbook,Boolean>();
         WorkbookState currentWorkbook;
+        private ExceLintGroundTruth annotations;
 
         #region BUTTON_HANDLERS
         private void showVectors_Click(object sender, RibbonControlEventArgs e)
@@ -570,7 +571,7 @@ namespace ExceLintUI
         private void annotate_Click(object sender, RibbonControlEventArgs e)
         {
             // if we are not currently in annotation mode:
-            if (!currentWorkbook.AnnotationMode)
+            if (!AnnotationMode)
             {
                 // get initial directory from user settings
                 string iDir = (string)Properties.Settings.Default["ExceLintGroundTruthPath"];
@@ -609,30 +610,24 @@ namespace ExceLintUI
                         {
                             // this means append
                             // try to read the file
-                            currentWorkbook.Annotations = ExceLintGroundTruth.Load(fileName);
+                            Annotations = ExceLintGroundTruth.Load(fileName);
                         } else
                         {
                             // this means overwrite
                             // just create a new one
-                            currentWorkbook.Annotations = ExceLintGroundTruth.Create(fileName);
+                            Annotations = ExceLintGroundTruth.Create(fileName);
                         }
                     }
                     else
                     {
                         // otherwise, create the file
-                        currentWorkbook.Annotations = ExceLintGroundTruth.Create(fileName);
+                        Annotations = ExceLintGroundTruth.Create(fileName);
                     }
 
-                    // populate notes
-                    var annots = currentWorkbook.Annotations.AnnotationsFor(currentWorkbook.WorkbookName);
-                    foreach (var annot in annots)
+                    // put notes into workbook
+                    foreach (var wbs in wbstates.Values)
                     {
-                        var rng = ParcelCOMShim.Address.GetCOMObject(annot.Item1, Globals.ThisAddIn.Application);
-                        if (!String.IsNullOrWhiteSpace(rng.Comment.Text()))
-                        {
-                            rng.Comment.Delete();
-                        }
-                        rng.AddComment(annot.Item2.Comment);
+                        PopulateAnnotations(wbs);
                     }
 
                     // set the button as "stop" annotation
@@ -642,25 +637,55 @@ namespace ExceLintUI
             else
             {
                 // write data to file
-                currentWorkbook.Annotations.Write();
+                Annotations.Write();
 
                 // de-populate notes
-                var annots = currentWorkbook.Annotations.AnnotationsFor(currentWorkbook.WorkbookName);
-                foreach (var annot in annots)
+                foreach (var wbs in wbstates.Values)
                 {
-                    var rng = ParcelCOMShim.Address.GetCOMObject(annot.Item1, Globals.ThisAddIn.Application);
-                    if (rng.Comment.Text() == annot.Item2.Comment)
-                    {
-                        rng.Comment.Delete();
-                    }
+                    DepopulateAnnotations(wbs);
                 }
 
                 // nullify the reference
-                currentWorkbook.Annotations = null;
+                Annotations = null;
 
                 // set the button to "start" annotation
                 setUIState(currentWorkbook);
             }
+        }
+
+        public void PopulateAnnotations(WorkbookState workbook)
+        {
+            if (Annotations != null)
+            {
+                // populate notes
+                var annots = Annotations.AnnotationsFor(workbook.WorkbookName);
+                foreach (var annot in annots)
+                {
+                    var rng = ParcelCOMShim.Address.GetCOMObject(annot.Item1, Globals.ThisAddIn.Application);
+                    if (rng.Comment != null)
+                    {
+                        rng.Comment.Delete();
+                    }
+                    rng.AddComment(annot.Item2.Comment);
+                }
+            }
+        }
+
+        public void DepopulateAnnotations(WorkbookState workbook)
+        {
+            if (Annotations != null)
+            {
+                var annots = Annotations.AnnotationsFor(workbook.WorkbookName);
+                foreach (var annot in annots)
+                {
+                    var rng = ParcelCOMShim.Address.GetCOMObject(annot.Item1, Globals.ThisAddIn.Application);
+                    if (rng.Comment != null && rng.Comment.Text() == annot.Item2.Comment)
+                    {
+                        rng.Comment.Delete();
+                    }
+                }
+            }
+            
         }
 
         private void annotateThisCell_Click(object sender, RibbonControlEventArgs e)
@@ -670,7 +695,7 @@ namespace ExceLintUI
             AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, Globals.ThisAddIn.Application.ActiveWorkbook);
 
             // get bug annotation from database
-            var annot = currentWorkbook.Annotations.AnnotationFor(cursorAddr);
+            var annot = Annotations.AnnotationFor(cursorAddr);
 
             // populate form and ask user for new data
             var mabf = new MarkAsBugForm(annot);
@@ -683,10 +708,10 @@ namespace ExceLintUI
                 // update database
                 annot.BugKind = mabf.BugKind;
                 annot.Note = mabf.Notes;
-                currentWorkbook.Annotations.SetAnnotationFor(cursorAddr, annot);
+                Annotations.SetAnnotationFor(cursorAddr, annot);
 
                 // stick note into workbook
-                if (!String.IsNullOrWhiteSpace(cursor.Comment.Text()))
+                if (cursor.Comment != null)
                 {
                     cursor.Comment.Delete();
                 }
@@ -780,11 +805,12 @@ namespace ExceLintUI
             }
             currentWorkbook = wbstates[workbook];
             setUIState(currentWorkbook);
+            if (AnnotationMode) PopulateAnnotations(currentWorkbook);
         }
 
         private void cancelRemoveState()
         {
-            System.Threading.Thread.Sleep(1000);
+            Thread.Sleep(1000);
 
             foreach(KeyValuePair<Excel.Workbook,Boolean> kvp in wbShutdown)
             {
@@ -812,7 +838,10 @@ namespace ExceLintUI
                 wbShutdown.TryRemove(workbook, out outcome);
             }
 
+            if (AnnotationMode) DepopulateAnnotations(currentWorkbook);
+
             currentWorkbook = null;
+
             // WorkbookBeforeClose event does not fire for default workbooks
             // containing no data
             var wbs = new List<Excel.Workbook>();
@@ -969,7 +998,7 @@ namespace ExceLintUI
 
                 // toggle the annotation button depending on whether we have
                 // an annotation datastructure open or not
-                if (wbs.AnnotationMode)
+                if (AnnotationMode)
                 {
                     this.annotate.Label = "Stop Annotating";
                     this.annotateThisCell.Visible = true;
@@ -1020,6 +1049,16 @@ namespace ExceLintUI
             return c;
         }
 
+        public bool AnnotationMode
+        {
+            get { return annotations != null; }
+        }
+
+        public ExceLintGroundTruth Annotations
+        {
+            get { return annotations; }
+            set { annotations = value; }
+        }
 
         #endregion UTILITY_FUNCTIONS
     }

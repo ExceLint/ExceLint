@@ -59,7 +59,6 @@ namespace ExceLintUI
         private Depends.DAG _dag;
         private bool _debug_mode = false;
         private bool _dag_changed = false;
-        private ExceLintGroundTruth _annotations = null;
 
         #endregion DATASTRUCTURES
 
@@ -172,17 +171,6 @@ namespace ExceLintUI
         {
             get { return _debug_mode; }
             set { _debug_mode = value; }
-        }
-
-        public bool AnnotationMode
-        {
-            get { return _annotations != null; }
-        }
-
-        public ExceLintGroundTruth Annotations
-        {
-            get { return _annotations; }
-            set { _annotations = value; }
         }
 
         public void getSelected(ExceLint.FeatureConf config, ExceLint.Scope.Selector sel, Boolean forceDAGBuild)
