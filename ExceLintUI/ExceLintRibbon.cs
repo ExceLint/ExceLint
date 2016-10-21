@@ -867,7 +867,7 @@ namespace ExceLintUI
             // if the user hits cancel, then WorkbookDeactivated will never
             // be called, but the shutdown will still be recorded; the
             // following schedules an action to unrecord the workbook close
-            System.Threading.Thread t = new System.Threading.Thread(cancelRemoveState);
+            Thread t = new Thread(cancelRemoveState);
             t.Start();
         }
 

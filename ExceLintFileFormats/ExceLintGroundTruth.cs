@@ -33,7 +33,7 @@ namespace ExceLintFileFormats
             return AST.Address.FromA1String(
                 addrStr.ToUpper(),
                 worksheetName,
-                (workbookName.EndsWith(".xls") ? workbookName : workbookName + ".xls"),
+                workbookName,
                 ""  // we don't care about paths
             );
         }
