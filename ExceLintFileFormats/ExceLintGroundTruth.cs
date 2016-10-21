@@ -30,12 +30,8 @@ namespace ExceLintFileFormats
 
         private AST.Address Address(string addrStr, string worksheetName, string workbookName)
         {
-            // we force the mode to absolute because
-            // that's how Depends reads them
-            return AST.Address.FromA1StringForceMode(
+            return AST.Address.FromA1String(
                 addrStr.ToUpper(),
-                AST.AddressMode.Absolute,
-                AST.AddressMode.Absolute,
                 worksheetName,
                 (workbookName.EndsWith(".xls") ? workbookName : workbookName + ".xls"),
                 ""  // we don't care about paths
