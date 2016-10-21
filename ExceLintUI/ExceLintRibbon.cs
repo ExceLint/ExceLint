@@ -810,11 +810,11 @@ namespace ExceLintUI
 
         private void cancelRemoveState()
         {
-            Thread.Sleep(1000);
+            Thread.Sleep(30000);
 
             foreach(KeyValuePair<Excel.Workbook,Boolean> kvp in wbShutdown)
             {
-                if (kvp.Value)
+                if (kvp.Value && kvp.Key != null)
                 {
                     wbShutdown[kvp.Key] = false;
                 }
