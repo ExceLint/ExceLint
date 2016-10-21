@@ -18,7 +18,7 @@ namespace ExceLintFileFormats
 
         public string Comment
         {
-            get { return BugKind.ToLog() + ": " + Note; }
+            get { return BugKind.ToString() + ": " + Note; }
         }
     };
 
