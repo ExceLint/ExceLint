@@ -628,6 +628,10 @@ namespace ExceLintUI
                     foreach (var annot in annots)
                     {
                         var rng = ParcelCOMShim.Address.GetCOMObject(annot.Item1, Globals.ThisAddIn.Application);
+                        if (!String.IsNullOrWhiteSpace(rng.Comment.Text()))
+                        {
+                            rng.Comment.Delete();
+                        }
                         rng.AddComment(annot.Item2.Comment);
                     }
 
@@ -682,6 +686,10 @@ namespace ExceLintUI
                 currentWorkbook.Annotations.SetAnnotationFor(cursorAddr, annot);
 
                 // stick note into workbook
+                if (!String.IsNullOrWhiteSpace(cursor.Comment.Text()))
+                {
+                    cursor.Comment.Delete();
+                }
                 cursor.AddComment(annot.Comment);
             }
         }
