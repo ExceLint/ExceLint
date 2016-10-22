@@ -73,7 +73,7 @@ open System.Text.RegularExpressions
         printfn "            analyzes formulas"
         printfn "-thresh <n> sets max %% to inspect at n%%; default 5%%"
         printfn "\nExample:\n"
-        printfn "ExceLintRunner.exe \"C:\\data\" \"C:\\output\" \"C:\\CUSTODES\\smell_detection_result.csv\" \"C:\\ProgramData\\Oracle\\Java\\javapath\\java.exe\" \"C:\\CUSTODES\\cc2.jar\" -verbose -allcells -rows -columns -levels -css"
+        printfn "ExceLintRunner.exe \"C:\\data\" \"C:\\output\" \"C:\\EXCELINT\\ground_truth.csv\" \"C:\\CUSTODES\\smell_detection_result.csv\" \"C:\\ProgramData\\Oracle\\Java\\javapath\\java.exe\" \"C:\\CUSTODES\\cc2.jar\" -verbose -allcells -rows -columns -levels -css"
         printfn "\nHelp:\n"
         printfn "ExceLintRunner.exe -help"
 
