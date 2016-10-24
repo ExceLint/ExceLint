@@ -342,6 +342,7 @@
 		<row><td>COMWrapper.Primary_output</td><td>{95640401-1A0F-41A1-9772-BDBB2A0F5119}</td><td>INSTALLDIR</td><td>2</td><td/><td>comwrapper.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>Depends.Primary_output</td><td>{369C356D-424E-4AC3-88F0-D8B0A8482DB8}</td><td>INSTALLDIR</td><td>2</td><td/><td>depends.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ExceLint.Primary_Output</td><td>{83B6A89F-7000-4FE7-9A33-999ED1B02884}</td><td>INSTALLDIR</td><td>2</td><td/><td>excelint.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExceLintCLIGenerator.Primary_output</td><td>{88985231-5E94-4F48-ADD5-E05762122494}</td><td>INSTALLDIR</td><td>2</td><td/><td>excelintcligenerator.primary</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ExceLintRunner.Primary_Output</td><td>{CDEC7122-1DA9-4E14-BA49-612E3B56AB22}</td><td>INSTALLDIR</td><td>2</td><td/><td>excelintrunner.primary_outpu</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ExceLintUI.Primary_output</td><td>{2C3B0C00-E125-44B6-8744-FF6D299C0D95}</td><td>INSTALLDIR</td><td>2</td><td/><td>excelintui.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ExcelParser.Primary_Output</td><td>{9DC8BA28-208A-4CD0-9EF7-3C52C2354273}</td><td>INSTALLDIR</td><td>2</td><td/><td>excelparser.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
@@ -1060,6 +1061,7 @@
 		<row><td>INSTALLDIR</td><td>COMWrapper.Primary_output</td></row>
 		<row><td>INSTALLDIR</td><td>Depends.Primary_output</td></row>
 		<row><td>INSTALLDIR</td><td>ExceLint.Primary_Output</td></row>
+		<row><td>INSTALLDIR</td><td>ExceLintCLIGenerator.Primary_output</td></row>
 		<row><td>INSTALLDIR</td><td>ExceLintRunner.Primary_Output</td></row>
 		<row><td>INSTALLDIR</td><td>ExceLintUI.Primary_output</td></row>
 		<row><td>INSTALLDIR</td><td>ExcelParser.Primary_Output</td></row>
@@ -1885,6 +1887,7 @@
 		<row><td>AlwaysInstall</td><td>COMWrapper.Primary_output</td></row>
 		<row><td>AlwaysInstall</td><td>Depends.Primary_output</td></row>
 		<row><td>AlwaysInstall</td><td>ExceLint.Primary_Output</td></row>
+		<row><td>AlwaysInstall</td><td>ExceLintCLIGenerator.Primary_output</td></row>
 		<row><td>AlwaysInstall</td><td>ExceLintRunner.Primary_Output</td></row>
 		<row><td>AlwaysInstall</td><td>ExceLintUI.Primary_output</td></row>
 		<row><td>AlwaysInstall</td><td>ExcelParser.Primary_Output</td></row>
@@ -1909,6 +1912,7 @@
 		<row><td>comwrapper.primary_output</td><td>COMWrapper.Primary_output</td><td>COMWrapper.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;COMWrapper&gt;|Built</td><td>3</td><td/></row>
 		<row><td>depends.primary_output</td><td>Depends.Primary_output</td><td>Depends.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;Depends&gt;|Built</td><td>3</td><td/></row>
 		<row><td>excelint.primary_output</td><td>ExceLint.Primary_Output</td><td>ExceLint.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLint&gt;|Built</td><td>3</td><td/></row>
+		<row><td>excelintcligenerator.primary</td><td>ExceLintCLIGenerator.Primary_output</td><td>ExceLintCLIGenerator.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLintCLIGenerator&gt;|Built</td><td>3</td><td/></row>
 		<row><td>excelintrunner.primary_outpu</td><td>ExceLintRunner.Primary_Output</td><td>ExceLintRunner.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLintRunner&gt;|Built</td><td>3</td><td/></row>
 		<row><td>excelintui.dll.manifest</td><td>ISX_DEFAULTCOMPONENT</td><td>EXCELI~1.MAN|ExceLintUI.dll.manifest</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISPROJECTFOLDER&gt;..\ExceLintUI\bin\Release\ExceLintUI.dll.manifest</td><td>1</td><td/></row>
 		<row><td>excelintui.primary_output</td><td>ExceLintUI.Primary_output</td><td>ExceLintUI.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLintUI&gt;|Built</td><td>3</td><td/></row>
@@ -2063,6 +2067,7 @@
 		<row><td>COMWrapper.Primary_output</td><td/><td/><td>_42663356_B917_47C3_8D1E_19E427C926AF_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>Depends.Primary_output</td><td/><td/><td>_087AC475_391E_410F_9A8C_D3026EF5A685_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ExceLint.Primary_Output</td><td/><td/><td>_7EA62BF1_D9E9_494B_97A1_885DF3C759CA_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ExceLintCLIGenerator.Primary_output</td><td/><td/><td>_C71BA997_66C9_4E78_9B1C_9D31921F32CA_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ExceLintRunner.Primary_Output</td><td/><td/><td>_2B86DE73_1C30_41A8_B94B_D1F468A8F53C_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ExceLintUI.Primary_output</td><td/><td/><td>_7954D820_BA00_42A8_9E38_62C0BD89A08E_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ExcelParser.Primary_Output</td><td/><td/><td>_F52FDEAB_E4F4_468B_BB19_BE824F0742B7_FILTER</td><td/><td/><td/><td/></row>
@@ -2351,6 +2356,7 @@
 		<row><td>CommonFilesFolder</td><td/><td/><td>1</td></row>
 		<row><td>Depends</td><td>Depends\Depends\Depends.csproj</td><td/><td>2</td></row>
 		<row><td>ExceLint</td><td>ExceLint\ExceLint.fsproj</td><td/><td>2</td></row>
+		<row><td>ExceLintCLIGenerator</td><td>ExceLintCLIGenerator\ExceLintCLIGenerator.csproj</td><td/><td>2</td></row>
 		<row><td>ExceLintRunner</td><td>ExceLintRunner\ExceLintRunner.fsproj</td><td/><td>2</td></row>
 		<row><td>ExceLintUI</td><td>ExceLintUI\ExceLintUI.csproj</td><td/><td>2</td></row>
 		<row><td>ExcelParser</td><td>Depends\parcel\Parcel\ExcelParser.fsproj</td><td/><td>2</td></row>
@@ -3772,6 +3778,7 @@
 		<row><td>IDS__TargetReq_DESC_RESOLUTION</td><td>1033</td><td>The screen resolution is not adequate for running [ProductName].</td><td>0</td><td/><td>1646578447</td></row>
 		<row><td>ID_STRING1</td><td>1033</td><td>http://www.PLASMA-at-UMass.com</td><td>0</td><td/><td>1915007374</td></row>
 		<row><td>ID_STRING2</td><td>1033</td><td>PLASMA-at-UMass</td><td>0</td><td/><td>1915007374</td></row>
+		<row><td>ID_STRING3</td><td>1033</td><td>EXCELI~1|ExceLint Batch GUI</td><td>0</td><td/><td>-987440717</td></row>
 		<row><td>IIDS_UITEXT_FeatureUninstalled</td><td>1033</td><td>This feature will remain uninstalled.</td><td>0</td><td/><td>1646578447</td></row>
 	</table>
 
@@ -3886,6 +3893,7 @@
 		<col def="S255">ISBuildSourcePath</col>
 		<col def="I2">ISIconIndex</col>
 		<row><td>ARPPRODUCTICON.exe</td><td/><td>&lt;ISProductFolder&gt;\redist\Language Independent\OS Independent\setupicon.ico</td><td>0</td></row>
+		<row><td>NewShortcut1_1ABF1C861049444D820A3814F7C891AC.exe</td><td/><td>&lt;ISProjectFolder&gt;\burnsy.ico</td><td>0</td></row>
 	</table>
 
 	<table name="IniFile">
@@ -4393,7 +4401,7 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS</td><td>##IDS_PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS##</td><td/></row>
 		<row><td>ProductCode</td><td>{75358FED-928E-4DC6-A469-629B45283011}</td><td/></row>
 		<row><td>ProductName</td><td>ExceLint</td><td/></row>
-		<row><td>ProductVersion</td><td>1.00.0019</td><td/></row>
+		<row><td>ProductVersion</td><td>1.00.0020</td><td/></row>
 		<row><td>ProgressType0</td><td>install</td><td/></row>
 		<row><td>ProgressType1</td><td>Installing</td><td/></row>
 		<row><td>ProgressType2</td><td>installed</td><td/></row>
@@ -4557,6 +4565,7 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<col def="S255">ISComments</col>
 		<col def="S255">ISShortcutName</col>
 		<col def="I4">ISAttributes</col>
+		<row><td>NewShortcut1</td><td>DesktopFolder</td><td>##ID_STRING3##</td><td>ExceLintCLIGenerator.Primary_output</td><td>AlwaysInstall</td><td/><td/><td/><td>NewShortcut1_1ABF1C861049444D820A3814F7C891AC.exe</td><td>0</td><td>1</td><td/><td/><td/><td/><td/><td/><td/><td/></row>
 	</table>
 
 	<table name="Signature">

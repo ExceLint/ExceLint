@@ -406,7 +406,7 @@
             // annotateThisCell
             // 
             this.annotateThisCell.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.annotateThisCell.Image = global::ExceLintUI.Properties.Resources.pain;
+            this.annotateThisCell.Image = global::ExceLintUI.Properties.Resources.correct_small;
             this.annotateThisCell.Label = "Annotate Current Cell";
             this.annotateThisCell.Name = "annotateThisCell";
             this.annotateThisCell.ShowImage = true;
