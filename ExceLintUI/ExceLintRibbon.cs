@@ -601,22 +601,8 @@ namespace ExceLintUI
 
                     if (System.IO.File.Exists(fileName))
                     {
-                        // file exists, overwrite or append?
-                        var ooa = new OverwriteOrAppend();
-                        ooa.Message = "The file '" + System.IO.Path.GetFileName(fileName) + "' already exists. Overwrite or append?";
-                        var ooaResult = ooa.ShowDialog();
-
-                        if (ooaResult == System.Windows.Forms.DialogResult.OK)
-                        {
-                            // this means append
-                            // try to read the file
-                            Annotations = ExceLintGroundTruth.Load(fileName);
-                        } else
-                        {
-                            // this means overwrite
-                            // just create a new one
-                            Annotations = ExceLintGroundTruth.Create(fileName);
-                        }
+                        // append
+                        Annotations = ExceLintGroundTruth.Load(fileName);
                     }
                     else
                     {
