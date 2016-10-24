@@ -76,6 +76,7 @@
             this.benchmarkDirTextbox.Name = "benchmarkDirTextbox";
             this.benchmarkDirTextbox.Size = new System.Drawing.Size(646, 20);
             this.benchmarkDirTextbox.TabIndex = 1;
+            this.benchmarkDirTextbox.TextChanged += new System.EventHandler(this.benchmarkDirTextbox_TextChanged);
             // 
             // outputDirectoryTextbox
             // 
@@ -83,6 +84,7 @@
             this.outputDirectoryTextbox.Name = "outputDirectoryTextbox";
             this.outputDirectoryTextbox.Size = new System.Drawing.Size(646, 20);
             this.outputDirectoryTextbox.TabIndex = 3;
+            this.outputDirectoryTextbox.TextChanged += new System.EventHandler(this.outputDirectoryTextbox_TextChanged);
             // 
             // outputDirecotryLabel
             // 
@@ -99,6 +101,7 @@
             this.excelintGroundTruthCSVTextbox.Name = "excelintGroundTruthCSVTextbox";
             this.excelintGroundTruthCSVTextbox.Size = new System.Drawing.Size(646, 20);
             this.excelintGroundTruthCSVTextbox.TabIndex = 5;
+            this.excelintGroundTruthCSVTextbox.TextChanged += new System.EventHandler(this.excelintGroundTruthCSVTextbox_TextChanged);
             // 
             // excelintGroundTruthLabel
             // 
@@ -115,6 +118,7 @@
             this.custodesGroundTruthCSVTextbox.Name = "custodesGroundTruthCSVTextbox";
             this.custodesGroundTruthCSVTextbox.Size = new System.Drawing.Size(646, 20);
             this.custodesGroundTruthCSVTextbox.TabIndex = 7;
+            this.custodesGroundTruthCSVTextbox.TextChanged += new System.EventHandler(this.custodesGroundTruthCSVTextbox_TextChanged);
             // 
             // custodesGroundTruthCSVLabel
             // 
@@ -131,6 +135,7 @@
             this.javaPathTextbox.Name = "javaPathTextbox";
             this.javaPathTextbox.Size = new System.Drawing.Size(646, 20);
             this.javaPathTextbox.TabIndex = 9;
+            this.javaPathTextbox.TextChanged += new System.EventHandler(this.javaPathTextbox_TextChanged);
             // 
             // label1
             // 
@@ -147,6 +152,7 @@
             this.custodesJARPathTextbox.Name = "custodesJARPathTextbox";
             this.custodesJARPathTextbox.Size = new System.Drawing.Size(646, 20);
             this.custodesJARPathTextbox.TabIndex = 11;
+            this.custodesJARPathTextbox.TextChanged += new System.EventHandler(this.custodesJARPathTextbox_TextChanged);
             // 
             // custodesJarLabel
             // 
@@ -166,6 +172,7 @@
             this.verboseCheckBox.TabIndex = 12;
             this.verboseCheckBox.Text = "Verbose Output";
             this.verboseCheckBox.UseVisualStyleBackColor = true;
+            this.verboseCheckBox.CheckedChanged += new System.EventHandler(this.verboseCheckBox_CheckedChanged);
             // 
             // noexitCheckBox
             // 
@@ -176,6 +183,7 @@
             this.noexitCheckBox.TabIndex = 13;
             this.noexitCheckBox.Text = "Require Keypress Before Exiting";
             this.noexitCheckBox.UseVisualStyleBackColor = true;
+            this.noexitCheckBox.CheckedChanged += new System.EventHandler(this.noexitCheckBox_CheckedChanged);
             // 
             // spectralCheckBox
             // 
@@ -197,6 +205,7 @@
             this.allcellsCheckBox.TabIndex = 15;
             this.allcellsCheckBox.Text = "Condition on All Cells";
             this.allcellsCheckBox.UseVisualStyleBackColor = true;
+            this.allcellsCheckBox.CheckedChanged += new System.EventHandler(this.allcellsCheckBox_CheckedChanged);
             // 
             // columnsCheckBox
             // 
@@ -207,6 +216,7 @@
             this.columnsCheckBox.TabIndex = 16;
             this.columnsCheckBox.Text = "Condition on Columns";
             this.columnsCheckBox.UseVisualStyleBackColor = true;
+            this.columnsCheckBox.CheckedChanged += new System.EventHandler(this.columnsCheckBox_CheckedChanged);
             // 
             // rowsCheckBox
             // 
@@ -217,6 +227,7 @@
             this.rowsCheckBox.TabIndex = 17;
             this.rowsCheckBox.Text = "Condition on Rows";
             this.rowsCheckBox.UseVisualStyleBackColor = true;
+            this.rowsCheckBox.CheckedChanged += new System.EventHandler(this.rowsCheckBox_CheckedChanged);
             // 
             // levelsCheckBox
             // 
@@ -227,6 +238,7 @@
             this.levelsCheckBox.TabIndex = 18;
             this.levelsCheckBox.Text = "Condition on Levels";
             this.levelsCheckBox.UseVisualStyleBackColor = true;
+            this.levelsCheckBox.CheckedChanged += new System.EventHandler(this.levelsCheckBox_CheckedChanged);
             // 
             // sheetsCheckbox
             // 
@@ -237,6 +249,7 @@
             this.sheetsCheckbox.TabIndex = 19;
             this.sheetsCheckbox.Text = "Condition on Worksheets";
             this.sheetsCheckbox.UseVisualStyleBackColor = true;
+            this.sheetsCheckbox.CheckedChanged += new System.EventHandler(this.sheetsCheckbox_CheckedChanged);
             // 
             // addrmodeCheckBox
             // 
@@ -247,6 +260,7 @@
             this.addrmodeCheckBox.TabIndex = 20;
             this.addrmodeCheckBox.Text = "Infer Address Modes";
             this.addrmodeCheckBox.UseVisualStyleBackColor = true;
+            this.addrmodeCheckBox.CheckedChanged += new System.EventHandler(this.addrmodeCheckBox_CheckedChanged);
             // 
             // weighIntrinsicCheckBox
             // 
@@ -257,6 +271,7 @@
             this.weighIntrinsicCheckBox.TabIndex = 21;
             this.weighIntrinsicCheckBox.Text = "Weigh by Intrinsic Anomalousness";
             this.weighIntrinsicCheckBox.UseVisualStyleBackColor = true;
+            this.weighIntrinsicCheckBox.CheckedChanged += new System.EventHandler(this.weighIntrinsicCheckBox_CheckedChanged);
             // 
             // weighCSSCheckBox
             // 
@@ -267,6 +282,7 @@
             this.weighCSSCheckBox.TabIndex = 22;
             this.weighCSSCheckBox.Text = "Weigh by Conditioning Set Siz";
             this.weighCSSCheckBox.UseVisualStyleBackColor = true;
+            this.weighCSSCheckBox.CheckedChanged += new System.EventHandler(this.weighCSSCheckBox_CheckedChanged);
             // 
             // analyzeInputsCheckBox
             // 
@@ -277,6 +293,7 @@
             this.analyzeInputsCheckBox.TabIndex = 23;
             this.analyzeInputsCheckBox.Text = "Also Analyze Inputs";
             this.analyzeInputsCheckBox.UseVisualStyleBackColor = true;
+            this.analyzeInputsCheckBox.CheckedChanged += new System.EventHandler(this.analyzeInputsCheckBox_CheckedChanged);
             // 
             // label2
             // 
@@ -293,6 +310,7 @@
             this.thresholdTextBox.Name = "thresholdTextBox";
             this.thresholdTextBox.Size = new System.Drawing.Size(72, 20);
             this.thresholdTextBox.TabIndex = 25;
+            this.thresholdTextBox.TextChanged += new System.EventHandler(this.thresholdTextBox_TextChanged);
             // 
             // clipboardButton
             // 
@@ -302,6 +320,7 @@
             this.clipboardButton.TabIndex = 26;
             this.clipboardButton.Text = "Copy Invocation to Clipboard";
             this.clipboardButton.UseVisualStyleBackColor = true;
+            this.clipboardButton.Click += new System.EventHandler(this.clipboardButton_Click);
             // 
             // excelintrunnerPathTextBox
             // 
@@ -309,6 +328,7 @@
             this.excelintrunnerPathTextBox.Name = "excelintrunnerPathTextBox";
             this.excelintrunnerPathTextBox.Size = new System.Drawing.Size(646, 20);
             this.excelintrunnerPathTextBox.TabIndex = 28;
+            this.excelintrunnerPathTextBox.TextChanged += new System.EventHandler(this.excelintrunnerPathTextBox_TextChanged);
             // 
             // label3
             // 

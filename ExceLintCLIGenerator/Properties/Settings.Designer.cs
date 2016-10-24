@@ -250,5 +250,17 @@ namespace ExceLintCLIGenerator.Properties {
                 this["thresholdDefault"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool addrmodeFlagDefalt {
+            get {
+                return ((bool)(this["addrmodeFlagDefalt"]));
+            }
+            set {
+                this["addrmodeFlagDefalt"] = value;
+            }
+        }
     }
 }
