@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows.Forms;
+using System.Collections.Generic;
 
 namespace ExceLintCLIGenerator
 {
@@ -159,7 +160,7 @@ namespace ExceLintCLIGenerator
             Properties.Settings.Default["noexitFlagDefault"] = noexitCheckBox.Checked;
         }
 
-        private string generateCLIInvocation()
+        private string[] generateCLIInvocation(bool includeEXE)
         {
             /* 
             -verbose    log per-spreadsheet flagged cells as separate CSVs
@@ -180,26 +181,48 @@ namespace ExceLintCLIGenerator
             -thresh <n> sets max % to inspect at n%; default 5%
             */
 
-            var flags =
-                verboseCheckBox.Checked ? "-verbose" : "" +
-                noexitCheckBox.Checked ? "-"
+            var flags = new List<string>();
 
-            return
-                excelintrunnerPathTextBox.Text + " " +
-                benchmarkDirTextbox.Text + " " + 
-                outputDirectoryTextbox.Text + " " +
-                excelintGroundTruthCSVTextbox.Text + " " +
-                custodesGroundTruthCSVTextbox.Text + " " +
-                javaPathTextbox.Text + " " +
-                custodesJARPathTextbox.Text + " " +
-                thresholdTextBox.Text + " " +
-                flags
-                ;
+            if (includeEXE) flags.Add('"' + excelintrunnerPathTextBox.Text + '"');
+            flags.Add('"' + benchmarkDirTextbox.Text + '"');
+            flags.Add('"' + outputDirectoryTextbox.Text + '"');
+            flags.Add('"' + excelintGroundTruthCSVTextbox.Text + '"');
+            flags.Add('"' + custodesGroundTruthCSVTextbox.Text + '"');
+            flags.Add('"' + javaPathTextbox.Text + '"');
+            flags.Add('"' + custodesJARPathTextbox.Text + '"');
+            flags.Add(thresholdTextBox.Text);
+
+            if (verboseCheckBox.Checked) flags.Add("-verbose");
+            if (noexitCheckBox.Checked) flags.Add("-noexit");
+            if (spectralCheckBox.Checked) flags.Add("-spectral");
+            if (allcellsCheckBox.Checked) flags.Add("-allcells");
+            if (columnsCheckBox.Checked) flags.Add("-columns");
+            if (rowsCheckBox.Checked) flags.Add("-rows");
+            if (levelsCheckBox.Checked) flags.Add("-levels");
+            if (sheetsCheckbox.Checked) flags.Add("-sheets");
+            if (addrmodeCheckBox.Checked) flags.Add("-addrmode");
+            if (weighIntrinsicCheckBox.Checked) flags.Add("-intrinsic");
+            if (weighCSSCheckBox.Checked) flags.Add("-css");
+            if (analyzeInputsCheckBox.Checked) flags.Add("-inputstoo");
+
+            return flags.ToArray();
+        }
+
+        private string generateCLIInvocationString()
+        {
+            return String.Join(" ", generateCLIInvocation(includeEXE: true));
         }
 
         private void clipboardButton_Click(object sender, EventArgs e)
         {
+            Clipboard.SetText(generateCLIInvocationString());
+        }
 
+        private void button1_Click(object sender, EventArgs e)
+        {
+            var flags = generateCLIInvocation(includeEXE: false);
+            var o = new Output(excelintrunnerPathTextBox.Text, flags);
+            o.Show();
         }
     }
 }
