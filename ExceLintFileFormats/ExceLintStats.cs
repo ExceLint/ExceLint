@@ -16,9 +16,7 @@ namespace ExceLintFileFormats
             _cw = new CsvWriter(_sw);
 
             // write header
-            _cw.WriteHeader<ExceLintStats>();
-
-            _sw.Flush();
+            _cw.WriteHeader<ExceLintStatsRow>();
         }
 
         public void WriteRow(ExceLintStatsRow row)
