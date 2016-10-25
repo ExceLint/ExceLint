@@ -23,6 +23,8 @@ namespace ExceLintFileFormats
                     return ReferenceBugInverse;
                 case "cwfe":
                     return ConstantWhereFormulaExpected;
+                case "pmi":
+                    return PotentialMaintenanceIssue;
                 default:
                     throw new UnknownBugType(kindstr);
             }
@@ -36,7 +38,8 @@ namespace ExceLintFileFormats
                     NotABug,
                     ReferenceBug,
                     ReferenceBugInverse,
-                    ConstantWhereFormulaExpected
+                    ConstantWhereFormulaExpected,
+                    PotentialMaintenanceIssue
                 };
             }
         }
@@ -59,6 +62,11 @@ namespace ExceLintFileFormats
         public static ConstantWhereFormulaExpected ConstantWhereFormulaExpected
         {
             get { return ConstantWhereFormulaExpected.Instance; }
+        }
+
+        public static PotentialMaintenanceIssue PotentialMaintenanceIssue
+        {
+            get { return PotentialMaintenanceIssue.Instance; }
         }
 
         public static BugKind DefaultKind
@@ -180,6 +188,35 @@ namespace ExceLintFileFormats
         public override string ToString()
         {
             return "Constant where formula expected";
+        }
+    }
+
+    public class PotentialMaintenanceIssue : BugKind
+    {
+        private static PotentialMaintenanceIssue instance;
+
+        private PotentialMaintenanceIssue() { }
+
+        public static PotentialMaintenanceIssue Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    instance = new PotentialMaintenanceIssue();
+                }
+                return instance;
+            }
+        }
+
+        public override string ToLog()
+        {
+            return "pmi";
+        }
+
+        public override string ToString()
+        {
+            return "Potential maintenance issue";
         }
     }
 }
