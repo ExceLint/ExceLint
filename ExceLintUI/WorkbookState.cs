@@ -854,7 +854,7 @@ namespace ExceLintUI
             return dag.ToDOT();
         }
 
-        public string GetSquareMatrices(bool forceDAGBuild)
+        public string GetSquareMatrices(bool forceDAGBuild, bool normalizeRefSpace, bool normalizeSSSpace)
         {
             // Disable screen updating during analysis to speed things up
             _app.ScreenUpdating = false;
@@ -871,8 +871,7 @@ namespace ExceLintUI
             var cWrksheet = cursorAddr.WorksheetName;
 
             // get matrices for this sheet
-            var formulas = _dag.getAllFormulaAddrs().Where(f => f.WorksheetName == cWrksheet);
-            var matrices = formulas.Select(f => ExceLint.Vector.SquareMatrixForCell(f, _dag));
+            var matrices = ExceLint.Vector.AllSquareMatrices(_dag, normalizeRefSpace, normalizeSSSpace, cWrksheet);
 
             // convert to CSV
             string[] rows = matrices.Select(tup =>

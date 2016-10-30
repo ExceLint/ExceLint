@@ -713,7 +713,7 @@ namespace ExceLintUI
 
         private void ExportSquareMatrixButton_Click(object sender, RibbonControlEventArgs e)
         {
-            var csv = CurrentWorkbook.GetSquareMatrices(forceBuildDAG.Checked);
+            var csv = CurrentWorkbook.GetSquareMatrices(forceBuildDAG.Checked, normRefCheckBox.Checked, normSSCheckBox.Checked);
             System.Windows.Forms.Clipboard.SetText(csv);
             System.Windows.Forms.MessageBox.Show("Exported to clipboard.");
         }

@@ -208,10 +208,56 @@
             let output = rebase (vectors cell dag depth isMixed)
             output
 
+        let private oldAspect(data: (X*Y*X*Y)[]) : double =
+            // compute aspect ratio
+            let width_min = Array.map (fun (sdx, sdy, x, y) -> x) data |> Array.min
+            let height_min = Array.map (fun (sdx, sdy, x, y) -> y) data |> Array.min
+            let width_max = Array.map (fun (sdx, sdy, x, y) -> x) data |> Array.max
+            let height_max = Array.map (fun (sdx, sdy, x, y) -> y) data |> Array.max
+            let width = width_max - width_min + 1
+            let height = height_max - height_min + 1
+            if width < height then
+                float(height) / float(width)
+            else
+                float(width) / float(height)
+
+        let private normalizeColumn(data: double[]) : double[] =
+            let min = Array.min data
+            let max = Array.max data
+            if max = min then
+                data 
+            else
+                Array.map (fun x -> (x - min) / ( max - min)) data
+
         let SquareMatrixForCell(cell: AST.Address)(dag: DAG) : X*Y*X*Y =
             let debugfrm = dag.getFormulaAtAddress(cell)
             let vs = getVectors cell dag (*transitive*) false (*isForm*) true (*isRel*) true (*isMixed*) true (*isOffSheetInsensitive*) true
             SquareMatrix (cell.X, cell.Y) vs
+
+        let column(i: int)(data: (X*Y*X*Y)[]) : double[] =
+            Array.map (fun row ->
+               let (x1,x2,x3,x4) = row
+               let arr = [| x1; x2; x3; x4 |]
+               double (arr.[i])
+            ) data
+
+        let combine(cols: double[][]) : (double*double*double*double)[] =
+            let len = cols.[0].Length
+            let mutable rows: (double*double*double*double) list = []
+            for i in 0..len-1 do
+                rows <- (cols.[0].[i], cols.[1].[i], cols.[2].[i], cols.[3].[i]) :: rows
+            List.rev rows |> List.toArray
+
+        let AllSquareMatrices(dag: DAG)(normalizeRefSpace: bool)(normalizeSSSpace: bool)(wsname: string) : (double*double*double*double)[] =
+            let fs = dag.getAllFormulaAddrs() |> Array.filter (fun f -> f.WorksheetName = wsname) 
+            let mats = Array.map (fun f -> SquareMatrixForCell f dag) fs
+
+            let sdx_vect = if normalizeRefSpace then normalizeColumn (column 0 mats) else column 0 mats
+            let sdy_vect = if normalizeRefSpace then normalizeColumn (column 1 mats) else column 1 mats
+            let x_vect = if normalizeSSSpace then normalizeColumn (column 2 mats) else column 2 mats
+            let y_vect = if normalizeSSSpace then normalizeColumn (column 3 mats) else column 3 mats
+
+            combine([| sdx_vect; sdy_vect; x_vect; y_vect |])
 
         type DeepInputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
