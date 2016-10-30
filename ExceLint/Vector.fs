@@ -131,6 +131,11 @@
         let private L2NormRVSum(vs: RelativeVector[]) : double =
             vs |> Array.map L2NormRV |> Array.sum
 
+        let private SquareMatrix(origin: X*Y)(vs: RelativeVector[]) : X*Y*X*Y =
+            let (x,y) = origin
+            let xyoff = vs |> Array.fold (fun (xacc: X, yacc: Y)(x': X,y': Y,z': Z) -> xacc + x', yacc + y') (0,0)
+            (fst xyoff, snd xyoff, x, y)
+
         let transitiveInputVectors(fCell: AST.Address)(dag : DAG)(depth: int option)(mixed: bool) : FullyQualifiedVector[] =
             let rec tfVect(tailO: AST.Address option)(head: AST.Address)(depth: int option) : FullyQualifiedVector list =
                 let vlist = match tailO with
@@ -202,6 +207,11 @@
                     Array.map (fun v -> relativeToOrigin v dag isOSI)
             let output = rebase (vectors cell dag depth isMixed)
             output
+
+        let SquareMatrixForCell(cell: AST.Address)(dag: DAG) : X*Y*X*Y =
+            let debugfrm = dag.getFormulaAtAddress(cell)
+            let vs = getVectors cell dag (*transitive*) false (*isForm*) true (*isRel*) true (*isMixed*) true (*isOffSheetInsensitive*) true
+            SquareMatrix (cell.X, cell.Y) vs
 
         type DeepInputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
@@ -298,3 +308,4 @@
             static member capability : string*Capability =
                 (typeof<DeepOutputVectorMixedL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepOutputVectorMixedL2NormSum.run } )
+

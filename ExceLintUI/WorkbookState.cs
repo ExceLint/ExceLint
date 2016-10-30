@@ -853,5 +853,39 @@ namespace ExceLintUI
             var dag = new Depends.DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
             return dag.ToDOT();
         }
+
+        public string GetSquareMatrices(bool forceDAGBuild)
+        {
+            // Disable screen updating during analysis to speed things up
+            _app.ScreenUpdating = false;
+
+            // build DAG
+            using (var pb = new ProgBar())
+            {
+                UpdateDAG(forceDAGBuild, pb);
+            }
+
+            // get cursor worksheet
+            var cursor = (Excel.Range)_app.Selection;
+            AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, _app.ActiveWorkbook);
+            var cWrksheet = cursorAddr.WorksheetName;
+
+            // get matrices for this sheet
+            var formulas = _dag.getAllFormulaAddrs().Where(f => f.WorksheetName == cWrksheet);
+            var matrices = formulas.Select(f => ExceLint.Vector.SquareMatrixForCell(f, _dag));
+
+            // convert to CSV
+            string[] rows = matrices.Select(tup =>
+            {
+                string[] s = new string[] { tup.Item1.ToString(), tup.Item2.ToString(), tup.Item3.ToString(), tup.Item4.ToString() };
+                return String.Join(",", s);
+            }).ToArray();
+
+            string csv = String.Join("\n", rows);
+
+            _app.ScreenUpdating = true;
+
+            return csv;
+        }
     }
 }

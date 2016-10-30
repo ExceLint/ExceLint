@@ -77,6 +77,7 @@
             this.separator4 = this.Factory.CreateRibbonSeparator();
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
+            this.ExportSquareMatrixButton = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -140,6 +141,7 @@
             this.box1.Items.Add(this.showVectors);
             this.box1.Items.Add(this.spectralPlot);
             this.box1.Items.Add(this.scatter3D);
+            this.box1.Items.Add(this.ExportSquareMatrixButton);
             this.box1.Name = "box1";
             // 
             // AnalyzeButton
@@ -412,6 +414,15 @@
             this.annotateThisCell.ShowImage = true;
             this.annotateThisCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotateThisCell_Click);
             // 
+            // ExportSquareMatrixButton
+            // 
+            this.ExportSquareMatrixButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.ExportSquareMatrixButton.Image = ((System.Drawing.Image)(resources.GetObject("ExportSquareMatrixButton.Image")));
+            this.ExportSquareMatrixButton.Label = "Export Square Matrices";
+            this.ExportSquareMatrixButton.Name = "ExportSquareMatrixButton";
+            this.ExportSquareMatrixButton.ShowImage = true;
+            this.ExportSquareMatrixButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ExportSquareMatrixButton_Click);
+            // 
             // ExceLintRibbon
             // 
             this.Name = "ExceLintRibbon";
@@ -475,6 +486,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonSeparator separator4;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton annotate;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton annotateThisCell;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton ExportSquareMatrixButton;
     }
 
     partial class ThisRibbonCollection
