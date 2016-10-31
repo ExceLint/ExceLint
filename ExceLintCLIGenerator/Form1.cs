@@ -8,7 +8,19 @@ using System.Threading;
 
 namespace ExceLintCLIGenerator
 {
+    public class FileDoesNotExistException : Exception {
+        public FileDoesNotExistException(string message) : base(message) { }
+    }
 
+    public class InvalidJavaEXEPathException : Exception
+    {
+        public InvalidJavaEXEPathException(string message) : base(message) { }
+    }
+
+    public class InvalidJARPathException : Exception
+    {
+        public InvalidJARPathException(string message) : base(message) { }
+    }
 
     public partial class Form1 : Form
     {
@@ -19,11 +31,18 @@ namespace ExceLintCLIGenerator
             int shortPathLength
          );
 
-        private static string shortPath(string p)
+        private static string shortPath(string p, bool isFile)
         {
-            var sb = new StringBuilder(255);
-            GetShortPathName(p, sb, sb.Capacity);
-            return sb.ToString();
+            if ((isFile && System.IO.File.Exists(p)) || System.IO.Directory.Exists(p))
+            {
+                var sb = new StringBuilder(p.Length);
+                GetShortPathName(p, sb, sb.Capacity);
+                var str = sb.ToString();
+                return str;
+            } else
+            {
+                throw new FileDoesNotExistException(p);
+            }
         }
 
         public Form1()
@@ -220,16 +239,32 @@ namespace ExceLintCLIGenerator
                         analyzes formulas
             -thresh <n> sets max % to inspect at n%; default 5%
             */
-
             var flags = new List<string>();
 
-            if (includeEXE) flags.Add(shortPath(excelintrunnerPathTextBox.Text));
-            flags.Add(shortPath(benchmarkDirTextbox.Text));
-            flags.Add(shortPath(outputDirectoryTextbox.Text));
-            flags.Add(shortPath(excelintGroundTruthCSVTextbox.Text));
-            flags.Add(shortPath(custodesGroundTruthCSVTextbox.Text));
-            flags.Add(shortPath(javaPathTextbox.Text));
-            flags.Add(shortPath(custodesJARPathTextbox.Text));
+            if (includeEXE) flags.Add(shortPath(excelintrunnerPathTextBox.Text, isFile: true));
+            flags.Add(shortPath(benchmarkDirTextbox.Text, isFile: false));
+            flags.Add(shortPath(outputDirectoryTextbox.Text, isFile: false));
+            flags.Add(shortPath(excelintGroundTruthCSVTextbox.Text, isFile: true));
+            flags.Add(shortPath(custodesGroundTruthCSVTextbox.Text, isFile: true));
+
+            var javaPath = shortPath(javaPathTextbox.Text, isFile: true);
+            if (javaPath.EndsWith("java.exe", StringComparison.InvariantCultureIgnoreCase))
+            {
+                flags.Add(javaPath);
+            } else
+            {
+                throw new InvalidJavaEXEPathException(javaPath);
+            }
+
+            var jarPath = shortPath(custodesJARPathTextbox.Text, isFile: true);
+            if (jarPath.EndsWith(".jar", StringComparison.InvariantCultureIgnoreCase))
+            {
+                flags.Add(jarPath);
+            } else
+            {
+                throw new InvalidJARPathException(jarPath);
+            }
+            
             flags.Add("-thresh " + thresholdTextBox.Text);
 
             if (verboseCheckBox.Checked) flags.Add("-verbose");
@@ -255,7 +290,22 @@ namespace ExceLintCLIGenerator
 
         private void clipboardButton_Click(object sender, EventArgs e)
         {
-            Clipboard.SetText(generateCLIInvocationString());
+            try
+            {
+                Clipboard.SetText(generateCLIInvocationString());
+            }
+            catch (FileDoesNotExistException ex)
+            {
+                MessageBox.Show("Cannot find file:\n\n" + ex.Message);
+            }
+            catch (InvalidJavaEXEPathException ex)
+            {
+                MessageBox.Show("The following does not appear to be a valid path to the java.exe binary:\n\n" + ex.Message);
+            }
+            catch (InvalidJARPathException ex)
+            {
+                MessageBox.Show("The following does not appear to be a valid JAR file:\n\n" + ex.Message);
+            }
         }
 
         public static void runCommand(string cpath, string[] args)
@@ -285,8 +335,23 @@ namespace ExceLintCLIGenerator
 
         private void button1_Click(object sender, EventArgs e)
         {
-            var flags = generateCLIInvocation(includeEXE: false);
-            runCommand(shortPath(excelintrunnerPathTextBox.Text), flags);
+            try
+            {
+                var flags = generateCLIInvocation(includeEXE: false);
+                runCommand(shortPath(excelintrunnerPathTextBox.Text, isFile: true), flags);
+            }
+            catch (FileDoesNotExistException ex)
+            {
+                MessageBox.Show("Cannot find file:\n\n" + ex.Message);
+            }
+            catch (InvalidJavaEXEPathException ex)
+            {
+                MessageBox.Show("The following does not appear to be a valid path to the java.exe binary:\n\n" + ex.Message);
+            }
+            catch (InvalidJARPathException ex)
+            {
+                MessageBox.Show("The following does not appear to be a valid JAR file:\n\n" + ex.Message);
+            }
         }
     }
 }
