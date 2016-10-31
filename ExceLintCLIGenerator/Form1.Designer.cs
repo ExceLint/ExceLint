@@ -37,7 +37,7 @@
             this.custodesGroundTruthCSVTextbox = new System.Windows.Forms.TextBox();
             this.custodesGroundTruthCSVLabel = new System.Windows.Forms.Label();
             this.javaPathTextbox = new System.Windows.Forms.TextBox();
-            this.label1 = new System.Windows.Forms.Label();
+            this.javaexePathLabel = new System.Windows.Forms.Label();
             this.custodesJARPathTextbox = new System.Windows.Forms.TextBox();
             this.custodesJarLabel = new System.Windows.Forms.Label();
             this.verboseCheckBox = new System.Windows.Forms.CheckBox();
@@ -52,11 +52,11 @@
             this.weighIntrinsicCheckBox = new System.Windows.Forms.CheckBox();
             this.weighCSSCheckBox = new System.Windows.Forms.CheckBox();
             this.analyzeInputsCheckBox = new System.Windows.Forms.CheckBox();
-            this.label2 = new System.Windows.Forms.Label();
+            this.thresholdLabel = new System.Windows.Forms.Label();
             this.thresholdTextBox = new System.Windows.Forms.TextBox();
             this.clipboardButton = new System.Windows.Forms.Button();
             this.excelintrunnerPathTextBox = new System.Windows.Forms.TextBox();
-            this.label3 = new System.Windows.Forms.Label();
+            this.excelintRunnerEXEPathLabel = new System.Windows.Forms.Label();
             this.button1 = new System.Windows.Forms.Button();
             this.label4 = new System.Windows.Forms.Label();
             this.SuspendLayout();
@@ -139,12 +139,12 @@
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(9, 139);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(58, 13);
-            this.label1.TabIndex = 8;
-            this.label1.Text = "java.exe Path:";
+            this.javaexePathLabel.AutoSize = true;
+            this.javaexePathLabel.Location = new System.Drawing.Point(9, 139);
+            this.javaexePathLabel.Name = "label1";
+            this.javaexePathLabel.Size = new System.Drawing.Size(58, 13);
+            this.javaexePathLabel.TabIndex = 8;
+            this.javaexePathLabel.Text = "java.exe Path:";
             // 
             // custodesJARPathTextbox
             // 
@@ -297,12 +297,12 @@
             // 
             // label2
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(9, 191);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(68, 13);
-            this.label2.TabIndex = 24;
-            this.label2.Text = "Threshold %:";
+            this.thresholdLabel.AutoSize = true;
+            this.thresholdLabel.Location = new System.Drawing.Point(9, 191);
+            this.thresholdLabel.Name = "label2";
+            this.thresholdLabel.Size = new System.Drawing.Size(68, 13);
+            this.thresholdLabel.TabIndex = 24;
+            this.thresholdLabel.Text = "Threshold %:";
             // 
             // thresholdTextBox
             // 
@@ -332,12 +332,12 @@
             // 
             // label3
             // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(9, 9);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(131, 13);
-            this.label3.TabIndex = 27;
-            this.label3.Text = "ExceLintRunner.exe Path:";
+            this.excelintRunnerEXEPathLabel.AutoSize = true;
+            this.excelintRunnerEXEPathLabel.Location = new System.Drawing.Point(9, 9);
+            this.excelintRunnerEXEPathLabel.Name = "label3";
+            this.excelintRunnerEXEPathLabel.Size = new System.Drawing.Size(131, 13);
+            this.excelintRunnerEXEPathLabel.TabIndex = 27;
+            this.excelintRunnerEXEPathLabel.Text = "ExceLintRunner.exe Path:";
             // 
             // button1
             // 
@@ -366,10 +366,10 @@
             this.Controls.Add(this.label4);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.excelintrunnerPathTextBox);
-            this.Controls.Add(this.label3);
+            this.Controls.Add(this.excelintRunnerEXEPathLabel);
             this.Controls.Add(this.clipboardButton);
             this.Controls.Add(this.thresholdTextBox);
-            this.Controls.Add(this.label2);
+            this.Controls.Add(this.thresholdLabel);
             this.Controls.Add(this.analyzeInputsCheckBox);
             this.Controls.Add(this.weighCSSCheckBox);
             this.Controls.Add(this.weighIntrinsicCheckBox);
@@ -385,7 +385,7 @@
             this.Controls.Add(this.custodesJARPathTextbox);
             this.Controls.Add(this.custodesJarLabel);
             this.Controls.Add(this.javaPathTextbox);
-            this.Controls.Add(this.label1);
+            this.Controls.Add(this.javaexePathLabel);
             this.Controls.Add(this.custodesGroundTruthCSVTextbox);
             this.Controls.Add(this.custodesGroundTruthCSVLabel);
             this.Controls.Add(this.excelintGroundTruthCSVTextbox);
@@ -412,7 +412,7 @@
         private System.Windows.Forms.TextBox custodesGroundTruthCSVTextbox;
         private System.Windows.Forms.Label custodesGroundTruthCSVLabel;
         private System.Windows.Forms.TextBox javaPathTextbox;
-        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Label javaexePathLabel;
         private System.Windows.Forms.TextBox custodesJARPathTextbox;
         private System.Windows.Forms.Label custodesJarLabel;
         private System.Windows.Forms.CheckBox verboseCheckBox;
@@ -427,11 +427,11 @@
         private System.Windows.Forms.CheckBox weighIntrinsicCheckBox;
         private System.Windows.Forms.CheckBox weighCSSCheckBox;
         private System.Windows.Forms.CheckBox analyzeInputsCheckBox;
-        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Label thresholdLabel;
         private System.Windows.Forms.TextBox thresholdTextBox;
         private System.Windows.Forms.Button clipboardButton;
         private System.Windows.Forms.TextBox excelintrunnerPathTextBox;
-        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.Label excelintRunnerEXEPathLabel;
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Label label4;
     }

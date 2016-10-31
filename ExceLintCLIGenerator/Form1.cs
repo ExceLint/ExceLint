@@ -22,6 +22,11 @@ namespace ExceLintCLIGenerator
         public InvalidJARPathException(string message) : base(message) { }
     }
 
+    public class CannotBeEmptyException : Exception
+    {
+        public CannotBeEmptyException(string message) : base(message) { }
+    }
+
     public partial class Form1 : Form
     {
         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
@@ -38,6 +43,13 @@ namespace ExceLintCLIGenerator
                 var sb = new StringBuilder(p.Length);
                 GetShortPathName(p, sb, sb.Capacity);
                 var str = sb.ToString();
+
+                // fallback in case GetShortPathName returns the empty string
+                if (String.IsNullOrEmpty(str))
+                {
+                    return p;
+                }
+
                 return str;
             } else
             {
@@ -219,6 +231,18 @@ namespace ExceLintCLIGenerator
             Properties.Settings.Default.Save();
         }
 
+        private string notEmpty(string s, string fieldName)
+        {
+            var r = new System.Text.RegularExpressions.Regex("^[ ]*$");
+            if (r.IsMatch(s))
+            {
+                throw new CannotBeEmptyException(fieldName);
+            } else
+            {
+                return s;
+            }
+        }
+
         private string[] generateCLIInvocation(bool includeEXE)
         {
             /* 
@@ -241,13 +265,13 @@ namespace ExceLintCLIGenerator
             */
             var flags = new List<string>();
 
-            if (includeEXE) flags.Add(shortPath(excelintrunnerPathTextBox.Text, isFile: true));
-            flags.Add(shortPath(benchmarkDirTextbox.Text, isFile: false));
-            flags.Add(shortPath(outputDirectoryTextbox.Text, isFile: false));
-            flags.Add(shortPath(excelintGroundTruthCSVTextbox.Text, isFile: true));
-            flags.Add(shortPath(custodesGroundTruthCSVTextbox.Text, isFile: true));
+            if (includeEXE) flags.Add(notEmpty(shortPath(excelintrunnerPathTextBox.Text, isFile: true), excelintRunnerEXEPathLabel.Text));
+            flags.Add(notEmpty(shortPath(benchmarkDirTextbox.Text, isFile: false), benchmarkDirLabel.Text));
+            flags.Add(notEmpty(shortPath(outputDirectoryTextbox.Text, isFile: false), outputDirecotryLabel.Text));
+            flags.Add(notEmpty(shortPath(excelintGroundTruthCSVTextbox.Text, isFile: true), excelintGroundTruthLabel.Text));
+            flags.Add(notEmpty(shortPath(custodesGroundTruthCSVTextbox.Text, isFile: true), custodesGroundTruthCSVLabel.Text));
 
-            var javaPath = shortPath(javaPathTextbox.Text, isFile: true);
+            var javaPath = notEmpty(shortPath(javaPathTextbox.Text, isFile: true), javaexePathLabel.Text);
             if (javaPath.EndsWith("java.exe", StringComparison.InvariantCultureIgnoreCase))
             {
                 flags.Add(javaPath);
@@ -256,7 +280,7 @@ namespace ExceLintCLIGenerator
                 throw new InvalidJavaEXEPathException(javaPath);
             }
 
-            var jarPath = shortPath(custodesJARPathTextbox.Text, isFile: true);
+            var jarPath = notEmpty(shortPath(custodesJARPathTextbox.Text, isFile: true), custodesJarLabel.Text);
             if (jarPath.EndsWith(".jar", StringComparison.InvariantCultureIgnoreCase))
             {
                 flags.Add(jarPath);
@@ -306,6 +330,10 @@ namespace ExceLintCLIGenerator
             {
                 MessageBox.Show("The following does not appear to be a valid JAR file:\n\n" + ex.Message);
             }
+            catch (CannotBeEmptyException ex)
+            {
+                MessageBox.Show("The field '" + ex.Message + "' cannot be empty.");
+            }
         }
 
         public static void runCommand(string cpath, string[] args)
@@ -351,6 +379,10 @@ namespace ExceLintCLIGenerator
             catch (InvalidJARPathException ex)
             {
                 MessageBox.Show("The following does not appear to be a valid JAR file:\n\n" + ex.Message);
+            }
+            catch (CannotBeEmptyException ex)
+            {
+                MessageBox.Show("The field '" + ex.Message + "' cannot be empty.");
             }
         }
     }
