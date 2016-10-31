@@ -225,7 +225,7 @@
             let min = Array.min data
             let max = Array.max data
             if max = min then
-                data 
+                Array.create data.Length 0.0
             else
                 Array.map (fun x -> (x - min) / ( max - min)) data
 
