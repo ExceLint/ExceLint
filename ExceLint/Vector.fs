@@ -2,6 +2,7 @@
     open Depends
     open Feature
     open System
+    open System.Collections.Generic
 
     module Vector =
         type public Directory = string
@@ -11,6 +12,7 @@
         type public X = int    // i.e., column displacement
         type public Y = int    // i.e., row displacement
         type public Z = int    // i.e., worksheet displacement (0 if same sheet, 1 if different)
+        type public SquareVector = double*double*double*double
 
         // components for mixed vectors
         type public VectorComponent =
@@ -26,6 +28,10 @@
         type public RelativeVector = (X*Y*Z)
         type public MixedVector = (VectorComponent*VectorComponent*Path)
 
+        // handy datastructures
+        type public Edge = RelativeVector*RelativeVector
+        type private DistDict = Dictionary<Edge,double>
+
         // the first component is the tail (start) and the second is the head (end)
         type public FullyQualifiedVector =
         | MixedFQVector of Coordinates*MixedVector
@@ -37,7 +43,6 @@
 
         let private fullPath(addr: AST.Address) : string*string*string =
             // portably create full path from components
-//            System.IO.Path.Combine([|addr.Path; addr.WorkbookName; addr.WorksheetName|])
             (addr.Path, addr.WorkbookName, addr.WorksheetName)
 
         let private vector(tail: AST.Address)(head: AST.Address)(mixed: bool) : FullyQualifiedVector =
@@ -57,7 +62,6 @@
 
         let private originPath(dag: DAG) : Path =
             (dag.getWorkbookDirectory(), dag.getWorkbookName(), dag.getWorksheetNames().[0]);
-//            System.IO.Path.Combine(dag.getWorkbookPath(), dag.getWorksheetNames().[0]);
 
         let private vectorPathDiff(p1: Path)(p2: Path) : int =
             if p1 <> p2 then 1 else 0
@@ -258,6 +262,59 @@
             let y_vect = if normalizeSSSpace then normalizeColumn (column 3 mats) else column 3 mats
 
             combine([| sdx_vect; sdy_vect; x_vect; y_vect |])
+
+        let dist(e: Edge) : double =
+            let (p,p') = e
+            let (x, y, _) = p
+            let (x',y',_) = p'
+            let fx  = float x
+            let fy  = float y
+            let fx' = float x'
+            let fy' = float y'
+            Math.Sqrt (
+                (fx - fx') * (fx - fx') +
+                (fy - fy') * (fy - fy')
+            )
+
+        let KNN(p: RelativeVector)(k : int)(G: HashSet<RelativeVector>)(DD: DistDict) : RelativeVector[] =
+            DD |>
+            Seq.filter (fun (kvp: KeyValuePair<Edge,double>) ->
+                let p' = fst kvp.Key
+                let o = snd kvp.Key
+                p = p' && p <> o && G.Contains(o)
+            )
+            |> Seq.map (fun (kvp: KeyValuePair<Edge,double>) -> snd kvp.Key)
+            |> Seq.toArray
+        
+
+        let edges(G: RelativeVector[]) : Edge[] =
+            Array.map (fun i -> Array.map (fun j -> i,j) G) G |> Array.concat
+
+        let pairwiseDistances(E: Edge[]) : DistDict =
+            let d = new DistDict()
+            for e in E do
+                d.Add(e, dist e)
+            d
+
+        let paths(p: RelativeVector)(G: RelativeVector[]) : (RelativeVector*RelativeVector)[] =
+            failwith "not yet"
+
+        let acDist(p: RelativeVector)(G: RelativeVector[])(DD: DistDict) : double =
+            let es : Edge[] = edges G
+            let r = float es.Length
+            Array.mapi (fun i e ->
+                let i' = float i
+                (2.0 * (r - i') * (DD.[e]))
+                /
+                (r * (r - 1.0))
+            ) es
+            |> Array.sum
+
+        let COF(p: RelativeVector)(k: int)(D: RelativeVector[])(DD: DistDict) : double =
+            let kN = KNN p k D
+            let acs = Array.filter(fun o -> o <> p) D
+                      |> Array.map (fun o -> acDist o (KNN o k D) DD )
+            ((float kN.Length) * (acDist p kN DD)) / ( Array.sum acs )
 
         type DeepInputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
