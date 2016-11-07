@@ -276,20 +276,22 @@
                 (fy - fy') * (fy - fy')
             )
 
-//        let kNearest(p: RelativeVector)(k : int)(G: HashSet<RelativeVector>)(DD: DistDict) : HashSet<RelativeVector> =
-//            let kn = DD |>
-//                        Seq.filter (fun (kvp: KeyValuePair<Edge,double>) ->
-//                            let p' = fst kvp.Key
-//                            let o = snd kvp.Key
-//                            p = p' && p <> o && G.Contains(o)
-//                        )
-//                        |> Seq.sortBy (fun (kvp: KeyValuePair<Edge,double>) -> kvp.Value)
-//                        |> Seq.take k
-//                        |> Seq.map (fun (kvp: KeyValuePair<Edge,double>) -> snd kvp.Key)
-//
-//            assert (Seq.length kn <= k)
-//
-//            new HashSet<RelativeVector>(knn)
+        let Nk(p: RelativeVector)(k : int)(G: HashSet<RelativeVector>)(DD: DistDict) : HashSet<RelativeVector> =
+            let kn = DD |>
+                        Seq.filter (fun (kvp: KeyValuePair<Edge,double>) ->
+                            let p' = fst kvp.Key
+                            let o = snd kvp.Key
+                            p = p' &&       // p must not be in Nk
+                            p <> o &&       // also, we don't care about dist(p,p)
+                            G.Contains(o)   // and G may also be a subset of points
+                        )
+                        |> Seq.sortBy (fun (kvp: KeyValuePair<Edge,double>) -> kvp.Value)
+                        |> Seq.take k
+                        |> Seq.map (fun (kvp: KeyValuePair<Edge,double>) -> snd kvp.Key)
+
+            assert (Seq.length kn <= k)
+
+            new HashSet<RelativeVector>(kn)
 
         let hsDiff(A: HashSet<'a>)(B: HashSet<'a>) : HashSet<'a> =
             let hs = new HashSet<'a>()
@@ -297,28 +299,6 @@
                 if not (B.Contains a) then
                     hs.Add a |> ignore
             hs
-
-        let kNearest(p: RelativeVector)(k : int)(G: HashSet<RelativeVector>)(DD: DistDict) : HashSet<RelativeVector> =
-            let G' = new HashSet<RelativeVector>(Seq.filter (fun o -> o <> p) G)    // make sure that p is excluded
-            let E = new HashSet<RelativeVector>()    // initialize E
-            for i in 0..k do
-                // TODO: base case for when E is empty (distance from p)
-
-                // compute set difference of G' and E
-                let GE = hsDiff G' E
-                // compute all edges from points in E to points in G'\E
-                let edges = Seq.map (fun ge ->
-                                   Seq.filter (fun (kvp: KeyValuePair<Edge,double>) ->
-                                       // it's an edge from E to G'\E
-                                       E.Contains(fst kvp.Key) && (snd kvp.Key) = ge
-                                   ) DD
-                               ) GE |> Seq.concat
-                // rank by distance
-                let ranked_edges = edges |> Seq.sortBy (fun (kvp: KeyValuePair<Edge,double>) -> kvp.Value) |> Seq.toList
-                // choose the shortest
-                E.Add (ranked_edges.Head |> fun (kvp: KeyValuePair<Edge,double>) -> kvp.Key) |> ignore
-
-            failwith "no"
             
         let edges(G: RelativeVector[]) : Edge[] =
             Array.map (fun i -> Array.map (fun j -> i,j) G) G |> Array.concat
@@ -329,9 +309,39 @@
                 d.Add(e, dist e)
             d
 
-        let SBNPath(p: RelativeVector)(G: HashSet<RelativeVector>) : Edge[] =
-            // make sure that we don't include path from p to p.
-            failwith "not yet"
+        let SBNTrail(p: RelativeVector)(G: HashSet<RelativeVector>)(DD: DistDict) : Edge[] =
+            let rec sbnt(path: Edge list) : Edge list =
+                // make a hashset out of the path
+                let E = new HashSet<RelativeVector>()
+                for e in path do
+                    let (start,dest) = e
+                    E.Add start |> ignore
+                    E.Add dest |> ignore
+
+                // compute G\E
+                let G' = hsDiff G E
+
+                if E.Count = 0 || G'.Count <> 0 then
+                    // base case; inductive steps follow
+                    if E.Count = 0 then
+                        E.Add p |> ignore
+
+                    // find min distance edges to points in G' from all points in E
+                    let edges = Seq.map (fun dest ->
+                                    // create candidate edges
+                                    Seq.map (fun origin -> (origin,dest)) E
+                                ) G' |> Seq.concat
+
+                    // rank by distance, smallest to largest
+                    let edges_ranked = Seq.sortBy (fun edge -> DD.[edge]) edges |> Seq.toList
+                
+                    // add smallest edge to path
+                    sbnt(edges_ranked.Head :: path)
+                else
+                    // terminating case: G'.Count = 0
+                    path
+
+            sbnt([]) |> List.toArray
 
         let acDist(p: RelativeVector)(es: Edge[])(DD: DistDict) : double =
             let r = float es.Length
@@ -345,18 +355,18 @@
 
         let COF(p: RelativeVector)(k: int)(G: HashSet<RelativeVector>)(DD: DistDict) : double =
             // get k nearest neighbors
-            let kN = kNearest p k G DD
-            // compute SBN path
-            let es = SBNPath p kN
-
-            // compute the average chaining distance for each point o in G s.t. o != p.
-            let acs = Seq.filter(fun o -> o <> p) G
+            let kN = Nk p k G DD
+            // compute SBN trail
+            let es = SBNTrail p kN DD
+            // compute the average chaining distance for each point o in kN.
+            let acs = Seq.filter(fun o -> o <> p) kN
                       |> Seq.map (fun o ->
-                             let o_kN = kNearest o k G DD
-                             let o_es = SBNPath o o_kN
+                             let o_kN = Nk o k G DD
+                             let o_es = SBNTrail o o_kN DD
                              acDist o o_es DD
                          )
-            ((float kN.Length) * (acDist p kN DD)) / ( Array.sum acs )
+            // compute COF
+            ((float kN.Count) * (acDist p es DD)) / ( Seq.sum acs )
 
         type DeepInputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
