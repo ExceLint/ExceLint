@@ -12,7 +12,6 @@
         type public X = int    // i.e., column displacement
         type public Y = int    // i.e., row displacement
         type public Z = int    // i.e., worksheet displacement (0 if same sheet, 1 if different)
-        type public SquareVector = double*double*double*double
 
         // components for mixed vectors
         type public VectorComponent =
@@ -27,9 +26,11 @@
         type public Coordinates = (X*Y*Path)
         type public RelativeVector = (X*Y*Z)
         type public MixedVector = (VectorComponent*VectorComponent*Path)
+        type public SquareVector = double*double*double*double
 
         // handy datastructures
-        type public Edge = RelativeVector*RelativeVector
+
+        type public Edge = SquareVector*SquareVector
         type private DistDict = Dictionary<Edge,double>
 
         // the first component is the tail (start) and the second is the head (end)
@@ -265,18 +266,16 @@
 
         let dist(e: Edge) : double =
             let (p,p') = e
-            let (x, y, _) = p
-            let (x',y',_) = p'
-            let fx  = float x
-            let fy  = float y
-            let fx' = float x'
-            let fy' = float y'
+            let (dx,  dy,  x,  y) = p
+            let (dx', dy', x', y') = p'
             Math.Sqrt (
-                (fx - fx') * (fx - fx') +
-                (fy - fy') * (fy - fy')
+                (dx - dx') * (dx - dx') +
+                (dy - dy') * (dy - dy') +
+                (x - x') * (x - x') +
+                (y - y') * (y - y')
             )
 
-        let Nk(p: RelativeVector)(k : int)(G: HashSet<RelativeVector>)(DD: DistDict) : HashSet<RelativeVector> =
+        let Nk(p: SquareVector)(k : int)(G: HashSet<SquareVector>)(DD: DistDict) : HashSet<SquareVector> =
             let kn = DD |>
                         Seq.filter (fun (kvp: KeyValuePair<Edge,double>) ->
                             let p' = fst kvp.Key
@@ -291,7 +290,7 @@
 
             assert (Seq.length kn <= k)
 
-            new HashSet<RelativeVector>(kn)
+            new HashSet<SquareVector>(kn)
 
         let hsDiff(A: HashSet<'a>)(B: HashSet<'a>) : HashSet<'a> =
             let hs = new HashSet<'a>()
@@ -300,7 +299,7 @@
                     hs.Add a |> ignore
             hs
             
-        let edges(G: RelativeVector[]) : Edge[] =
+        let edges(G: SquareVector[]) : Edge[] =
             Array.map (fun i -> Array.map (fun j -> i,j) G) G |> Array.concat
 
         let pairwiseDistances(E: Edge[]) : DistDict =
@@ -309,10 +308,10 @@
                 d.Add(e, dist e)
             d
 
-        let SBNTrail(p: RelativeVector)(G: HashSet<RelativeVector>)(DD: DistDict) : Edge[] =
+        let SBNTrail(p: SquareVector)(G: HashSet<SquareVector>)(DD: DistDict) : Edge[] =
             let rec sbnt(path: Edge list) : Edge list =
                 // make a hashset out of the path
-                let E = new HashSet<RelativeVector>()
+                let E = new HashSet<SquareVector>()
                 for e in path do
                     let (start,dest) = e
                     E.Add start |> ignore
@@ -343,7 +342,7 @@
 
             sbnt([]) |> List.toArray
 
-        let acDist(p: RelativeVector)(es: Edge[])(DD: DistDict) : double =
+        let acDist(p: SquareVector)(es: Edge[])(DD: DistDict) : double =
             let r = float es.Length
             Array.mapi (fun i e ->
                 let i' = float i
@@ -353,7 +352,7 @@
             ) es
             |> Array.sum
 
-        let COF(p: RelativeVector)(k: int)(G: HashSet<RelativeVector>)(DD: DistDict) : double =
+        let COF(p: SquareVector)(k: int)(G: HashSet<SquareVector>)(DD: DistDict) : double =
             // get k nearest neighbors
             let kN = Nk p k G DD
             // compute SBN trail
