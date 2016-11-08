@@ -4,7 +4,7 @@
     open System
     open System.Collections.Generic
 
-    module Vector =
+    module public Vector =
         type public Directory = string
         type public WorkbookName = string
         type public WorksheetName = string
@@ -26,10 +26,13 @@
         type public Coordinates = (X*Y*Path)
         type public RelativeVector = (X*Y*Z)
         type public MixedVector = (VectorComponent*VectorComponent*Path)
-        type public SquareVector = double*double*double*double
+        type public SquareVector(dx: double, dy: double, x: double, y: double) =
+            member self.dx = dx
+            member self.dy = dy
+            member self.x = x
+            member self.y = y
 
         // handy datastructures
-
         type public Edge = SquareVector*SquareVector
         type private DistDict = Dictionary<Edge,double>
 
@@ -266,13 +269,11 @@
 
         let dist(e: Edge) : double =
             let (p,p') = e
-            let (dx,  dy,  x,  y) = p
-            let (dx', dy', x', y') = p'
             Math.Sqrt (
-                (dx - dx') * (dx - dx') +
-                (dy - dy') * (dy - dy') +
-                (x - x') * (x - x') +
-                (y - y') * (y - y')
+                (p.dx - p'.dx) * (p.dx - p'.dx) +
+                (p.dy - p'.dy) * (p.dy - p'.dy) +
+                (p.x - p'.x) * (p.x - p'.x) +
+                (p.y - p'.y) * (p.y - p'.y)
             )
 
         let Nk(p: SquareVector)(k : int)(G: HashSet<SquareVector>)(DD: DistDict) : HashSet<SquareVector> =
