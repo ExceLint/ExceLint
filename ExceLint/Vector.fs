@@ -37,6 +37,13 @@
                     (dx, dy, x, y) = (o'.dx, o'.dy, o'.x, o'.y)
                 | _ -> false
             override self.GetHashCode() = hash (dx, dy, x, y)
+            override self.ToString() =
+                "(" +
+                dx.ToString() + "," +
+                dy.ToString() + "," +
+                x.ToString() + "," +
+                y.ToString() +
+                ")"
 
         // handy datastructures
         type public Edge = SquareVector*SquareVector
@@ -283,19 +290,20 @@
             )
 
         let Nk(p: SquareVector)(k : int)(G: HashSet<SquareVector>)(DD: DistDict) : HashSet<SquareVector> =
-            let kn = DD |>
-                        Seq.filter (fun (kvp: KeyValuePair<Edge,double>) ->
-                            let p' = fst kvp.Key
-                            let o = snd kvp.Key
-                            p = p' &&       // p must not be in Nk
-                            p <> o &&       // also, we don't care about dist(p,p)
-                            G.Contains(o)   // and G may also be a subset of points
-                        )
-                        |> Seq.sortBy (fun (kvp: KeyValuePair<Edge,double>) -> kvp.Value)
-                        |> Seq.take k
-                        |> Seq.map (fun (kvp: KeyValuePair<Edge,double>) -> snd kvp.Key)
+            let subgraph = DD |>
+                            Seq.filter (fun (kvp: KeyValuePair<Edge,double>) ->
+                                let p' = fst kvp.Key
+                                let o = snd kvp.Key
+                                p = p' &&       // p must not be in Nk
+                                p <> o &&       // also, we don't care about dist(p,p)
+                                G.Contains(o)   // and G may also be a subset of points
+                            ) |>
+                            Seq.toArray
+            let subgraph_sorted = subgraph |> Array.sortBy (fun (kvp: KeyValuePair<Edge,double>) -> kvp.Value)
+            let subgraph_sorted_k = subgraph_sorted |> Array.take k
+            let kn = subgraph_sorted_k |> Array.map (fun (kvp: KeyValuePair<Edge,double>) -> snd kvp.Key)
 
-            assert (Seq.length kn <= k)
+            assert (Array.length kn <= k)
 
             new HashSet<SquareVector>(kn)
 
