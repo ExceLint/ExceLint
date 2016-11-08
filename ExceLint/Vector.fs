@@ -36,7 +36,7 @@
                 | :? SquareVector as o' ->
                     (dx, dy, x, y) = (o'.dx, o'.dy, o'.x, o'.y)
                 | _ -> false
-            override x.GetHashCode() = hash (dx, dy, x, y)
+            override self.GetHashCode() = hash (dx, dy, x, y)
 
         // handy datastructures
         type public Edge = SquareVector*SquareVector
