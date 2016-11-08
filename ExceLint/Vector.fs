@@ -355,7 +355,7 @@
                     // terminating case: G'.Count = 0
                     path
 
-            sbnt([]) |> List.toArray
+            sbnt([]) |> List.rev |> List.toArray
 
         let acDist(p: SquareVector)(es: Edge[])(DD: DistDict) : double =
             let r = float es.Length
