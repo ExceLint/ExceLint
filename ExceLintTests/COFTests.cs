@@ -107,5 +107,29 @@ namespace ExceLintTests
 
             Assert.IsTrue(sd.Count == 0);
         }
+
+        [TestMethod]
+        public void COFPaperExamplePoint1ACDist()
+        {
+            // Check to see that the average chaining distance for
+            // Nk(p1) union { p1 } matches the result in the paper
+            // of 2.05 + epsilon.
+            var s = Vector.SBNTrail(p1, Vector.Nk(p1, 10, input, dd), dd);
+
+            var acdist = Vector.acDist(p1, s, dd);
+
+            Assert.IsTrue(acdist >= 2.05 && acdist < 2.06);
+        }
+
+        [TestMethod]
+        public void COFPaperExamplePoint1COF()
+        {
+            // Check the output of COF wrt p1 approx 1.929
+            // (in accordance with RapidMiner COF implementation).
+            // The paper's COF_{10}(p1) of 2.1 is incorrect.
+            var cof = Vector.COF(p1, 10, input, dd);
+
+            Assert.IsTrue(cof > 1.928 && cof < 1.93);
+        }
     }
 }

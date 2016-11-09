@@ -31,6 +31,7 @@
             member self.dy = dy
             member self.x = x
             member self.y = y
+            member self.AsArray = [| dx; dy; x; y |]
             override self.Equals(o: obj) : bool =
                 match o with
                 | :? SquareVector as o' ->
@@ -282,12 +283,17 @@
 
         let dist(e: Edge) : double =
             let (p,p') = e
-            Math.Sqrt (
-                (p.dx - p'.dx) * (p.dx - p'.dx) +
-                (p.dy - p'.dy) * (p.dy - p'.dy) +
-                (p.x - p'.x) * (p.x - p'.x) +
-                (p.y - p'.y) * (p.y - p'.y)
-            )
+
+            let p_arr = p.AsArray
+            let p'_arr = p'.AsArray
+
+            let elts = Array.map (fun i ->
+                           (p_arr.[i] - p'_arr.[i]) * (p_arr.[i] - p'_arr.[i])
+                       ) [|0..3|]
+
+            let res = Math.Sqrt(Array.sum elts)
+
+            res
 
         let Nk(p: SquareVector)(k : int)(G: HashSet<SquareVector>)(DD: DistDict) : HashSet<SquareVector> =
             let subgraph = DD |>
@@ -358,29 +364,44 @@
             sbnt([]) |> List.rev |> List.toArray
 
         let acDist(p: SquareVector)(es: Edge[])(DD: DistDict) : double =
-            let r = float es.Length
-            Array.mapi (fun i e ->
-                let i' = float i
-                (2.0 * (r - i') * (DD.[e]))
-                /
-                (r * (r - 1.0))
-            ) es
-            |> Array.sum
+            // there are r - 1 edges, so r = len(es) + 1
+            let r = float es.Length + 1.0
+            let cost_desc = Array.map (fun e -> DD.[e]) es
+
+            let cost = Array.mapi (fun i e ->
+                            let i' = float i + 1.0
+                            assert (i' > 0.0)
+                            if i' <= (r - 1.0) then
+                                let expr = (2.0 * (r - i') * (DD.[e]))
+                                            /
+                                            (r * (r - 1.0))
+                                expr
+                            else
+                                0.0
+                        ) es
+            let tot = Array.sum cost
+            tot
 
         let COF(p: SquareVector)(k: int)(G: HashSet<SquareVector>)(DD: DistDict) : double =
-            // get k nearest neighbors
+            // get p's k nearest neighbors
             let kN = Nk p k G DD
-            // compute SBN trail
+            assert not (kN.Contains p)
+            // compute SBN trail for p
             let es = SBNTrail p kN DD
+            // compute ac-dist for kN union p
+            let acDist_p = acDist p es DD
             // compute the average chaining distance for each point o in kN.
-            let acs = Seq.filter(fun o -> o <> p) kN
-                      |> Seq.map (fun o ->
-                             let o_kN = Nk o k G DD
-                             let o_es = SBNTrail o o_kN DD
-                             acDist o o_es DD
-                         )
+            let acs = kN |>
+                      Seq.map (fun o ->
+                          let o_kN = Nk o k G DD
+                          assert not (o_kN.Contains o)
+                          let o_es = SBNTrail o o_kN DD
+                          acDist o o_es DD
+                      ) |>
+                      Seq.toArray
             // compute COF
-            ((float kN.Count) * (acDist p es DD)) / ( Seq.sum acs )
+            let res = acDist_p / ((1.0 / float k) * Array.sum acs)
+            res
 
         type DeepInputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
