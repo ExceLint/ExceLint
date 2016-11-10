@@ -263,14 +263,27 @@
                double (arr.[i])
             ) data
 
-        let combine(cols: double[][]) : (double*double*double*double)[] =
+        let combine(cols: double[][]) : SquareVector[] =
             let len = cols.[0].Length
-            let mutable rows: (double*double*double*double) list = []
+            let mutable rows: SquareVector list = []
             for i in 0..len-1 do
-                rows <- (cols.[0].[i], cols.[1].[i], cols.[2].[i], cols.[3].[i]) :: rows
+                rows <- SquareVector(cols.[0].[i], cols.[1].[i], cols.[2].[i], cols.[3].[i]) :: rows
             List.rev rows |> List.toArray
 
-        let AllSquareMatrices(dag: DAG)(normalizeRefSpace: bool)(normalizeSSSpace: bool)(wsname: string) : (double*double*double*double)[] =
+        let SingleSquareVector(cell: AST.Address)(dag: DAG)(normalizeRefSpace: bool)(normalizeSSSpace: bool) : SquareVector =
+            // yes, I am lazy; this is basically a copy of AllSquareVectors; TODO refactor
+            let fs = [|cell|]
+            let mats = Array.map (fun f -> SquareMatrixForCell f dag) fs
+
+            let sdx_vect = if normalizeRefSpace then normalizeColumn (column 0 mats) else column 0 mats
+            let sdy_vect = if normalizeRefSpace then normalizeColumn (column 1 mats) else column 1 mats
+            let x_vect = if normalizeSSSpace then normalizeColumn (column 2 mats) else column 2 mats
+            let y_vect = if normalizeSSSpace then normalizeColumn (column 3 mats) else column 3 mats
+
+            let arr = combine([| sdx_vect; sdy_vect; x_vect; y_vect |])
+            arr.[0]
+
+        let AllSquareVectors(dag: DAG)(normalizeRefSpace: bool)(normalizeSSSpace: bool)(wsname: string) : SquareVector[] =
             let fs = dag.getAllFormulaAddrs() |> Array.filter (fun f -> f.WorksheetName = wsname) 
             let mats = Array.map (fun f -> SquareMatrixForCell f dag) fs
 
@@ -280,6 +293,14 @@
             let y_vect = if normalizeSSSpace then normalizeColumn (column 3 mats) else column 3 mats
 
             combine([| sdx_vect; sdy_vect; x_vect; y_vect |])
+
+        let DistDictToSVHashSet(dd: DistDict) : HashSet<SquareVector> =
+            let hs = new HashSet<SquareVector>()
+            for edge in dd do
+                let (efrom,eto) = edge.Key
+                hs.Add(efrom) |> ignore
+                hs.Add(eto) |> ignore
+            hs
 
         let dist(e: Edge) : double =
             let (p,p') = e
@@ -498,4 +519,53 @@
             static member capability : string*Capability =
                 (typeof<DeepOutputVectorMixedL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepOutputVectorMixedL2NormSum.run } )
+
+        type Product private () =
+            let mutable state = 0
+            static let instance = Product()
+            static member Instance = instance
+            member this.DoSomething() = 
+                state <- state + 1
+                printfn "Doing something for the %i time" state
+                ()
+
+        let private MutateCache(cache: Dictionary<WorkbookName,Dictionary<WorksheetName,DistDict>>)(dag: DAG)(normalizeRefSpace: bool)(normalizeSSSpace: bool) : unit =
+                let wbname = dag.getWorkbookName()
+
+                // get workbook-level cache
+                let wbcache = if not (cache.ContainsKey wbname) then
+                                  cache.Add(wbname, new Dictionary<WorksheetName,DistDict>())
+                                  cache.[wbname]
+                              else
+                                  cache.[wbname]
+                
+                // loop through all worksheet names
+                Array.iter (fun wsname ->
+                    if not (wbcache.ContainsKey(wsname)) then
+                        // get vectors
+                        let vectors = AllSquareVectors dag normalizeRefSpace normalizeSSSpace wsname
+                        // compute distances
+                        let dists = pairwiseDistances (edges vectors)
+                        // cache
+                        wbcache.Add(wsname, dists)
+                ) (dag.getWorksheetNames())
+
+        type ShallowInputVectorMixedCOFRefUnnormSSNorm() =
+            inherit BaseFeature()
+            let cache = new Dictionary<WorkbookName,Dictionary<WorksheetName,DistDict>>()
+            static let instance = new ShallowInputVectorMixedCOFRefUnnormSSNorm()
+            member self.BuildDistDict(dag: DAG) : Dictionary<WorksheetName,DistDict> =
+                MutateCache cache dag false true
+                cache.[dag.getWorkbookName()]
+            static member Instance = instance
+            static member run(cell: AST.Address)(dag: DAG) : double =
+                let k = failwith "compute the width of the spreadsheet"
+                let dd = (ShallowInputVectorMixedCOFRefUnnormSSNorm.Instance.BuildDistDict dag).[cell.WorksheetName]
+                let vcell = SingleSquareVector cell dag false true
+                let neighbors = DistDictToSVHashSet dd
+                COF vcell 10 neighbors dd
+
+            static member capability : string*Capability =
+                (typeof<ShallowInputVectorMixedCOFRefUnnormSSNorm>.Name,
+                    { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedCOFRefUnnormSSNorm.run } )
 

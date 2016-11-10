@@ -26,6 +26,7 @@
                 Vector.ShallowOutputVectorAbsoluteL2NormSum.capability;
                 Vector.ShallowInputVectorMixedL2NormSum.capability;
                 Vector.ShallowOutputVectorMixedL2NormSum.capability;
+                Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.capability;
                 Proximity.Above.capability;
                 Proximity.Below.capability;
                 Proximity.Left.capability;
@@ -216,6 +217,19 @@
                     self
         member self.enableShallowOutputVectorMixedL2NormSum(on: bool) : FeatureConf =
             let (name,cap) = Vector.ShallowOutputVectorMixedL2NormSum.capability
+            if on then
+                FeatureConf(
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.enableShallowInputVectorMixedCOFRefUnnormSSNorm(on: bool) : FeatureConf =
+            let (name,cap) = Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.capability
             if on then
                 FeatureConf(
                     _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
@@ -481,8 +495,12 @@
                           else
                               config
 
-            // for now, our feature is always the mixed shallow L2 norm
-            config'.enableShallowInputVectorMixedL2NormSum(true)
+            let (cof,_) = Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.capability
+            if self.IsEnabled(cof) then
+                config'
+            else
+                // use L2 norm sums by default
+                config'.enableShallowInputVectorMixedL2NormSum(true)
 
         member self.rawConf = _config
 

@@ -37,7 +37,7 @@
             progress: Depends.Progress;
         }
 
-        type Analysis = {
+        type HistoAnalysis = {
             scores: ScoreTable;
             ftable: FreqTable;
             csstable: ConditioningSetSizeTable;
@@ -53,6 +53,21 @@
             cutoff_idx: int;
             weights: Weights;
         }
+
+        type COFAnalysis = {
+            scores: ScoreTable;
+            ranking: Ranking;
+            fixes: Dictionary<AST.Address,HashSet<AST.Address>>;
+            score_time: int64;
+            ranking_time: int64;
+            sig_threshold_idx: int;
+            cutoff_idx: int;
+            weights: Weights;
+        }
+
+        type Analysis =
+        | Histogram of HistoAnalysis
+        | Cluster of COFAnalysis
 
         type AnalysisOutcome =
         | Success of Analysis

@@ -107,8 +107,9 @@
                               else
                                   noWeights (analysisBase input.config) input.dag
 
-                Success({ analysis with weights = weights })
-                
+                match analysis with
+                | Histogram h -> Success(Histogram({ h with weights = weights }))
+                | Cluster c -> Success(Cluster({ c with weights = weights }))
 
             // sanity check: are scores monotonically increasing?
             let monotonicallyIncreasing(r: Ranking) : bool =
@@ -135,7 +136,7 @@
                         angleminindex <- index
                 angleminindex
 
-            let private equivalenceClasses(ranking: Ranking)(causes: Causes) : Dict<AST.Address,int> =
+            let private equivalenceClasses(ranking: Ranking) : Dict<AST.Address,int> =
                 let rankgrps = Array.groupBy (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Value) ranking
 
                 let grpids = Array.mapi (fun i (hb,_) -> hb,i) rankgrps |> adict
@@ -144,14 +145,14 @@
 
                 output
 
-            let private seekEquivalenceBoundary(ranking: Ranking)(causes: Causes)(cut_idx: int) : int =
+            let private seekEquivalenceBoundary(ranking: Ranking)(cut_idx: int) : int =
                 // if we have no anomalies, because either the cut index excludes
                 // all cells or because the ranking is zero-length, just return -1
                 if cut_idx = -1 || ranking.Length = 0 then
                     -1
                 else
                     // a map from AST.Address to equivalence class number
-                    let ecs = equivalenceClasses ranking causes
+                    let ecs = equivalenceClasses ranking
 
                     // get the equivalence class of the element at the cut index (inclusive)
                     let cutEC = ecs.[ranking.[cut_idx].Key]
@@ -176,7 +177,7 @@
 
             // returns the index of the last element to KEEP
             // returns -1 if you should keep nothing
-            let private findCutIndex(ranking: Ranking)(thresh_idx: int)(causes: Causes): int =
+            let private findCutIndex(ranking: Ranking)(thresh_idx: int): int =
                 if ranking.Length = 0 then
                     -1
                 else
@@ -190,26 +191,37 @@
                     dderiv(rank_nums')
 
             let private kneeIndexOpt(input: Input)(analysis: Analysis) : AnalysisOutcome =
+                let ranking = match analysis with | Histogram h -> h.ranking | Cluster c -> c.ranking
+                let sig_threshold_idx = match analysis with | Histogram h -> h.sig_threshold_idx | Cluster c -> c.sig_threshold_idx
+
                 let idx =
                     if input.config.IsEnabledSpectralRanking then
                         // compute knee cutoff
-                        findCutIndex analysis.ranking analysis.sig_threshold_idx analysis.causes
+                        findCutIndex ranking sig_threshold_idx
                     else
                         // stick with total %
-                        analysis.sig_threshold_idx
+                        sig_threshold_idx
                 // does the cut index straddle an equivalence class?
-                let ce = seekEquivalenceBoundary analysis.ranking analysis.causes idx
-                Success({ analysis with cutoff_idx = ce })
+                let ce = seekEquivalenceBoundary ranking idx
+
+                match analysis with
+                | Histogram h -> Success(Histogram({ h with cutoff_idx = ce }))
+                | Cluster c -> Success(Cluster({ c with cutoff_idx = ce }))
 
             let private cutoffIndex(input: Input)(analysis: Analysis) : AnalysisOutcome =
+                let ranking = match analysis with | Histogram h -> h.ranking | Cluster c -> c.ranking
+
                 // compute total mass of distribution
-                let total_mass = double analysis.ranking.Length
+                let total_mass = double ranking.Length
                 // compute the index of the maximum element
                 let idx = int (Math.Floor(total_mass * input.alpha))
-                Success({ analysis with sig_threshold_idx = idx })
+
+                match analysis with
+                | Histogram h -> Success(Histogram({ h with sig_threshold_idx = idx }))
+                | Cluster c -> Success(Cluster({ c with sig_threshold_idx = idx }))
 
             let private canonicalSort(input: Input)(analysis: Analysis) : AnalysisOutcome =
-                let r = analysis.ranking
+                let r = match analysis with | Histogram h -> h.ranking | Cluster c -> c.ranking
                 let arr = Array.sortWith (fun (a: KeyValuePair<AST.Address,double>)(b: KeyValuePair<AST.Address,double>) ->
                                               let a_addr: AST.Address = a.Key
                                               let a_score: double = a.Value
@@ -234,18 +246,26 @@
                                                   1
                                          ) r
                 assert (monotonicallyIncreasing arr)
-                Success({ analysis with ranking = arr })
+
+                match analysis with
+                | Histogram h -> Success(Histogram({ h with ranking = arr }))
+                | Cluster c -> Success(Cluster({ c with ranking = arr }))
 
             let private reweightRanking(input: Input)(analysis: Analysis) : AnalysisOutcome =
-                let ranking = 
-                    analysis.ranking
+                let ranking = match analysis with | Histogram h -> h.ranking | Cluster c -> c.ranking
+                let weights = match analysis with | Histogram h -> h.weights | Cluster c -> c.weights
+
+                let ranking' = 
+                    ranking
                     |> Array.map (fun (kvp: KeyValuePair<AST.Address,double>) ->
                         let addr = kvp.Key
                         let score = kvp.Value
-                        new KeyValuePair<AST.Address,double>(addr, analysis.weights.[addr] * score)
+                        new KeyValuePair<AST.Address,double>(addr, weights.[addr] * score)
                       )
 
-                Pipeline.Success({ analysis with ranking = ranking })
+                match analysis with
+                | Histogram h -> Success(Histogram({ h with ranking = ranking' }))
+                | Cluster c -> Success(Cluster({ c with ranking = ranking' }))
 
             let private getChangeSetAddresses(cs: ChangeSet) : AST.Address[] =
                 Array.map (fun (kvp: KeyValuePair<AST.Address,string>) ->
@@ -553,90 +573,95 @@
                     { mutants = ref_fs; scores = def_buckets; freqtable = def_freq; selcache = def_selcache; sidcache = def_sidcache }
 
             let private inferAddressModes(input: Input)(analysis: Analysis) : AnalysisOutcome =
-                if input.config.IsEnabled "InferAddressModes" then
-                    try
-                        let cells = analysisBase input.config input.dag
+                match analysis with
+                | Histogram h ->
+                    if input.config.IsEnabled "InferAddressModes" then
+                        try
+                            let cells = analysisBase input.config input.dag
 
-                        // convert ranking into map
-                        let rankmap = analysis.ranking
-                                      |> Array.map (fun (pair: KeyValuePair<AST.Address,double>) -> (pair.Key,pair.Value))
-                                      |> toDict
+                            // convert ranking into map
+                            let rankmap = h.ranking
+                                          |> Array.map (fun (pair: KeyValuePair<AST.Address,double>) -> (pair.Key,pair.Value))
+                                          |> toDict
 
-                        let rank_positions = analysis.ranking
-                                             |> Array.mapi (fun i (pair: KeyValuePair<AST.Address,double>) -> (pair.Key, i))
-                                             |> toDict
+                            let rank_positions = h.ranking
+                                                 |> Array.mapi (fun i (pair: KeyValuePair<AST.Address,double>) -> (pair.Key, i))
+                                                 |> toDict
 
-                        // get all the formulas that ref each cell
-                        let refss = Array.map (fun i -> i, input.dag.getFormulasThatRefCell i) cells |> toDict
+                            // get all the formulas that ref each cell
+                            let refss = Array.map (fun i -> i, input.dag.getFormulasThatRefCell i) cells |> toDict
 
-                        // rank inputs by their impact on the ranking
-                        let crank = Array.map (fun input_addr ->
-                                        let anomalous_formulas = Array.filter (
-                                                                    fun formula_addr ->
-                                                                        let pos = try
-                                                                                    rank_positions.[formula_addr]
-                                                                                  with
-                                                                                  | e ->
-                                                                                     let is_formula = input.dag.isFormula formula_addr
-                                                                                     analysis.cutoff_idx + 1
-                                                                        pos <= analysis.cutoff_idx
-                                                                 ) (refss.[input_addr])
+                            // rank inputs by their impact on the ranking
+                            let crank = Array.map (fun input_addr ->
+                                            let anomalous_formulas = Array.filter (
+                                                                        fun formula_addr ->
+                                                                            let pos = try
+                                                                                        rank_positions.[formula_addr]
+                                                                                      with
+                                                                                      | e ->
+                                                                                         let is_formula = input.dag.isFormula formula_addr
+                                                                                         h.cutoff_idx + 1
+                                                                            pos <= h.cutoff_idx
+                                                                     ) (refss.[input_addr])
 
-                                        if anomalous_formulas.Length > 0 then
-                                            let sum = Array.sumBy (fun formula ->
-                                                            rankmap.[formula]
-                                                        ) anomalous_formulas
-                                            let average_score = sum / double (anomalous_formulas.Length)
-                                            Some(input_addr, average_score)
-                                        else
-                                            None
-                                    ) cells |>
-                                    Array.choose id |>
-                                    Array.sortBy (fun (input,score) -> score) |>
-                                    Array.map (fun (input,score) -> input)
+                                            if anomalous_formulas.Length > 0 then
+                                                let sum = Array.sumBy (fun formula ->
+                                                                rankmap.[formula]
+                                                            ) anomalous_formulas
+                                                let average_score = sum / double (anomalous_formulas.Length)
+                                                Some(input_addr, average_score)
+                                            else
+                                                None
+                                        ) cells |>
+                                        Array.choose id |>
+                                        Array.sortBy (fun (input,score) -> score) |>
+                                        Array.map (fun (input,score) -> input)
 
-                        // for each input cell, try changing all refs to either abs or rel;
-                        // if anomalousness drops, keep new interpretation
-                        let dag' = Array.fold (fun accdag i ->
-                                       // get referring formulas
-                                       let refs = refss.[i]
+                            // for each input cell, try changing all refs to either abs or rel;
+                            // if anomalousness drops, keep new interpretation
+                            let dag' = Array.fold (fun accdag i ->
+                                           // get referring formulas
+                                           let refs = refss.[i]
 
-                                       if refs.Length <> 0 then
-                                           // run inference
-                                           let cs = chooseLikelyAddressMode i refs accdag input.config input.progress input.app
+                                           if refs.Length <> 0 then
+                                               // run inference
+                                               let cs = chooseLikelyAddressMode i refs accdag input.config input.progress input.app
 
-                                           // update DAG
-                                           mutateDAG cs accdag input.app input.progress
-                                       else
-                                           accdag
-                                   ) input.dag crank
+                                               // update DAG
+                                               mutateDAG cs accdag input.app input.progress
+                                           else
+                                               accdag
+                                       ) input.dag crank
 
-                        // initialize selector cache
-                        let selcache = Scope.SelectorCache()
+                            // initialize selector cache
+                            let selcache = Scope.SelectorCache()
 
-                        // score
-                        let scores = runEnabledFeatures cells dag' input.config input.progress
+                            // score
+                            let scores = runEnabledFeatures cells dag' input.config input.progress
 
-                        // count freqs
-                        let (freqs,sidcache) = buildFrequencyTable scores selcache input.progress dag' input.config
+                            // count freqs
+                            let (freqs,sidcache) = buildFrequencyTable scores selcache input.progress dag' input.config
 
-                        // compute conditioning set size
-                        let csstable = buildCSSTable cells input.progress dag' selcache sidcache input.config
+                            // compute conditioning set size
+                            let csstable = buildCSSTable cells input.progress dag' selcache sidcache input.config
 
-                        // rerank
-                        let (ranking,_) = totalHistoSums cells freqs scores csstable selcache input.config input.progress input.dag
+                            // rerank
+                            let (ranking,_) = totalHistoSums cells freqs scores csstable selcache input.config input.progress input.dag
 
-                        // get causes
-                        let causes = causes cells freqs scores csstable selcache input.config input.progress input.dag
+                            // get causes
+                            let causes = causes cells freqs scores csstable selcache input.config input.progress input.dag
 
-                        Success({ analysis with scores = scores; ftable = freqs; ranking = ranking; causes = causes; })
-                    with
-                    | AnalysisCancelled -> Cancellation
-                    | e ->
-                        // for breakpoint-friendliness
-                        raise e
-                else
-                    Success(analysis)
+                            Success(Histogram { h with scores = scores; ftable = freqs; ranking = ranking; causes = causes; })
+                        with
+                        | AnalysisCancelled -> Cancellation
+                        | e ->
+                            // for breakpoint-friendliness
+                            raise e
+                    else
+                        Success(Histogram h)
+                | Cluster c ->
+                    // do nothing for now
+                    Success(Cluster c)
 
             let private cancellableWait(input: Input)(analysis: Analysis) : AnalysisOutcome =
                 let mutable timer = 10
@@ -705,11 +730,11 @@
 
                 dist
 
-            let private binsBelowCutoff(analysis: Analysis)(cutoff: int) : Set<HistoBin> =
+            let private binsBelowCutoff(h: HistoAnalysis)(cutoff: int) : Set<HistoBin> =
                 // find the set of (by definition small) bins that contribute to the highest-ranked cells
                 Array.map (fun (pair: KeyValuePair<AST.Address,Hash>) ->
-                                    Array.map (fun (bin,count,weight) -> bin) (analysis.causes.[pair.Key])
-                                ) (analysis.ranking.[..cutoff]) |>
+                                    Array.map (fun (bin,count,weight) -> bin) (h.causes.[pair.Key])
+                                ) (h.ranking.[..cutoff]) |>
                                 Array.concat |>
                                 Set.ofArray
 
@@ -810,6 +835,32 @@
 
                 (ranking', Some hf)
 
+            let prive runCOFModel(input: Input) : AnalysisOutcome =
+                try
+                    let cells = (analysisBase input.config input.dag)
+
+                    let _runf = fun () -> runEnabledFeatures cells input.dag input.config input.progress
+
+                    // get COF scores for each feature: featurename -> (address, score)[]
+                    let (scores: ScoreTable,score_time: int64) = PerfUtils.runMillis _runf ()
+
+
+
+                    Success(Cluster
+                        {
+                            scores = scores;
+                            ranking = ranking;
+                            fixes = fixes;
+                            score_time = score_time;
+                            ranking_time = ranking_time;
+                            sig_threshold_idx = 0;
+                            cutoff_idx = 0;
+                            weights = new Dictionary<AST.Address,double>();
+                        }
+                    )
+                with
+                | AnalysisCancelled -> Cancellation
+
             let private runModel(input: Input) : AnalysisOutcome =
                 try
                     // initialize selector cache
@@ -845,7 +896,7 @@
                                         r, hfo
                     let (ranking,fixes),ranking_time = PerfUtils.runMillis _rankf ()
 
-                    Success(
+                    Success(Histogram(
                         {
                             scores = scores;
                             ftable = ftable;
@@ -862,7 +913,7 @@
                             cutoff_idx = 0;
                             weights = new Dictionary<AST.Address,double>();
                         }
-                    )
+                    ))
                 with
                 | AnalysisCancelled -> Cancellation
 
@@ -887,6 +938,3 @@
                     match pipeline input with
                     | Success(analysis) -> Some (ErrorModel(input, analysis, config'))
                     | Cancellation -> None
-
-        
-

@@ -871,12 +871,12 @@ namespace ExceLintUI
             var cWrksheet = cursorAddr.WorksheetName;
 
             // get matrices for this sheet
-            var matrices = ExceLint.Vector.AllSquareMatrices(_dag, normalizeRefSpace, normalizeSSSpace, cWrksheet);
+            var matrices = ExceLint.Vector.AllSquareVectors(_dag, normalizeRefSpace, normalizeSSSpace, cWrksheet);
 
             // convert to CSV
-            string[] rows = matrices.Select(tup =>
+            string[] rows = matrices.Select(v =>
             {
-                string[] s = new string[] { tup.Item1.ToString(), tup.Item2.ToString(), tup.Item3.ToString(), tup.Item4.ToString() };
+                string[] s = new string[] { v.dx.ToString(), v.dy.ToString(), v.x.ToString(), v.y.ToString() };
                 return String.Join(",", s);
             }).ToArray();
 
