@@ -835,7 +835,11 @@
 
                 (ranking', Some hf)
 
-            let prive runCOFModel(input: Input) : AnalysisOutcome =
+            let private rankCOFScores(scores: ScoreTable) : Ranking =
+                
+                failwith "nerp"
+
+            let private runCOFModel(input: Input) : AnalysisOutcome =
                 try
                     let cells = (analysisBase input.config input.dag)
 
@@ -844,7 +848,13 @@
                     // get COF scores for each feature: featurename -> (address, score)[]
                     let (scores: ScoreTable,score_time: int64) = PerfUtils.runMillis _runf ()
 
+                    // rank
+                    let _rankf = fun () -> failwith "not yet"
+                    let (ranking,ranking_time) = PerfUtils.runMillis _rankf ()
 
+                    // get fixes
+                    let _fixf = fun () -> failwith "not yet"
+                    let (fixes,fixes_time) = PerfUtils.runMillis _fixf ()
 
                     Success(Cluster
                         {
