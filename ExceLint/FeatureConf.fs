@@ -475,6 +475,27 @@
         member self.IsEnabledSpectralRanking : bool = _config.ContainsKey "SpectralRanking" && _config.["SpectralRanking"].enabled
         member self.IsEnabledAnalyzeOnlyFormulas : bool = _config.ContainsKey "AnalyzeOnlyFormulas" && _config.["AnalyzeOnlyFormulas"].enabled
         member self.IsEnabledAnalyzeAllCells : bool = _config.ContainsKey "AnalyzeOnlyFormulas" && not (_config.["AnalyzeOnlyFormulas"].enabled)
+        member self.IsCOF : bool =
+            let (name,_) = Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.capability
+            _config.ContainsKey name
+        member self.NormalizeRefs : bool =
+            let (name,_) = Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.capability
+            if _config.ContainsKey name then
+                Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.normalizeRefSpace
+            else
+                false
+        member self.NormalizeSS : bool =
+            let (name,_) = Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.capability
+            if _config.ContainsKey name then
+                Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.normalizeSSSpace
+            else
+                false
+        member self.DD(dag: Depends.DAG): Dictionary<Vector.WorksheetName,Vector.DistDict> =
+            let (name,_) = Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.capability
+            if _config.ContainsKey name then
+                Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.Instance.BuildDistDict dag
+            else
+                failwith "Invalid operation for configured analysis."
 
         // make sure that config option combinations make sense;
         // returns a 'corrected' config

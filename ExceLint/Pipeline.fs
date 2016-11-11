@@ -58,6 +58,7 @@
             scores: ScoreTable;
             ranking: Ranking;
             fixes: Dictionary<AST.Address,HashSet<AST.Address>>;
+            fixes_time: int64;
             score_time: int64;
             ranking_time: int64;
             sig_threshold_idx: int;

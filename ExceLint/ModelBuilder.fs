@@ -836,8 +836,37 @@
                 (ranking', Some hf)
 
             let private rankCOFScores(scores: ScoreTable) : Ranking =
+                let d = new Dictionary<AST.Address,double>()
                 
-                failwith "nerp"
+                for kvp in scores do
+                    for (addr,score) in kvp.Value do
+                        if not (d.ContainsKey addr) then
+                            d.Add(addr, score)
+                        else
+                            d.[addr] <- d.[addr] + score
+
+                Seq.sortBy (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Value) d
+                |> Seq.toArray
+
+            let private HsUnion<'a>(h1: HashSet<'a>)(h2: HashSet<'a>) : HashSet<'a> =
+                let h3 = new HashSet<'a>(h1)
+                h3.UnionWith h2
+                h3
+
+            let private getCOFFixes(scores: ScoreTable)(dag: Depends.DAG)(normalizeRefSpace: bool)(normalizeSSSpace: bool)(DDs: Dictionary<Vector.WorksheetName,Vector.DistDict>) : Dictionary<AST.Address,HashSet<AST.Address>> =
+                let d = new Dictionary<AST.Address,HashSet<AST.Address>>()
+
+                for kvp in scores do
+                    for (addr,score) in kvp.Value do
+                        let k = Vector.COFk addr dag normalizeRefSpace normalizeSSSpace
+                        let DD = DDs.[addr.WorksheetName]
+                        let nb = Vector.Nk_cells addr k dag normalizeRefSpace normalizeSSSpace DD
+                        if not (d.ContainsKey addr) then
+                            d.Add(addr, nb)
+                        else
+                            d.[addr] <- HsUnion d.[addr] nb
+
+                d
 
             let private runCOFModel(input: Input) : AnalysisOutcome =
                 try
@@ -849,11 +878,11 @@
                     let (scores: ScoreTable,score_time: int64) = PerfUtils.runMillis _runf ()
 
                     // rank
-                    let _rankf = fun () -> failwith "not yet"
+                    let _rankf = fun () -> rankCOFScores scores
                     let (ranking,ranking_time) = PerfUtils.runMillis _rankf ()
 
                     // get fixes
-                    let _fixf = fun () -> failwith "not yet"
+                    let _fixf = fun () -> getCOFFixes scores input.dag input.config.NormalizeRefs input.config.NormalizeSS (input.config.DD input.dag)
                     let (fixes,fixes_time) = PerfUtils.runMillis _fixf ()
 
                     Success(Cluster
@@ -861,6 +890,7 @@
                             scores = scores;
                             ranking = ranking;
                             fixes = fixes;
+                            fixes_time = fixes_time;
                             score_time = score_time;
                             ranking_time = ranking_time;
                             sig_threshold_idx = 0;
@@ -934,6 +964,20 @@
 
                 if dag.IsCancelled() then
                     None
+                elif input.config.IsCOF then
+                    let pipeline = runCOFModel              // produce initial (unsorted) ranking
+                                    +> weights              // compute weights
+                                    +> reweightRanking      // modify ranking scores
+                                    +> canonicalSort        // sort
+                                    +> cutoffIndex          // compute initial cutoff index
+                                    +> kneeIndexOpt         // optionally compute knee index
+                                    +> inferAddressModes    // remove anomaly candidates
+                                    +> canonicalSort
+                                    +> kneeIndexOpt
+
+                    match pipeline input with
+                    | Success(analysis) -> Some (ErrorModel(input, analysis, config'))
+                    | Cancellation -> None
                 else
                     let pipeline = runModel                 // produce initial (unsorted) ranking
                                     +> weights              // compute weights

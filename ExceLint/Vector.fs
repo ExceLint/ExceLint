@@ -3,6 +3,7 @@
     open Feature
     open System
     open System.Collections.Generic
+    open Utils
 
     module public Vector =
         type public Directory = string
@@ -48,7 +49,7 @@
 
         // handy datastructures
         type public Edge = SquareVector*SquareVector
-        type private DistDict = Dictionary<Edge,double>
+        type public DistDict = Dictionary<Edge,double>
 
         // the first component is the tail (start) and the second is the head (end)
         type public FullyQualifiedVector =
@@ -334,6 +335,17 @@
 
             new HashSet<SquareVector>(kn)
 
+        let Nk_cells(p: AST.Address)(k: int)(dag: DAG)(normalizeRefSpace: bool)(normalizeSSSpace: bool)(DD: DistDict) : HashSet<AST.Address> =
+            let p' = SingleSquareVector p dag normalizeRefSpace normalizeSSSpace
+            let Gmap = Array.map (fun c ->
+                           SingleSquareVector c dag normalizeRefSpace normalizeSSSpace, c
+                       ) (dag.getAllFormulaAddrs() |> Array.filter (fun c -> c.WorksheetName = p.WorksheetName))
+                       |> adict
+            let G = Gmap.Keys |> Seq.toArray |> fun cs -> new HashSet<SquareVector>(cs)
+            let nb = Nk p' k G DD
+            Seq.map (fun n -> Gmap.[n]) nb
+            |> fun ns -> new HashSet<AST.Address>(ns)
+
         let hsDiff(A: HashSet<'a>)(B: HashSet<'a>) : HashSet<'a> =
             let hs = new HashSet<'a>()
             for a in A do
@@ -402,6 +414,14 @@
                         ) es
             let tot = Array.sum cost
             tot
+
+        // compute a reasonable k
+        let COFk(cell: AST.Address)(dag: DAG)(normalizeRefSpace: bool)(normalizeSSSpace: bool) : int =
+            let wsname = cell.WorksheetName
+            let wscells = dag.allInputs() |> Array.filter (fun c -> c.WorksheetName = wsname)
+            let miny: int = Array.map (fun (c: AST.Address) -> c.Row) wscells |> Array.min
+            let maxy: int = Array.map (fun (c: AST.Address) -> c.Row) wscells |> Array.max
+            maxy - miny
 
         let COF(p: SquareVector)(k: int)(G: HashSet<SquareVector>)(DD: DistDict) : double =
             // get p's k nearest neighbors
@@ -550,22 +570,29 @@
                         wbcache.Add(wsname, dists)
                 ) (dag.getWorksheetNames())
 
-        type ShallowInputVectorMixedCOFRefUnnormSSNorm() =
+        type BaseCOFFeature() =
             inherit BaseFeature()
+
+        type ShallowInputVectorMixedCOFRefUnnormSSNorm() =
+            inherit BaseCOFFeature()
             let cache = new Dictionary<WorkbookName,Dictionary<WorksheetName,DistDict>>()
             static let instance = new ShallowInputVectorMixedCOFRefUnnormSSNorm()
             member self.BuildDistDict(dag: DAG) : Dictionary<WorksheetName,DistDict> =
                 MutateCache cache dag false true
                 cache.[dag.getWorkbookName()]
+            static member normalizeRefSpace: bool = false
+            static member normalizeSSSpace: bool = true
             static member Instance = instance
             static member run(cell: AST.Address)(dag: DAG) : double =
-                let k = failwith "compute the width of the spreadsheet"
+                let normRef = false
+                let normSS = true
+                
+                let k = COFk cell dag normRef normSS
                 let dd = (ShallowInputVectorMixedCOFRefUnnormSSNorm.Instance.BuildDistDict dag).[cell.WorksheetName]
-                let vcell = SingleSquareVector cell dag false true
+                let vcell = SingleSquareVector cell dag normRef normSS
                 let neighbors = DistDictToSVHashSet dd
-                COF vcell 10 neighbors dd
+                COF vcell k neighbors dd
 
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorMixedCOFRefUnnormSSNorm>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedCOFRefUnnormSSNorm.run } )
-
