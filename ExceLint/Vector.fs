@@ -322,9 +322,10 @@
                             Seq.filter (fun (kvp: KeyValuePair<Edge,double>) ->
                                 let p' = fst kvp.Key
                                 let o = snd kvp.Key
-                                p = p' &&       // p must not be in Nk
-                                p <> o &&       // also, we don't care about dist(p,p)
-                                G.Contains(o)   // and G may also be a subset of points
+                                let b1 = p <> p'       // p must not be in Nk
+                                let b2 = p <> o       // also, we don't care about dist(p,p)
+                                let b3 = G.Contains(o)   // and G may also be a subset of points
+                                b1 && b2 && b3
                             ) |>
                             Seq.toArray
             let subgraph_sorted = subgraph |> Array.sortBy (fun (kvp: KeyValuePair<Edge,double>) -> kvp.Value)

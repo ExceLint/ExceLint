@@ -47,6 +47,9 @@
             this.showVectors = this.Factory.CreateRibbonButton();
             this.spectralPlot = this.Factory.CreateRibbonButton();
             this.scatter3D = this.Factory.CreateRibbonButton();
+            this.ExportSquareMatrixButton = this.Factory.CreateRibbonButton();
+            this.normRefCheckBox = this.Factory.CreateRibbonCheckBox();
+            this.normSSCheckBox = this.Factory.CreateRibbonCheckBox();
             this.significanceTextBox = this.Factory.CreateRibbonEditBox();
             this.spectralRanking = this.Factory.CreateRibbonCheckBox();
             this.showFixes = this.Factory.CreateRibbonCheckBox();
@@ -77,9 +80,7 @@
             this.separator4 = this.Factory.CreateRibbonSeparator();
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
-            this.ExportSquareMatrixButton = this.Factory.CreateRibbonButton();
-            this.normRefCheckBox = this.Factory.CreateRibbonCheckBox();
-            this.normSSCheckBox = this.Factory.CreateRibbonCheckBox();
+            this.useCOF = this.Factory.CreateRibbonToggleButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -146,6 +147,7 @@
             this.box1.Items.Add(this.ExportSquareMatrixButton);
             this.box1.Items.Add(this.normRefCheckBox);
             this.box1.Items.Add(this.normSSCheckBox);
+            this.box1.Items.Add(this.useCOF);
             this.box1.Name = "box1";
             // 
             // AnalyzeButton
@@ -220,6 +222,25 @@
             this.scatter3D.Name = "scatter3D";
             this.scatter3D.ShowImage = true;
             this.scatter3D.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.scatter3D_Click);
+            // 
+            // ExportSquareMatrixButton
+            // 
+            this.ExportSquareMatrixButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.ExportSquareMatrixButton.Image = ((System.Drawing.Image)(resources.GetObject("ExportSquareMatrixButton.Image")));
+            this.ExportSquareMatrixButton.Label = "Export Square Matrices";
+            this.ExportSquareMatrixButton.Name = "ExportSquareMatrixButton";
+            this.ExportSquareMatrixButton.ShowImage = true;
+            this.ExportSquareMatrixButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ExportSquareMatrixButton_Click);
+            // 
+            // normRefCheckBox
+            // 
+            this.normRefCheckBox.Label = "Normalize Refs";
+            this.normRefCheckBox.Name = "normRefCheckBox";
+            // 
+            // normSSCheckBox
+            // 
+            this.normSSCheckBox.Label = "Normalize Sheet";
+            this.normSSCheckBox.Name = "normSSCheckBox";
             // 
             // significanceTextBox
             // 
@@ -418,24 +439,10 @@
             this.annotateThisCell.ShowImage = true;
             this.annotateThisCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotateThisCell_Click);
             // 
-            // ExportSquareMatrixButton
+            // useCOF
             // 
-            this.ExportSquareMatrixButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.ExportSquareMatrixButton.Image = ((System.Drawing.Image)(resources.GetObject("ExportSquareMatrixButton.Image")));
-            this.ExportSquareMatrixButton.Label = "Export Square Matrices";
-            this.ExportSquareMatrixButton.Name = "ExportSquareMatrixButton";
-            this.ExportSquareMatrixButton.ShowImage = true;
-            this.ExportSquareMatrixButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ExportSquareMatrixButton_Click);
-            // 
-            // normRefCheckBox
-            // 
-            this.normRefCheckBox.Label = "Normalize Refs";
-            this.normRefCheckBox.Name = "normRefCheckBox";
-            // 
-            // normSSCheckBox
-            // 
-            this.normSSCheckBox.Label = "Normalize Sheet";
-            this.normSSCheckBox.Name = "normSSCheckBox";
+            this.useCOF.Label = "Use COF";
+            this.useCOF.Name = "useCOF";
             // 
             // ExceLintRibbon
             // 
@@ -503,6 +510,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton ExportSquareMatrixButton;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox normRefCheckBox;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox normSSCheckBox;
+        internal Microsoft.Office.Tools.Ribbon.RibbonToggleButton useCOF;
     }
 
     partial class ThisRibbonCollection

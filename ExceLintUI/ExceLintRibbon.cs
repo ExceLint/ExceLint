@@ -1045,6 +1045,14 @@ namespace ExceLintUI
             // ranking type
             if (this.spectralRanking.Checked) { c = c.spectralRanking(true).analyzeRelativeToSheet(true); }
 
+            // COF?
+            if (this.useCOF.Checked) {
+                c = c.enableShallowInputVectorMixedCOFRefUnnormSSNorm(true);
+            } else
+            {
+                c = c.enableShallowInputVectorMixedCOFRefUnnormSSNorm(false);
+            }
+
             return c;
         }
 
