@@ -493,7 +493,15 @@
         member self.DD(dag: Depends.DAG): Dictionary<Vector.WorksheetName,Vector.DistDict> =
             let (name,_) = Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.capability
             if _config.ContainsKey name then
-                Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.Instance.BuildDistDict dag
+                let (bdd,dd) = Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.Instance.BuildDistDict dag
+                dd
+            else
+                failwith "Invalid operation for configured analysis."
+        member self.BDD(dag: Depends.DAG): Dictionary<Vector.WorksheetName,Dictionary<AST.Address,Vector.SquareVector>> =
+            let (name,_) = Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.capability
+            if _config.ContainsKey name then
+                let (bdd,dd) = Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.Instance.BuildDistDict dag
+                bdd
             else
                 failwith "Invalid operation for configured analysis."
 

@@ -856,35 +856,37 @@ namespace ExceLintUI
 
         public string GetSquareMatrices(bool forceDAGBuild, bool normalizeRefSpace, bool normalizeSSSpace)
         {
-            // Disable screen updating during analysis to speed things up
-            _app.ScreenUpdating = false;
+            return null;
+            //// Disable screen updating during analysis to speed things up
+            //_app.ScreenUpdating = false;
 
-            // build DAG
-            using (var pb = new ProgBar())
-            {
-                UpdateDAG(forceDAGBuild, pb);
-            }
+            //// build DAG
+            //using (var pb = new ProgBar())
+            //{
+            //    UpdateDAG(forceDAGBuild, pb);
+            //}
 
-            // get cursor worksheet
-            var cursor = (Excel.Range)_app.Selection;
-            AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, _app.ActiveWorkbook);
-            var cWrksheet = cursorAddr.WorksheetName;
+            //// get cursor worksheet
+            //var cursor = (Excel.Range)_app.Selection;
+            //AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, _app.ActiveWorkbook);
+            //var cWrksheet = cursorAddr.WorksheetName;
 
-            // get matrices for this sheet
-            var matrices = ExceLint.Vector.AllSquareVectors(_dag, normalizeRefSpace, normalizeSSSpace, cWrksheet);
+            //// get matrices for this sheet
+            //var formulas = _dag.getAllFormulaAddrs().Where(c => c.WorksheetName == cWrksheet).ToArray();
+            //var matrices = ExceLint.Vector.AllSquareVectors(formulas, _dag, normalizeRefSpace, normalizeSSSpace);
 
-            // convert to CSV
-            string[] rows = matrices.Select(v =>
-            {
-                string[] s = new string[] { v.dx.ToString(), v.dy.ToString(), v.x.ToString(), v.y.ToString() };
-                return String.Join(",", s);
-            }).ToArray();
+            //// convert to CSV
+            //string[] rows = matrices.Select(v =>
+            //{
+            //    string[] s = new string[] { v.dx.ToString(), v.dy.ToString(), v.x.ToString(), v.y.ToString() };
+            //    return String.Join(",", s);
+            //}).ToArray();
 
-            string csv = String.Join("\n", rows);
+            //string csv = String.Join("\n", rows);
 
-            _app.ScreenUpdating = true;
+            //_app.ScreenUpdating = true;
 
-            return csv;
+            //return csv;
         }
     }
 }

@@ -853,14 +853,14 @@
                 h3.UnionWith h2
                 h3
 
-            let private getCOFFixes(scores: ScoreTable)(dag: Depends.DAG)(normalizeRefSpace: bool)(normalizeSSSpace: bool)(DDs: Dictionary<Vector.WorksheetName,Vector.DistDict>) : Dictionary<AST.Address,HashSet<AST.Address>> =
+            let private getCOFFixes(scores: ScoreTable)(dag: Depends.DAG)(normalizeRefSpace: bool)(normalizeSSSpace: bool)(BDD: Dictionary<string,Dictionary<AST.Address,Vector.SquareVector>>)(DDs: Dictionary<Vector.WorksheetName,Vector.DistDict>) : Dictionary<AST.Address,HashSet<AST.Address>> =
                 let d = new Dictionary<AST.Address,HashSet<AST.Address>>()
 
                 for kvp in scores do
                     for (addr,score) in kvp.Value do
                         let k = Vector.COFk addr dag normalizeRefSpace normalizeSSSpace
                         let DD = DDs.[addr.WorksheetName]
-                        let nb = Vector.Nk_cells addr k dag normalizeRefSpace normalizeSSSpace DD
+                        let nb = Vector.Nk_cells addr k dag normalizeRefSpace normalizeSSSpace BDD DD
                         if not (d.ContainsKey addr) then
                             d.Add(addr, nb)
                         else
@@ -882,7 +882,7 @@
                     let (ranking,ranking_time) = PerfUtils.runMillis _rankf ()
 
                     // get fixes
-                    let _fixf = fun () -> getCOFFixes scores input.dag input.config.NormalizeRefs input.config.NormalizeSS (input.config.DD input.dag)
+                    let _fixf = fun () -> getCOFFixes scores input.dag input.config.NormalizeRefs input.config.NormalizeSS (input.config.BDD input.dag) (input.config.DD input.dag)
                     let (fixes,fixes_time) = PerfUtils.runMillis _fixf ()
 
                     Success(Cluster

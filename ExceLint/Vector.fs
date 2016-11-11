@@ -271,9 +271,7 @@
                 rows <- SquareVector(cols.[0].[i], cols.[1].[i], cols.[2].[i], cols.[3].[i]) :: rows
             List.rev rows |> List.toArray
 
-        let SingleSquareVector(cell: AST.Address)(dag: DAG)(normalizeRefSpace: bool)(normalizeSSSpace: bool) : SquareVector =
-            // yes, I am lazy; this is basically a copy of AllSquareVectors; TODO refactor
-            let fs = [|cell|]
+        let AllSquareVectors(fs: AST.Address[])(dag: DAG)(normalizeRefSpace: bool)(normalizeSSSpace: bool) : Dictionary<AST.Address,SquareVector> =
             let mats = Array.map (fun f -> SquareMatrixForCell f dag) fs
 
             let sdx_vect = if normalizeRefSpace then normalizeColumn (column 0 mats) else column 0 mats
@@ -281,19 +279,9 @@
             let x_vect = if normalizeSSSpace then normalizeColumn (column 2 mats) else column 2 mats
             let y_vect = if normalizeSSSpace then normalizeColumn (column 3 mats) else column 3 mats
 
-            let arr = combine([| sdx_vect; sdy_vect; x_vect; y_vect |])
-            arr.[0]
+            let sqvect = combine([| sdx_vect; sdy_vect; x_vect; y_vect |])
 
-        let AllSquareVectors(dag: DAG)(normalizeRefSpace: bool)(normalizeSSSpace: bool)(wsname: string) : SquareVector[] =
-            let fs = dag.getAllFormulaAddrs() |> Array.filter (fun f -> f.WorksheetName = wsname) 
-            let mats = Array.map (fun f -> SquareMatrixForCell f dag) fs
-
-            let sdx_vect = if normalizeRefSpace then normalizeColumn (column 0 mats) else column 0 mats
-            let sdy_vect = if normalizeRefSpace then normalizeColumn (column 1 mats) else column 1 mats
-            let x_vect = if normalizeSSSpace then normalizeColumn (column 2 mats) else column 2 mats
-            let y_vect = if normalizeSSSpace then normalizeColumn (column 3 mats) else column 3 mats
-
-            combine([| sdx_vect; sdy_vect; x_vect; y_vect |])
+            Array.mapi (fun i f -> f,sqvect.[i]) fs |> adict
 
         let DistDictToSVHashSet(dd: DistDict) : HashSet<SquareVector> =
             let hs = new HashSet<SquareVector>()
@@ -317,18 +305,32 @@
 
             res
 
+        let edges(G: SquareVector[]) : Edge[] =
+            Array.map (fun i -> Array.map (fun j -> i,j) G) G |> Array.concat
+
+        let pairwiseDistances(E: Edge[]) : DistDict =
+            let d = new DistDict()
+            for e in E do
+                d.Add(e, dist e)
+            d
+
         let Nk(p: SquareVector)(k : int)(G: HashSet<SquareVector>)(DD: DistDict) : HashSet<SquareVector> =
-            let subgraph = DD |>
-                            Seq.filter (fun (kvp: KeyValuePair<Edge,double>) ->
+            let DDarr = pairwiseDistances (edges (G |> Seq.toArray)) |> Seq.toArray
+
+            let subgraph = DDarr |>
+                           Array.filter (fun (kvp: KeyValuePair<Edge,double>) ->
                                 let p' = fst kvp.Key
                                 let o = snd kvp.Key
-                                let b1 = p <> p'       // p must not be in Nk
+                                let b1 = p = p'       // p must not be in Nk
                                 let b2 = p <> o       // also, we don't care about dist(p,p)
                                 let b3 = G.Contains(o)   // and G may also be a subset of points
                                 b1 && b2 && b3
-                            ) |>
-                            Seq.toArray
+                            )
             let subgraph_sorted = subgraph |> Array.sortBy (fun (kvp: KeyValuePair<Edge,double>) -> kvp.Value)
+
+            if subgraph_sorted.Length < k then
+                System.Console.WriteLine("yo")
+
             let subgraph_sorted_k = subgraph_sorted |> Array.take k
             let kn = subgraph_sorted_k |> Array.map (fun (kvp: KeyValuePair<Edge,double>) -> snd kvp.Key)
 
@@ -336,10 +338,10 @@
 
             new HashSet<SquareVector>(kn)
 
-        let Nk_cells(p: AST.Address)(k: int)(dag: DAG)(normalizeRefSpace: bool)(normalizeSSSpace: bool)(DD: DistDict) : HashSet<AST.Address> =
-            let p' = SingleSquareVector p dag normalizeRefSpace normalizeSSSpace
-            let Gmap = Array.map (fun c ->
-                           SingleSquareVector c dag normalizeRefSpace normalizeSSSpace, c
+        let Nk_cells(p: AST.Address)(k: int)(dag: DAG)(normalizeRefSpace: bool)(normalizeSSSpace: bool)(BDD: Dictionary<WorksheetName,Dictionary<AST.Address,SquareVector>>)(DD: DistDict) : HashSet<AST.Address> =
+            let p' = BDD.[p.WorksheetName].[p]
+            let Gmap = Array.map (fun (c: AST.Address) ->
+                           BDD.[c.WorksheetName].[c], c
                        ) (dag.getAllFormulaAddrs() |> Array.filter (fun c -> c.WorksheetName = p.WorksheetName))
                        |> adict
             let G = Gmap.Keys |> Seq.toArray |> fun cs -> new HashSet<SquareVector>(cs)
@@ -353,15 +355,7 @@
                 if not (B.Contains a) then
                     hs.Add a |> ignore
             hs
-            
-        let edges(G: SquareVector[]) : Edge[] =
-            Array.map (fun i -> Array.map (fun j -> i,j) G) G |> Array.concat
-
-        let pairwiseDistances(E: Edge[]) : DistDict =
-            let d = new DistDict()
-            for e in E do
-                d.Add(e, dist e)
-            d
+           
 
         let SBNTrail(p: SquareVector)(G: HashSet<SquareVector>)(DD: DistDict) : Edge[] =
             let rec sbnt(path: Edge list) : Edge list =
@@ -387,7 +381,15 @@
                                 ) G' |> Seq.concat
 
                     // rank by distance, smallest to largest
-                    let edges_ranked = Seq.sortBy (fun edge -> DD.[edge]) edges |> Seq.toList
+                    let edges_ranked = Seq.sortBy (fun edge ->
+                                          try
+                                            let d = DD.[edge]
+                                            d
+                                          with
+                                          | e ->
+                                            let m = e.Message
+                                            raise e
+                                       ) edges |> Seq.toList
                 
                     // add smallest edge to path
                     sbnt(edges_ranked.Head :: path)
@@ -550,7 +552,7 @@
                 printfn "Doing something for the %i time" state
                 ()
 
-        let private MutateCache(cache: Dictionary<WorkbookName,Dictionary<WorksheetName,DistDict>>)(dag: DAG)(normalizeRefSpace: bool)(normalizeSSSpace: bool) : unit =
+        let private MutateCache(bigcache: Dictionary<WorkbookName,Dictionary<WorksheetName,Dictionary<AST.Address,SquareVector>>>)(cache: Dictionary<WorkbookName,Dictionary<WorksheetName,DistDict>>)(dag: DAG)(normalizeRefSpace: bool)(normalizeSSSpace: bool) : unit =
                 let wbname = dag.getWorkbookName()
 
                 // get workbook-level cache
@@ -559,16 +561,25 @@
                                   cache.[wbname]
                               else
                                   cache.[wbname]
+
+                let bwbcache = if not (bigcache.ContainsKey wbname) then
+                                  bigcache.Add(wbname, new Dictionary<WorksheetName,Dictionary<AST.Address,SquareVector>>())
+                                  bigcache.[wbname]
+                               else
+                                  bigcache.[wbname]
                 
                 // loop through all worksheet names
                 Array.iter (fun wsname ->
                     if not (wbcache.ContainsKey(wsname)) then
                         // get vectors
-                        let vectors = AllSquareVectors dag normalizeRefSpace normalizeSSSpace wsname
+                        let fs = dag.getAllFormulaAddrs() |> Array.filter (fun f -> f.WorksheetName = wsname) 
+                        let stuff = AllSquareVectors fs dag normalizeRefSpace normalizeSSSpace
+                        let vectors = stuff.Values |> Seq.toArray
                         // compute distances
                         let dists = pairwiseDistances (edges vectors)
                         // cache
                         wbcache.Add(wsname, dists)
+                        bwbcache.Add(wsname, stuff)
                 ) (dag.getWorksheetNames())
 
         type BaseCOFFeature() =
@@ -576,11 +587,14 @@
 
         type ShallowInputVectorMixedCOFRefUnnormSSNorm() =
             inherit BaseCOFFeature()
+            let bigcache = new Dictionary<WorkbookName,Dictionary<WorksheetName,Dictionary<AST.Address,SquareVector>>>()
             let cache = new Dictionary<WorkbookName,Dictionary<WorksheetName,DistDict>>()
             static let instance = new ShallowInputVectorMixedCOFRefUnnormSSNorm()
-            member self.BuildDistDict(dag: DAG) : Dictionary<WorksheetName,DistDict> =
-                MutateCache cache dag false true
-                cache.[dag.getWorkbookName()]
+            member self.BuildDistDict(dag: DAG) : Dictionary<WorksheetName,Dictionary<AST.Address,SquareVector>>*Dictionary<WorksheetName,DistDict> =
+                MutateCache bigcache cache dag ShallowInputVectorMixedCOFRefUnnormSSNorm.normalizeRefSpace ShallowInputVectorMixedCOFRefUnnormSSNorm.normalizeSSSpace
+                let c = cache.[dag.getWorkbookName()]
+                let bc = bigcache.[dag.getWorkbookName()]
+                bc,c
             static member normalizeRefSpace: bool = false
             static member normalizeSSSpace: bool = true
             static member Instance = instance
@@ -589,8 +603,21 @@
                 let normSS = true
                 
                 let k = COFk cell dag normRef normSS
-                let dd = (ShallowInputVectorMixedCOFRefUnnormSSNorm.Instance.BuildDistDict dag).[cell.WorksheetName]
-                let vcell = SingleSquareVector cell dag normRef normSS
+                let (foo,bar) = ShallowInputVectorMixedCOFRefUnnormSSNorm.Instance.BuildDistDict dag
+                let dd = bar.[cell.WorksheetName]
+                let bdd = foo.[cell.WorksheetName]
+
+                let vcell = bdd.[cell]
+
+//                let strs = Seq.map (fun (kvp: KeyValuePair<SquareVector*SquareVector,double>) ->
+//                            let edge = kvp.Key
+//                            let dist = kvp.Value
+//                            "from: " + (fst edge).ToString() + ", to: " + (snd edge).ToString() + ", dist: " + dist.ToString()
+//                           ) dd
+//                let pstr = "real address: " + cell.ToString() + "\n"
+//                let vstr = "point: " + vcell.ToString() + "\n"
+//                failwith (pstr + vstr + String.Join("\n", strs))
+
                 let neighbors = DistDictToSVHashSet dd
                 COF vcell k neighbors dd
 
