@@ -244,18 +244,45 @@
             else
                 float(width) / float(height)
 
-        let private normalizeColumn(data: double[]) : double[] =
-            let min = Array.min data
-            let max = Array.max data
-            if max = min then
-                Array.create data.Length 0.5
-            else
-                Array.map (fun x -> (x - min) / ( max - min)) data
+//        let private normalizeColumn(data: double[]) : double[] =
+//            let min = Array.min data
+//            let max = Array.max data
+//            if max = min then
+//                Array.create data.Length 0.5
+//            else
+//                Array.map (fun x -> (x - min) / ( max - min)) data
 
-        let SquareMatrixForCell(cell: AST.Address)(dag: DAG) : X*Y*X*Y =
+        // find normalization function that shifts and scales column values appropriately
+        let private colNormFunc(column: double[]) : double -> double =
+            let min = Array.min column
+            let max = Array.max column
+            if max = min then
+                fun x -> 0.5
+            else
+                fun x -> (x - min) / (max - min)
+
+        let private zeroOneNormalization(worksheet: SquareVector[]) : SquareVector[] =
+            assert (worksheet.Length <> 0)
+
+            let dx_norm_f = colNormFunc (Array.map (fun (v: SquareVector) -> v.dx) worksheet)
+            let dy_norm_f = colNormFunc (Array.map (fun (v: SquareVector) -> v.dy) worksheet)
+            let x_norm_f = colNormFunc (Array.map (fun (v: SquareVector) -> v.x) worksheet)
+            let y_norm_f = colNormFunc (Array.map (fun (v: SquareVector) -> v.x) worksheet)
+
+            Array.map (fun (v: SquareVector) ->
+                let dx = dx_norm_f v.dx
+                let dy = dy_norm_f v.dy
+                let x = x_norm_f v.x
+                let y = y_norm_f v.y
+                SquareVector(dx, dy, x, y)
+            ) worksheet
+
+        let SquareVectorForCell(cell: AST.Address)(dag: DAG) : SquareVector =
             let debugfrm = dag.getFormulaAtAddress(cell)
             let vs = getVectors cell dag (*transitive*) false (*isForm*) true (*isRel*) true (*isMixed*) true (*isOffSheetInsensitive*) true
-            SquareMatrix (cell.X, cell.Y) vs
+            let sm = SquareMatrix (cell.X, cell.Y) vs
+            let (dx,dy,x,y) = sm
+            SquareVector(float dx,float dy,float x,float y)
 
         let column(i: int)(data: (X*Y*X*Y)[]) : double[] =
             Array.map (fun row ->
@@ -271,17 +298,17 @@
                 rows <- SquareVector(cols.[0].[i], cols.[1].[i], cols.[2].[i], cols.[3].[i]) :: rows
             List.rev rows |> List.toArray
 
-        let AllSquareVectors(fs: AST.Address[])(dag: DAG)(normalizeRefSpace: bool)(normalizeSSSpace: bool) : Dictionary<AST.Address,SquareVector> =
-            let mats = Array.map (fun f -> SquareMatrixForCell f dag) fs
-
-            let sdx_vect = if normalizeRefSpace then normalizeColumn (column 0 mats) else column 0 mats
-            let sdy_vect = if normalizeRefSpace then normalizeColumn (column 1 mats) else column 1 mats
-            let x_vect = if normalizeSSSpace then normalizeColumn (column 2 mats) else column 2 mats
-            let y_vect = if normalizeSSSpace then normalizeColumn (column 3 mats) else column 3 mats
-
-            let sqvect = combine([| sdx_vect; sdy_vect; x_vect; y_vect |])
-
-            Array.mapi (fun i f -> f,sqvect.[i]) fs |> adict
+//        let AllSquareVectors(fs: AST.Address[])(dag: DAG)(normalizeRefSpace: bool)(normalizeSSSpace: bool) : Dictionary<AST.Address,SquareVector> =
+//            let mats = Array.map (fun f -> SquareMatrixForCell f dag) fs
+//
+//            let sdx_vect = if normalizeRefSpace then normalizeColumn (column 0 mats) else column 0 mats
+//            let sdy_vect = if normalizeRefSpace then normalizeColumn (column 1 mats) else column 1 mats
+//            let x_vect = if normalizeSSSpace then normalizeColumn (column 2 mats) else column 2 mats
+//            let y_vect = if normalizeSSSpace then normalizeColumn (column 3 mats) else column 3 mats
+//
+//            let sqvect = combine([| sdx_vect; sdy_vect; x_vect; y_vect |])
+//
+//            Array.mapi (fun i f square-> f,sqvect.[i]) fs |> adict
 
         let DistDictToSVHashSet(dd: DistDict) : HashSet<SquareVector> =
             let hs = new HashSet<SquareVector>()
@@ -571,15 +598,23 @@
                 // loop through all worksheet names
                 Array.iter (fun wsname ->
                     if not (wbcache.ContainsKey(wsname)) then
-                        // get vectors
+                        // get formulas
                         let fs = dag.getAllFormulaAddrs() |> Array.filter (fun f -> f.WorksheetName = wsname) 
-                        let stuff = AllSquareVectors fs dag normalizeRefSpace normalizeSSSpace
-                        let vectors = stuff.Values |> Seq.toArray
-                        // compute distances
-                        let dists = pairwiseDistances (edges vectors)
-                        // cache
-                        wbcache.Add(wsname, dists)
-                        bwbcache.Add(wsname, stuff)
+
+                        // don't do anything if the sheet has no formulas
+                        if fs.Length <> 0 then
+                            // get square vectors for every formula
+                            let vmap = Array.map (fun cell -> cell,SquareVectorForCell cell dag) fs |> adict
+                            let vectors = vmap.Values |> Seq.toArray
+
+                            // normalize for this sheet
+                            let vectors' = zeroOneNormalization vectors
+
+                            // compute distances
+                            let dists = pairwiseDistances (edges vectors')
+                            // cache
+                            wbcache.Add(wsname, dists)
+                            bwbcache.Add(wsname, vmap)
                 ) (dag.getWorksheetNames())
 
         type BaseCOFFeature() =
