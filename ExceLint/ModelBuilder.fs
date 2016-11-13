@@ -249,7 +249,7 @@
 
                 match analysis with
                 | Histogram h -> Success(Histogram({ h with ranking = arr }))
-                | Cluster c -> Success(Cluster({ c with ranking = arr }))
+                | Cluster c -> Success(Cluster({ c with ranking = Array.rev arr }))
 
             let private reweightRanking(input: Input)(analysis: Analysis) : AnalysisOutcome =
                 let ranking = match analysis with | Histogram h -> h.ranking | Cluster c -> c.ranking

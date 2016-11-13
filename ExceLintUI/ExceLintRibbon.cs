@@ -138,13 +138,17 @@ namespace ExceLintUI
                 if (idx == analysis.cutoff + 1) { prefix = "--- CUTOFF ---\n"; }
 
                 // enumerate causes
-                var causes = analysis.model.causeOf(score.Key);
-                var causes_str = "\tcauses: [\n" +
-                                 String.Join("\n", causes.Select(cause => {
-                                     var causeScore = cause.Value.Item1;
-                                     var causeWeight = cause.Value.Item2;
-                                     return "\t\t" + ExceLint.ErrorModel.prettyHistoBinDesc(cause.Key) + ": (CSS weight) * score = " + causeWeight + " x " + causeScore + " = " + causeWeight * causeScore;
-                                 })) + "\n\t]";
+                string causes_str = "";
+                try
+                {
+                    var causes = analysis.model.causeOf(score.Key);
+                    causes_str = "\tcauses: [\n" +
+                                     String.Join("\n", causes.Select(cause => {
+                                         var causeScore = cause.Value.Item1;
+                                         var causeWeight = cause.Value.Item2;
+                                         return "\t\t" + ExceLint.ErrorModel.prettyHistoBinDesc(cause.Key) + ": (CSS weight) * score = " + causeWeight + " x " + causeScore + " = " + causeWeight * causeScore;
+                                     })) + "\n\t]";
+                } catch (Exception e) { }
 
                 // print
                 return prefix + score.Key.A1FullyQualified() + " -> " + score.Value.ToString() + "\n" + causes_str + "\n\t" + "intrinsic anomalousness weight: " + analysis.model.weightOf(score.Key);

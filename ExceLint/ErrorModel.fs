@@ -33,7 +33,7 @@
         member self.FrequencyTableTimeInMilliseconds : int64 =
             match analysis with 
             | Histogram h -> h.ftable_time
-            | Cluster c -> failwith "Not valid for COF analysis."
+            | Cluster c -> 0L
 
         member self.RankingTimeInMilliseconds : int64 =
             match analysis with 
@@ -43,7 +43,7 @@
         member self.ConditioningSetSizeTimeInMilliseconds: int64 =
             match analysis with 
             | Histogram h -> h.csstable_time
-            | Cluster c -> failwith "Not valid for COF analysis."
+            | Cluster c -> 0L
 
         member self.CausesTimeInMilliseconds: int64 =
             match analysis with 
@@ -62,7 +62,7 @@
         member self.NumFreqEntries : int =
             match analysis with 
             | Histogram h -> h.ftable.Count
-            | Cluster c -> failwith "Not valid for COF analysis."
+            | Cluster c -> 0
 
         member self.NumRankedEntries : int =
             match analysis with 
