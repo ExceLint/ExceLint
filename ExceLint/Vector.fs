@@ -629,42 +629,64 @@
         type BaseCOFFeature() =
             inherit BaseFeature()
 
-        type ShallowInputVectorMixedCOFRefUnnormSSNorm() =
+        type ShallowInputVectorMixedCOFNoAspect() =
             inherit BaseCOFFeature()
             let bigcache = new Dictionary<WorkbookName,Dictionary<WorksheetName,Dictionary<AST.Address,SquareVector>>>()
             let cache = new Dictionary<WorkbookName,Dictionary<WorksheetName,DistDict>>()
-            static let instance = new ShallowInputVectorMixedCOFRefUnnormSSNorm()
+            static let instance = new ShallowInputVectorMixedCOFNoAspect()
             member self.BuildDistDict(dag: DAG) : Dictionary<WorksheetName,Dictionary<AST.Address,SquareVector>>*Dictionary<WorksheetName,DistDict> =
-                MutateCache bigcache cache dag ShallowInputVectorMixedCOFRefUnnormSSNorm.normalizeRefSpace ShallowInputVectorMixedCOFRefUnnormSSNorm.normalizeSSSpace
+                MutateCache bigcache cache dag ShallowInputVectorMixedCOFNoAspect.normalizeRefSpace ShallowInputVectorMixedCOFNoAspect.normalizeSSSpace
                 let c = cache.[dag.getWorkbookName()]
                 let bc = bigcache.[dag.getWorkbookName()]
                 bc,c
-            static member normalizeRefSpace: bool = false
+            static member normalizeRefSpace: bool = true
             static member normalizeSSSpace: bool = true
             static member Instance = instance
             static member run(cell: AST.Address)(dag: DAG) : double =
-                let normRef = false
-                let normSS = true
+                let normRef = ShallowInputVectorMixedCOFNoAspect.normalizeRefSpace
+                let normSS = ShallowInputVectorMixedCOFNoAspect.normalizeSSSpace
                 
                 let k = COFk cell dag normRef normSS
-                let (BDD,DD) = ShallowInputVectorMixedCOFRefUnnormSSNorm.Instance.BuildDistDict dag
+                let (BDD,DD) = ShallowInputVectorMixedCOFNoAspect.Instance.BuildDistDict dag
                 let dd = DD.[cell.WorksheetName]
                 let bdd = BDD.[cell.WorksheetName]
 
                 let vcell = bdd.[cell]
 
-//                let strs = Seq.map (fun (kvp: KeyValuePair<SquareVector*SquareVector,double>) ->
-//                            let edge = kvp.Key
-//                            let dist = kvp.Value
-//                            "from: " + (fst edge).ToString() + ", to: " + (snd edge).ToString() + ", dist: " + dist.ToString()
-//                           ) dd
-//                let pstr = "real address: " + cell.ToString() + "\n"
-//                let vstr = "point: " + vcell.ToString() + "\n"
-//                failwith (pstr + vstr + String.Join("\n", strs))
+                let neighbors = DistDictToSVHashSet dd
+                COF vcell k neighbors dd
+
+            static member capability : string*Capability =
+                (typeof<ShallowInputVectorMixedCOFNoAspect>.Name,
+                    { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedCOFNoAspect.run } )
+
+        type ShallowInputVectorMixedCOFAspect() =
+            inherit BaseCOFFeature()
+            let bigcache = new Dictionary<WorkbookName,Dictionary<WorksheetName,Dictionary<AST.Address,SquareVector>>>()
+            let cache = new Dictionary<WorkbookName,Dictionary<WorksheetName,DistDict>>()
+            static let instance = new ShallowInputVectorMixedCOFAspect()
+            member self.BuildDistDict(dag: DAG) : Dictionary<WorksheetName,Dictionary<AST.Address,SquareVector>>*Dictionary<WorksheetName,DistDict> =
+                MutateCache bigcache cache dag ShallowInputVectorMixedCOFAspect.normalizeRefSpace ShallowInputVectorMixedCOFAspect.normalizeSSSpace
+                let c = cache.[dag.getWorkbookName()]
+                let bc = bigcache.[dag.getWorkbookName()]
+                bc,c
+            static member normalizeRefSpace: bool = true
+            static member normalizeSSSpace: bool = true
+            static member Instance = instance
+            static member run(cell: AST.Address)(dag: DAG) : double =
+                let normRef = ShallowInputVectorMixedCOFAspect.normalizeRefSpace
+                let normSS = ShallowInputVectorMixedCOFAspect.normalizeSSSpace
+                
+                let k = COFk cell dag normRef normSS
+                let (BDD,DD) = ShallowInputVectorMixedCOFAspect.Instance.BuildDistDict dag
+                let dd = DD.[cell.WorksheetName]
+                let bdd = BDD.[cell.WorksheetName]
+
+                let vcell = bdd.[cell]
 
                 let neighbors = DistDictToSVHashSet dd
                 COF vcell k neighbors dd
 
             static member capability : string*Capability =
-                (typeof<ShallowInputVectorMixedCOFRefUnnormSSNorm>.Name,
-                    { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedCOFRefUnnormSSNorm.run } )
+                (typeof<ShallowInputVectorMixedCOFAspect>.Name,
+                    { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedCOFAspect.run } )

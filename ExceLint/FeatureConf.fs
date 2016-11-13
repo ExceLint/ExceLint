@@ -26,7 +26,7 @@
                 Vector.ShallowOutputVectorAbsoluteL2NormSum.capability;
                 Vector.ShallowInputVectorMixedL2NormSum.capability;
                 Vector.ShallowOutputVectorMixedL2NormSum.capability;
-                Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.capability;
+                Vector.ShallowInputVectorMixedCOFNoAspect.capability;
                 Proximity.Above.capability;
                 Proximity.Below.capability;
                 Proximity.Left.capability;
@@ -229,7 +229,7 @@
                 else
                     self
         member self.enableShallowInputVectorMixedCOFRefUnnormSSNorm(on: bool) : FeatureConf =
-            let (name,cap) = Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.capability
+            let (name,cap) = Vector.ShallowInputVectorMixedCOFNoAspect.capability
             if on then
                 FeatureConf(
                     _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
@@ -476,31 +476,31 @@
         member self.IsEnabledAnalyzeOnlyFormulas : bool = _config.ContainsKey "AnalyzeOnlyFormulas" && _config.["AnalyzeOnlyFormulas"].enabled
         member self.IsEnabledAnalyzeAllCells : bool = _config.ContainsKey "AnalyzeOnlyFormulas" && not (_config.["AnalyzeOnlyFormulas"].enabled)
         member self.IsCOF : bool =
-            let (name,_) = Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.capability
+            let (name,_) = Vector.ShallowInputVectorMixedCOFNoAspect.capability
             _config.ContainsKey name
         member self.NormalizeRefs : bool =
-            let (name,_) = Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.capability
+            let (name,_) = Vector.ShallowInputVectorMixedCOFNoAspect.capability
             if _config.ContainsKey name then
-                Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.normalizeRefSpace
+                Vector.ShallowInputVectorMixedCOFNoAspect.normalizeRefSpace
             else
                 false
         member self.NormalizeSS : bool =
-            let (name,_) = Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.capability
+            let (name,_) = Vector.ShallowInputVectorMixedCOFNoAspect.capability
             if _config.ContainsKey name then
-                Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.normalizeSSSpace
+                Vector.ShallowInputVectorMixedCOFNoAspect.normalizeSSSpace
             else
                 false
         member self.DD(dag: Depends.DAG): Dictionary<Vector.WorksheetName,Vector.DistDict> =
-            let (name,_) = Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.capability
+            let (name,_) = Vector.ShallowInputVectorMixedCOFNoAspect.capability
             if _config.ContainsKey name then
-                let (bdd,dd) = Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.Instance.BuildDistDict dag
+                let (bdd,dd) = Vector.ShallowInputVectorMixedCOFNoAspect.Instance.BuildDistDict dag
                 dd
             else
                 failwith "Invalid operation for configured analysis."
         member self.BDD(dag: Depends.DAG): Dictionary<Vector.WorksheetName,Dictionary<AST.Address,Vector.SquareVector>> =
-            let (name,_) = Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.capability
+            let (name,_) = Vector.ShallowInputVectorMixedCOFNoAspect.capability
             if _config.ContainsKey name then
-                let (bdd,dd) = Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.Instance.BuildDistDict dag
+                let (bdd,dd) = Vector.ShallowInputVectorMixedCOFNoAspect.Instance.BuildDistDict dag
                 bdd
             else
                 failwith "Invalid operation for configured analysis."
@@ -524,7 +524,7 @@
                           else
                               config
 
-            let (cof,_) = Vector.ShallowInputVectorMixedCOFRefUnnormSSNorm.capability
+            let (cof,_) = Vector.ShallowInputVectorMixedCOFNoAspect.capability
             if self.IsEnabled(cof) then
                 config'
             else

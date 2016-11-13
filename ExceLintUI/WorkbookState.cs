@@ -694,8 +694,47 @@ namespace ExceLintUI
                 // enable auditing buttons
                 setTool(active: true);
 
+                // if this is COF, always show fixes
+                if (_analysis.model.IsCOF)
+                {
+                    var fixes = _analysis.model.COFFixes[_flagged_cell].ToArray();
+
+                    if (fixes.Length > 0)
+                    {
+                        var sb = new StringBuilder();
+
+                        sb.AppendLine("ExceLint thinks that");
+                        sb.AppendLine(_dag.getFormulaAtAddress(_flagged_cell));
+                        sb.AppendLine("should look more like");
+
+                        for (int i = 0; i < fixes.Length; i++)
+                        {
+                            // get formula at fix address
+                            var f = _dag.getFormulaAtAddress(fixes[i]);
+                            if (i > 0)
+                            {
+                                sb.Append("or ");
+                            }
+                            sb.AppendLine("address: " + fixes[i].A1Local().ToString() + ", formula: " + f);
+
+                            // get cell COM object
+                            var fix_com = ParcelCOMShim.Address.GetCOMObject(fixes[i], _app);
+
+                            // save old color
+                            _colors.saveColorAt(
+                                fixes[i],
+                                new CellColor { ColorIndex = (int)fix_com.Interior.ColorIndex, Color = (double)fix_com.Interior.Color }
+                            );
+
+                            // set color
+                            fix_com.Interior.Color = System.Drawing.Color.Green;
+                        }
+
+                        System.Windows.Forms.MessageBox.Show(sb.ToString());
+                    }
+                }
                 // if the user wants to see fixes, show them now
-                if (showFixes)
+                else if (showFixes)
                 {
                     var fixes = hypothesizedFixes(_flagged_cell, _analysis.model);
                     if (fixes.Length > 0)

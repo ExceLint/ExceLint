@@ -30,6 +30,11 @@
             | Histogram h -> h.ftable
             | Cluster c -> failwith "Not valid for COF analysis."
 
+        member self.IsCOF : bool =
+            match analysis with
+            | Histogram _ -> false
+            | Cluster _ -> true
+
         member self.FrequencyTableTimeInMilliseconds : int64 =
             match analysis with 
             | Histogram h -> h.ftable_time
@@ -77,6 +82,11 @@
             match analysis with 
             | Histogram h -> h.fixes
             | Cluster c -> failwith "Not valid for COF analysis."
+
+        member self.COFFixes : Dictionary<AST.Address,HashSet<AST.Address>> =
+            match analysis with
+            | Histogram _ -> failwith "Not valid for non-COF analysis."
+            | Cluster c -> c.fixes
 
         member self.Scores : ScoreTable =
             match analysis with 
