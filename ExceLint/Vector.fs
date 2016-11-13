@@ -261,14 +261,22 @@
             else
                 fun x -> (x - min) / (max - min)
 
-        let private zeroOneNormalization(worksheet: SquareVector[]) : SquareVector[] =
+        let private idf(x: double[]) : double -> double = fun x -> x
+
+        let private zeroOneNormalization(worksheet: SquareVector[])(normalizeRefSpace: bool)(normalizeSSSpace: bool) : SquareVector[] =
             assert (worksheet.Length <> 0)
 
-            let dx_norm_f = colNormFunc (Array.map (fun (v: SquareVector) -> v.dx) worksheet)
-            let dy_norm_f = colNormFunc (Array.map (fun (v: SquareVector) -> v.dy) worksheet)
-            let x_norm_f = colNormFunc (Array.map (fun (v: SquareVector) -> v.x) worksheet)
-            let y_norm_f = colNormFunc (Array.map (fun (v: SquareVector) -> v.x) worksheet)
+            // get normalization functions for each column
+            let dx_norm_f =  Array.map (fun (v: SquareVector) -> v.dx) worksheet
+                             |> fun xs -> if normalizeRefSpace then colNormFunc xs else idf xs
+            let dy_norm_f = Array.map (fun (v: SquareVector) -> v.dy) worksheet
+                            |> fun xs -> if normalizeRefSpace then colNormFunc xs else idf xs
+            let x_norm_f = Array.map (fun (v: SquareVector) -> v.x) worksheet
+                           |> fun xs -> if normalizeSSSpace then colNormFunc xs else idf xs
+            let y_norm_f = Array.map (fun (v: SquareVector) -> v.y) worksheet
+                           |> fun xs -> if normalizeSSSpace then colNormFunc xs else idf xs
 
+            // normalize and reutrn new vector array
             Array.map (fun (v: SquareVector) ->
                 let dx = dx_norm_f v.dx
                 let dy = dy_norm_f v.dy
@@ -342,21 +350,18 @@
             d
 
         let Nk(p: SquareVector)(k : int)(G: HashSet<SquareVector>)(DD: DistDict) : HashSet<SquareVector> =
-            let DDarr = pairwiseDistances (edges (G |> Seq.toArray)) |> Seq.toArray
+            let DDarr = DD |> Seq.toArray
 
             let subgraph = DDarr |>
                            Array.filter (fun (kvp: KeyValuePair<Edge,double>) ->
                                 let p' = fst kvp.Key
                                 let o = snd kvp.Key
-                                let b1 = p = p'       // p must not be in Nk
-                                let b2 = p <> o       // also, we don't care about dist(p,p)
-                                let b3 = G.Contains(o)   // and G may also be a subset of points
+                                let b1 = p = p'        // the starting edge must be p
+                                let b2 = p <> o        // p itself must not be considered a neighbor
+                                let b3 = G.Contains(o) // neighbor must be in the subgraph G
                                 b1 && b2 && b3
                             )
             let subgraph_sorted = subgraph |> Array.sortBy (fun (kvp: KeyValuePair<Edge,double>) -> kvp.Value)
-
-            if subgraph_sorted.Length < k then
-                System.Console.WriteLine("yo")
 
             let subgraph_sorted_k = subgraph_sorted |> Array.take k
             let kn = subgraph_sorted_k |> Array.map (fun (kvp: KeyValuePair<Edge,double>) -> snd kvp.Key)
@@ -608,7 +613,7 @@
                             let vectors = vmap.Values |> Seq.toArray
 
                             // normalize for this sheet
-                            let vectors' = zeroOneNormalization vectors
+                            let vectors' = zeroOneNormalization vectors normalizeRefSpace normalizeSSSpace
 
                             // compute distances
                             let dists = pairwiseDistances (edges vectors')
@@ -638,9 +643,9 @@
                 let normSS = true
                 
                 let k = COFk cell dag normRef normSS
-                let (foo,bar) = ShallowInputVectorMixedCOFRefUnnormSSNorm.Instance.BuildDistDict dag
-                let dd = bar.[cell.WorksheetName]
-                let bdd = foo.[cell.WorksheetName]
+                let (BDD,DD) = ShallowInputVectorMixedCOFRefUnnormSSNorm.Instance.BuildDistDict dag
+                let dd = DD.[cell.WorksheetName]
+                let bdd = BDD.[cell.WorksheetName]
 
                 let vcell = bdd.[cell]
 
