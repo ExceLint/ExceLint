@@ -50,6 +50,7 @@
             this.ExportSquareMatrixButton = this.Factory.CreateRibbonButton();
             this.normRefCheckBox = this.Factory.CreateRibbonCheckBox();
             this.normSSCheckBox = this.Factory.CreateRibbonCheckBox();
+            this.useCOF = this.Factory.CreateRibbonToggleButton();
             this.significanceTextBox = this.Factory.CreateRibbonEditBox();
             this.spectralRanking = this.Factory.CreateRibbonCheckBox();
             this.showFixes = this.Factory.CreateRibbonCheckBox();
@@ -80,7 +81,6 @@
             this.separator4 = this.Factory.CreateRibbonSeparator();
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
-            this.useCOF = this.Factory.CreateRibbonToggleButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -102,6 +102,9 @@
             // CheckCellGroup
             // 
             this.CheckCellGroup.Items.Add(this.box1);
+            this.CheckCellGroup.Items.Add(this.useCOF);
+            this.CheckCellGroup.Items.Add(this.normSSCheckBox);
+            this.CheckCellGroup.Items.Add(this.normRefCheckBox);
             this.CheckCellGroup.Items.Add(this.significanceTextBox);
             this.CheckCellGroup.Items.Add(this.spectralRanking);
             this.CheckCellGroup.Items.Add(this.showFixes);
@@ -145,9 +148,6 @@
             this.box1.Items.Add(this.spectralPlot);
             this.box1.Items.Add(this.scatter3D);
             this.box1.Items.Add(this.ExportSquareMatrixButton);
-            this.box1.Items.Add(this.normRefCheckBox);
-            this.box1.Items.Add(this.normSSCheckBox);
-            this.box1.Items.Add(this.useCOF);
             this.box1.Name = "box1";
             // 
             // AnalyzeButton
@@ -230,17 +230,26 @@
             this.ExportSquareMatrixButton.Label = "Export Square Matrices";
             this.ExportSquareMatrixButton.Name = "ExportSquareMatrixButton";
             this.ExportSquareMatrixButton.ShowImage = true;
+            this.ExportSquareMatrixButton.Visible = false;
             this.ExportSquareMatrixButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ExportSquareMatrixButton_Click);
             // 
             // normRefCheckBox
             // 
             this.normRefCheckBox.Label = "Normalize Refs";
             this.normRefCheckBox.Name = "normRefCheckBox";
+            this.normRefCheckBox.Visible = false;
             // 
             // normSSCheckBox
             // 
             this.normSSCheckBox.Label = "Normalize Sheet";
             this.normSSCheckBox.Name = "normSSCheckBox";
+            this.normSSCheckBox.Visible = false;
+            // 
+            // useCOF
+            // 
+            this.useCOF.Label = "Use COF";
+            this.useCOF.Name = "useCOF";
+            this.useCOF.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.useCOF_Click);
             // 
             // significanceTextBox
             // 
@@ -438,11 +447,6 @@
             this.annotateThisCell.Name = "annotateThisCell";
             this.annotateThisCell.ShowImage = true;
             this.annotateThisCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotateThisCell_Click);
-            // 
-            // useCOF
-            // 
-            this.useCOF.Label = "Use COF";
-            this.useCOF.Name = "useCOF";
             // 
             // ExceLintRibbon
             // 

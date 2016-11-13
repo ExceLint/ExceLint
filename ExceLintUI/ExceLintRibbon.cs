@@ -503,7 +503,7 @@ namespace ExceLintUI
                 this.rowCellsFreq.Checked = true;
                 this.columnCellsFreq.Checked = true;
                 this.levelsFreq.Checked = false;
-                this.showFixes.Enabled = false;
+                this.showFixes.Enabled = useCOF.Checked;
             }
 
             setUIState(this.currentWorkbook);
@@ -954,6 +954,7 @@ namespace ExceLintUI
                 this.spectralRanking.Enabled = disabled;
                 this.showFixes.Enabled = disabled;
                 this.annotate.Enabled = disabled;
+                this.useCOF.Enabled = disabled;
 
                 // tell the user ExceLint doesn't work
                 SetTooltips(disabled_text);
@@ -1072,5 +1073,10 @@ namespace ExceLintUI
         }
 
         #endregion UTILITY_FUNCTIONS
+
+        private void useCOF_Click(object sender, RibbonControlEventArgs e)
+        {
+            showFixes.Enabled = useCOF.Checked || spectralRanking.Checked;
+        }
     }
 }
