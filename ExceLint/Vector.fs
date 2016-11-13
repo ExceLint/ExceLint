@@ -352,6 +352,8 @@
         let Nk(p: SquareVector)(k : int)(G: HashSet<SquareVector>)(DD: DistDict) : HashSet<SquareVector> =
             let DDarr = DD |> Seq.toArray
 
+            let k' = if G.Count - 1 < k then G.Count - 1 else k
+
             let subgraph = DDarr |>
                            Array.filter (fun (kvp: KeyValuePair<Edge,double>) ->
                                 let p' = fst kvp.Key
@@ -363,10 +365,10 @@
                             )
             let subgraph_sorted = subgraph |> Array.sortBy (fun (kvp: KeyValuePair<Edge,double>) -> kvp.Value)
 
-            let subgraph_sorted_k = subgraph_sorted |> Array.take k
+            let subgraph_sorted_k = subgraph_sorted |> Array.take k'
             let kn = subgraph_sorted_k |> Array.map (fun (kvp: KeyValuePair<Edge,double>) -> snd kvp.Key)
 
-            assert (Array.length kn <= k)
+            assert (Array.length kn <= k')
 
             new HashSet<SquareVector>(kn)
 
@@ -610,16 +612,18 @@
                         if fs.Length <> 0 then
                             // get square vectors for every formula
                             let vmap = Array.map (fun cell -> cell,SquareVectorForCell cell dag) fs |> adict
+                            let rev_vmap = Seq.map (fun (kvp: KeyValuePair<AST.Address,SquareVector>) -> kvp.Value, kvp.Key) vmap |> adict
                             let vectors = vmap.Values |> Seq.toArray
 
-                            // normalize for this sheet
+                            // normalize both data structures for this sheet
                             let vectors' = zeroOneNormalization vectors normalizeRefSpace normalizeSSSpace
+                            let vmap' = Array.mapi (fun i v -> rev_vmap.[v],vectors'.[i]) vectors |> adict
 
                             // compute distances
                             let dists = pairwiseDistances (edges vectors')
                             // cache
                             wbcache.Add(wsname, dists)
-                            bwbcache.Add(wsname, vmap)
+                            bwbcache.Add(wsname, vmap')
                 ) (dag.getWorksheetNames())
 
         type BaseCOFFeature() =
