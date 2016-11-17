@@ -151,8 +151,16 @@
         let private L2NormRV(v: RelativeVector) : double =
             L2Norm(relativeVectorToRealVectorArr(v))
 
+        let private RVSum(v1: RelativeVector)(v2: RelativeVector) : RelativeVector =
+            let (x1,y1,z1) = v1
+            let (x2,y2,z2) = v2
+            (x1 + x2, y1 + y2, z1 + z2)
+
         let private L2NormRVSum(vs: RelativeVector[]) : double =
             vs |> Array.map L2NormRV |> Array.sum
+
+        let private Resultant(vs: RelativeVector[]) : RelativeVector =
+            vs |> Array.fold (fun (acc: RelativeVector)(v: RelativeVector) -> RVSum acc v) (0,0,0)
 
         let private SquareMatrix(origin: X*Y)(vs: RelativeVector[]) : X*Y*X*Y =
             let (x,y) = origin
@@ -483,96 +491,117 @@
 
         type DeepInputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
-            static member run(cell: AST.Address)(dag : DAG) : double = 
+            static member run(cell: AST.Address)(dag : DAG) : Countable = 
                 L2NormRVSum (getVectors cell dag (*transitive*) true (*isForm*) true (*isRel*) true (*isMixed*) false (*isOffSheetInsensitive*) true)
+                |> Num
             static member capability : string*Capability =
                 (typeof<DeepInputVectorRelativeL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepInputVectorRelativeL2NormSum.run } )
 
         type DeepOutputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
-            static member run(cell: AST.Address)(dag : DAG) : double = 
+            static member run(cell: AST.Address)(dag : DAG) : Countable = 
                 L2NormRVSum (getVectors cell dag (*transitive*) true (*isForm*) false (*isRel*) true (*isMixed*) false (*isOffSheetInsensitive*) true)
+                |> Num
             static member capability : string*Capability =
                 (typeof<DeepOutputVectorRelativeL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepOutputVectorRelativeL2NormSum.run } )
 
         type DeepInputVectorAbsoluteL2NormSum() =
             inherit BaseFeature()
-            static member run(cell: AST.Address)(dag: DAG) : double =
+            static member run(cell: AST.Address)(dag: DAG) : Countable =
                 L2NormRVSum (getVectors cell dag (*transitive*) true (*isForm*) true (*isRel*) false (*isMixed*) false (*isOffSheetInsensitive*) true)
+                |> Num
             static member capability : string*Capability =
                 (typeof<DeepInputVectorAbsoluteL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepInputVectorAbsoluteL2NormSum.run } )
 
         type DeepOutputVectorAbsoluteL2NormSum() =
             inherit BaseFeature()
-            static member run(cell: AST.Address)(dag: DAG) : double =
+            static member run(cell: AST.Address)(dag: DAG) : Countable =
                 L2NormRVSum (getVectors cell dag (*transitive*) true (*isForm*) false (*isRel*) false (*isMixed*) false (*isOffSheetInsensitive*) true)
+                |> Num
             static member capability : string*Capability =
                 (typeof<DeepOutputVectorAbsoluteL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepOutputVectorAbsoluteL2NormSum.run } )
 
         type ShallowInputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
-            static member run(cell: AST.Address)(dag : DAG) : double = 
+            static member run(cell: AST.Address)(dag : DAG) : Countable = 
                 L2NormRVSum (getVectors cell dag (*transitive*) false (*isForm*) true (*isRel*) true (*isMixed*) false (*isOffSheetInsensitive*) true)
+                |> Num
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorRelativeL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorRelativeL2NormSum.run } )
 
         type ShallowOutputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
-            static member run(cell: AST.Address)(dag : DAG) : double = 
+            static member run(cell: AST.Address)(dag : DAG) : Countable = 
                 L2NormRVSum (getVectors cell dag (*transitive*) false (*isForm*) false (*isRel*) true (*isMixed*) false (*isOffSheetInsensitive*) true)
+                |> Num
             static member capability : string*Capability =
                 (typeof<ShallowOutputVectorRelativeL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowOutputVectorRelativeL2NormSum.run } )
 
         type ShallowInputVectorAbsoluteL2NormSum() =
             inherit BaseFeature()
-            static member run(cell: AST.Address)(dag: DAG) : double =
+            static member run(cell: AST.Address)(dag: DAG) : Countable =
                 L2NormRVSum (getVectors cell dag (*transitive*) false (*isForm*) true (*isRel*) false (*isMixed*) false (*isOffSheetInsensitive*) true)
+                |> Num
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorAbsoluteL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorAbsoluteL2NormSum.run } )
 
         type ShallowOutputVectorAbsoluteL2NormSum() =
             inherit BaseFeature()
-            static member run(cell: AST.Address)(dag: DAG) : double =
+            static member run(cell: AST.Address)(dag: DAG) : Countable =
                 L2NormRVSum (getVectors cell dag (*transitive*) false (*isForm*) false (*isRel*) false (*isMixed*) false (*isOffSheetInsensitive*) true)
+                |> Num
             static member capability : string*Capability =
                 (typeof<ShallowOutputVectorAbsoluteL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowOutputVectorAbsoluteL2NormSum.run } )
 
         type ShallowInputVectorMixedL2NormSum() =
             inherit BaseFeature()
-            static member run(cell: AST.Address)(dag: DAG) : double =
+            static member run(cell: AST.Address)(dag: DAG) : Countable =
                 L2NormRVSum (getVectors cell dag (*transitive*) false (*isForm*) true (*isRel*) true (*isMixed*) true (*isOffSheetInsensitive*) true)
+                |> Num
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorMixedL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedL2NormSum.run } )
 
+        type ShallowInputVectorMixedResultant() =
+            inherit BaseFeature()
+            static member run(cell: AST.Address)(dag: DAG) : Countable =
+                let (x,y,z) = Resultant (getVectors cell dag (*transitive*) false (*isForm*) true (*isRel*) true (*isMixed*) true (*isOffSheetInsensitive*) true)
+                Countable.Vector(x,y,z)
+            static member capability : string*Capability =
+                (typeof<ShallowInputVectorMixedResultant>.Name,
+                    { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedResultant.run } )
+
         type ShallowOutputVectorMixedL2NormSum() =
             inherit BaseFeature()
-            static member run(cell: AST.Address)(dag: DAG) : double =
+            static member run(cell: AST.Address)(dag: DAG) : Countable =
                 L2NormRVSum (getVectors cell dag (*transitive*) false (*isForm*) false (*isRel*) true (*isMixed*) true (*isOffSheetInsensitive*) true)
+                |> Num
             static member capability : string*Capability =
                 (typeof<ShallowOutputVectorMixedL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowOutputVectorMixedL2NormSum.run } )
 
         type DeepInputVectorMixedL2NormSum() =
             inherit BaseFeature()
-            static member run(cell: AST.Address)(dag: DAG) : double =
+            static member run(cell: AST.Address)(dag: DAG) : Countable =
                 L2NormRVSum (getVectors cell dag (*transitive*) true (*isForm*) true (*isRel*) true (*isMixed*) true (*isOffSheetInsensitive*) true)
+                |> Num
             static member capability : string*Capability =
                 (typeof<DeepInputVectorMixedL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepInputVectorMixedL2NormSum.run } )
 
         type DeepOutputVectorMixedL2NormSum() =
             inherit BaseFeature()
-            static member run(cell: AST.Address)(dag: DAG) : double =
+            static member run(cell: AST.Address)(dag: DAG) : Countable =
                 L2NormRVSum (getVectors cell dag (*transitive*) true (*isForm*) false (*isRel*) true (*isMixed*) true (*isOffSheetInsensitive*) true)
+                |> Num
             static member capability : string*Capability =
                 (typeof<DeepOutputVectorMixedL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepOutputVectorMixedL2NormSum.run } )
@@ -642,7 +671,7 @@
             static member normalizeRefSpace: bool = true
             static member normalizeSSSpace: bool = true
             static member Instance = instance
-            static member run(cell: AST.Address)(dag: DAG) : double =
+            static member run(cell: AST.Address)(dag: DAG) : Countable =
                 let normRef = ShallowInputVectorMixedCOFNoAspect.normalizeRefSpace
                 let normSS = ShallowInputVectorMixedCOFNoAspect.normalizeSSSpace
                 
@@ -655,6 +684,7 @@
 
                 let neighbors = DistDictToSVHashSet dd
                 COF vcell k neighbors dd
+                |> Num
 
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorMixedCOFNoAspect>.Name,
@@ -673,7 +703,7 @@
             static member normalizeRefSpace: bool = true
             static member normalizeSSSpace: bool = true
             static member Instance = instance
-            static member run(cell: AST.Address)(dag: DAG) : double =
+            static member run(cell: AST.Address)(dag: DAG) : Countable =
                 let normRef = ShallowInputVectorMixedCOFAspect.normalizeRefSpace
                 let normSS = ShallowInputVectorMixedCOFAspect.normalizeSSSpace
                 
@@ -686,6 +716,7 @@
 
                 let neighbors = DistDictToSVHashSet dd
                 COF vcell k neighbors dd
+                |> Num
 
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorMixedCOFAspect>.Name,

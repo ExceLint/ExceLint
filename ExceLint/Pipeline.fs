@@ -4,20 +4,20 @@
         open System.Collections
         open System
         open Utils
+        open Feature
 
         type Weight = double
-        type Hash = double
         type Feature = string
         type Count = int
-        type Distribution = Dict<Feature,Dict<Scope.SelectID,Dict<Hash,Set<AST.Address>>>>
-        type ScoreTable = Dict<string,(AST.Address*Hash)[]>
-        type FlatScoreTable = Dict<string*AST.Address,Hash>
+        type Distribution = Dict<Feature,Dict<Scope.SelectID,Dict<Countable,Set<AST.Address>>>>
+        type ScoreTable = Dict<string,(AST.Address*Countable)[]>
+        type FlatScoreTable = Dict<string*AST.Address,Countable>
         type ConditioningSetSizeTable = Dict<Scope.Selector,Dict<AST.Address,Count>>
-        type HistoBin = Feature*Scope.SelectID*Hash
+        type HistoBin = Feature*Scope.SelectID*Countable
         type FreqTable = Dict<HistoBin,Count>
         type Weights = IDictionary<AST.Address,Weight>
         type Ranking = KeyValuePair<AST.Address,double>[]
-        type HypothesizedFixes = Dict<AST.Address,Dict<Feature,Hash>>
+        type HypothesizedFixes = Dict<AST.Address,Dict<Feature,Countable>>
         type Causes = Dict<AST.Address,(HistoBin*Count*Weight)[]>
         type ChangeSet = {
             mutants: KeyValuePair<AST.Address,string>[];

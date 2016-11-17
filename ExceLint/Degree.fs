@@ -23,9 +23,9 @@
          /// <returns>the number of inputs referenced by cell</returns>
          static member run cell (dag : DAG) = 
              if dag.isFormula(cell) then
-                 InDegree.getIndegreeForFormulaCell cell dag
+                 InDegree.getIndegreeForFormulaCell cell dag |> Num
              else
-                 0.0
+                 0.0 |> Num
 
          static member capability : string*Capability =
              (typeof<InDegree>.Name,
@@ -55,7 +55,10 @@
         inherit BaseFeature()
 
             static member run cell (dag: DAG) =
-                InDegree.run cell dag + OutDegree.run cell dag
+                let idnum = match (InDegree.run cell dag) with
+                            | Num n -> n
+                            | _ -> failwith "impossible"
+                (idnum + OutDegree.run cell dag) |> Num
 
             static member capability : string*Capability =
                 (typeof<CombinedDegree>.Name,

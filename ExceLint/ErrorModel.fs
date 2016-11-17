@@ -5,6 +5,7 @@
     open Utils
     open ConfUtils
     open Pipeline
+    open Feature
 
     type ErrorModel(input: Input, analysis: Analysis, config: FeatureConf) =
         let r = match analysis with
@@ -60,7 +61,7 @@
                          | Histogram h -> h.scores
                          | Cluster c -> c.scores
 
-            Array.fold (fun acc (pairs: (AST.Address*double)[]) ->
+            Array.fold (fun acc (pairs: (AST.Address*Countable)[]) ->
                 acc + pairs.Length
             ) 0 (scores.Values |> Seq.toArray)
 
@@ -132,19 +133,19 @@
             | Histogram h -> ErrorModel.toDistribution h.causes
             | Cluster c -> failwith "Not valid for COF analysis."
 
-        member self.inspectSelectorFor(addr: AST.Address, sel: Scope.Selector, dag: Depends.DAG) : KeyValuePair<AST.Address,(string*double)[]>[] =
+        member self.inspectSelectorFor(addr: AST.Address, sel: Scope.Selector, dag: Depends.DAG) : KeyValuePair<AST.Address,(string*Countable)[]>[] =
             let selcache = Scope.SelectorCache()
             let sID = sel.id addr dag selcache
 
-            let d = new Dict<AST.Address,(string*double) list>()
+            let d = new Dict<AST.Address,(string*Countable) list>()
 
             let scores = match analysis with
                          | Histogram h -> h.scores
                          | Cluster c -> c.scores
 
-            Seq.iter (fun (kvp: KeyValuePair<string,(AST.Address*double)[]>) ->
+            Seq.iter (fun (kvp: KeyValuePair<string,(AST.Address*Countable)[]>) ->
                 let fname: string = kvp.Key
-                let scores: (AST.Address*double)[] = kvp.Value
+                let scores: (AST.Address*Countable)[] = kvp.Value
 
                 let valid_scores =
                     Array.choose (fun (addr2,score) ->
@@ -162,11 +163,11 @@
                 ) valid_scores
             ) scores
 
-            let debug = Seq.map (fun (kvp: KeyValuePair<AST.Address,(string*double) list>) ->
+            let debug = Seq.map (fun (kvp: KeyValuePair<AST.Address,(string*Countable) list>) ->
                                     let addr2: AST.Address = kvp.Key
-                                    let scores: (string*double)[] = kvp.Value |> List.toArray
+                                    let scores: (string*Countable)[] = kvp.Value |> List.toArray
 
-                                    new KeyValuePair<AST.Address,(string*double)[]>(addr2, scores)
+                                    new KeyValuePair<AST.Address,(string*Countable)[]>(addr2, scores)
                                     ) d
 
             debug |> Seq.toArray
@@ -182,11 +183,11 @@
 
                     // init outer dict
                     if not (d.ContainsKey(feat)) then
-                        d.Add(feat, new Dict<Scope.SelectID,Dict<Hash,Set<AST.Address>>>())
+                        d.Add(feat, new Dict<Scope.SelectID,Dict<Countable,Set<AST.Address>>>())
 
                     // init inner dict
                     if not (d.[feat].ContainsKey(scope)) then
-                        d.[feat].Add(scope, new Dict<Hash,Set<AST.Address>>())
+                        d.[feat].Add(scope, new Dict<Countable,Set<AST.Address>>())
 
                     // init address set
                     if not (d.[feat].[scope].ContainsKey(hash)) then
@@ -194,13 +195,6 @@
 
                     // add address
                     d.[feat].[scope].[hash] <- d.[feat].[scope].[hash].Add(addr)
-
-                    (* DEBUG *)
-                    let addrs = Seq.map (fun (kvp: KeyValuePair<Hash,Set<AST.Address>>) -> kvp.Value |> Set.toList) (d.[feat].[scope]) |> Seq.toList |> List.concat |> List.distinct
-                    let fst_addr = List.head addrs
-                    let allsame = List.forall (fun (addr: AST.Address) -> addr.A1Worksheet() = addr.A1Worksheet()) addrs
-                    assert allsame
-
 
             d
 

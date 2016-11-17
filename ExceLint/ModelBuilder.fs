@@ -5,6 +5,7 @@
     open Utils
     open ConfUtils
     open Pipeline
+    open Feature
 
         module ModelBuilder =
             let private nop = Depends.Progress.NOPProgress()
@@ -281,9 +282,9 @@
                     if arr.Value.Length > max then
                         max <- arr.Value.Length
 
-                let d = new Dict<string*AST.Address,double>(max * scores.Count)
+                let d = new Dict<string*AST.Address,Countable>(max * scores.Count)
                 
-                Seq.iter (fun (kvp: KeyValuePair<string,(AST.Address*double)[]>) ->
+                Seq.iter (fun (kvp: KeyValuePair<string,(AST.Address*Countable)[]>) ->
                     let fname = kvp.Key
                     let arr = kvp.Value
                     Array.iter (fun (addr,score) ->
@@ -449,7 +450,7 @@
                 let d = new Dict<HistoBin,int>()
                 Array.iter (fun fname ->
                     Array.iter (fun (sel: Scope.Selector) ->
-                        Array.iter (fun (addr: AST.Address, score: double) ->
+                        Array.iter (fun (addr: AST.Address, score: Countable) ->
                             if progress.IsCancelled() then
                                 raise AnalysisCancelled
 
@@ -698,7 +699,7 @@
                 let dist = Math.Sqrt(Math.Pow(x1-x2,2.0) + Math.Pow(y1-y2,2.0))
                 dist
 
-            let sameSheet(P: Distribution)(feature: Feature)(scope: Scope.SelectID)(other_hash: double)(anom_hash: double) =
+            let sameSheet(P: Distribution)(feature: Feature)(scope: Scope.SelectID)(other_hash: Countable)(anom_hash: Countable) =
                 let acells = P.[feature].[scope].[anom_hash]
                 let ocells = P.[feature].[scope].[other_hash]
                 let bothcells = Set.union acells ocells |> Set.toList
@@ -711,7 +712,7 @@
                                   ) (true,None) bothcells
                 allsame
 
-            let private earthMoversDistance(P: Distribution)(feature: Feature)(scope: Scope.SelectID)(other_hash: double)(anom_hash: double): double =
+            let private earthMoversDistance(P: Distribution)(feature: Feature)(scope: Scope.SelectID)(other_hash: Countable)(anom_hash: Countable): double =
                 assert (other_hash <> anom_hash)
                 assert (sameSheet P feature scope other_hash anom_hash)
 
@@ -732,7 +733,7 @@
 
             let private binsBelowCutoff(h: HistoAnalysis)(cutoff: int) : Set<HistoBin> =
                 // find the set of (by definition small) bins that contribute to the highest-ranked cells
-                Array.map (fun (pair: KeyValuePair<AST.Address,Hash>) ->
+                Array.map (fun (pair: KeyValuePair<AST.Address,double>) ->
                                     Array.map (fun (bin,count,weight) -> bin) (h.causes.[pair.Key])
                                 ) (h.ranking.[..cutoff]) |>
                                 Array.concat |>
@@ -743,12 +744,12 @@
                 // excluding the element itself
                 Set.map (fun x -> x, (Set.difference yset (Set.ofList [x])) |> Set.toArray) xset |> Set.toList
 
-            let private justHashes(P: Distribution)(feature: Feature)(scope: Scope.SelectID) : Set<Hash> =
+            let private justHashes(P: Distribution)(feature: Feature)(scope: Scope.SelectID) : Set<Countable> =
                 let mutable s = set[]
                 for hash_row in P.[feature].[scope] do
                     let hash = hash_row.Key
                     let addr = hash_row.Value |> Set.toList |> List.head
-                    let other_addresses = Seq.map (fun (pair: KeyValuePair<Hash,Set<AST.Address>>) -> pair.Value |> Set.toList) (P.[feature].[scope]) |> Seq.toList |> List.concat |> List.distinct
+                    let other_addresses = Seq.map (fun (pair: KeyValuePair<Countable,Set<AST.Address>>) -> pair.Value |> Set.toList) (P.[feature].[scope]) |> Seq.toList |> List.concat |> List.distinct
                     let allsame = List.forall (fun (other_addr: AST.Address) -> other_addr.A1Worksheet() = addr.A1Worksheet()) other_addresses
                     assert allsame
                     s <- s.Add(hash)
@@ -760,7 +761,7 @@
                     s <- s.Add(hash_row.Key)
                 s
 
-            let private EMDsbyFeature(feature: Feature)(causes: Causes) : Dict<Hash,Hash*double> =
+            let private EMDsbyFeature(feature: Feature)(causes: Causes) : Dict<Countable,Countable*double> =
                 // the initial distribution
                 let P = ErrorModel.toDistribution causes
 
@@ -773,7 +774,7 @@
                     // get set of feature hashes from distribution
                     let hashes = justHashes P feature scope
 
-                    List.map (fun (a: Hash, hs: Hash[]) ->
+                    List.map (fun (a: Countable, hs: Countable[]) ->
                         // do not consider smaller bins
                         let a_count = P.[feature].[scope].[a].Count
                         let bigger = Array.filter (fun h -> P.[feature].[scope].[h].Count > a_count) hs
@@ -825,7 +826,7 @@
 
                         // add entry for cell, if necessary
                         if not (hf.ContainsKey(cell)) then
-                            hf.Add(cell, new Dict<Feature,Hash>())
+                            hf.Add(cell, new Dict<Feature,Countable>())
 
                         // add closest hash
                         hf.[cell].Add(fname, min_hash)
@@ -840,10 +841,13 @@
                 
                 for kvp in scores do
                     for (addr,score) in kvp.Value do
+                        let dscore: double = match score with
+                                             | Num n -> n
+                                             | _ -> failwith "Wrong Countable type for COF."
                         if not (d.ContainsKey addr) then
-                            d.Add(addr, score)
+                            d.Add(addr, dscore)
                         else
-                            d.[addr] <- d.[addr] + score
+                            d.[addr] <- d.[addr] + dscore
 
                 Seq.sortBy (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Value) d
                 |> Seq.toArray

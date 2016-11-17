@@ -2,9 +2,10 @@
     open System.Collections.Generic
     open System.Collections
     open System
+    open Feature
 
     module ConfUtils =
-        type RunnerMap = Map<string, AST.Address -> Depends.DAG -> double>
+        type RunnerMap = Map<string, AST.Address -> Depends.DAG -> Countable>
 
     // a C#-friendly configuration object that is also pure/fluent
     type FeatureConf private (userConf: Map<string,Feature.Capability>) =
@@ -33,7 +34,7 @@
                 Proximity.Right.capability
             ] |> Map.ofList
 
-        let nop(cell: AST.Address)(dag: Depends.DAG) : double = 0.0
+        let nop(cell: AST.Address)(dag: Depends.DAG) : Feature.Countable = Feature.Countable.Num 0.0
 
         let _config = Map.fold (fun (acc: Map<string,Feature.Capability>)(fname: string)(cap: Feature.Capability) ->
                         let cap' : Feature.Capability =

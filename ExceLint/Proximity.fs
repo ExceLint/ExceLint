@@ -44,32 +44,32 @@ let cellProximal(cell: AST.Address)(dag: DAG)(selector: AST.Address -> AST.Addre
 
 type Above() =
     inherit BaseFeature()
-    static member run(cell: AST.Address)(dag: DAG) : double =
-        cellProximal cell dag cellAbove
+    static member run(cell: AST.Address)(dag: DAG) : Countable =
+        cellProximal cell dag cellAbove |> Num
     static member capability : string*Capability =
         (typeof<Above>.Name,
             { enabled = false; kind = ConfigKind.Feature; runner = Above.run } )
 
 type Below() =
     inherit BaseFeature()
-    static member run(cell: AST.Address)(dag: DAG) : double =
-        cellProximal cell dag cellBelow
+    static member run(cell: AST.Address)(dag: DAG) : Countable =
+        cellProximal cell dag cellBelow |> Num
     static member capability : string*Capability =
         (typeof<Below>.Name,
             { enabled = false; kind = ConfigKind.Feature; runner = Below.run } )
 
 type Left() =
     inherit BaseFeature()
-    static member run(cell: AST.Address)(dag: DAG) : double =
-        cellProximal cell dag cellLeft
+    static member run(cell: AST.Address)(dag: DAG) : Countable =
+        cellProximal cell dag cellLeft |> Num
     static member capability : string*Capability =
         (typeof<Left>.Name,
             { enabled = false; kind = ConfigKind.Feature; runner = Left.run } )
 
 type Right() =
     inherit BaseFeature()
-    static member run(cell: AST.Address)(dag: DAG) : double =
-        cellProximal cell dag cellRight
+    static member run(cell: AST.Address)(dag: DAG) : Countable =
+        cellProximal cell dag cellRight |> Num
     static member capability : string*Capability =
         (typeof<Right>.Name,
             { enabled = false; kind = ConfigKind.Feature; runner = Right.run } )

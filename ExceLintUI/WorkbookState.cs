@@ -5,7 +5,7 @@ using Excel = Microsoft.Office.Interop.Excel;
 using FullyQualifiedVector = ExceLint.Vector.FullyQualifiedVector;
 using RelativeVector = System.Tuple<int, int, int>;
 using Score = System.Collections.Generic.KeyValuePair<AST.Address, double>;
-using HypothesizedFixes = System.Collections.Generic.Dictionary<AST.Address, System.Collections.Generic.Dictionary<string, double>>;
+using HypothesizedFixes = System.Collections.Generic.Dictionary<AST.Address, System.Collections.Generic.Dictionary<string, Feature.Countable>>;
 using Microsoft.FSharp.Core;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -214,7 +214,7 @@ namespace ExceLintUI
             System.Windows.Forms.MessageBox.Show(cursorStr + "\n\n" + String.Join("\n", outputStrings));
         }
 
-        private string[] prettyPrintSelectScores(KeyValuePair<AST.Address, Tuple<string, double>[]> addrScores)
+        private string[] prettyPrintSelectScores(KeyValuePair<AST.Address, Tuple<string, Feature.Countable>[]> addrScores)
         {
             var addr = addrScores.Key;
             var scores = addrScores.Value;
@@ -357,7 +357,13 @@ namespace ExceLintUI
             var cursorStr = "(" + cursorAddr.X + "," + cursorAddr.Y + ")";  // for sanity-preservation purposes
 
             // find all sources for formula under the cursor
-            double l2ns = ExceLint.Vector.DeepInputVectorRelativeL2NormSum.run(cursorAddr, _dag);
+            Feature.Countable fc = ExceLint.Vector.DeepInputVectorRelativeL2NormSum.run(cursorAddr, _dag);
+            double l2ns = 0.0;
+            if (fc.IsNum)
+            {
+                var fcn = (Feature.Countable.Num)fc;
+                l2ns = fcn.Item;
+            }
 
             // Enable screen updating when we're done
             _app.ScreenUpdating = true;
@@ -454,26 +460,28 @@ namespace ExceLintUI
 
         public void showSpectralPlot(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean forceDAGBuild, ProgBar pb)
         {
-                if (!_analysis.hasRun)
-                {
-                    // run analysis
-                    analyze(max_duration_in_ms, config, forceDAGBuild, pb);
-                }
+            System.Windows.Forms.MessageBox.Show("disabled");
+            //    if (!_analysis.hasRun)
+            //    {
+            //        // run analysis
+            //        analyze(max_duration_in_ms, config, forceDAGBuild, pb);
+            //    }
 
-            var plot = new SpectralPlot(_analysis.model);
-            plot.Show();
+            //var plot = new SpectralPlot(_analysis.model);
+            //plot.Show();
         }
 
         public void show3DScatterPlot(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean forceDAGBuild, ProgBar pb)
         {
-            if (!_analysis.hasRun)
-            {
-                // run analysis
-                analyze(max_duration_in_ms, config, forceDAGBuild, pb);
-            }
+            System.Windows.Forms.MessageBox.Show("disabled");
+            //if (!_analysis.hasRun)
+            //{
+            //    // run analysis
+            //    analyze(max_duration_in_ms, config, forceDAGBuild, pb);
+            //}
 
-            var plot = new Scatterplot3D(_analysis.model);
-            plot.Show();
+            //var plot = new Scatterplot3D(_analysis.model);
+            //plot.Show();
         }
 
         private double intensity(double min_score, double max_score, double score)
