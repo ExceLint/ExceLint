@@ -69,3 +69,9 @@ module Feature
     type BaseFeature() =
         static member run (cell: AST.Address) (dag: DAG): Countable = failwith "Feature must provide run method."
         static member capability : string*Capability = failwith "Feature must provide capability."
+
+    // the following are for C# interop because
+    // discriminated union types are not exported
+    let makeNum(d: double) = Num d
+    let makeVector(x: double, y: double, z: double) = Vector(x,y,z)
+    let makeSpatialVector(dx: double, dy: double, dz: double, x: double, y: double, z: double) = SquareVector(dx,dy,dz,x,y,z)
