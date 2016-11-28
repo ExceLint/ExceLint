@@ -683,32 +683,12 @@
 
                 cells
                 |> Array.fold (fun (acc: Countable)(c: Countable) -> acc.Add c) (cells.[0].MeanFoldDefault)
-                |> 
+                |> (fun c -> c.ScalarDivide n)
 
-                failwith "not yet"
-
-            // the mean
-            let private binCentroid_old(cells: Set<double*double>) : double*double =
-                let n = double (cells.Count)
-
-                cells
-                |> Set.toArray
-                // add coordinates, element-wise
-                |> Array.fold (fun acc coords ->
-                                    let (x, y) = acc
-                                    let (x',y') = coords
-                                    (x + x', y + y')
-                              ) (0.0,0.0)
-                // normalize by the number of cells
-                |> (fun (x,y) -> (double x) / n, (double y) / n)
-
-            let euclideanDistance(cell1: double*double)(cell2: double*double) : double =
+            let euclideanDistance(cell1: Countable)(cell2: Countable) : double =
                 // note that it is possible for the two cells to be the same;
                 // like when the cell happens to be the exact centroid
-                let (x1,y1) = cell1
-                let (x2,y2) = cell2
-                let dist = Math.Sqrt(Math.Pow(x1-x2,2.0) + Math.Pow(y1-y2,2.0))
-                dist
+                Math.Sqrt((cell1.Negate.Add cell2).VectorMultiply(cell1.Negate.Add cell2))
 
             let sameSheet(P: Distribution)(feature: Feature)(scope: Scope.SelectID)(other_hash: Countable)(anom_hash: Countable) =
                 let acells = P.[feature].[scope].[anom_hash]
@@ -731,28 +711,7 @@
                 let dirt = P.[fname].[scope].[anom_hash] |> Set.toArray |> Array.map (fun a -> feature a)
 
                 // get every cell in the named other bin(s) across all conditional tables
-                let other_dirt = P.[fname].[scope].[other_hash] |> Set.map (fun a -> feature a)
-
-                // compute the centroid of the other_hash
-                let centroid = binCentroid other_dirt
-
-                // compute work required to move dirt
-                // amount * distance
-                let dist = Array.sumBy (fun coord -> euclideanDistance coord centroid) dirt
-
-                dist
-
-                failwith "not yet"
-
-            let private earthMoversDistance_old(P: Distribution)(feature: Feature)(scope: Scope.SelectID)(other_hash: Countable)(anom_hash: Countable): double =
-                assert (other_hash <> anom_hash)
-                assert (sameSheet P feature scope other_hash anom_hash)
-
-                // get every cell in the named anomalous bin in the sheets conditional table only
-                let dirt = P.[feature].[scope].[anom_hash] |> toRawCoords |> Set.toArray
-
-                // get every cell in the named other bin(s) across all conditional tables
-                let other_dirt = P.[feature].[scope].[other_hash] |> toRawCoords
+                let other_dirt = P.[fname].[scope].[other_hash] |> Set.toArray |> Array.map (fun a -> feature a)
 
                 // compute the centroid of the other_hash
                 let centroid = binCentroid other_dirt
@@ -793,29 +752,29 @@
                     s <- s.Add(hash_row.Key)
                 s
 
-            let private EMDsbyFeature(feature: Feature)(causes: Causes) : Dict<Countable,Countable*double> =
+            let private EMDsbyFeature(feature: AST.Address -> Countable)(fname: Feature)(causes: Causes) : Dict<Countable,Countable*double> =
                 // the initial distribution
                 let P = ErrorModel.toDistribution causes
 
                 // get all sheet scopes 
-                let scopes = justScopes P feature
+                let scopes = justScopes P fname
                 assert (Set.forall (fun (scope: Scope.SelectID) -> scope.IsKind = Scope.SameSheet) scopes)
 
                 // find the distance to move every cell with a given hash to the nearest hash of a larger bin
                 List.map (fun scope -> 
                     // get set of feature hashes from distribution
-                    let hashes = justHashes P feature scope
+                    let hashes = justHashes P fname scope
 
                     List.map (fun (a: Countable, hs: Countable[]) ->
                         // do not consider smaller bins
-                        let a_count = P.[feature].[scope].[a].Count
-                        let bigger = Array.filter (fun h -> P.[feature].[scope].[h].Count > a_count) hs
+                        let a_count = P.[fname].[scope].[a].Count
+                        let bigger = Array.filter (fun h -> P.[fname].[scope].[h].Count > a_count) hs
 
                         if bigger.Length > 0 then
-                            let f = (fun h -> earthMoversDistance P feature scope h a) 
+                            let f = (fun h -> earthMoversDistance P feature fname scope h a) 
                             let min_hash = argmin f bigger
                             let min_distance = f min_hash
-                            assert (sameSheet P feature scope a min_hash)
+                            assert (sameSheet P fname scope a min_hash)
                             a, (min_hash, min_distance)
                         else
                             // If there is no closest hash, then we say that
@@ -829,7 +788,12 @@
                 |> adict
 
             let private rankByEMD(cells: AST.Address[])(input: Input)(causes: Causes) : Ranking*HypothesizedFixes option =
-                let emds = Array.map (fun f -> f, EMDsbyFeature f causes) (input.config.EnabledFeatures) |> adict
+                let emds = Array.map (fun fname ->
+                               // get feature function
+                               let feature = (fun addr -> (input.config.FeatureByName fname) addr input.dag)
+                               // return (fname, distance) pair
+                               fname, EMDsbyFeature feature fname causes
+                           ) (input.config.EnabledFeatures) |> adict
 
                 let ranking' = Array.map (fun (cell: AST.Address) ->
                                    let sum = Array.sumBy (fun fname ->

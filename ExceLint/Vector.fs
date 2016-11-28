@@ -574,7 +574,7 @@
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag: DAG) : Countable =
                 let (x,y,z) = Resultant (getVectors cell dag (*transitive*) false (*isForm*) true (*isRel*) true (*isMixed*) true (*isOffSheetInsensitive*) true)
-                Countable.Vector(x,y,z)
+                Countable.Vector(double x, double y, double z)
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorMixedResultant>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedResultant.run } )

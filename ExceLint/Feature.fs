@@ -1,5 +1,6 @@
 module Feature
     open Depends
+    open System
 
     type ConfigKind =
     | Feature
@@ -29,13 +30,37 @@ module Feature
             | SquareVector(dx1,dy1,dz1,x1,y1,z1), SquareVector(dx2,dy2,dz2,x2,y2,z2) ->
                 SquareVector(dx1 + dx2, dy1 + dy2, dz1 + dz2, x1 + x2, y1 + y2, z1 + z2)
             | _ -> failwith "Invalid operation.  Both Countables must be of the same type."
+        member self.Negate : Countable =
+            match self with
+            | Num n -> Num(-n)
+            | Vector(x,y,z) -> Vector(-x, -y, -z)
+            | SquareVector(dx,dy,dz,x,y,z) ->
+                SquareVector(-dx,-dy,-dz,-x,-y,-z)
         member self.ScalarDivide(d: double) : Countable =
             match self with
             | Num n -> Num(n / d)
             | Vector(x,y,z) -> Vector(x / d, y / d, z / d)
             | SquareVector(dx,dy,dz,x,y,z) ->
                 SquareVector(dx / d, dy / d, dz / d, x / d, y / d, z / d)
+        member self.VectorMultiply(co: Countable) : double =
+            match (self,co) with
+            | Num d1, Num d2 -> d1 * d2
+            | Vector(x1,y1,z1), Vector(x2,y2,z2) -> x1 * x2 + y1 * y2 + z1 * z2
+            | SquareVector(dx1,dy1,dz1,x1,y1,z1), SquareVector(dx2,dy2,dz2,x2,y2,z2) ->
+                dx1 * dx2 + dy1 * dy2 + dz1 * dz2 + x1 * x2 + y1 * y2 + z1 * z2
             | _ -> failwith "Invalid operation.  Both Countables must be of the same type."
+        member self.Sqrt : Countable =
+            match self with
+            | Num n -> Num(Math.Sqrt(n))
+            | Vector(x,y,z) -> Vector(Math.Sqrt(x), Math.Sqrt(y), Math.Sqrt(z))
+            | SquareVector(dx,dy,dz,x,y,z) ->
+                SquareVector(Math.Sqrt(dx), Math.Sqrt(dy), Math.Sqrt(dz), Math.Sqrt(x), Math.Sqrt(y), Math.Sqrt(z))
+        member self.Abs : Countable =
+            match self with
+            | Num n -> Num(Math.Abs(n))
+            | Vector(x,y,z) -> Vector(Math.Abs(x),Math.Abs(y),Math.Abs(z))
+            | SquareVector(dx,dy,dz,x,y,z) ->
+                SquareVector(Math.Abs(dx),Math.Abs(dy),Math.Abs(dz),Math.Abs(x),Math.Abs(y),Math.Abs(z))
 
     type Capability = { enabled : bool; kind: ConfigKind; runner: AST.Address -> Depends.DAG -> Countable; }
 
