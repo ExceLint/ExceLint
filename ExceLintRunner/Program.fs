@@ -150,6 +150,22 @@ open ExceLintFileFormats
                     csv.WriteRow per_row
                 ) (missed_formula_related |> Seq.toArray)
 
+    let precision(tp: int)(fp: int) : double =
+        if tp = 0 && fp = 0 then
+            1.0
+        else
+            let tp' = double tp
+            let fp' = double fp
+            tp' / (tp' + fp')
+
+    let recall(tp: int)(fn: int) : double =
+        if tp = 0 && fn = 0 then
+            1.0
+        else
+            let tp' = double tp
+            let fn' = double fn
+            tp' / (tp' + fn')
+
     let append_stats(stats: Stats)(csv: ExceLintStats)(model: ErrorModel)(custodes: CUSTODES.OutputResult)(config: Args.Config) : unit =
         let min_excelint_score = Array.map (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Value) (model.ranking()) |> Array.min
 
@@ -166,6 +182,8 @@ open ExceLintFileFormats
         row.CausesTimeMs <- model.CausesTimeInMilliseconds
         row.ConditioningSetSzTimeMs <- model.ConditioningSetSizeTimeInMilliseconds
         row.ExceLintFlags <- model.Cutoff + 1
+        row.ExceLintPrecisionVsCustodesGT <- precision (stats.excelint_true_smells.Count) (row.ExceLintFlags - stats.excelint_true_smells.Count)
+        row.ExceLintRecallVsCustodesGT <- recall (stats.excelint_true_smells.Count) (stats.true_smells_this_wb.Count - stats.excelint_true_smells.Count)
         row.MinAnomScore <- min_excelint_score
         row.CUSTODESFailed <- (match custodes with | CUSTODES.BadOutput _ -> true | _ -> false)
         row.CUSTODESFailureMsg <- (match custodes with | CUSTODES.BadOutput msg -> msg | _ -> "")

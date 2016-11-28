@@ -64,6 +64,8 @@ namespace ExceLintFileFormats
         public long CausesTimeMs { get; set; }
         public long ConditioningSetSzTimeMs { get; set; }
         public int ExceLintFlags { get; set; }
+        public double ExceLintPrecisionVsCustodesGT { get; set; }
+        public double ExceLintRecallVsCustodesGT { get; set; }
         public double MinAnomScore { get; set; }
         public bool CUSTODESFailed { get; set; }
         public string CUSTODESFailureMsg { get; set; }
