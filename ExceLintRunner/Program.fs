@@ -24,6 +24,7 @@ open ExceLintFileFormats
         custodes_true_smells: HashSet<AST.Address>;
         excelint_excel_intersect: HashSet<AST.Address>;
         custodes_excel_intersect: HashSet<AST.Address>;
+        custodes_time: int64;
     }
 
     let hs_difference<'a>(hs1: HashSet<'a>)(hs2: HashSet<'a>) : HashSet<'a> =
@@ -49,7 +50,7 @@ open ExceLintFileFormats
 
     let per_append_excelint(csv: WorkbookStats)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: Pipeline.Ranking)(dag: Depends.DAG) : unit =
         let smells = match custodes with
-                     | CUSTODES.OKOutput c -> c.Smells
+                     | CUSTODES.OKOutput(c,_) -> c.Smells
                      | _ -> new HashSet<AST.Address>()
 
         // append all ExceLint flagged cells
@@ -75,7 +76,7 @@ open ExceLintFileFormats
 
     let per_append_custodes(csv: WorkbookStats)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: Pipeline.Ranking)(custodes_not_excelint: HashSet<AST.Address>)(dag: Depends.DAG) : unit =
         let smells = match custodes with
-                     | CUSTODES.OKOutput c -> c.Smells
+                     | CUSTODES.OKOutput(c,_) -> c.Smells
                      | _ -> new HashSet<AST.Address>()
 
         // append all remaining CUSTODES cells
@@ -100,7 +101,7 @@ open ExceLintFileFormats
 
     let per_append_true_smells(csv: WorkbookStats)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: Pipeline.Ranking)(true_smells_not_found: HashSet<AST.Address>)(dag: Depends.DAG) : unit =
         let smells = match custodes with
-                     | CUSTODES.OKOutput c -> c.Smells
+                     | CUSTODES.OKOutput(c,_) -> c.Smells
                      | _ -> new HashSet<AST.Address>()
 
         // append all true smells found by neither tool
@@ -185,8 +186,9 @@ open ExceLintFileFormats
         row.ExceLintPrecisionVsCustodesGT <- precision (stats.excelint_true_smells.Count) (row.ExceLintFlags - stats.excelint_true_smells.Count)
         row.ExceLintRecallVsCustodesGT <- recall (stats.excelint_true_smells.Count) (stats.true_smells_this_wb.Count - stats.excelint_true_smells.Count)
         row.MinAnomScore <- min_excelint_score
+        row.CUSTODESTimeMs <- stats.custodes_time
         row.CUSTODESFailed <- (match custodes with | CUSTODES.BadOutput _ -> true | _ -> false)
-        row.CUSTODESFailureMsg <- (match custodes with | CUSTODES.BadOutput msg -> msg | _ -> "")
+        row.CUSTODESFailureMsg <- (match custodes with | CUSTODES.BadOutput(msg,_) -> msg | _ -> "")
         row.NumExceLintTrueRefBugsFound <- stats.excelint_true_ref_bugs.Count
         row.NumCUSTODESTrueRefBugsFound <- stats.custodes_true_ref_bugs.Count
         row.NumCUSTODESSmells <- stats.custodes_flagged.Count
@@ -242,9 +244,9 @@ open ExceLintFileFormats
                 let this_wb = ranking.[0].Key.WorkbookName
 
                 // get the set of cells flagged by CUSTODES
-                let custodes_flags = match custodes with
-                                        | CUSTODES.OKOutput c -> c.Smells
-                                        | CUSTODES.BadOutput _ -> new HashSet<AST.Address>()
+                let (custodes_flags,custodes_time) = match custodes with
+                                                     | CUSTODES.OKOutput(c,t) -> c.Smells, t
+                                                     | CUSTODES.BadOutput(_,t) -> new HashSet<AST.Address>(), t
 
                 // find true ref bugs
                 let true_ref_bugs_this_wb = etruth.TrueRefBugsByWorkbook this_wb
@@ -284,6 +286,7 @@ open ExceLintFileFormats
                     custodes_true_smells = custodes_true_smells;
                     excelint_excel_intersect = excelint_excel_intersect;
                     custodes_excel_intersect = custodes_excel_intersect;
+                    custodes_time = custodes_time;
                 }
 
                 // write to per-workbook CSV

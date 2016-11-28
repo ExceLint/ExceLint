@@ -88,19 +88,23 @@
         member self.Smells = canonicalOutputHS
 
     type OutputResult =
-    | OKOutput of Output
-    | BadOutput of string
+    | OKOutput of Output*int64
+    | BadOutput of string*int64
 
-    let runCUSTODES(spreadsheet: string)(custodesPath: string)(javaPath: string) : CUSTODESParse =
+    let runCUSTODES(spreadsheet: string)(custodesPath: string)(javaPath: string) : CUSTODESParse*int64 =
         let outputPath = IO.Path.GetTempPath()
 
+        let sw = new System.Diagnostics.Stopwatch()
+        sw.Start()
         let invocation = fun () -> runCommand (shortPath javaPath) [| "-jar"; "-d64"; "-Xms2g"; "-Xmx4g"; shortPath custodesPath; shortPath spreadsheet; shortPath outputPath; |]
-        match invocation() with
-        | STDOUT output -> parse output
-        | STDERR error ->
-            match parseException error with
-            | Some (ex) -> CFailure(ex)
-            | None -> CFailure(error)
+        sw.Stop()
+        let parsed = match invocation() with
+                     | STDOUT output -> parse output
+                     | STDERR error ->
+                         match parseException error with
+                         | Some (ex) -> CFailure(ex)
+                         | None -> CFailure(error)
+        parsed, sw.ElapsedMilliseconds
 
     let CUSTODESToAddress(addrstr: Address)(worksheetname: string)(workbookname: string)(path: string) : AST.Address =
         // we force the mode to absolute because
@@ -123,10 +127,10 @@
         let path = IO.Path.GetDirectoryName(absSpreadsheetPath)
 
         // run custodes
-        let cOutput = runCUSTODES absSpreadsheetPath absCustodesPath absJavaPath
+        let (cOutput,cTime) = runCUSTODES absSpreadsheetPath absCustodesPath absJavaPath
 
         match cOutput with
-        | CFailure(err) -> BadOutput(err)
+        | CFailure(err) -> BadOutput(err,cTime)
         | CSuccess(o) ->
             // convert to parcel addresses and flatten
             let canonicalOutput = Seq.map (fun (pair: KeyValuePair<Worksheet,Address[]>) ->
@@ -140,7 +144,7 @@
             // this will remove duplicates, if there are any
             let canonicalOutputHS = new HashSet<AST.Address>(canonicalOutput)
 
-            OKOutput (Output(canonicalOutputHS))
+            OKOutput (Output(canonicalOutputHS),cTime)
 
     let addresses(tool: Tool)(row: CUSTODESGroundTruthRow)(workbook_paths: Dictionary<string, string>) : AST.Address[] =
         let cells_str = tool.Accessor(row).Replace(" ", "")
