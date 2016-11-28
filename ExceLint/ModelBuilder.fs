@@ -677,7 +677,18 @@
                 |> Set.map (fun cell -> (double cell.X, double cell.Y))
 
             // the mean
-            let private binCentroid(cells: Set<double*double>) : double*double =
+            let private binCentroid(cells: Countable[]) : Countable =
+                assert (cells.Length > 0)
+                let n = double (cells.Length)
+
+                cells
+                |> Array.fold (fun (acc: Countable)(c: Countable) -> acc.Add c) (cells.[0].MeanFoldDefault)
+                |> 
+
+                failwith "not yet"
+
+            // the mean
+            let private binCentroid_old(cells: Set<double*double>) : double*double =
                 let n = double (cells.Count)
 
                 cells
@@ -712,7 +723,28 @@
                                   ) (true,None) bothcells
                 allsame
 
-            let private earthMoversDistance(P: Distribution)(feature: Feature)(scope: Scope.SelectID)(other_hash: Countable)(anom_hash: Countable): double =
+            let private earthMoversDistance(P: Distribution)(feature: AST.Address -> Countable)(fname: Feature)(scope: Scope.SelectID)(other_hash: Countable)(anom_hash: Countable): double =
+                assert (other_hash <> anom_hash)
+                assert (sameSheet P fname scope other_hash anom_hash)
+
+                // get every cell in the named anomalous bin in the sheets conditional table only
+                let dirt = P.[fname].[scope].[anom_hash] |> Set.toArray |> Array.map (fun a -> feature a)
+
+                // get every cell in the named other bin(s) across all conditional tables
+                let other_dirt = P.[fname].[scope].[other_hash] |> Set.map (fun a -> feature a)
+
+                // compute the centroid of the other_hash
+                let centroid = binCentroid other_dirt
+
+                // compute work required to move dirt
+                // amount * distance
+                let dist = Array.sumBy (fun coord -> euclideanDistance coord centroid) dirt
+
+                dist
+
+                failwith "not yet"
+
+            let private earthMoversDistance_old(P: Distribution)(feature: Feature)(scope: Scope.SelectID)(other_hash: Countable)(anom_hash: Countable): double =
                 assert (other_hash <> anom_hash)
                 assert (sameSheet P feature scope other_hash anom_hash)
 
