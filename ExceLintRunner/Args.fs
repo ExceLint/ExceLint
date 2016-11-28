@@ -58,7 +58,8 @@ open System.Text.RegularExpressions
         printfn "\n"
         printfn "-verbose    log per-spreadsheet flagged cells as separate CSVs"
         printfn "-noexit     prompt user to press a key before exiting"
-        printfn "-spectral   use spectral outliers, otherwise use summation outliers;"
+        printfn "-resultant  bin by resultant vector, otherwise bin by L2 norm sum"
+        printfn "-spectral   find outliers by earth mover's distance, otherwise use raw frequency;"
         printfn "            forces the use of -sheets below and disables -allcells,"
         printfn "            -columns, -rows, and -levels"
         printfn "-allcells   condition by all cells"
@@ -98,6 +99,7 @@ open System.Text.RegularExpressions
                                | [] -> knobs.verbose, knobs.dont_exit, knobs.alpha, conf
                                | "-verbose"   :: rest -> optParse rest { knobs with verbose = true } conf
                                | "-noexit"    :: rest -> optParse rest { knobs with dont_exit = true } conf
+                               | "-resultant" :: rest -> optParse rest knobs (conf.enableShallowInputVectorMixedResultant(true))
                                | "-spectral"  :: rest -> optParse rest knobs (conf.spectralRanking true)
                                | "-allcells"  :: rest -> optParse rest knobs (conf.analyzeRelativeToAllCells true)
                                | "-columns"   :: rest -> optParse rest knobs (conf.analyzeRelativeToColumns true)
