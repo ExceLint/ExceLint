@@ -478,7 +478,7 @@
         member self.IsEnabledAnalyzeAllCells : bool = _config.ContainsKey "AnalyzeOnlyFormulas" && not (_config.["AnalyzeOnlyFormulas"].enabled)
         member self.IsCOF : bool =
             let (name,_) = Vector.ShallowInputVectorMixedCOFNoAspect.capability
-            _config.ContainsKey name
+            _config.ContainsKey name && _config.[name].enabled
         member self.NormalizeRefs : bool =
             let (name,_) = Vector.ShallowInputVectorMixedCOFNoAspect.capability
             if _config.ContainsKey name then
