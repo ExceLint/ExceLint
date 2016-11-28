@@ -49,6 +49,7 @@
             this.scatter3D = this.Factory.CreateRibbonButton();
             this.ExportSquareMatrixButton = this.Factory.CreateRibbonButton();
             this.useCOF = this.Factory.CreateRibbonToggleButton();
+            this.useResultant = this.Factory.CreateRibbonCheckBox();
             this.normSSCheckBox = this.Factory.CreateRibbonCheckBox();
             this.normRefCheckBox = this.Factory.CreateRibbonCheckBox();
             this.significanceTextBox = this.Factory.CreateRibbonEditBox();
@@ -81,7 +82,7 @@
             this.separator4 = this.Factory.CreateRibbonSeparator();
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
-            this.useResultant = this.Factory.CreateRibbonCheckBox();
+            this.sheetFreq = this.Factory.CreateRibbonCheckBox();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -127,6 +128,7 @@
             this.CheckCellGroup.Items.Add(this.columnCellsFreq);
             this.CheckCellGroup.Items.Add(this.rowCellsFreq);
             this.CheckCellGroup.Items.Add(this.levelsFreq);
+            this.CheckCellGroup.Items.Add(this.sheetFreq);
             this.CheckCellGroup.Items.Add(this.separator3);
             this.CheckCellGroup.Items.Add(this.DebugOutput);
             this.CheckCellGroup.Items.Add(this.forceBuildDAG);
@@ -240,6 +242,11 @@
             this.useCOF.Label = "Use COF";
             this.useCOF.Name = "useCOF";
             this.useCOF.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.useCOF_Click);
+            // 
+            // useResultant
+            // 
+            this.useResultant.Label = "Use Resultant";
+            this.useResultant.Name = "useResultant";
             // 
             // normSSCheckBox
             // 
@@ -450,10 +457,11 @@
             this.annotateThisCell.ShowImage = true;
             this.annotateThisCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotateThisCell_Click);
             // 
-            // useResultant
+            // sheetFreq
             // 
-            this.useResultant.Label = "Use Resultant";
-            this.useResultant.Name = "useResultant";
+            this.sheetFreq.Checked = true;
+            this.sheetFreq.Label = "Sheet Freq";
+            this.sheetFreq.Name = "sheetFreq";
             // 
             // ExceLintRibbon
             // 
@@ -523,6 +531,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox normSSCheckBox;
         internal Microsoft.Office.Tools.Ribbon.RibbonToggleButton useCOF;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox useResultant;
+        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox sheetFreq;
     }
 
     partial class ThisRibbonCollection

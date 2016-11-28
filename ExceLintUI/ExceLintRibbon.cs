@@ -496,6 +496,7 @@ namespace ExceLintUI
                 this.rowCellsFreq.Checked = false;
                 this.columnCellsFreq.Checked = false;
                 this.levelsFreq.Checked = false;
+                this.sheetFreq.Checked = true;
                 this.showFixes.Enabled = true;
             } else
             {
@@ -503,6 +504,7 @@ namespace ExceLintUI
                 this.rowCellsFreq.Checked = true;
                 this.columnCellsFreq.Checked = true;
                 this.levelsFreq.Checked = false;
+                this.sheetFreq.Checked = false;
                 this.showFixes.Enabled = useCOF.Checked;
             }
 
@@ -918,6 +920,7 @@ namespace ExceLintUI
             this.columnCellsFreq.ScreenTip = text;
             this.rowCellsFreq.ScreenTip = text;
             this.levelsFreq.ScreenTip = text;
+            this.sheetFreq.ScreenTip = text;
             this.DebugOutput.ScreenTip = text;
             this.forceBuildDAG.ScreenTip = text;
             this.inferAddrModes.ScreenTip = text;
@@ -948,6 +951,7 @@ namespace ExceLintUI
                 this.forceBuildDAG.Enabled = disabled;
                 this.inferAddrModes.Enabled = disabled;
                 this.allCells.Enabled = disabled;
+                this.sheetFreq.Enabled = disabled;
                 this.weightByIntrinsicAnomalousness.Enabled = disabled;
                 this.significanceTextBox.Enabled = disabled;
                 this.conditioningSetSize.Enabled = disabled;
@@ -981,6 +985,7 @@ namespace ExceLintUI
                 this.columnCellsFreq.Enabled = enable_config && !this.spectralRanking.Checked;
                 this.rowCellsFreq.Enabled = enable_config && !this.spectralRanking.Checked;
                 this.levelsFreq.Enabled = enable_config && !this.spectralRanking.Checked;
+                this.sheetFreq.Enabled = enable_config && !this.spectralRanking.Checked;
                 this.DebugOutput.Enabled = enable_config;
                 this.forceBuildDAG.Enabled = enable_config;
                 this.inferAddrModes.Enabled = enable_config;
@@ -1048,6 +1053,7 @@ namespace ExceLintUI
             if (this.columnCellsFreq.Checked) { c = c.analyzeRelativeToColumns(true); }
             if (this.rowCellsFreq.Checked) { c = c.analyzeRelativeToRows(true); }
             if (this.levelsFreq.Checked) { c = c.analyzeRelativeToLevels(true); }
+            if (this.sheetFreq.Checked) { c = c.analyzeRelativeToSheet(true); }
 
             // weighting / program resynthesis
             if (this.inferAddrModes.Checked) { c = c.inferAddressModes(true);  }
