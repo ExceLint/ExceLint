@@ -48,9 +48,9 @@
             this.spectralPlot = this.Factory.CreateRibbonButton();
             this.scatter3D = this.Factory.CreateRibbonButton();
             this.ExportSquareMatrixButton = this.Factory.CreateRibbonButton();
-            this.normRefCheckBox = this.Factory.CreateRibbonCheckBox();
-            this.normSSCheckBox = this.Factory.CreateRibbonCheckBox();
             this.useCOF = this.Factory.CreateRibbonToggleButton();
+            this.normSSCheckBox = this.Factory.CreateRibbonCheckBox();
+            this.normRefCheckBox = this.Factory.CreateRibbonCheckBox();
             this.significanceTextBox = this.Factory.CreateRibbonEditBox();
             this.spectralRanking = this.Factory.CreateRibbonCheckBox();
             this.showFixes = this.Factory.CreateRibbonCheckBox();
@@ -81,6 +81,7 @@
             this.separator4 = this.Factory.CreateRibbonSeparator();
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
+            this.useResultant = this.Factory.CreateRibbonCheckBox();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -103,6 +104,7 @@
             // 
             this.CheckCellGroup.Items.Add(this.box1);
             this.CheckCellGroup.Items.Add(this.useCOF);
+            this.CheckCellGroup.Items.Add(this.useResultant);
             this.CheckCellGroup.Items.Add(this.normSSCheckBox);
             this.CheckCellGroup.Items.Add(this.normRefCheckBox);
             this.CheckCellGroup.Items.Add(this.significanceTextBox);
@@ -233,11 +235,11 @@
             this.ExportSquareMatrixButton.Visible = false;
             this.ExportSquareMatrixButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ExportSquareMatrixButton_Click);
             // 
-            // normRefCheckBox
+            // useCOF
             // 
-            this.normRefCheckBox.Label = "Normalize Refs";
-            this.normRefCheckBox.Name = "normRefCheckBox";
-            this.normRefCheckBox.Visible = false;
+            this.useCOF.Label = "Use COF";
+            this.useCOF.Name = "useCOF";
+            this.useCOF.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.useCOF_Click);
             // 
             // normSSCheckBox
             // 
@@ -245,11 +247,11 @@
             this.normSSCheckBox.Name = "normSSCheckBox";
             this.normSSCheckBox.Visible = false;
             // 
-            // useCOF
+            // normRefCheckBox
             // 
-            this.useCOF.Label = "Use COF";
-            this.useCOF.Name = "useCOF";
-            this.useCOF.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.useCOF_Click);
+            this.normRefCheckBox.Label = "Normalize Refs";
+            this.normRefCheckBox.Name = "normRefCheckBox";
+            this.normRefCheckBox.Visible = false;
             // 
             // significanceTextBox
             // 
@@ -448,6 +450,11 @@
             this.annotateThisCell.ShowImage = true;
             this.annotateThisCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotateThisCell_Click);
             // 
+            // useResultant
+            // 
+            this.useResultant.Label = "Use Resultant";
+            this.useResultant.Name = "useResultant";
+            // 
             // ExceLintRibbon
             // 
             this.Name = "ExceLintRibbon";
@@ -515,6 +522,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox normRefCheckBox;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox normSSCheckBox;
         internal Microsoft.Office.Tools.Ribbon.RibbonToggleButton useCOF;
+        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox useResultant;
     }
 
     partial class ThisRibbonCollection

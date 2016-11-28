@@ -242,6 +242,19 @@
                     )
                 else
                     self
+        member self.enableShallowInputVectorMixedResultant(on: bool) : FeatureConf =
+            let (name,cap) = Vector.ShallowInputVectorMixedResultant.capability
+            if on then
+                FeatureConf(
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
         member self.enableProximityAbove(on: bool) : FeatureConf =
             let (name,cap) = Proximity.Above.capability
             if on then
@@ -479,6 +492,9 @@
         member self.IsCOF : bool =
             let (name,_) = Vector.ShallowInputVectorMixedCOFNoAspect.capability
             _config.ContainsKey name && _config.[name].enabled
+        member self.IsResultant : bool =
+            let (name,_) = Vector.ShallowInputVectorMixedResultant.capability
+            _config.ContainsKey name && _config.[name].enabled
         member self.NormalizeRefs : bool =
             let (name,_) = Vector.ShallowInputVectorMixedCOFNoAspect.capability
             if _config.ContainsKey name then
@@ -526,11 +542,16 @@
                               config
 
             let (cof,_) = Vector.ShallowInputVectorMixedCOFNoAspect.capability
-            if self.IsEnabled(cof) then
+            let (resf,_) = Vector.ShallowInputVectorMixedResultant.capability
+
+            // set count type
+            if self.IsCOF then
+                config'
+            elif self.IsResultant then
                 config'
             else
-                // use L2 norm sums by default
-                config'.enableShallowInputVectorMixedL2NormSum(true)
+                // fall back on L2 norm sums is not specified
+                config'.enableShallowInputVectorMixedResultant(true)
 
         member self.rawConf = _config
 

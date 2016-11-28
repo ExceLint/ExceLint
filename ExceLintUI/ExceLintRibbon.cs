@@ -955,6 +955,7 @@ namespace ExceLintUI
                 this.showFixes.Enabled = disabled;
                 this.annotate.Enabled = disabled;
                 this.useCOF.Enabled = disabled;
+                this.useResultant.Enabled = disabled;
 
                 // tell the user ExceLint doesn't work
                 SetTooltips(disabled_text);
@@ -988,6 +989,7 @@ namespace ExceLintUI
                 this.significanceTextBox.Enabled = enable_config;
                 this.conditioningSetSize.Enabled = enable_config;
                 this.spectralRanking.Enabled = enable_config;
+                this.useResultant.Enabled = enable_config;
                 this.showFixes.Enabled = enable_config && this.spectralRanking.Checked;
 
                 // toggle the heatmap label depending on the heatmap shown/hidden state
@@ -1024,7 +1026,13 @@ namespace ExceLintUI
             if (this.combinedDegree.Checked) { c = c.enableCombinedDegree(true); }
 
             // spatiostructual vectors
-            if (this.inVectors.Checked) { c = c.enableShallowInputVectorMixedL2NormSum(true); }
+            if (this.inVectors.Checked) {
+                if (this.useResultant.Checked) {
+                    c = c.enableShallowInputVectorMixedResultant(true);
+                } else {
+                    c = c.enableShallowInputVectorMixedL2NormSum(true);
+                }
+            }
             if (this.outVectors.Checked) { c = c.enableShallowOutputVectorMixedL2NormSum(true); }
             if (this.inVectorsAbs.Checked) { c = c.enableShallowInputVectorAbsoluteL2NormSum(true); }
             if (this.outVectorsAbs.Checked) { c = c.enableShallowOutputVectorAbsoluteL2NormSum(true); }
