@@ -217,7 +217,6 @@ open ExceLintFileFormats
         let shortf = (System.IO.Path.GetFileName file)
 
         printfn "Opening: %A" shortf
-
         let wb = app.OpenWorkbook(file)
             
         printfn "Building dependence graph: %A" shortf
