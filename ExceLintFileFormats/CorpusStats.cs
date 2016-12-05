@@ -12,12 +12,11 @@ namespace ExceLintFileFormats
         public CorpusStats(string path)
         {
             _sw = new StreamWriter(path);
+            _sw.AutoFlush = true;
             _cw = new CsvWriter(_sw);
 
             // write header
             _cw.WriteHeader<DebugInfoRow>();
-
-            _sw.Flush();
         }
 
         public void WriteRow(CorpusStatsRow row)
