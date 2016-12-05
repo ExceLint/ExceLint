@@ -34,7 +34,11 @@ open System.Text.RegularExpressions
             usage()
         let dpath  = System.IO.Path.GetFullPath argv.[0]   // input directory
         let opath  = System.IO.Path.GetFullPath argv.[1]   // output file
-        let errpath = System.IO.Path.GetFullPath ((Path.GetFileNameWithoutExtension argv.[1]) + "_err.csv")  // error file
+
+        let opath_dir = System.IO.Path.GetDirectoryName opath
+        let opath_fne = System.IO.Path.GetFileNameWithoutExtension opath
+
+        let errpath = Path.Combine(opath_dir, (opath_fne + "_err.csv"))  // error file
 
         Config(dpath, opath, errpath)
 
