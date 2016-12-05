@@ -14,7 +14,8 @@ open System.Text.RegularExpressions
             printfn "------------------------------------\n"
 
         member self.files: string[] =
-            Directory.EnumerateFiles(dpath, "*.xls?", SearchOption.AllDirectories) |> Seq.toArray
+//            Directory.EnumerateFiles(dpath, "*.xls?", SearchOption.AllDirectories) |> Seq.toArray
+            Directory.EnumerateFiles(dpath, "*", SearchOption.AllDirectories) |> Seq.toArray
         member self.output_file: string = ofile
         member self.error_file: string = errfile 
 
