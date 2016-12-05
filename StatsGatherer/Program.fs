@@ -37,6 +37,7 @@ let main argv =
                     let fs = graph.getAllFormulaAddrs()
 
                     // get all formula ASTs
+                    let mutable ucount = 0
                     let fs_asts = fs |>
                                   Array.map (fun addr -> addr, graph.getFormulaAtAddress addr) |>
                                   Array.map (fun (addr,astr) ->
@@ -53,6 +54,9 @@ let main argv =
                                         erow.Formula <- astr
                                         err.WriteRow erow
 
+                                        // bump count
+                                        ucount <- ucount + 1
+
                                         // we failed; return nothing
                                         None
                                   ) |>
@@ -68,6 +72,9 @@ let main argv =
                                        acc.[str] <- acc.[str] + 1
                                    acc
                               ) (new Dictionary<string,int>())
+                    
+                    // add unparseable formula count
+                    ops.Add("unparseable",ucount)
             
                     // write rows to CSV, one per operator
                     for pair in ops do
