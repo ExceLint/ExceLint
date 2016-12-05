@@ -3,18 +3,20 @@
 open System.IO
 open System.Text.RegularExpressions
 
-    type Config(dpath: string, ofile: string) =
+    type Config(dpath: string, ofile: string, errfile: string) =
         do
             printfn "\n------------------------------------"
             printfn "Running with the following options: "
             printfn "------------------------------------"
             printfn "Input directory: %A" dpath
             printfn "Output file: %A" ofile
+            printfn "Error file: %A" errfile
             printfn "------------------------------------\n"
 
         member self.files: string[] =
             Directory.EnumerateFiles(dpath, "*.xls?", SearchOption.AllDirectories) |> Seq.toArray
         member self.output_file: string = ofile
+        member self.error_file: string = errfile 
 
     type Knobs = { verbose: bool; dont_exit: bool; alpha: double }
 
@@ -32,6 +34,7 @@ open System.Text.RegularExpressions
             usage()
         let dpath  = System.IO.Path.GetFullPath argv.[0]   // input directory
         let opath  = System.IO.Path.GetFullPath argv.[1]   // output file
+        let errpath = System.IO.Path.GetFullPath ((Path.GetFileNameWithoutExtension argv.[1]) + "_err.csv")  // error file
 
-        Config(dpath, opath)
+        Config(dpath, opath, errpath)
 
