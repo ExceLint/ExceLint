@@ -31,17 +31,15 @@ let main argv =
                     try
                         let wb = app.OpenWorkbook(workbook)
             
-                        printfn "Building dependence graph: %A" workbook
-                        let graph = wb.buildDependenceGraph()
-
-                        // get all formula addresses
-                        let fs = graph.getAllFormulaAddrs()
+                        printfn "Reading workbook formulas: %A" workbook
+                        let fsd = wb.Formulas;
 
                         // get all formula ASTs
                         let mutable ucount = 0
-                        let fs_asts = fs |>
-                                      Array.map (fun addr -> addr, graph.getFormulaAtAddress addr) |>
-                                      Array.map (fun (addr,astr) ->
+                        let fs_asts = fsd |>
+                                      Seq.map (fun (pair: KeyValuePair<AST.Address,string>) ->
+                                        let addr = pair.Key
+                                        let astr = pair.Value
                                         try
                                             Some(Parcel.parseFormulaAtAddress addr astr)
                                         with
@@ -60,8 +58,9 @@ let main argv =
 
                                             // we failed; return nothing
                                             None
-                                      ) |>
-                                      Array.choose id
+                                      )
+                                      |> Seq.choose id
+                                      |> Seq.toArray
 
                         // get operator counts from ASTs
                         let ops = fs_asts |>
