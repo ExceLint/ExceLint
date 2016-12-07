@@ -4,6 +4,71 @@ open ExceLint.Utils
 open ExceLintFileFormats
 open System.Collections.Generic
 
+type FDict = Dictionary<AST.Address,string>
+type FCount = Dictionary<string,int>
+
+let asts(fsd: FDict)(err: ParserErrors)(ucount: int byref) : AST.Expression[] =
+    let mutable i = 0
+    let output =
+        fsd |>
+            Seq.map (fun (pair: KeyValuePair<AST.Address,string>) ->
+            let addr = pair.Key
+            let astr = pair.Value
+            try
+                Some(Parcel.parseFormulaAtAddress addr astr)
+            with
+            | ex ->
+                // log error as a side-effect
+                let erow = new ParserErrorsRow()
+                erow.Path <- addr.Path
+                erow.Workbook <- addr.WorkbookName
+                erow.Worksheet <- addr.WorksheetName
+                erow.Address <- addr.A1Local()
+                erow.Formula <- astr
+                err.WriteRow erow
+
+                // bump count
+                i <- i + 1
+
+                // we failed; return nothing
+                None
+            )
+            |> Seq.choose id
+            |> Seq.toArray
+    ucount <- i
+    output
+
+let ast_count(fs_asts: AST.Expression[]) : FCount =
+    fs_asts |>
+        Array.fold (fun (acc: Dictionary<string,int>)(ast: AST.Expression) ->
+            let strs = Parcel.operatorNamesFromExpr ast
+            for str in strs do
+                if not (acc.ContainsKey str) then
+                    acc.Add(str, 0)
+                acc.[str] <- acc.[str] + 1
+            acc
+        ) (new Dictionary<string,int>())
+
+let copy_workbook(workbook: string)(tmpdir: string) : string =
+    match Application.MagicBytes(workbook) with
+    | Application.CWFileType.XLS ->
+        let newpath = System.IO.Path.Combine(
+                        tmpdir,
+                        System.IO.Path.GetFileName(workbook) + ".xls"
+                        )
+        System.IO.File.Copy(workbook, newpath)
+        newpath
+    | Application.CWFileType.XLSX ->
+        let newpath = System.IO.Path.Combine(
+                        tmpdir,
+                        System.IO.Path.GetFileName(workbook) + ".xlsx"
+                        )
+        System.IO.File.Copy(workbook, newpath)
+        newpath
+    | _ ->
+        printfn "Not an Excel file: %A" workbook
+        failwith "sorry"
+
 [<EntryPoint>]
 let main argv = 
 
@@ -16,11 +81,13 @@ let main argv =
                 System.Environment.Exit 1
                 failwith "never gets called but keeps F# happy"
 
-    let workbooks = Array.map (fun fname ->
+    let workbooks = Seq.map (fun fname ->
                                   let wbname = System.IO.Path.GetFileName fname
                                   let path = System.IO.Path.GetDirectoryName fname
                                   System.IO.Path.Combine(path, wbname)
-                              ) (config.files)
+                             ) (config.files)
+
+    let tmpdir = System.IO.Path.GetTempPath()
 
     using(new Application()) (fun app ->
         using(new CorpusStats(config.output_file)) (fun csv ->
@@ -29,60 +96,34 @@ let main argv =
                     printfn "Opening: %A" workbook
 
                     try
-                        using(app.OpenWorkbook(workbook)) (fun wb ->
-                            printfn "Reading workbook formulas: %A" workbook
-                            let fsd = wb.Formulas;
+                        // determine file type and copy to tmp with appropriate name
+                        let workbook' = copy_workbook workbook tmpdir
 
-                            // get all formula ASTs
-                            let mutable ucount = 0
-                            let fs_asts = fsd |>
-                                          Seq.map (fun (pair: KeyValuePair<AST.Address,string>) ->
-                                            let addr = pair.Key
-                                            let astr = pair.Value
-                                            try
-                                                Some(Parcel.parseFormulaAtAddress addr astr)
-                                            with
-                                            | ex ->
-                                                // log error as a side-effect
-                                                let erow = new ParserErrorsRow()
-                                                erow.Path <- addr.Path
-                                                erow.Workbook <- addr.WorkbookName
-                                                erow.Worksheet <- addr.WorksheetName
-                                                erow.Address <- addr.A1Local()
-                                                erow.Formula <- astr
-                                                err.WriteRow erow
+                        try
+                            using(app.OpenWorkbook(workbook')) (fun wb ->
+                                printfn "Reading workbook formulas: %A" workbook'
+                                let fsd = wb.Formulas;
 
-                                                // bump count
-                                                ucount <- ucount + 1
+                                // get all formula ASTs
+                                let mutable ucount = 0
+                                let fs_asts = asts fsd err &ucount
 
-                                                // we failed; return nothing
-                                                None
-                                          )
-                                          |> Seq.choose id
-                                          |> Seq.toArray
-
-                            // get operator counts from ASTs
-                            let ops = fs_asts |>
-                                      Array.fold (fun (acc: Dictionary<string,int>)(ast: AST.Expression) ->
-                                           let strs = Parcel.operatorNamesFromExpr ast
-                                           for str in strs do
-                                               if not (acc.ContainsKey str) then
-                                                   acc.Add(str, 0)
-                                               acc.[str] <- acc.[str] + 1
-                                           acc
-                                      ) (new Dictionary<string,int>())
+                                // get operator counts from ASTs
+                                let ops = ast_count fs_asts
                     
-                            // add unparseable formula count
-                            ops.Add("unparseable",ucount)
+                                // add unparseable formula count
+                                ops.Add("unparseable",ucount)
             
-                            // write rows to CSV, one per operator
-                            for pair in ops do
-                                let row = new CorpusStatsRow()
-                                row.Workbook <- System.IO.Path.GetFileName workbook
-                                row.Operator <- pair.Key
-                                row.Count <- pair.Value
-                                csv.WriteRow row
-                        )
+                                // write rows to CSV, one per operator
+                                for pair in ops do
+                                    let row = new CorpusStatsRow()
+                                    row.Workbook <- System.IO.Path.GetFileName workbook'
+                                    row.Operator <- pair.Key
+                                    row.Count <- pair.Value
+                                    csv.WriteRow row
+                            )
+                        finally
+                            System.IO.File.Delete workbook'
                     with
                     | ex ->
                         printfn "Cannot open workbook: %A" workbook

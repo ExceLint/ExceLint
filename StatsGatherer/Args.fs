@@ -2,6 +2,7 @@
 
 open System.IO
 open System.Text.RegularExpressions
+open System.Collections.Generic
 
     type Config(dpath: string, ofile: string, errfile: string) =
         do
@@ -13,9 +14,8 @@ open System.Text.RegularExpressions
             printfn "Error file: %A" errfile
             printfn "------------------------------------\n"
 
-        member self.files: string[] =
-//            Directory.EnumerateFiles(dpath, "*.xls?", SearchOption.AllDirectories) |> Seq.toArray
-            Directory.EnumerateFiles(dpath, "*", SearchOption.AllDirectories) |> Seq.toArray
+        member self.files: IEnumerable<string> =
+            Directory.EnumerateFiles(dpath, "*", SearchOption.AllDirectories)
         member self.output_file: string = ofile
         member self.error_file: string = errfile 
 
