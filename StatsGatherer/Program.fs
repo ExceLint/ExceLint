@@ -63,11 +63,11 @@ let copy_workbook(workbook: string)(tmpdir: string) : string =
                         tmpdir,
                         System.IO.Path.GetFileName(workbook) + ".xlsx"
                         )
-        System.IO.File.Copy(workbook, newpath)
+        System.IO.File.Copy(workbook, newpath, overwrite = true)
         newpath
     | _ ->
         printfn "Not an Excel file: %A" workbook
-        failwith "sorry"
+        failwith (sprintf "Not an Excel file: %A" workbook)
 
 [<EntryPoint>]
 let main argv = 
@@ -92,7 +92,8 @@ let main argv =
     using(new Application()) (fun app ->
         using(new CorpusStats(config.output_file)) (fun csv ->
             using(new ParserErrors(config.error_file)) (fun err ->
-                for workbook in workbooks do
+                using(new ExceptionLog(config.exception_file)) (fun exlog ->
+                    for workbook in workbooks do
                     printfn "Opening: %A" workbook
 
                     try
@@ -126,7 +127,13 @@ let main argv =
                             System.IO.File.Delete workbook'
                     with
                     | ex ->
+                        let exrow = new ExceptionLogRow()
+                        exrow.Workbook <- workbook
+                        exrow.Error <- ex.Message
+                        exlog.WriteRow exrow
+
                         printfn "Cannot open workbook: %A" workbook
+                )
             )
         )
     )

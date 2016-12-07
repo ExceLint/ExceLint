@@ -4,7 +4,7 @@ open System.IO
 open System.Text.RegularExpressions
 open System.Collections.Generic
 
-    type Config(dpath: string, ofile: string, errfile: string) =
+    type Config(dpath: string, ofile: string, errfile: string, exceptionfile: string) =
         do
             printfn "\n------------------------------------"
             printfn "Running with the following options: "
@@ -12,12 +12,14 @@ open System.Collections.Generic
             printfn "Input directory: %A" dpath
             printfn "Output file: %A" ofile
             printfn "Error file: %A" errfile
+            printfn "Exception file: %A" exceptionfile
             printfn "------------------------------------\n"
 
         member self.files: IEnumerable<string> =
             Directory.EnumerateFiles(dpath, "*", SearchOption.AllDirectories)
         member self.output_file: string = ofile
-        member self.error_file: string = errfile 
+        member self.error_file: string = errfile
+        member self.exception_file: string = exceptionfile
 
     type Knobs = { verbose: bool; dont_exit: bool; alpha: double }
 
@@ -40,6 +42,7 @@ open System.Collections.Generic
         let opath_fne = System.IO.Path.GetFileNameWithoutExtension opath
 
         let errpath = Path.Combine(opath_dir, (opath_fne + "_err.csv"))  // error file
+        let exceptionpath = Path.Combine(opath_dir, (opath_fne + "_exceptions.csv"))  // exception file
 
-        Config(dpath, opath, errpath)
+        Config(dpath, opath, errpath, exceptionpath)
 
