@@ -51,6 +51,7 @@
     <Compile Include="DebugInfo.cs" />
     <Compile Include="ExceLintGroundTruth.cs" />
     <Compile Include="ExceLintStats.cs" />
+    <Compile Include="ExceptionLog.cs" />
     <Compile Include="ParserErrors.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WorkbookStats.cs" />
