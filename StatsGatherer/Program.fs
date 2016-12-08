@@ -48,7 +48,7 @@ let WithTimeout(proc: unit -> 'a)(duration_ms: int) =
         | None -> failwith "Unexpected failure."
 
 let asts(workbook: string)(fsd: FDict)(err: ParserErrors)(exlog: ExceptionLog)(ucount: int byref) : AST.Expression[] =
-    let fsda = Seq.toArray fsd
+    let fsda = Seq.toArray fsd |> Array.sortBy (fun pair -> pair.Value.Length)
 
     let mutable i = 0
     
