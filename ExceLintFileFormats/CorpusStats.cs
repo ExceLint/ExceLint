@@ -54,7 +54,7 @@ namespace ExceLintFileFormats
     public class CorpusStatsRow
     {
         public string Workbook { get; set; }
-        public string Operator { get; set; }
-        public int Count { get; set; }
+        public string Variable { get; set; }
+        public long Value { get; set; }
     }
 }

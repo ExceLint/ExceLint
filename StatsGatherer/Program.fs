@@ -8,26 +8,68 @@ open System.Threading
 
 type FDict = Dictionary<AST.Address,string>
 type FCount = Dictionary<string,int>
+type ParseOKorNot =
+| Success of AST.Expression
+| PFailure of ParserErrorsRow
+| TFailure of ExceptionLogRow
 
-exception TimeoutExceeded
+let TIMEOUT_S = 5
+let ENUFWORK = 20
 
-let TIMEOUT_S = 30L
-
-let asts(fsd: FDict)(err: ParserErrors)(ucount: int byref)(sw: Stopwatch) : AST.Expression[] =
-    let mutable i: int = 0
-
-    let fsda = Seq.toArray fsd
+// Adapted from: http://stackoverflow.com/questions/9460661/implementing-regex-timeout-in-net-4/9461311#9461311
+let WithTimeout(proc: unit -> 'a)(duration_ms: int) =
+    let reset = new AutoResetEvent false
+    let mutable ex: System.Exception option = None
+    let mutable retVal: 'a option = None
     
-    let do_work(pair: KeyValuePair<AST.Address,string>) = 
-        // check timeout
-        if sw.ElapsedMilliseconds / 1000L > TIMEOUT_S then
-            raise TimeoutExceeded
+    let ts = new ThreadStart(
+                (fun () ->
+                    try
+                        retVal <- Some(proc())
+                    with
+                    | e -> ex <- Some e
 
+                    reset.Set() |> ignore
+                )
+              )
+
+    let t = new Thread(ts)
+
+    t.Start()
+
+    while t.ThreadState <> ThreadState.Running do
+        Thread.Sleep(0)
+
+    if not (reset.WaitOne(duration_ms)) then
+        t.Abort()
+        raise (System.TimeoutException())
+
+    match ex with
+    | Some e -> raise e
+    | None ->
+        match retVal with
+        | Some r -> r
+        | None -> failwith "Unexpected failure."
+
+let asts(workbook: string)(fsd: FDict)(err: ParserErrors)(exlog: ExceptionLog)(ucount: int byref) : AST.Expression[] =
+    let fsda = Seq.toArray fsd
+
+    let mutable i = 0
+    
+    let do_work(pair: KeyValuePair<AST.Address,string>) : ParseOKorNot = 
         let addr = pair.Key
         let astr = pair.Value
         try
-            Some(Parcel.parseFormulaAtAddress addr astr)
+            Success(WithTimeout (fun () -> Parcel.parseFormulaAtAddress addr astr) TIMEOUT_S )
         with
+        | :? System.TimeoutException ->
+            let exrow = new ExceptionLogRow()
+            exrow.Workbook <- workbook
+            exrow.Error <- "Timeout"
+
+            printfn "Analysis timeout: %A" workbook
+
+            TFailure exrow
         | ex ->
             // log error as a side-effect
             let erow = new ParserErrorsRow()
@@ -36,25 +78,37 @@ let asts(fsd: FDict)(err: ParserErrors)(ucount: int byref)(sw: Stopwatch) : AST.
             erow.Worksheet <- addr.WorksheetName
             erow.Address <- addr.A1Local()
             erow.Formula <- astr
-            err.WriteRow erow
 
-            // thread-safe bump count
-            Interlocked.Increment(ref i) |> ignore
+            printfn "Parser failure: cell %A in %A" (addr.A1Local()) workbook
 
-            // we failed; return nothing
-            None
+            // we failed; return row
+            PFailure erow
 
+    let chooser =
+        fun e ->
+            // this function is not thread-safe
+            // because CsvHelper is NOT thread-safe!
+            match e with
+            | Success ast -> Some ast
+            | PFailure erow ->
+                
+                err.WriteRow erow
+                i <- i + 1
+                None
+            | TFailure exrow ->
+                exlog.WriteRow exrow
+                i <- i + 1
+                None
+
+    // do work in parallel if there is enough of it
     let output =
-        if fsda.Length > 100 then
-            fsda
-                |> Array.Parallel.map do_work
-                |> Seq.choose id
-                |> Seq.toArray
-        else
-            fsda
-                |> Array.map do_work
-                |> Seq.choose id
-                |> Seq.toArray
+        fsda
+            |> if fsda.Length > ENUFWORK then
+                   Array.Parallel.map do_work
+               else
+                   Array.map do_work
+            |> Seq.choose chooser
+            |> Seq.toArray
 
     ucount <- i
     output
@@ -92,7 +146,6 @@ let copy_workbook(workbook: string)(tmpdir: string) : string =
 
 [<EntryPoint>]
 let main argv = 
-
     let config =
             try
                 Args.processArgs argv
@@ -123,7 +176,6 @@ let main argv =
 
                         try
                             using(app.OpenWorkbook(workbook')) (fun wb ->
-                                // START TIME-CONSUMING
                                 let sw = new Stopwatch()
                                 sw.Start()
 
@@ -132,35 +184,38 @@ let main argv =
 
                                 // get all formula ASTs
                                 let mutable ucount = 0
-                                let fs_asts = asts fsd err &ucount sw
+                                let fs_asts = asts workbook fsd err exlog &ucount
 
-                                // END TIME-CONSUMING
                                 sw.Stop()
 
                                 // get operator counts from ASTs
                                 let ops = ast_count fs_asts
                     
                                 // add unparseable formula count
-                                ops.Add("unparseable",ucount)
+                                if ucount > 0 then
+                                    ops.Add("unparseable",ucount)
             
                                 // write rows to CSV, one per operator
                                 for pair in ops do
                                     let row = new CorpusStatsRow()
                                     row.Workbook <- System.IO.Path.GetFileName workbook'
-                                    row.Operator <- pair.Key
-                                    row.Count <- pair.Value
+                                    row.Variable <- pair.Key
+                                    row.Value <- int64 (pair.Value)
                                     csv.WriteRow row
+
+                                // record time
+                                let row = new CorpusStatsRow()
+                                row.Workbook <- System.IO.Path.GetFileName workbook'
+                                row.Variable <- "analysis_time_s"
+                                row.Value <- sw.ElapsedMilliseconds / 1000L
+                                csv.WriteRow row
+
+                                // let the user know we're done
+                                printfn "Workbook analysis complete; took %A milliseconds." (sw.ElapsedMilliseconds.ToString())
                             )
                         finally
                             System.IO.File.Delete workbook'
                     with
-                    | TimeoutExceeded ->
-                        let exrow = new ExceptionLogRow()
-                        exrow.Workbook <- workbook
-                        exrow.Error <- "Timeout"
-                        exlog.WriteRow exrow
-
-                        printfn "Analysis timeout: %A" workbook
                     | ex ->
                         let exrow = new ExceptionLogRow()
                         exrow.Workbook <- workbook
