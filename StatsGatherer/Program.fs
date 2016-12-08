@@ -13,7 +13,7 @@ type ParseOKorNot =
 | PFailure of ParserErrorsRow
 | TFailure of ExceptionLogRow
 
-let TIMEOUT_S = 5
+let TIMEOUT_S = 20
 let ENUFWORK = 20
 
 // Adapted from: http://stackoverflow.com/questions/9460661/implementing-regex-timeout-in-net-4/9461311#9461311
@@ -202,8 +202,8 @@ let main argv =
                                 // record time
                                 let row = new CorpusStatsRow()
                                 row.Workbook <- System.IO.Path.GetFileName workbook'
-                                row.Variable <- "analysis_time_s"
-                                row.Value <- sw.ElapsedMilliseconds / 1000L
+                                row.Variable <- "analysis_time_ms"
+                                row.Value <- sw.ElapsedMilliseconds
                                 csv.WriteRow row
 
                                 // let the user know we're done
