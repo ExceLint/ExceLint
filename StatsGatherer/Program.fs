@@ -3,38 +3,59 @@ open ExceLint
 open ExceLint.Utils
 open ExceLintFileFormats
 open System.Collections.Generic
+open System.Diagnostics
+open System.Threading
 
 type FDict = Dictionary<AST.Address,string>
 type FCount = Dictionary<string,int>
 
-let asts(fsd: FDict)(err: ParserErrors)(ucount: int byref) : AST.Expression[] =
-    let mutable i = 0
+exception TimeoutExceeded
+
+let TIMEOUT_S = 30L
+
+let asts(fsd: FDict)(err: ParserErrors)(ucount: int byref)(sw: Stopwatch) : AST.Expression[] =
+    let mutable i: int = 0
+
+    let fsda = Seq.toArray fsd
+    
+    let do_work(pair: KeyValuePair<AST.Address,string>) = 
+        // check timeout
+        if sw.ElapsedMilliseconds / 1000L > TIMEOUT_S then
+            raise TimeoutExceeded
+
+        let addr = pair.Key
+        let astr = pair.Value
+        try
+            Some(Parcel.parseFormulaAtAddress addr astr)
+        with
+        | ex ->
+            // log error as a side-effect
+            let erow = new ParserErrorsRow()
+            erow.Path <- addr.Path
+            erow.Workbook <- addr.WorkbookName
+            erow.Worksheet <- addr.WorksheetName
+            erow.Address <- addr.A1Local()
+            erow.Formula <- astr
+            err.WriteRow erow
+
+            // thread-safe bump count
+            Interlocked.Increment(ref i) |> ignore
+
+            // we failed; return nothing
+            None
+
     let output =
-        fsd |>
-            Seq.map (fun (pair: KeyValuePair<AST.Address,string>) ->
-            let addr = pair.Key
-            let astr = pair.Value
-            try
-                Some(Parcel.parseFormulaAtAddress addr astr)
-            with
-            | ex ->
-                // log error as a side-effect
-                let erow = new ParserErrorsRow()
-                erow.Path <- addr.Path
-                erow.Workbook <- addr.WorkbookName
-                erow.Worksheet <- addr.WorksheetName
-                erow.Address <- addr.A1Local()
-                erow.Formula <- astr
-                err.WriteRow erow
+        if fsda.Length > 100 then
+            fsda
+                |> Array.Parallel.map do_work
+                |> Seq.choose id
+                |> Seq.toArray
+        else
+            fsda
+                |> Array.map do_work
+                |> Seq.choose id
+                |> Seq.toArray
 
-                // bump count
-                i <- i + 1
-
-                // we failed; return nothing
-                None
-            )
-            |> Seq.choose id
-            |> Seq.toArray
     ucount <- i
     output
 
@@ -102,12 +123,19 @@ let main argv =
 
                         try
                             using(app.OpenWorkbook(workbook')) (fun wb ->
+                                // START TIME-CONSUMING
+                                let sw = new Stopwatch()
+                                sw.Start()
+
                                 printfn "Reading workbook formulas: %A" workbook'
                                 let fsd = wb.Formulas;
 
                                 // get all formula ASTs
                                 let mutable ucount = 0
-                                let fs_asts = asts fsd err &ucount
+                                let fs_asts = asts fsd err &ucount sw
+
+                                // END TIME-CONSUMING
+                                sw.Stop()
 
                                 // get operator counts from ASTs
                                 let ops = ast_count fs_asts
@@ -126,6 +154,13 @@ let main argv =
                         finally
                             System.IO.File.Delete workbook'
                     with
+                    | TimeoutExceeded ->
+                        let exrow = new ExceptionLogRow()
+                        exrow.Workbook <- workbook
+                        exrow.Error <- "Timeout"
+                        exlog.WriteRow exrow
+
+                        printfn "Analysis timeout: %A" workbook
                     | ex ->
                         let exrow = new ExceptionLogRow()
                         exrow.Workbook <- workbook
