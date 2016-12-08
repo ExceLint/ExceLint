@@ -81,7 +81,7 @@ namespace ExceLintUI
 
                     pb.GoAway();
                 }
-                catch (Parcel.ParseException ex)
+                catch (AST.ParseException ex)
                 {
                     RunInSTAThread(() =>
                     {
@@ -148,7 +148,7 @@ namespace ExceLintUI
                                          var causeWeight = cause.Value.Item2;
                                          return "\t\t" + ExceLint.ErrorModel.prettyHistoBinDesc(cause.Key) + ": (CSS weight) * score = " + causeWeight + " x " + causeScore + " = " + causeWeight * causeScore;
                                      })) + "\n\t]";
-                } catch (Exception e) { }
+                } catch (Exception) { }
 
                 // print
                 return prefix + score.Key.A1FullyQualified() + " -> " + score.Value.ToString() + "\n" + causes_str + "\n\t" + "intrinsic anomalousness weight: " + analysis.model.weightOf(score.Key);
@@ -353,7 +353,7 @@ namespace ExceLintUI
 
                     pb.GoAway();
                 }
-                catch (Parcel.ParseException ex)
+                catch (AST.ParseException ex)
                 {
                     RunInSTAThread(() =>
                     {

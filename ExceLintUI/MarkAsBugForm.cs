@@ -9,7 +9,6 @@ namespace ExceLintUI
 {
     public partial class MarkAsBugForm : Form
     {
-        BugAnnotation _ba;
         BugKind _selected_kind = BugKind.DefaultKind;
         string _notes = "";
 

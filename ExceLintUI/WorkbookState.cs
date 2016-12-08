@@ -560,7 +560,7 @@ namespace ExceLintUI
                     return;
                 }
             }
-            catch (Parcel.ParseException e)
+            catch (AST.ParseException e)
             {
                 // UI cleanup repeated here since the throw
                 // below will cause the finally clause to be skipped
