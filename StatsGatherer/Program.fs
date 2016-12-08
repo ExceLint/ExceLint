@@ -34,11 +34,7 @@ let WithTimeout(proc: unit -> 'a)(duration_ms: int) =
               )
 
     let t = new Thread(ts)
-
     t.Start()
-
-    while t.ThreadState <> ThreadState.Running do
-        Thread.Sleep(0)
 
     if not (reset.WaitOne(duration_ms)) then
         t.Abort()
