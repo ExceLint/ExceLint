@@ -214,6 +214,13 @@ let main argv =
                                     row.Value <- int64 (pair.Value)
                                     csv.WriteRow row
 
+                                // write the total number of formulas
+                                let row = new CorpusStatsRow()
+                                row.Workbook <- System.IO.Path.GetFileName workbook'
+                                row.Variable <- "num_formulas"
+                                row.Value <- int64 (fsd.Count)
+                                csv.WriteRow row
+
                                 // record time
                                 let row = new CorpusStatsRow()
                                 row.Workbook <- System.IO.Path.GetFileName workbook'
