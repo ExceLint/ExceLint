@@ -26,7 +26,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DocumentationFile>bin\Debug\StatsGatherer.XML</DocumentationFile>
     <Prefer32Bit>true</Prefer32Bit>
-    <StartArguments>"Z:\dbarowy\Documents\FUSE\cc-binaries" "P:\excelint\fuse_stats"</StartArguments>
+    <StartArguments>"Z:\dbarowy\Documents\FUSE\cc-binaries" "P:\excelint\fuse_stats\FUSE_output.csv"</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
