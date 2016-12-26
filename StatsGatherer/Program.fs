@@ -12,6 +12,7 @@ type ParseOKorNot =
 | Success of AST.Expression
 | PFailure of ParserErrorsRow
 | TFailure of ExceptionLogRow
+type WorkerFn = Application -> CorpusStats -> ParserErrors -> ExceptionLog -> unit
 
 let TIMEOUT_S = 20
 let ENUFWORK = 20
@@ -120,25 +121,34 @@ let ast_count(fs_asts: AST.Expression[]) : FCount =
             acc
         ) (new Dictionary<string,int>())
 
-let copy_workbook(workbook: string)(tmpdir: string) : string =
+let workbook_proper_name(workbook: string)(tmpdir: string) : string =
     match Application.MagicBytes(workbook) with
     | Application.CWFileType.XLS ->
         let newpath = System.IO.Path.Combine(
                         tmpdir,
                         System.IO.Path.GetFileName(workbook) + ".xls"
                         )
-        System.IO.File.Copy(workbook, newpath)
         newpath
     | Application.CWFileType.XLSX ->
         let newpath = System.IO.Path.Combine(
                         tmpdir,
                         System.IO.Path.GetFileName(workbook) + ".xlsx"
                         )
-        System.IO.File.Copy(workbook, newpath, overwrite = true)
         newpath
     | _ ->
         printfn "Not an Excel file: %A" workbook
         failwith (sprintf "Not an Excel file: %A" workbook)
+
+let open_and_do_stuff(config: Args.Config)(dothis: WorkerFn) : unit =
+    using(new Application()) (fun app ->
+        using(new CorpusStats(config.output_file)) (fun csv ->
+            using(new ParserErrors(config.error_file)) (fun err ->
+                using(new ExceptionLog(config.exception_file)) (fun exlog ->
+                    dothis app csv err exlog
+                )
+            )
+        )
+    )
 
 [<EntryPoint>]
 let main argv = 
@@ -159,17 +169,22 @@ let main argv =
 
     let tmpdir = System.IO.Path.GetTempPath()
 
-    using(new Application()) (fun app ->
-        using(new CorpusStats(config.output_file)) (fun csv ->
-            using(new ParserErrors(config.error_file)) (fun err ->
-                using(new ExceptionLog(config.exception_file)) (fun exlog ->
-                    for workbook in workbooks do
-                    printfn "Opening: %A" workbook
+    // this is what the worker does
+    let workerfn: WorkerFn = fun app csv err exlog ->
+        for workbook in workbooks do
+                try
+                    // determine file type and name at tmp dir
+                    let workbook' = workbook_proper_name workbook tmpdir
 
-                    try
-                        // determine file type and copy to tmp with appropriate name
-                        let workbook' = copy_workbook workbook tmpdir
+                    if csv.IsProcessed(workbook') then
+                        printfn "Already processed: %A" workbook
+                    else
+                        printfn "Opening: %A" workbook
 
+                        // copy to tmp dir
+                        System.IO.File.Copy(workbook, workbook', overwrite = true)
+
+                        // get to it
                         try
                             using(app.OpenWorkbook(workbook')) (fun wb ->
                                 let sw = new Stopwatch()
@@ -219,10 +234,9 @@ let main argv =
                         exlog.WriteRow exrow
 
                         printfn "Cannot open workbook: %A" workbook
-                )
-            )
-        )
-    )
+
+    // do the work now
+    open_and_do_stuff config workerfn
 
     printfn "Press any key to continue..."
     System.Console.ReadKey() |> ignore
