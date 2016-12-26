@@ -9,14 +9,17 @@ namespace ExceLintFileFormats
         StreamWriter _sw;
         CsvWriter _cw;
 
-        public ParserErrors(string path)
+        public ParserErrors(string path, bool append)
         {
-            _sw = new StreamWriter(path);
+            _sw = new StreamWriter(path, append);
             _sw.AutoFlush = true;
             _cw = new CsvWriter(_sw);
 
             // write header
-            _cw.WriteHeader<ParserErrorsRow>();
+            if (!append)
+            {
+                _cw.WriteHeader<ParserErrorsRow>();
+            }
         }
 
         public void WriteRow(ParserErrorsRow row)

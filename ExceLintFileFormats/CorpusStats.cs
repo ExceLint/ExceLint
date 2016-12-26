@@ -97,6 +97,12 @@ namespace ExceLintFileFormats
             return _processed.Contains(Path.GetFileName(workbookFullPath));
         }
 
+        public bool WasResumed
+        {
+            get { return _processed.Count > 0; }
+        }
+          
+
         #region IDisposable Support
         // To detect redundant calls
         private bool disposedValue = false;

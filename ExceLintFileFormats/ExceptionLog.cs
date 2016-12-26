@@ -9,14 +9,17 @@ namespace ExceLintFileFormats
         StreamWriter _sw;
         CsvWriter _cw;
 
-        public ExceptionLog(string path)
+        public ExceptionLog(string path, bool append)
         {
-            _sw = new StreamWriter(path);
+            _sw = new StreamWriter(path, append);
             _sw.AutoFlush = true;
             _cw = new CsvWriter(_sw);
 
             // write header
-            _cw.WriteHeader<ExceptionLogRow>();
+            if (!append)
+            {
+                _cw.WriteHeader<ExceptionLogRow>();
+            }
         }
 
         public void WriteRow(ExceptionLogRow row)

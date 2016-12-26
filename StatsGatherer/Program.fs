@@ -142,8 +142,8 @@ let workbook_proper_name(workbook: string)(tmpdir: string) : string =
 let open_and_do_stuff(config: Args.Config)(dothis: WorkerFn) : unit =
     using(new Application()) (fun app ->
         using(new CorpusStats(config.output_file)) (fun csv ->
-            using(new ParserErrors(config.error_file)) (fun err ->
-                using(new ExceptionLog(config.exception_file)) (fun exlog ->
+            using(new ParserErrors(config.error_file, csv.WasResumed)) (fun err ->
+                using(new ExceptionLog(config.exception_file, csv.WasResumed)) (fun exlog ->
                     dothis app csv err exlog
                 )
             )
