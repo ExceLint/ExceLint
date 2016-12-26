@@ -101,7 +101,11 @@ namespace ExceLintFileFormats
         {
             get { return _processed.Count > 0; }
         }
-          
+
+        public void MarkAsProcessed(string workbookFullPath)
+        {
+            _processed.Add(Path.GetFileName(workbookFullPath));
+        }
 
         #region IDisposable Support
         // To detect redundant calls

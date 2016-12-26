@@ -223,6 +223,9 @@ let main argv =
 
                                 // let the user know we're done
                                 printfn "Workbook analysis complete; took %A milliseconds." (sw.ElapsedMilliseconds.ToString())
+
+                                // mark as processed
+                                csv.MarkAsProcessed workbook'
                             )
                         finally
                             System.IO.File.Delete workbook'
