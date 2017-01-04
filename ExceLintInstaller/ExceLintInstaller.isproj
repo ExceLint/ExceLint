@@ -45,6 +45,10 @@
 			<Name>ExceLintCLIGenerator</Name>
 			<Project>{620E8175-C82F-4353-94BD-32D38D048DC2}</Project>
 		</ProjectReference>
+		<ProjectReference Include="..\ExceLintFileFormats\ExceLintFileFormats.csproj">
+			<Name>ExceLintFileFormats</Name>
+			<Project>{BF7683ED-F2E1-42D4-916C-D8DD2E58F389}</Project>
+		</ProjectReference>
 		<ProjectReference Include="..\ExceLintRunner\ExceLintRunner.fsproj">
 			<Name>ExceLintRunner</Name>
 			<Project>{95BB2692-05A3-4CFE-A10D-376C7139D649}</Project>
