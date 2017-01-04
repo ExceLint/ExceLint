@@ -5,6 +5,7 @@ open ExceLintFileFormats
 open System.Collections.Generic
 open System.Diagnostics
 open System.Threading
+open System.Text.RegularExpressions
 
 type FDict = Dictionary<AST.Address,string>
 type FCount = Dictionary<string,int>
@@ -122,22 +123,30 @@ let ast_count(fs_asts: AST.Expression[]) : FCount =
         ) (new Dictionary<string,int>())
 
 let workbook_proper_name(workbook: string)(tmpdir: string) : string =
-    match Application.MagicBytes(workbook) with
-    | Application.CWFileType.XLS ->
-        let newpath = System.IO.Path.Combine(
-                        tmpdir,
-                        System.IO.Path.GetFileName(workbook) + ".xls"
-                        )
-        newpath
-    | Application.CWFileType.XLSX ->
-        let newpath = System.IO.Path.Combine(
-                        tmpdir,
-                        System.IO.Path.GetFileName(workbook) + ".xlsx"
-                        )
-        newpath
-    | _ ->
-        printfn "Not an Excel file: %A" workbook
-        failwith (sprintf "Not an Excel file: %A" workbook)
+    let r = new Regex(".+\.xlsx?", RegexOptions.IgnoreCase)
+    if r.IsMatch workbook then
+        System.IO.Path.Combine(
+                            tmpdir,
+                            System.IO.Path.GetFileName(workbook)
+                            )
+    else
+        // only append extension if it is missing
+        match Application.MagicBytes(workbook) with
+        | Application.CWFileType.XLS ->
+            let newpath = System.IO.Path.Combine(
+                            tmpdir,
+                            System.IO.Path.GetFileName(workbook) + ".xls"
+                            )
+            newpath
+        | Application.CWFileType.XLSX ->
+            let newpath = System.IO.Path.Combine(
+                            tmpdir,
+                            System.IO.Path.GetFileName(workbook) + ".xlsx"
+                            )
+            newpath
+        | _ ->
+            printfn "Not an Excel file: %A" workbook
+            failwith (sprintf "Not an Excel file: %A" workbook)
 
 let open_and_do_stuff(config: Args.Config)(dothis: WorkerFn) : unit =
     using(new Application()) (fun app ->

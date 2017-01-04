@@ -69,5 +69,9 @@
 			<Name>ParcelCOMShim</Name>
 			<Project>{71E3AF28-8088-4F9D-9392-858964D72947}</Project>
 		</ProjectReference>
+		<ProjectReference Include="..\StatsGatherer\StatsGatherer.fsproj">
+			<Name>StatsGatherer</Name>
+			<Project>{7D763067-CDAB-4222-8593-B3D247C4E337}</Project>
+		</ProjectReference>
 	</ItemGroup>
 </Project>
