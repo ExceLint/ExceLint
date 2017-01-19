@@ -63,7 +63,8 @@ namespace ExceLintFileFormats
         public bool IsFlaggedByCUSTODES { get; set; }
         public bool IsFlaggedByExcel { get; set; }
         public bool CLISameAsV1 { get; set; }
-        public int Rank { get; set; }
+        public int ExceLintRank { get; set; }
+        public int CUSTODESRank { get; set; }
         public double Score { get; set; }
         public bool IsExceLintTrueBug { get; set; }
         public bool IsCUSTODESTrueSmell { get; set; }

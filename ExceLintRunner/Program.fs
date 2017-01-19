@@ -49,9 +49,15 @@ open ExceLintFileFormats
         |> (fun arr -> new HashSet<AST.Address>(arr))
 
     let per_append_excelint(csv: WorkbookStats)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: Pipeline.Ranking)(dag: Depends.DAG) : unit =
-        let smells = match custodes with
+        let output = match custodes with
                      | CUSTODES.OKOutput(c,_) -> c.Smells
-                     | _ -> new HashSet<AST.Address>()
+                     | _ -> [||]
+
+        let coutputd = new Dictionary<AST.Address,int>()
+        for i in [0..output.Length - 1] do
+            coutputd.Add(output.[i], i)
+
+        let smells = new HashSet<AST.Address>(output)
 
         // append all ExceLint flagged cells
         Array.mapi (fun i (kvp: KeyValuePair<AST.Address,double>) ->
@@ -66,7 +72,8 @@ open ExceLintFileFormats
             per_row.IsFlaggedByCUSTODES <- smells.Contains addr
             per_row.IsFlaggedByExcel <- ctruth.isFlaggedByExcel(addr)
             per_row.CLISameAsV1 <- ctruth.differs addr (smells.Contains addr)
-            per_row.Rank <- i
+            per_row.ExceLintRank <- i
+            per_row.CUSTODESRank <- if coutputd.ContainsKey(addr) then coutputd.[addr] else 999999999
             per_row.Score <- kvp.Value
             per_row.IsExceLintTrueBug <- etruth.IsABug addr
             per_row.IsCUSTODESTrueSmell <- ctruth.isTrueSmell addr
@@ -75,9 +82,11 @@ open ExceLintFileFormats
         ) ranking |> ignore
 
     let per_append_custodes(csv: WorkbookStats)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: Pipeline.Ranking)(custodes_not_excelint: HashSet<AST.Address>)(dag: Depends.DAG) : unit =
-        let smells = match custodes with
+        let output = match custodes with
                      | CUSTODES.OKOutput(c,_) -> c.Smells
-                     | _ -> new HashSet<AST.Address>()
+                     | _ -> [||]
+
+        let smells = new HashSet<AST.Address>(output)
 
         // append all remaining CUSTODES cells
         Array.iter (fun (addr: AST.Address) ->
@@ -91,7 +100,7 @@ open ExceLintFileFormats
             per_row.IsFlaggedByCUSTODES <- true
             per_row.IsFlaggedByExcel <- ctruth.isFlaggedByExcel(addr)
             per_row.CLISameAsV1 <- ctruth.differs addr (smells.Contains addr)
-            per_row.Rank <- 999999999
+            per_row.ExceLintRank <- 999999999
             per_row.Score <- 0.0
             per_row.IsExceLintTrueBug <- etruth.IsABug addr
             per_row.IsCUSTODESTrueSmell <- ctruth.isTrueSmell addr
@@ -100,9 +109,11 @@ open ExceLintFileFormats
         ) (custodes_not_excelint |> Seq.toArray)
 
     let per_append_true_smells(csv: WorkbookStats)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: Pipeline.Ranking)(true_smells_not_found: HashSet<AST.Address>)(dag: Depends.DAG) : unit =
-        let smells = match custodes with
+        let output = match custodes with
                      | CUSTODES.OKOutput(c,_) -> c.Smells
-                     | _ -> new HashSet<AST.Address>()
+                     | _ -> [||]
+
+        let smells = new HashSet<AST.Address>(output)
 
         // append all true smells found by neither tool
         Array.iter (fun (addr: AST.Address) ->
@@ -116,7 +127,7 @@ open ExceLintFileFormats
             per_row.IsFlaggedByCUSTODES <- false
             per_row.IsFlaggedByExcel <- ctruth.isFlaggedByExcel(addr)
             per_row.CLISameAsV1 <- ctruth.differs addr (smells.Contains addr)
-            per_row.Rank <- 999999999
+            per_row.ExceLintRank <- 999999999
             per_row.Score <- 0.0
             per_row.IsExceLintTrueBug <- etruth.IsABug addr
             per_row.IsCUSTODESTrueSmell <- true
@@ -243,9 +254,11 @@ open ExceLintFileFormats
                 let this_wb = ranking.[0].Key.WorkbookName
 
                 // get the set of cells flagged by CUSTODES
-                let (custodes_flags,custodes_time) = match custodes with
-                                                     | CUSTODES.OKOutput(c,t) -> c.Smells, t
-                                                     | CUSTODES.BadOutput(_,t) -> new HashSet<AST.Address>(), t
+                let (custodes_total_order,custodes_time) = match custodes with
+                                                           | CUSTODES.OKOutput(c,t) -> c.Smells, t
+                                                           | CUSTODES.BadOutput(_,t) -> [||], t
+
+                let custodes_flags = new HashSet<AST.Address>(custodes_total_order)
 
                 // find true ref bugs
                 let true_ref_bugs_this_wb = etruth.TrueRefBugsByWorkbook this_wb

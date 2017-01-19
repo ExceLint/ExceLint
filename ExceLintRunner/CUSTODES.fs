@@ -83,9 +83,9 @@
             )
         )
 
-    type Output(canonicalOutputHS: HashSet<AST.Address>) =
-        member self.NumSmells = canonicalOutputHS.Count
-        member self.Smells = canonicalOutputHS
+    type Output(canonicalOutput: AST.Address[]) =
+        member self.NumSmells = canonicalOutput.Length
+        member self.Smells = canonicalOutput
 
     type OutputResult =
     | OKOutput of Output*int64
@@ -103,7 +103,8 @@
         sw.Stop()
 
         let parsed = match output with
-                     | STDOUT output -> parse output
+                     | STDOUT output ->
+                        parse output
                      | STDERR error ->
                          match parseException error with
                          | Some (ex) -> CFailure(ex)
@@ -145,10 +146,7 @@
                                   ) o
                                   |> Seq.concat |> Seq.toArray
 
-            // this will remove duplicates, if there are any
-            let canonicalOutputHS = new HashSet<AST.Address>(canonicalOutput)
-
-            OKOutput (Output(canonicalOutputHS),cTime)
+            OKOutput (Output(canonicalOutput),cTime)
 
     let addresses(tool: Tool)(row: CUSTODESGroundTruthRow)(workbook_paths: Dictionary<string, string>) : AST.Address[] =
         let cells_str = tool.Accessor(row).Replace(" ", "")
