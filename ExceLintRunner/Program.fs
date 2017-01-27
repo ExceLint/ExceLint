@@ -128,6 +128,7 @@ open ExceLintFileFormats
             per_row.IsFlaggedByExcel <- ctruth.isFlaggedByExcel(addr)
             per_row.CLISameAsV1 <- ctruth.differs addr (smells.Contains addr)
             per_row.ExceLintRank <- 999999999
+            per_row.CUSTODESRank <- 999999999
             per_row.Score <- 0.0
             per_row.IsExceLintTrueBug <- etruth.IsABug addr
             per_row.IsCUSTODESTrueSmell <- true
@@ -143,12 +144,12 @@ open ExceLintFileFormats
 
         if not_excelint_at_all.Count <> 0 then
             // are these related to formulas?  if so, this is a sign that something went wrong
-            let all_comp = new HashSet<AST.Address>(model.DependenceGraph.allComputationCells())
-            let missed_formula_related = hs_intersection not_excelint_at_all all_comp
+            let all_formulas = new HashSet<AST.Address>(model.DependenceGraph.getAllFormulaAddrs())
+            let missed_formulas = hs_intersection not_excelint_at_all all_formulas
 
             printfn "WARNING: CUSTODES analysis contains %d cells not analyzed by ExceLint," (not_excelint_at_all.Count)
-            printfn "         %d of which are formula-related (either inputs or formulas)." missed_formula_related.Count
-            if missed_formula_related.Count > 0 then
+            printfn "         %d of which are formulas." missed_formulas.Count
+            if missed_formulas.Count > 0 then
                 printfn "         Writing to %s" config.DebugPath
 
                 // append all true smells found by neither tool
@@ -160,7 +161,7 @@ open ExceLintFileFormats
                     per_row.Address <- addr.A1Local()
 
                     csv.WriteRow per_row
-                ) (missed_formula_related |> Seq.toArray)
+                ) (missed_formulas |> Seq.toArray)
 
     let precision(tp: int)(fp: int) : double =
         if tp = 0 && fp = 0 then
