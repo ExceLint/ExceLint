@@ -551,7 +551,7 @@
                 config'
             else
                 // fall back on L2 norm sums is not specified
-                config'.enableShallowInputVectorMixedResultant(true)
+                config'.enableShallowInputVectorMixedL2NormSum(true)
 
         member self.rawConf = _config
 
