@@ -26,7 +26,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DocumentationFile>bin\Debug\ExceLintRunner.XML</DocumentationFile>
     <Prefer32Bit>true</Prefer32Bit>
-    <StartArguments>"C:\Users\dbarowy\Documents\Visual Studio 2015\Projects\ExceLint\data\spreadsheets\custodes" "C:\Users\dbarowy\Desktop\ctest" "C:\Users\dbarowy\Documents\Visual Studio 2015\Projects\ExceLint\data\analyses\ExceLint\ground_truth.csv" "C:\Users\dbarowy\Documents\Visual Studio 2015\Projects\ExceLint\data\analyses\CUSTODES\smell_detection_result.csv" "C:\ProgramData\Oracle\Java\javapath\java.exe" "C:\Users\dbarowy\Documents\Visual Studio 2015\Projects\ExceLint\data\analyses\CUSTODES2\cc2.jar" -thresh 5 -verbose -sheets -css</StartArguments>
+    <StartArguments>"C:\Users\dbarowy\Documents\Visual Studio 2015\Projects\ExceLint\data\spreadsheets\custodes" "C:\Users\dbarowy\Desktop\ctest2" "C:\Users\dbarowy\Documents\Visual Studio 2015\Projects\ExceLint\data\analyses\ExceLint\ground_truth.csv" "C:\Users\dbarowy\Documents\Visual Studio 2015\Projects\ExceLint\data\analyses\CUSTODES\smell_detection_result.csv" "C:\ProgramData\Oracle\Java\javapath\java.exe" "C:\Users\dbarowy\Documents\Visual Studio 2015\Projects\ExceLint\data\analyses\CUSTODES2\cc2.jar" -thresh 5 -verbose -sheets -css</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
