@@ -13,6 +13,7 @@
         type public X = int    // i.e., column displacement
         type public Y = int    // i.e., row displacement
         type public Z = int    // i.e., worksheet displacement (0 if same sheet, 1 if different)
+        type public C = int    // i.e., a constant (1 if reference is a constant, 0 otherwise)
 
         // components for mixed vectors
         type public VectorComponent =
@@ -26,6 +27,7 @@
         // the vector, relative to an origin
         type public Coordinates = (X*Y*Path)
         type public RelativeVector = (X*Y*Z)
+        type public RelativeVectorAndConstant = (X*Y*Z*C)
         type public MixedVector = (VectorComponent*VectorComponent*Path)
         type public SquareVector(dx: double, dy: double, x: double, y: double) =
             member self.dx = dx
@@ -238,27 +240,6 @@
                     Array.map (fun v -> relativeToOrigin v dag isOSI)
             let output = rebase (vectors cell dag depth isMixed)
             output
-
-        let private oldAspect(data: (X*Y*X*Y)[]) : double =
-            // compute aspect ratio
-            let width_min = Array.map (fun (sdx, sdy, x, y) -> x) data |> Array.min
-            let height_min = Array.map (fun (sdx, sdy, x, y) -> y) data |> Array.min
-            let width_max = Array.map (fun (sdx, sdy, x, y) -> x) data |> Array.max
-            let height_max = Array.map (fun (sdx, sdy, x, y) -> y) data |> Array.max
-            let width = width_max - width_min + 1
-            let height = height_max - height_min + 1
-            if width < height then
-                float(height) / float(width)
-            else
-                float(width) / float(height)
-
-//        let private normalizeColumn(data: double[]) : double[] =
-//            let min = Array.min data
-//            let max = Array.max data
-//            if max = min then
-//                Array.create data.Length 0.5
-//            else
-//                Array.map (fun x -> (x - min) / ( max - min)) data
 
         // find normalization function that shifts and scales column values appropriately
         let private colNormFunc(column: double[]) : double -> double =
@@ -578,6 +559,11 @@
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorMixedResultant>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedResultant.run } )
+
+        type ShallowInputVectorMixedResultantWithConstant() =
+            inherit BaseFeature()
+            static member run(cell: AST.Address)(dag: DAG) : Countable =
+                let (x,y,z,c) = 
 
         type ShallowOutputVectorMixedL2NormSum() =
             inherit BaseFeature()
