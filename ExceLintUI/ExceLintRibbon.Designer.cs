@@ -43,35 +43,18 @@
             this.MarkAsOKButton = this.Factory.CreateRibbonButton();
             this.StartOverButton = this.Factory.CreateRibbonButton();
             this.showHeatmap = this.Factory.CreateRibbonButton();
-            this.ToDOT = this.Factory.CreateRibbonButton();
-            this.showVectors = this.Factory.CreateRibbonButton();
-            this.spectralPlot = this.Factory.CreateRibbonButton();
-            this.scatter3D = this.Factory.CreateRibbonButton();
-            this.ExportSquareMatrixButton = this.Factory.CreateRibbonButton();
-            this.useCOF = this.Factory.CreateRibbonToggleButton();
             this.useResultant = this.Factory.CreateRibbonCheckBox();
             this.normSSCheckBox = this.Factory.CreateRibbonCheckBox();
             this.normRefCheckBox = this.Factory.CreateRibbonCheckBox();
             this.significanceTextBox = this.Factory.CreateRibbonEditBox();
             this.spectralRanking = this.Factory.CreateRibbonCheckBox();
             this.showFixes = this.Factory.CreateRibbonCheckBox();
-            this.separator1 = this.Factory.CreateRibbonSeparator();
-            this.inDegree = this.Factory.CreateRibbonCheckBox();
-            this.outDegree = this.Factory.CreateRibbonCheckBox();
-            this.combinedDegree = this.Factory.CreateRibbonCheckBox();
-            this.inVectors = this.Factory.CreateRibbonCheckBox();
-            this.outVectors = this.Factory.CreateRibbonCheckBox();
-            this.inVectorsAbs = this.Factory.CreateRibbonCheckBox();
-            this.outVectorsAbs = this.Factory.CreateRibbonCheckBox();
-            this.ProximityAbove = this.Factory.CreateRibbonCheckBox();
-            this.ProximityBelow = this.Factory.CreateRibbonCheckBox();
-            this.ProximityLeft = this.Factory.CreateRibbonCheckBox();
-            this.ProximityRight = this.Factory.CreateRibbonCheckBox();
             this.separator2 = this.Factory.CreateRibbonSeparator();
             this.allCellsFreq = this.Factory.CreateRibbonCheckBox();
             this.columnCellsFreq = this.Factory.CreateRibbonCheckBox();
             this.rowCellsFreq = this.Factory.CreateRibbonCheckBox();
             this.levelsFreq = this.Factory.CreateRibbonCheckBox();
+            this.sheetFreq = this.Factory.CreateRibbonCheckBox();
             this.separator3 = this.Factory.CreateRibbonSeparator();
             this.DebugOutput = this.Factory.CreateRibbonCheckBox();
             this.forceBuildDAG = this.Factory.CreateRibbonCheckBox();
@@ -82,7 +65,6 @@
             this.separator4 = this.Factory.CreateRibbonSeparator();
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
-            this.sheetFreq = this.Factory.CreateRibbonCheckBox();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -104,25 +86,12 @@
             // CheckCellGroup
             // 
             this.CheckCellGroup.Items.Add(this.box1);
-            this.CheckCellGroup.Items.Add(this.useCOF);
             this.CheckCellGroup.Items.Add(this.useResultant);
             this.CheckCellGroup.Items.Add(this.normSSCheckBox);
             this.CheckCellGroup.Items.Add(this.normRefCheckBox);
             this.CheckCellGroup.Items.Add(this.significanceTextBox);
             this.CheckCellGroup.Items.Add(this.spectralRanking);
             this.CheckCellGroup.Items.Add(this.showFixes);
-            this.CheckCellGroup.Items.Add(this.separator1);
-            this.CheckCellGroup.Items.Add(this.inDegree);
-            this.CheckCellGroup.Items.Add(this.outDegree);
-            this.CheckCellGroup.Items.Add(this.combinedDegree);
-            this.CheckCellGroup.Items.Add(this.inVectors);
-            this.CheckCellGroup.Items.Add(this.outVectors);
-            this.CheckCellGroup.Items.Add(this.inVectorsAbs);
-            this.CheckCellGroup.Items.Add(this.outVectorsAbs);
-            this.CheckCellGroup.Items.Add(this.ProximityAbove);
-            this.CheckCellGroup.Items.Add(this.ProximityBelow);
-            this.CheckCellGroup.Items.Add(this.ProximityLeft);
-            this.CheckCellGroup.Items.Add(this.ProximityRight);
             this.CheckCellGroup.Items.Add(this.separator2);
             this.CheckCellGroup.Items.Add(this.allCellsFreq);
             this.CheckCellGroup.Items.Add(this.columnCellsFreq);
@@ -147,11 +116,6 @@
             this.box1.Items.Add(this.MarkAsOKButton);
             this.box1.Items.Add(this.StartOverButton);
             this.box1.Items.Add(this.showHeatmap);
-            this.box1.Items.Add(this.ToDOT);
-            this.box1.Items.Add(this.showVectors);
-            this.box1.Items.Add(this.spectralPlot);
-            this.box1.Items.Add(this.scatter3D);
-            this.box1.Items.Add(this.ExportSquareMatrixButton);
             this.box1.Name = "box1";
             // 
             // AnalyzeButton
@@ -190,59 +154,6 @@
             this.showHeatmap.ShowImage = true;
             this.showHeatmap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.showHeatmap_Click);
             // 
-            // ToDOT
-            // 
-            this.ToDOT.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.ToDOT.Image = global::ExceLintUI.Properties.Resources.graph;
-            this.ToDOT.Label = "ToDOT";
-            this.ToDOT.Name = "ToDOT";
-            this.ToDOT.ShowImage = true;
-            this.ToDOT.Visible = false;
-            this.ToDOT.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ToDOT_Click);
-            // 
-            // showVectors
-            // 
-            this.showVectors.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.showVectors.Image = global::ExceLintUI.Properties.Resources.graph;
-            this.showVectors.Label = "Show Vectors";
-            this.showVectors.Name = "showVectors";
-            this.showVectors.ShowImage = true;
-            this.showVectors.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.showVectors_Click);
-            // 
-            // spectralPlot
-            // 
-            this.spectralPlot.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.spectralPlot.Image = global::ExceLintUI.Properties.Resources.spectral_plot_32;
-            this.spectralPlot.Label = "Spectral Plot";
-            this.spectralPlot.Name = "spectralPlot";
-            this.spectralPlot.ShowImage = true;
-            this.spectralPlot.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.spectralPlot_Click);
-            // 
-            // scatter3D
-            // 
-            this.scatter3D.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.scatter3D.Image = global::ExceLintUI.Properties.Resources.spectral_plot_32;
-            this.scatter3D.Label = "3D Scatterplot";
-            this.scatter3D.Name = "scatter3D";
-            this.scatter3D.ShowImage = true;
-            this.scatter3D.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.scatter3D_Click);
-            // 
-            // ExportSquareMatrixButton
-            // 
-            this.ExportSquareMatrixButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.ExportSquareMatrixButton.Image = ((System.Drawing.Image)(resources.GetObject("ExportSquareMatrixButton.Image")));
-            this.ExportSquareMatrixButton.Label = "Export Square Matrices";
-            this.ExportSquareMatrixButton.Name = "ExportSquareMatrixButton";
-            this.ExportSquareMatrixButton.ShowImage = true;
-            this.ExportSquareMatrixButton.Visible = false;
-            this.ExportSquareMatrixButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ExportSquareMatrixButton_Click);
-            // 
-            // useCOF
-            // 
-            this.useCOF.Label = "Use COF";
-            this.useCOF.Name = "useCOF";
-            this.useCOF.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.useCOF_Click);
-            // 
             // useResultant
             // 
             this.useResultant.Label = "Use Resultant";
@@ -280,88 +191,6 @@
             this.showFixes.Label = "Show Fixes";
             this.showFixes.Name = "showFixes";
             // 
-            // separator1
-            // 
-            this.separator1.Name = "separator1";
-            // 
-            // inDegree
-            // 
-            this.inDegree.Label = "In-Degree";
-            this.inDegree.Name = "inDegree";
-            this.inDegree.Visible = false;
-            this.inDegree.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.inDegree_Click);
-            // 
-            // outDegree
-            // 
-            this.outDegree.Label = "Out-Degree";
-            this.outDegree.Name = "outDegree";
-            this.outDegree.Visible = false;
-            this.outDegree.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.outDegree_Click);
-            // 
-            // combinedDegree
-            // 
-            this.combinedDegree.Label = "Both-Degree";
-            this.combinedDegree.Name = "combinedDegree";
-            this.combinedDegree.Visible = false;
-            this.combinedDegree.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.combinedDegree_Click);
-            // 
-            // inVectors
-            // 
-            this.inVectors.Checked = true;
-            this.inVectors.Label = "In-Vectors (mix; sh)";
-            this.inVectors.Name = "inVectors";
-            this.inVectors.Visible = false;
-            this.inVectors.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.inVectors_Click);
-            // 
-            // outVectors
-            // 
-            this.outVectors.Label = "Out-Vectors (mix; sh)";
-            this.outVectors.Name = "outVectors";
-            this.outVectors.Visible = false;
-            this.outVectors.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.outVectors_Click);
-            // 
-            // inVectorsAbs
-            // 
-            this.inVectorsAbs.Label = "In-Vectors (abs; sh)";
-            this.inVectorsAbs.Name = "inVectorsAbs";
-            this.inVectorsAbs.Visible = false;
-            this.inVectorsAbs.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.inVectorsAbs_Click);
-            // 
-            // outVectorsAbs
-            // 
-            this.outVectorsAbs.Label = "Out-Vectors (abs; sh)";
-            this.outVectorsAbs.Name = "outVectorsAbs";
-            this.outVectorsAbs.Visible = false;
-            this.outVectorsAbs.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.outVectorsAbs_Click);
-            // 
-            // ProximityAbove
-            // 
-            this.ProximityAbove.Label = "Above";
-            this.ProximityAbove.Name = "ProximityAbove";
-            this.ProximityAbove.Visible = false;
-            this.ProximityAbove.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ProximityAbove_Click);
-            // 
-            // ProximityBelow
-            // 
-            this.ProximityBelow.Label = "Below";
-            this.ProximityBelow.Name = "ProximityBelow";
-            this.ProximityBelow.Visible = false;
-            this.ProximityBelow.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ProximityBelow_Click);
-            // 
-            // ProximityLeft
-            // 
-            this.ProximityLeft.Label = "Left";
-            this.ProximityLeft.Name = "ProximityLeft";
-            this.ProximityLeft.Visible = false;
-            this.ProximityLeft.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ProximityLeft_Click);
-            // 
-            // ProximityRight
-            // 
-            this.ProximityRight.Label = "Right";
-            this.ProximityRight.Name = "ProximityRight";
-            this.ProximityRight.Visible = false;
-            this.ProximityRight.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ProximityRight_Click);
-            // 
             // separator2
             // 
             this.separator2.Name = "separator2";
@@ -393,6 +222,12 @@
             this.levelsFreq.Label = "Levels Freq";
             this.levelsFreq.Name = "levelsFreq";
             this.levelsFreq.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.levelsFreq_Click);
+            // 
+            // sheetFreq
+            // 
+            this.sheetFreq.Checked = true;
+            this.sheetFreq.Label = "Sheet Freq";
+            this.sheetFreq.Name = "sheetFreq";
             // 
             // separator3
             // 
@@ -457,12 +292,6 @@
             this.annotateThisCell.ShowImage = true;
             this.annotateThisCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotateThisCell_Click);
             // 
-            // sheetFreq
-            // 
-            this.sheetFreq.Checked = true;
-            this.sheetFreq.Label = "Sheet Freq";
-            this.sheetFreq.Name = "sheetFreq";
-            // 
             // ExceLintRibbon
             // 
             this.Name = "ExceLintRibbon";
@@ -491,45 +320,27 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton AnalyzeButton;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton MarkAsOKButton;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton StartOverButton;
-        internal Microsoft.Office.Tools.Ribbon.RibbonSeparator separator1;
-        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox inDegree;
-        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox outDegree;
-        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox combinedDegree;
-        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox inVectors;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton ToDOT;
-        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox outVectors;
-        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox inVectorsAbs;
-        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox outVectorsAbs;
         internal Microsoft.Office.Tools.Ribbon.RibbonSeparator separator2;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox allCellsFreq;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox columnCellsFreq;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox rowCellsFreq;
-        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox ProximityAbove;
-        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox ProximityBelow;
-        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox ProximityLeft;
-        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox ProximityRight;
         internal Microsoft.Office.Tools.Ribbon.RibbonEditBox significanceTextBox;
         internal Microsoft.Office.Tools.Ribbon.RibbonSeparator separator3;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox DebugOutput;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton showHeatmap;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox forceBuildDAG;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton showVectors;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox inferAddrModes;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox allCells;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox weightByIntrinsicAnomalousness;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox levelsFreq;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox conditioningSetSize;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton spectralPlot;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox spectralRanking;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton scatter3D;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox showFixes;
         internal Microsoft.Office.Tools.Ribbon.RibbonSeparator separator4;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton annotate;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton annotateThisCell;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton ExportSquareMatrixButton;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox normRefCheckBox;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox normSSCheckBox;
-        internal Microsoft.Office.Tools.Ribbon.RibbonToggleButton useCOF;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox useResultant;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox sheetFreq;
     }

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Excel = Microsoft.Office.Interop.Excel;
-using FullyQualifiedVector = ExceLint.Vector.FullyQualifiedVector;
+using FullyQualifiedVector = ExceLint.Vector.RichVector;
 using RelativeVector = System.Tuple<int, int, int>;
 using Score = System.Collections.Generic.KeyValuePair<AST.Address, double>;
 using HypothesizedFixes = System.Collections.Generic.Dictionary<AST.Address, System.Collections.Generic.Dictionary<string, Feature.Countable>>;

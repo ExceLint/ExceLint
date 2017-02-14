@@ -1087,10 +1087,5 @@ namespace ExceLintUI
         }
 
         #endregion UTILITY_FUNCTIONS
-
-        private void useCOF_Click(object sender, RibbonControlEventArgs e)
-        {
-            showFixes.Enabled = useCOF.Checked || spectralRanking.Checked;
-        }
     }
 }

@@ -13,7 +13,7 @@
         type public X = int    // i.e., column displacement
         type public Y = int    // i.e., row displacement
         type public Z = int    // i.e., worksheet displacement (0 if same sheet, 1 if different)
-        type public C = int    // i.e., a constant (1 if reference is a constant, 0 otherwise)
+        type public C = int    // i.e., a constant (1 if reference is a constant, 0 otherwise) 
 
         // components for mixed vectors
         type public VectorComponent =
@@ -54,7 +54,7 @@
         type public DistDict = Dictionary<Edge,double>
 
         // the first component is the tail (start) and the second is the head (end)
-        type public FullyQualifiedVector =
+        type public RichVector =
         | MixedFQVector of Coordinates*MixedVector
         | AbsoluteFQVector of Coordinates*Coordinates
             override self.ToString() : string =
@@ -62,11 +62,14 @@
                 | MixedFQVector(tail,head) -> tail.ToString() + " -> " + head.ToString()
                 | AbsoluteFQVector(tail,head) -> tail.ToString() + " -> " + head.ToString()
 
+        type private VectorMaker = AST.Address -> AST.Address -> RichVector
+        type private Rebaser = RichVector -> DAG -> bool -> RelativeVector
+
         let private fullPath(addr: AST.Address) : string*string*string =
             // portably create full path from components
             (addr.Path, addr.WorkbookName, addr.WorksheetName)
 
-        let private vector(tail: AST.Address)(head: AST.Address)(mixed: bool) : FullyQualifiedVector =
+        let private vector(tail: AST.Address)(head: AST.Address)(mixed: bool) : RichVector =
             let tailXYP = (tail.X, tail.Y, fullPath tail)
             if mixed then
                 let X = match head.XMode with
@@ -94,7 +97,7 @@
 
         // represent the position of the head of the vector relative to the tail, (x1,y1,z1)
         // if the reference is off-sheet then optionally ignore X and Y vector components
-        let private relativeToTail(absVect: FullyQualifiedVector)(dag: DAG)(offSheetInsensitive: bool) : RelativeVector =
+        let private relativeToTail(absVect: RichVector)(dag: DAG)(offSheetInsensitive: bool) : RelativeVector =
             match absVect with
             | AbsoluteFQVector(tail,head) ->
                 let (x1,y1,p1) = tail
@@ -118,7 +121,7 @@
                     (x', y', vectorPathDiff p2 p1)
 
         // represent the position of the the head of the vector relative to the origin, (0,0,0)
-        let private relativeToOrigin(absVect: FullyQualifiedVector)(dag: DAG)(offSheetInsensitive: bool) : RelativeVector =
+        let private relativeToOrigin(absVect: RichVector)(dag: DAG)(offSheetInsensitive: bool) : RelativeVector =
             match absVect with
             | AbsoluteFQVector(tail,head) ->
                 let (_,_,tp) = tail
@@ -169,10 +172,10 @@
             let xyoff = vs |> Array.fold (fun (xacc: X, yacc: Y)(x': X,y': Y,z': Z) -> xacc + x', yacc + y') (0,0)
             (fst xyoff, snd xyoff, x, y)
 
-        let transitiveInputVectors(fCell: AST.Address)(dag : DAG)(depth: int option)(mixed: bool) : FullyQualifiedVector[] =
-            let rec tfVect(tailO: AST.Address option)(head: AST.Address)(depth: int option) : FullyQualifiedVector list =
+        let transitiveInputVectors(fCell: AST.Address)(dag : DAG)(depth: int option)(vector_f: VectorMaker) : RichVector[] =
+            let rec tfVect(tailO: AST.Address option)(head: AST.Address)(depth: int option) : RichVector list =
                 let vlist = match tailO with
-                            | Some tail -> [vector tail head mixed]
+                            | Some tail -> [vector_f tail head]
                             | None -> []
 
                 match depth with
@@ -180,7 +183,7 @@
                 | Some(d) -> tfVect_b head (Some(d-1)) vlist
                 | None -> tfVect_b head None vlist
 
-            and tfVect_b(tail: AST.Address)(nextDepth: int option)(vlist: FullyQualifiedVector list) : FullyQualifiedVector list =
+            and tfVect_b(tail: AST.Address)(nextDepth: int option)(vlist: RichVector list) : RichVector list =
                 if (dag.isFormula tail) then
                     // find all of the inputs for source
                     let heads_single = dag.getFormulaSingleCellInputs tail |> List.ofSeq
@@ -196,13 +199,13 @@
     
             tfVect None fCell depth |> List.toArray
 
-        let inputVectors(fCell: AST.Address)(dag : DAG)(mixed: bool) : FullyQualifiedVector[] =
-            transitiveInputVectors fCell dag (Some 1) mixed
+        let inputVectors(fCell: AST.Address)(dag : DAG)(vector_f: VectorMaker) : RichVector[] =
+            transitiveInputVectors fCell dag (Some 1) vector_f
 
-        let transitiveOutputVectors(dCell: AST.Address)(dag : DAG)(depth: int option)(mixed: bool) : FullyQualifiedVector[] =
-            let rec tdVect(sourceO: AST.Address option)(sink: AST.Address)(depth: int option) : FullyQualifiedVector list =
+        let transitiveOutputVectors(dCell: AST.Address)(dag : DAG)(depth: int option)(vector_f: VectorMaker) : RichVector[] =
+            let rec tdVect(sourceO: AST.Address option)(sink: AST.Address)(depth: int option) : RichVector list =
                 let vlist = match sourceO with
-                            | Some source -> [vector sink source mixed]
+                            | Some source -> [vector_f sink source]
                             | None -> []
 
                 match depth with
@@ -210,7 +213,7 @@
                 | Some(d) -> tdVect_b sink (Some(d-1)) vlist
                 | None -> tdVect_b sink None vlist
 
-            and tdVect_b(sink: AST.Address)(nextDepth: int option)(vlist: FullyQualifiedVector list) : FullyQualifiedVector list =
+            and tdVect_b(sink: AST.Address)(nextDepth: int option)(vlist: RichVector list) : RichVector list =
                     // find all of the formulas that use sink
                     let outAddrs = dag.getFormulasThatRefCell sink
                                     |> Array.toList
@@ -223,22 +226,17 @@
 
             tdVect None dCell depth |> List.toArray
 
-        let outputVectors(dCell: AST.Address)(dag : DAG)(mixed: bool) : FullyQualifiedVector[] =
-            transitiveOutputVectors dCell dag (Some 1) mixed
+        let outputVectors(dCell: AST.Address)(dag : DAG)(vector_f: VectorMaker) : RichVector[] =
+            transitiveOutputVectors dCell dag (Some 1) vector_f
 
-        let getVectors(cell: AST.Address)(dag: DAG)(transitive: bool)(isForm: bool)(isRel: bool)(isMixed: bool)(isOSI: bool) : RelativeVector[] =
+        let getVectors(cell: AST.Address)(dag: DAG)(vector_f: VectorMaker)(transitive: bool)(isForm: bool) : RichVector[] =
             let depth = if transitive then None else (Some 1)
             let vectors =
                 if isForm then
                     transitiveInputVectors
                 else
                     transitiveOutputVectors
-            let rebase =
-                if isRel then
-                    Array.map (fun v -> relativeToTail v dag isOSI)
-                else
-                    Array.map (fun v -> relativeToOrigin v dag isOSI)
-            let output = rebase (vectors cell dag depth isMixed)
+            let output = vectors cell dag depth vector_f
             output
 
         // find normalization function that shifts and scales column values appropriately
@@ -274,10 +272,10 @@
                 SquareVector(dx, dy, x, y)
             ) worksheet
 
-        let SquareVectorForCell(cell: AST.Address)(dag: DAG) : SquareVector =
-            let debugfrm = dag.getFormulaAtAddress(cell)
-            let vs = getVectors cell dag (*transitive*) false (*isForm*) true (*isRel*) true (*isMixed*) true (*isOffSheetInsensitive*) true
-            let sm = SquareMatrix (cell.X, cell.Y) vs
+        let SquareVectorForCell(cell: AST.Address)(dag: DAG)(vector_f: VectorMaker) : SquareVector =
+            let vs = getVectors cell dag vector_f (*transitive*) false (*isForm*) true
+            let rvs = Array.map (fun rv -> relativeToTail rv dag (*isOffSheetInsensitive*) true) vs
+            let sm = SquareMatrix (cell.X, cell.Y) rvs
             let (dx,dy,x,y) = sm
             SquareVector(float dx,float dy,float x,float y)
 
@@ -470,11 +468,32 @@
             let res = acDist_p / ((1.0 / float k) * Array.sum acs)
             res
 
+        let L2NormSumMaker(cell: AST.Address)(dag: DAG)(isMixed: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(rebase_f: Rebaser) =
+            let vector_f =
+                (fun (source: AST.Address)(sink: AST.Address) -> vector source sink isMixed)
+            getVectors cell dag vector_f isTransitive isFormula
+            |> Array.map (fun v -> rebase_f v dag isOffSheetInsensitive)
+            |> L2NormRVSum
+            |> Num
+
+        let CountableVectorMaker(cell: AST.Address)(dag: DAG)(isMixed: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(rebase_f: Rebaser) =
+            let vector_f =
+                    (fun (source: AST.Address)(sink: AST.Address) -> vector source sink isMixed)
+            getVectors cell dag vector_f isTransitive isFormula
+            |> Array.map (fun v -> rebase_f v dag isOffSheetInsensitive)
+            |> Resultant
+            |> (fun (x,y,z) -> Vector(double x, double y, double z))
+
         type DeepInputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag : DAG) : Countable = 
-                L2NormRVSum (getVectors cell dag (*transitive*) true (*isForm*) true (*isRel*) true (*isMixed*) false (*isOffSheetInsensitive*) true)
-                |> Num
+                let isMixed = false
+                let isTransitive = true
+                let isFormula = true
+                let isOffSheetInsensitive = true
+                let rebase_f = relativeToTail
+                L2NormSumMaker cell dag isMixed isTransitive isFormula isOffSheetInsensitive rebase_f
+
             static member capability : string*Capability =
                 (typeof<DeepInputVectorRelativeL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepInputVectorRelativeL2NormSum.run } )
@@ -482,8 +501,13 @@
         type DeepOutputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag : DAG) : Countable = 
-                L2NormRVSum (getVectors cell dag (*transitive*) true (*isForm*) false (*isRel*) true (*isMixed*) false (*isOffSheetInsensitive*) true)
-                |> Num
+                let isMixed = false
+                let isTransitive = true
+                let isFormula = false
+                let isOffSheetInsensitive = true
+                let rebase_f = relativeToTail
+                L2NormSumMaker cell dag isMixed isTransitive isFormula isOffSheetInsensitive rebase_f
+
             static member capability : string*Capability =
                 (typeof<DeepOutputVectorRelativeL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepOutputVectorRelativeL2NormSum.run } )
@@ -491,8 +515,12 @@
         type DeepInputVectorAbsoluteL2NormSum() =
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag: DAG) : Countable =
-                L2NormRVSum (getVectors cell dag (*transitive*) true (*isForm*) true (*isRel*) false (*isMixed*) false (*isOffSheetInsensitive*) true)
-                |> Num
+                let isMixed = false
+                let isTransitive = true
+                let isFormula = true
+                let isOffSheetInsensitive = true
+                let rebase_f = relativeToOrigin
+                L2NormSumMaker cell dag isMixed isTransitive isFormula isOffSheetInsensitive rebase_f
             static member capability : string*Capability =
                 (typeof<DeepInputVectorAbsoluteL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepInputVectorAbsoluteL2NormSum.run } )
@@ -500,8 +528,12 @@
         type DeepOutputVectorAbsoluteL2NormSum() =
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag: DAG) : Countable =
-                L2NormRVSum (getVectors cell dag (*transitive*) true (*isForm*) false (*isRel*) false (*isMixed*) false (*isOffSheetInsensitive*) true)
-                |> Num
+                let isMixed = false
+                let isTransitive = true
+                let isFormula = false
+                let isOffSheetInsensitive = true
+                let rebase_f = relativeToOrigin
+                L2NormSumMaker cell dag isMixed isTransitive isFormula isOffSheetInsensitive rebase_f
             static member capability : string*Capability =
                 (typeof<DeepOutputVectorAbsoluteL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepOutputVectorAbsoluteL2NormSum.run } )
@@ -509,8 +541,12 @@
         type ShallowInputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag : DAG) : Countable = 
-                L2NormRVSum (getVectors cell dag (*transitive*) false (*isForm*) true (*isRel*) true (*isMixed*) false (*isOffSheetInsensitive*) true)
-                |> Num
+                let isMixed = false
+                let isTransitive = false
+                let isFormula = true
+                let isOffSheetInsensitive = true
+                let rebase_f = relativeToTail
+                L2NormSumMaker cell dag isMixed isTransitive isFormula isOffSheetInsensitive rebase_f
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorRelativeL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorRelativeL2NormSum.run } )
@@ -518,8 +554,12 @@
         type ShallowOutputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag : DAG) : Countable = 
-                L2NormRVSum (getVectors cell dag (*transitive*) false (*isForm*) false (*isRel*) true (*isMixed*) false (*isOffSheetInsensitive*) true)
-                |> Num
+                let isMixed = false
+                let isTransitive = false
+                let isFormula = false
+                let isOffSheetInsensitive = true
+                let rebase_f = relativeToTail
+                L2NormSumMaker cell dag isMixed isTransitive isFormula isOffSheetInsensitive rebase_f
             static member capability : string*Capability =
                 (typeof<ShallowOutputVectorRelativeL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowOutputVectorRelativeL2NormSum.run } )
@@ -527,8 +567,12 @@
         type ShallowInputVectorAbsoluteL2NormSum() =
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag: DAG) : Countable =
-                L2NormRVSum (getVectors cell dag (*transitive*) false (*isForm*) true (*isRel*) false (*isMixed*) false (*isOffSheetInsensitive*) true)
-                |> Num
+                let isMixed = false
+                let isTransitive = false
+                let isFormula = true
+                let isOffSheetInsensitive = true
+                let rebase_f = relativeToOrigin
+                L2NormSumMaker cell dag isMixed isTransitive isFormula isOffSheetInsensitive rebase_f
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorAbsoluteL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorAbsoluteL2NormSum.run } )
@@ -536,8 +580,12 @@
         type ShallowOutputVectorAbsoluteL2NormSum() =
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag: DAG) : Countable =
-                L2NormRVSum (getVectors cell dag (*transitive*) false (*isForm*) false (*isRel*) false (*isMixed*) false (*isOffSheetInsensitive*) true)
-                |> Num
+                let isMixed = false
+                let isTransitive = false
+                let isFormula = false
+                let isOffSheetInsensitive = true
+                let rebase_f = relativeToOrigin
+                L2NormSumMaker cell dag isMixed isTransitive isFormula isOffSheetInsensitive rebase_f
             static member capability : string*Capability =
                 (typeof<ShallowOutputVectorAbsoluteL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowOutputVectorAbsoluteL2NormSum.run } )
@@ -545,8 +593,12 @@
         type ShallowInputVectorMixedL2NormSum() =
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag: DAG) : Countable =
-                L2NormRVSum (getVectors cell dag (*transitive*) false (*isForm*) true (*isRel*) true (*isMixed*) true (*isOffSheetInsensitive*) true)
-                |> Num
+                let isMixed = true
+                let isTransitive = false
+                let isFormula = true
+                let isOffSheetInsensitive = true
+                let rebase_f = relativeToTail
+                L2NormSumMaker cell dag isMixed isTransitive isFormula isOffSheetInsensitive rebase_f
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorMixedL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedL2NormSum.run } )
@@ -554,22 +606,30 @@
         type ShallowInputVectorMixedResultant() =
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag: DAG) : Countable =
-                let (x,y,z) = Resultant (getVectors cell dag (*transitive*) false (*isForm*) true (*isRel*) true (*isMixed*) true (*isOffSheetInsensitive*) true)
-                Countable.Vector(double x, double y, double z)
+                let isMixed = true
+                let isTransitive = false
+                let isFormula = true
+                let isOffSheetInsensitive = true
+                let rebase_f = relativeToTail
+                CountableVectorMaker cell dag isMixed isTransitive isFormula isOffSheetInsensitive rebase_f
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorMixedResultant>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedResultant.run } )
 
-        type ShallowInputVectorMixedResultantWithConstant() =
-            inherit BaseFeature()
-            static member run(cell: AST.Address)(dag: DAG) : Countable =
-                let (x,y,z,c) = 
+//        type ShallowInputVectorMixedResultantWithConstant() =
+//            inherit BaseFeature()
+//            static member run(cell: AST.Address)(dag: DAG) : Countable =
+//                let (x,y,z,c) = 
 
         type ShallowOutputVectorMixedL2NormSum() =
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag: DAG) : Countable =
-                L2NormRVSum (getVectors cell dag (*transitive*) false (*isForm*) false (*isRel*) true (*isMixed*) true (*isOffSheetInsensitive*) true)
-                |> Num
+                let isMixed = true
+                let isTransitive = false
+                let isFormula = false
+                let isOffSheetInsensitive = true
+                let rebase_f = relativeToTail
+                L2NormSumMaker cell dag isMixed isTransitive isFormula isOffSheetInsensitive rebase_f
             static member capability : string*Capability =
                 (typeof<ShallowOutputVectorMixedL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowOutputVectorMixedL2NormSum.run } )
@@ -577,8 +637,12 @@
         type DeepInputVectorMixedL2NormSum() =
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag: DAG) : Countable =
-                L2NormRVSum (getVectors cell dag (*transitive*) true (*isForm*) true (*isRel*) true (*isMixed*) true (*isOffSheetInsensitive*) true)
-                |> Num
+                let isMixed = true
+                let isTransitive = true
+                let isFormula = true
+                let isOffSheetInsensitive = true
+                let rebase_f = relativeToTail
+                L2NormSumMaker cell dag isMixed isTransitive isFormula isOffSheetInsensitive rebase_f
             static member capability : string*Capability =
                 (typeof<DeepInputVectorMixedL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepInputVectorMixedL2NormSum.run } )
@@ -586,8 +650,12 @@
         type DeepOutputVectorMixedL2NormSum() =
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag: DAG) : Countable =
-                L2NormRVSum (getVectors cell dag (*transitive*) true (*isForm*) false (*isRel*) true (*isMixed*) true (*isOffSheetInsensitive*) true)
-                |> Num
+                let isMixed = true
+                let isTransitive = true
+                let isFormula = false
+                let isOffSheetInsensitive = true
+                let rebase_f = relativeToTail
+                L2NormSumMaker cell dag isMixed isTransitive isFormula isOffSheetInsensitive rebase_f
             static member capability : string*Capability =
                 (typeof<DeepOutputVectorMixedL2NormSum>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = DeepOutputVectorMixedL2NormSum.run } )
@@ -601,7 +669,7 @@
                 printfn "Doing something for the %i time" state
                 ()
 
-        let private MutateCache(bigcache: Dictionary<WorkbookName,Dictionary<WorksheetName,Dictionary<AST.Address,SquareVector>>>)(cache: Dictionary<WorkbookName,Dictionary<WorksheetName,DistDict>>)(dag: DAG)(normalizeRefSpace: bool)(normalizeSSSpace: bool) : unit =
+        let private MutateCache(bigcache: Dictionary<WorkbookName,Dictionary<WorksheetName,Dictionary<AST.Address,SquareVector>>>)(cache: Dictionary<WorkbookName,Dictionary<WorksheetName,DistDict>>)(dag: DAG)(normalizeRefSpace: bool)(normalizeSSSpace: bool)(vector_f: VectorMaker) : unit =
                 let wbname = dag.getWorkbookName()
 
                 // get workbook-level cache
@@ -626,7 +694,7 @@
                         // don't do anything if the sheet has no formulas
                         if fs.Length <> 0 then
                             // get square vectors for every formula
-                            let vmap = Array.map (fun cell -> cell,SquareVectorForCell cell dag) fs |> adict
+                            let vmap = Array.map (fun cell -> cell,SquareVectorForCell cell dag vector_f) fs |> adict
                             let rev_vmap = Seq.map (fun (kvp: KeyValuePair<AST.Address,SquareVector>) -> kvp.Value, kvp.Key) vmap |> adict
                             let vectors = vmap.Values |> Seq.toArray
 
@@ -650,7 +718,9 @@
             let cache = new Dictionary<WorkbookName,Dictionary<WorksheetName,DistDict>>()
             static let instance = new ShallowInputVectorMixedCOFNoAspect()
             member self.BuildDistDict(dag: DAG) : Dictionary<WorksheetName,Dictionary<AST.Address,SquareVector>>*Dictionary<WorksheetName,DistDict> =
-                MutateCache bigcache cache dag ShallowInputVectorMixedCOFNoAspect.normalizeRefSpace ShallowInputVectorMixedCOFNoAspect.normalizeSSSpace
+                let vector_f =
+                    (fun (source: AST.Address)(sink: AST.Address) -> vector source sink true)
+                MutateCache bigcache cache dag ShallowInputVectorMixedCOFNoAspect.normalizeRefSpace ShallowInputVectorMixedCOFNoAspect.normalizeSSSpace vector_f
                 let c = cache.[dag.getWorkbookName()]
                 let bc = bigcache.[dag.getWorkbookName()]
                 bc,c
@@ -682,7 +752,9 @@
             let cache = new Dictionary<WorkbookName,Dictionary<WorksheetName,DistDict>>()
             static let instance = new ShallowInputVectorMixedCOFAspect()
             member self.BuildDistDict(dag: DAG) : Dictionary<WorksheetName,Dictionary<AST.Address,SquareVector>>*Dictionary<WorksheetName,DistDict> =
-                MutateCache bigcache cache dag ShallowInputVectorMixedCOFAspect.normalizeRefSpace ShallowInputVectorMixedCOFAspect.normalizeSSSpace
+                let vector_f =
+                    (fun (source: AST.Address)(sink: AST.Address) -> vector source sink true)
+                MutateCache bigcache cache dag ShallowInputVectorMixedCOFAspect.normalizeRefSpace ShallowInputVectorMixedCOFAspect.normalizeSSSpace vector_f
                 let c = cache.[dag.getWorkbookName()]
                 let bc = bigcache.[dag.getWorkbookName()]
                 bc,c
