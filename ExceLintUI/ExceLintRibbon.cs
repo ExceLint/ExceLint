@@ -20,11 +20,6 @@ namespace ExceLintUI
         private ExceLintGroundTruth annotations;
 
         #region BUTTON_HANDLERS
-        private void showVectors_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.getMixedFormulaVectors(forceDAGBuild: forceBuildDAG.Checked);
-        }
-
         public WorkbookState CurrentWorkbook { 
             get
             {
@@ -249,57 +244,6 @@ namespace ExceLintUI
             currentWorkbook.getSelected(getConfig(), ExceLint.Scope.Selector.SameRow, forceDAGBuild: forceBuildDAG.Checked);
         }
 
-        private void button1_Click(object sender, RibbonControlEventArgs e)
-        {
-            // if the user holds down Option, get absolute vectors
-            if ((System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Alt) > 0)
-            {
-                currentWorkbook.getRawFormulaVectors(forceDAGBuild: forceBuildDAG.Checked);
-            } else
-            {
-                currentWorkbook.getFormulaRelVectors(forceDAGBuild: forceBuildDAG.Checked);
-            }
-        }
-
-        private void button3_Click(object sender, RibbonControlEventArgs e)
-        {
-            // if the user holds down Option, get absolute vectors
-            if ((System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Alt) > 0)
-            {
-                currentWorkbook.getRawDataVectors(forceDAGBuild: forceBuildDAG.Checked);
-            }
-            else
-            {
-                currentWorkbook.getDataRelVectors(forceDAGBuild: forceBuildDAG.Checked);
-            }
-        }
-
-        private void FrmAbsVect_Click(object sender, RibbonControlEventArgs e)
-        {
-            // if the user holds down Option, get absolute vectors
-            if ((System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Alt) > 0)
-            {
-                currentWorkbook.getRawFormulaVectors(forceDAGBuild: forceBuildDAG.Checked);
-            }
-            else
-            {
-                currentWorkbook.getFormulaAbsVectors(forceDAGBuild: forceBuildDAG.Checked);
-            }
-        }
-
-        private void DataAbsVect_Click(object sender, RibbonControlEventArgs e)
-        {
-            // if the user holds down Option, get absolute vectors
-            if ((System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Alt) > 0)
-            {
-                currentWorkbook.getRawDataVectors(forceDAGBuild: forceBuildDAG.Checked);
-            }
-            else
-            {
-                currentWorkbook.getDataAbsVectors(forceDAGBuild: forceBuildDAG.Checked);
-            }
-        }
-
         private void showHeatmap_Click(object sender, RibbonControlEventArgs e)
         {
             // check for debug checkbox
@@ -505,7 +449,6 @@ namespace ExceLintUI
                 this.columnCellsFreq.Checked = true;
                 this.levelsFreq.Checked = false;
                 this.sheetFreq.Checked = false;
-                this.showFixes.Enabled = useCOF.Checked;
             }
 
             setUIState(this.currentWorkbook);
@@ -958,7 +901,6 @@ namespace ExceLintUI
                 this.spectralRanking.Enabled = disabled;
                 this.showFixes.Enabled = disabled;
                 this.annotate.Enabled = disabled;
-                this.useCOF.Enabled = disabled;
                 this.useResultant.Enabled = disabled;
 
                 // tell the user ExceLint doesn't work
@@ -1025,28 +967,12 @@ namespace ExceLintUI
         {
             var c = new ExceLint.FeatureConf();
 
-            // reference counts
-            if (this.inDegree.Checked) { c = c.enableInDegree(true); }
-            if (this.outDegree.Checked) { c = c.enableOutDegree(true); }
-            if (this.combinedDegree.Checked) { c = c.enableCombinedDegree(true); }
-
             // spatiostructual vectors
-            if (this.inVectors.Checked) {
-                if (this.useResultant.Checked) {
-                    c = c.enableShallowInputVectorMixedResultant(true);
-                } else {
-                    c = c.enableShallowInputVectorMixedL2NormSum(true);
-                }
+            if (this.useResultant.Checked) {
+                c = c.enableShallowInputVectorMixedResultant(true);
+            } else {
+                c = c.enableShallowInputVectorMixedL2NormSum(true);
             }
-            if (this.outVectors.Checked) { c = c.enableShallowOutputVectorMixedL2NormSum(true); }
-            if (this.inVectorsAbs.Checked) { c = c.enableShallowInputVectorAbsoluteL2NormSum(true); }
-            if (this.outVectorsAbs.Checked) { c = c.enableShallowOutputVectorAbsoluteL2NormSum(true); }
-
-            // locality
-            if (this.ProximityAbove.Checked) { c = c.enableProximityAbove(true); }
-            if (this.ProximityBelow.Checked) { c = c.enableProximityBelow(true); }
-            if (this.ProximityLeft.Checked) { c = c.enableProximityLeft(true); }
-            if (this.ProximityRight.Checked) { c = c.enableProximityRight(true); }
 
             // Scopes (i.e., conditioned analysis)
             if (this.allCellsFreq.Checked) { c = c.analyzeRelativeToAllCells(true); }
@@ -1065,12 +991,7 @@ namespace ExceLintUI
             if (this.spectralRanking.Checked) { c = c.spectralRanking(true).analyzeRelativeToSheet(true); }
 
             // COF?
-            if (this.useCOF.Checked) {
-                c = c.enableShallowInputVectorMixedCOFRefUnnormSSNorm(true);
-            } else
-            {
-                c = c.enableShallowInputVectorMixedCOFRefUnnormSSNorm(false);
-            }
+            c = c.enableShallowInputVectorMixedCOFRefUnnormSSNorm(false);
 
             return c;
         }

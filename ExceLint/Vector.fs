@@ -229,6 +229,11 @@
         let outputVectors(dCell: AST.Address)(dag : DAG)(vector_f: VectorMaker) : RichVector[] =
             transitiveOutputVectors dCell dag (Some 1) vector_f
 
+        let makeVector(isMixed: bool): VectorMaker =
+            (fun (source: AST.Address)(sink: AST.Address) ->
+                vector source sink isMixed
+            )
+
         let getVectors(cell: AST.Address)(dag: DAG)(vector_f: VectorMaker)(transitive: bool)(isForm: bool) : RichVector[] =
             let depth = if transitive then None else (Some 1)
             let vectors =
@@ -468,25 +473,33 @@
             let res = acDist_p / ((1.0 / float k) * Array.sum acs)
             res
 
+        let getRebasedVectors(cell: AST.Address)(dag: DAG)(isMixed: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(isRelative: bool) =
+            getVectors cell dag (makeVector isMixed) isTransitive isFormula
+            |> Array.map (fun v ->
+                   (if isRelative then relativeToTail else relativeToOrigin) v dag isOffSheetInsensitive
+               )
+
         let L2NormSumMaker(cell: AST.Address)(dag: DAG)(isMixed: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(rebase_f: Rebaser) =
-            let vector_f =
-                (fun (source: AST.Address)(sink: AST.Address) -> vector source sink isMixed)
-            getVectors cell dag vector_f isTransitive isFormula
+            getVectors cell dag (makeVector isMixed) isTransitive isFormula
+            |> Array.map (fun v -> rebase_f v dag isOffSheetInsensitive)
+            |> L2NormRVSum
+            |> Num
+
+        let L2NormSumMakerCS(cell: AST.Address)(dag: DAG)(isMixed: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(rebase_f: Rebaser) =
+            getVectors cell dag (makeVector isMixed) isTransitive isFormula
             |> Array.map (fun v -> rebase_f v dag isOffSheetInsensitive)
             |> L2NormRVSum
             |> Num
 
         let CountableVectorMaker(cell: AST.Address)(dag: DAG)(isMixed: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(rebase_f: Rebaser) =
-            let vector_f =
-                    (fun (source: AST.Address)(sink: AST.Address) -> vector source sink isMixed)
-            getVectors cell dag vector_f isTransitive isFormula
+            getVectors cell dag (makeVector isMixed) isTransitive isFormula
             |> Array.map (fun v -> rebase_f v dag isOffSheetInsensitive)
             |> Resultant
             |> (fun (x,y,z) -> Vector(double x, double y, double z))
 
         type DeepInputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
-            static member run(cell: AST.Address)(dag : DAG) : Countable = 
+            static member run(cell: AST.Address)(dag: DAG) : Countable = 
                 let isMixed = false
                 let isTransitive = true
                 let isFormula = true
