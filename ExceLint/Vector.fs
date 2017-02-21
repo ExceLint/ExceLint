@@ -13,7 +13,7 @@
         type public X = int    // i.e., column displacement
         type public Y = int    // i.e., row displacement
         type public Z = int    // i.e., worksheet displacement (0 if same sheet, 1 if different)
-        type public C = int    // i.e., a constant (1 if reference is a constant, 0 otherwise) 
+        type public C = double // i.e., a constant value
 
         // components for mixed vectors
         type public VectorComponent =
@@ -26,9 +26,15 @@
 
         // the vector, relative to an origin
         type public Coordinates = (X*Y*Path)
-        type public RelativeVector = (X*Y*Z)
-        type public RelativeVectorAndConstant = (X*Y*Z*C)
+        type public RelativeVector =
+        | NoConstant of X*Y*Z
+        | Constant of X*Y*Z*C
+            member self.Zero =
+                match self with
+                | Constant(_,_,_,_) -> Constant(0,0,0,0.0)
+                | NoConstant(_,_,_) -> NoConstant(0,0,0)
         type public MixedVector = (VectorComponent*VectorComponent*Path)
+        type public MixedVectorWithConstant = (VectorComponent*VectorComponent*Path*C)
         type public SquareVector(dx: double, dy: double, x: double, y: double) =
             member self.dx = dx
             member self.dy = dy
@@ -55,14 +61,20 @@
 
         // the first component is the tail (start) and the second is the head (end)
         type public RichVector =
+        | MixedFQVectorWithConstant of Coordinates*MixedVectorWithConstant
         | MixedFQVector of Coordinates*MixedVector
         | AbsoluteFQVector of Coordinates*Coordinates
             override self.ToString() : string =
                 match self with
+                | MixedFQVectorWithConstant(tail,head) -> tail.ToString() + " -> " + head.ToString()
                 | MixedFQVector(tail,head) -> tail.ToString() + " -> " + head.ToString()
                 | AbsoluteFQVector(tail,head) -> tail.ToString() + " -> " + head.ToString()
+        type private KeepConstantValue =
+        | Yes
+        | No
 
         type private VectorMaker = AST.Address -> AST.Address -> RichVector
+        type private ConstantVectorMaker = AST.Address -> AST.Expression -> RichVector list
         type private Rebaser = RichVector -> DAG -> bool -> RelativeVector
 
         let private fullPath(addr: AST.Address) : string*string*string =
@@ -103,9 +115,9 @@
                 let (x1,y1,p1) = tail
                 let (x2,y2,p2) = head
                 if offSheetInsensitive && p1 <> p2 then
-                    (0, 0, dag.getPathClosureIndex(p2))
+                    NoConstant(0, 0, dag.getPathClosureIndex(p2))
                 else
-                    (x2-x1, y2-y1, vectorPathDiff p2 p1)
+                    NoConstant(x2-x1, y2-y1, vectorPathDiff p2 p1)
             | MixedFQVector(tail,head) ->
                 let (x1,y1,p1) = tail
                 let (x2,y2,p2) = head
@@ -116,9 +128,22 @@
                             | Rel(y) -> y - y1
                             | Abs(y) -> y
                 if offSheetInsensitive && p1 <> p2 then
-                    (0, 0, dag.getPathClosureIndex(p2))
+                    NoConstant(0, 0, dag.getPathClosureIndex(p2))
                 else
-                    (x', y', vectorPathDiff p2 p1)
+                    NoConstant(x', y', vectorPathDiff p2 p1)
+            | MixedFQVectorWithConstant(tail,head) ->
+                let (x1,y1,p1) = tail
+                let (x2,y2,p2,c) = head
+                let x' = match x2 with
+                            | Rel(x) -> x - x1
+                            | Abs(x) -> x
+                let y' = match y2 with
+                            | Rel(y) -> y - y1
+                            | Abs(y) -> y
+                if offSheetInsensitive && p1 <> p2 then
+                    Constant(0, 0, dag.getPathClosureIndex(p2), c)
+                else
+                    Constant(x', y', vectorPathDiff p2 p1, c)
 
         // represent the position of the the head of the vector relative to the origin, (0,0,0)
         let private relativeToOrigin(absVect: RichVector)(dag: DAG)(offSheetInsensitive: bool) : RelativeVector =
@@ -127,18 +152,27 @@
                 let (_,_,tp) = tail
                 let (x,y,p) = head
                 if offSheetInsensitive && tp <> p then
-                    (0, 0, dag.getPathClosureIndex(p))
+                    NoConstant(0, 0, dag.getPathClosureIndex(p))
                 else
-                    (x, y, pathDiff p dag)
+                    NoConstant(x, y, pathDiff p dag)
             | MixedFQVector(tail,head) ->
                 let (_,_,tp) = tail
                 let (x,y,p) = head
                 let x' = match x with | Abs(xa) -> xa | Rel(xr) -> xr
                 let y' = match y with | Abs(ya) -> ya | Rel(yr) -> yr
                 if offSheetInsensitive && tp <> p then
-                    (0, 0, dag.getPathClosureIndex(p))
+                    NoConstant(0, 0, dag.getPathClosureIndex(p))
                 else
-                    (x', y', pathDiff p dag)
+                    NoConstant(x', y', pathDiff p dag)
+            | MixedFQVectorWithConstant(tail,head) ->
+                let (_,_,tp) = tail
+                let (x,y,p,c) = head
+                let x' = match x with | Abs(xa) -> xa | Rel(xr) -> xr
+                let y' = match y with | Abs(ya) -> ya | Rel(yr) -> yr
+                if offSheetInsensitive && tp <> p then
+                    Constant(0, 0, dag.getPathClosureIndex(p), c)
+                else
+                    Constant(x', y', pathDiff p dag, c)
 
         let private L2Norm(X: double[]) : double =
             Math.Sqrt(
@@ -146,33 +180,61 @@
             )
 
         let private relativeVectorToRealVectorArr(v: RelativeVector) : double[] =
-            let (x,y,z) = v
-            [|
-                System.Convert.ToDouble(x);
-                System.Convert.ToDouble(y);
-                System.Convert.ToDouble(z);
-            |]
+            match v with
+            | NoConstant(x,y,z) ->
+                [|
+                    System.Convert.ToDouble(x);
+                    System.Convert.ToDouble(y);
+                    System.Convert.ToDouble(z);
+                |]
+            | Constant(x,y,z,c) ->
+                [|
+                    System.Convert.ToDouble(x);
+                    System.Convert.ToDouble(y);
+                    System.Convert.ToDouble(z);
+                    c;
+                |]
 
         let private L2NormRV(v: RelativeVector) : double =
             L2Norm(relativeVectorToRealVectorArr(v))
 
         let private RVSum(v1: RelativeVector)(v2: RelativeVector) : RelativeVector =
-            let (x1,y1,z1) = v1
-            let (x2,y2,z2) = v2
-            (x1 + x2, y1 + y2, z1 + z2)
+            match v1,v2 with
+            | NoConstant(x1,y1,z1), NoConstant(x2,y2,z2) ->
+                NoConstant(x1 + x2, y1 + y2, z1 + z2)
+            | Constant(x1,y1,z1,c1), Constant(x2,y2,z2,c2) ->
+                Constant(x1 + x2, y1 + y2, z1 + z2, c1 + c2)
+            | _ -> failwith "Cannot sum RelativeVectors of different subtypes."
 
         let private L2NormRVSum(vs: RelativeVector[]) : double =
             vs |> Array.map L2NormRV |> Array.sum
 
         let private Resultant(vs: RelativeVector[]) : RelativeVector =
-            vs |> Array.fold (fun (acc: RelativeVector)(v: RelativeVector) -> RVSum acc v) (0,0,0)
+            vs |>
+            Array.fold (fun (acc: RelativeVector option)(v: RelativeVector) ->
+                match acc with
+                | None -> Some (RVSum v.Zero v)
+                | Some a -> Some (RVSum a v)
+            ) None |>
+            (fun rvopt ->
+                match rvopt with
+                | Some rv -> rv
+                | None -> failwith "Empty resultant!"
+            )
 
         let private SquareMatrix(origin: X*Y)(vs: RelativeVector[]) : X*Y*X*Y =
             let (x,y) = origin
-            let xyoff = vs |> Array.fold (fun (xacc: X, yacc: Y)(x': X,y': Y,z': Z) -> xacc + x', yacc + y') (0,0)
+            let xyoff = vs |>
+                        Array.fold (fun (xacc: X, yacc: Y)(rv: RelativeVector) ->
+                            let (x',y') =
+                                match rv with
+                                | Constant(x,y,_,_) -> x,y
+                                | NoConstant(x,y,_) -> x,y
+                            xacc + x', yacc + y'
+                        ) (0,0)
             (fst xyoff, snd xyoff, x, y)
 
-        let transitiveInputVectors(fCell: AST.Address)(dag : DAG)(depth: int option)(vector_f: VectorMaker) : RichVector[] =
+        let transitiveInputVectors(fCell: AST.Address)(dag : DAG)(depth: int option)(vector_f: VectorMaker)(cvector_f: ConstantVectorMaker) : RichVector[] =
             let rec tfVect(tailO: AST.Address option)(head: AST.Address)(depth: int option) : RichVector list =
                 let vlist = match tailO with
                             | Some tail -> [vector_f tail head]
@@ -191,18 +253,20 @@
                                             List.ofSeq |>
                                             List.map (fun rng -> rng.Addresses() |> Array.toList) |>
                                             List.concat
+
+                    // find all constant inputs for source
+                    let fexpr = Parcel.parseFormulaAtAddress tail (dag.getFormulaAtAddress tail)
+                    let cvects = cvector_f tail fexpr
+
                     let heads = heads_single @ heads_vector
                     // recursively call this function
-                    vlist @ (List.map (fun head -> tfVect (Some tail) head nextDepth) heads |> List.concat)
+                    vlist @ cvects @ (List.map (fun head -> tfVect (Some tail) head nextDepth) heads |> List.concat)
                 else
                     vlist
     
             tfVect None fCell depth |> List.toArray
 
-        let inputVectors(fCell: AST.Address)(dag : DAG)(vector_f: VectorMaker) : RichVector[] =
-            transitiveInputVectors fCell dag (Some 1) vector_f
-
-        let transitiveOutputVectors(dCell: AST.Address)(dag : DAG)(depth: int option)(vector_f: VectorMaker) : RichVector[] =
+        let transitiveOutputVectors(dCell: AST.Address)(dag : DAG)(depth: int option)(vector_f: VectorMaker)(cvector_f: ConstantVectorMaker) : RichVector[] =
             let rec tdVect(sourceO: AST.Address option)(sink: AST.Address)(depth: int option) : RichVector list =
                 let vlist = match sourceO with
                             | Some source -> [vector_f sink source]
@@ -226,22 +290,44 @@
 
             tdVect None dCell depth |> List.toArray
 
-        let outputVectors(dCell: AST.Address)(dag : DAG)(vector_f: VectorMaker) : RichVector[] =
-            transitiveOutputVectors dCell dag (Some 1) vector_f
-
-        let makeVector(isMixed: bool): VectorMaker =
+        let private makeVector(isMixed: bool): VectorMaker =
             (fun (source: AST.Address)(sink: AST.Address) ->
                 vector source sink isMixed
             )
 
-        let getVectors(cell: AST.Address)(dag: DAG)(vector_f: VectorMaker)(transitive: bool)(isForm: bool) : RichVector[] =
+        let private nopConstantVector : ConstantVectorMaker =
+            (fun (a: AST.Address)(e: AST.Expression) -> [])
+
+        let private makeConstantVectorsFromConstants(k: KeepConstantValue) : ConstantVectorMaker =
+            (fun (tail: AST.Address)(e: AST.Expression) ->
+                // convert into RichVector form
+                let tailXYP = (tail.X, tail.Y, fullPath tail)
+
+                // the path for the head is the same as the path for the tail for constants
+                let path = fullPath tail
+                let constants = Parcel.constantsFromExpr e
+
+                // the vectorcomponents for constants are Abs(0)
+                let cvc = Abs(0)
+
+                // make vectors
+                let cf = match k with
+                         | Yes -> (fun (rc: AST.ReferenceConstant) -> rc.Value)
+                         | No -> (fun (rc: AST.ReferenceConstant) -> if rc.Value <> 0.0 then 1.0 else 0.0)
+
+                Array.map (fun (c: AST.ReferenceConstant) ->
+                    RichVector.MixedFQVectorWithConstant(tailXYP, (cvc, cvc, path, cf c))
+                ) constants |> Array.toList
+            )
+
+        let getVectors(cell: AST.Address)(dag: DAG)(vector_f: VectorMaker)(cvector_f: ConstantVectorMaker)(transitive: bool)(isForm: bool) : RichVector[] =
             let depth = if transitive then None else (Some 1)
             let vectors =
                 if isForm then
                     transitiveInputVectors
                 else
                     transitiveOutputVectors
-            let output = vectors cell dag depth vector_f
+            let output = vectors cell dag depth vector_f cvector_f
             output
 
         // find normalization function that shifts and scales column values appropriately
@@ -277,8 +363,8 @@
                 SquareVector(dx, dy, x, y)
             ) worksheet
 
-        let SquareVectorForCell(cell: AST.Address)(dag: DAG)(vector_f: VectorMaker) : SquareVector =
-            let vs = getVectors cell dag vector_f (*transitive*) false (*isForm*) true
+        let SquareVectorForCell(cell: AST.Address)(dag: DAG)(vector_f: VectorMaker)(cvector_f: ConstantVectorMaker) : SquareVector =
+            let vs = getVectors cell dag vector_f cvector_f (*transitive*) false (*isForm*) true
             let rvs = Array.map (fun rv -> relativeToTail rv dag (*isOffSheetInsensitive*) true) vs
             let sm = SquareMatrix (cell.X, cell.Y) rvs
             let (dx,dy,x,y) = sm
@@ -474,28 +560,32 @@
             res
 
         let getRebasedVectors(cell: AST.Address)(dag: DAG)(isMixed: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(isRelative: bool) =
-            getVectors cell dag (makeVector isMixed) isTransitive isFormula
+            getVectors cell dag (makeVector isMixed) nopConstantVector isTransitive isFormula
             |> Array.map (fun v ->
                    (if isRelative then relativeToTail else relativeToOrigin) v dag isOffSheetInsensitive
                )
 
         let L2NormSumMaker(cell: AST.Address)(dag: DAG)(isMixed: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(rebase_f: Rebaser) =
-            getVectors cell dag (makeVector isMixed) isTransitive isFormula
+            getVectors cell dag (makeVector isMixed) nopConstantVector isTransitive isFormula
             |> Array.map (fun v -> rebase_f v dag isOffSheetInsensitive)
             |> L2NormRVSum
             |> Num
 
         let L2NormSumMakerCS(cell: AST.Address)(dag: DAG)(isMixed: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(rebase_f: Rebaser) =
-            getVectors cell dag (makeVector isMixed) isTransitive isFormula
+            getVectors cell dag (makeVector isMixed) nopConstantVector isTransitive isFormula
             |> Array.map (fun v -> rebase_f v dag isOffSheetInsensitive)
             |> L2NormRVSum
             |> Num
 
-        let CountableVectorMaker(cell: AST.Address)(dag: DAG)(isMixed: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(rebase_f: Rebaser) =
-            getVectors cell dag (makeVector isMixed) isTransitive isFormula
+        let ResultantMaker(cell: AST.Address)(dag: DAG)(isMixed: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(constant_f: ConstantVectorMaker)(rebase_f: Rebaser) =
+            getVectors cell dag (makeVector isMixed) constant_f isTransitive isFormula
             |> Array.map (fun v -> rebase_f v dag isOffSheetInsensitive)
             |> Resultant
-            |> (fun (x,y,z) -> Vector(double x, double y, double z))
+            |> (fun rv ->
+                    match rv with
+                    | Constant(x,y,z,c) -> CVector(double x, double y, double z, double c)
+                    | NoConstant(x,y,z) -> Vector(double x, double y, double z)
+               )
 
         type DeepInputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
@@ -624,15 +714,25 @@
                 let isFormula = true
                 let isOffSheetInsensitive = true
                 let rebase_f = relativeToTail
-                CountableVectorMaker cell dag isMixed isTransitive isFormula isOffSheetInsensitive rebase_f
+                let constant_f = nopConstantVector
+                ResultantMaker cell dag isMixed isTransitive isFormula isOffSheetInsensitive constant_f rebase_f 
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorMixedResultant>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedResultant.run } )
 
-//        type ShallowInputVectorMixedResultantWithConstant() =
-//            inherit BaseFeature()
-//            static member run(cell: AST.Address)(dag: DAG) : Countable =
-//                let (x,y,z,c) = 
+        type ShallowInputVectorMixedCVectorResultantNotOSI() =
+            inherit BaseFeature()
+            static member run(cell: AST.Address)(dag: DAG) : Countable =
+                let isMixed = true
+                let isTransitive = false
+                let isFormula = true
+                let isOffSheetInsensitive = false
+                let rebase_f = relativeToTail
+                let constant_f = (makeConstantVectorsFromConstants KeepConstantValue.No)
+                ResultantMaker cell dag isMixed isTransitive isFormula isOffSheetInsensitive constant_f rebase_f 
+            static member capability : string*Capability =
+                (typeof<ShallowInputVectorMixedCVectorResultantNotOSI>.Name,
+                    { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedCVectorResultantNotOSI.run } )
 
         type ShallowOutputVectorMixedL2NormSum() =
             inherit BaseFeature()
@@ -682,7 +782,7 @@
                 printfn "Doing something for the %i time" state
                 ()
 
-        let private MutateCache(bigcache: Dictionary<WorkbookName,Dictionary<WorksheetName,Dictionary<AST.Address,SquareVector>>>)(cache: Dictionary<WorkbookName,Dictionary<WorksheetName,DistDict>>)(dag: DAG)(normalizeRefSpace: bool)(normalizeSSSpace: bool)(vector_f: VectorMaker) : unit =
+        let private MutateCache(bigcache: Dictionary<WorkbookName,Dictionary<WorksheetName,Dictionary<AST.Address,SquareVector>>>)(cache: Dictionary<WorkbookName,Dictionary<WorksheetName,DistDict>>)(dag: DAG)(normalizeRefSpace: bool)(normalizeSSSpace: bool)(vector_f: VectorMaker)(cvector_f: ConstantVectorMaker) : unit =
                 let wbname = dag.getWorkbookName()
 
                 // get workbook-level cache
@@ -707,7 +807,7 @@
                         // don't do anything if the sheet has no formulas
                         if fs.Length <> 0 then
                             // get square vectors for every formula
-                            let vmap = Array.map (fun cell -> cell,SquareVectorForCell cell dag vector_f) fs |> adict
+                            let vmap = Array.map (fun cell -> cell,SquareVectorForCell cell dag vector_f cvector_f) fs |> adict
                             let rev_vmap = Seq.map (fun (kvp: KeyValuePair<AST.Address,SquareVector>) -> kvp.Value, kvp.Key) vmap |> adict
                             let vectors = vmap.Values |> Seq.toArray
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using COMWrapper;
+using System.Linq;
 
 namespace ExceLintTests
 {
@@ -17,7 +18,20 @@ namespace ExceLintTests
         // gets the set of shallow intransitive mixed input vectors pointed to by the formula
         private static Tuple<int,int,int>[] getSIMIVs(AST.Address formula, Depends.DAG dag)
         {
-            return ExceLint.Vector.getRebasedVectors(formula, dag, isMixed: true, isTransitive: false, isFormula: true, isOffSheetInsensitive: true, isRelative: true);
+            var vs = ExceLint.Vector.getRebasedVectors(formula, dag, isMixed: true, isTransitive: false, isFormula: true, isOffSheetInsensitive: true, isRelative: true);
+            return vs.Select(v =>
+            {
+                if (v.IsConstant)
+                {
+                    var c = (ExceLint.Vector.RelativeVector.Constant)v;
+                    return new Tuple<int, int, int>(c.Item1, c.Item2, c.Item3);
+                }
+                else
+                {
+                    var c = (ExceLint.Vector.RelativeVector.NoConstant)v;
+                    return new Tuple<int, int, int>(c.Item1, c.Item2, c.Item3);
+                }
+            }).ToArray();
         }
 
         [TestMethod]
