@@ -584,10 +584,9 @@
             |> Num
 
         let ResultantMaker(cell: AST.Address)(dag: DAG)(isMixed: bool)(includeConstant: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(constant_f: ConstantVectorMaker)(rebase_f: Rebaser) =
-            let vs = getVectors cell dag (makeVector isMixed includeConstant) constant_f isTransitive isFormula
-            let rvs = vs |> Array.map (fun v -> rebase_f v dag isOffSheetInsensitive)
-            let rvsr = rvs |> Resultant
-            rvsr
+            getVectors cell dag (makeVector isMixed includeConstant) constant_f isTransitive isFormula
+            |> Array.map (fun v -> rebase_f v dag isOffSheetInsensitive)
+            |> Resultant
             |> (fun rv ->
                     match rv with
                     | Constant(x,y,z,c) -> CVectorResultant(double x, double y, double z, double c)
