@@ -1,6 +1,5 @@
 ﻿namespace ExceLint
     open Depends
-    open Feature
     open System
     open System.Collections.Generic
     open Utils
@@ -81,7 +80,7 @@
             // portably create full path from components
             (addr.Path, addr.WorkbookName, addr.WorksheetName)
 
-        let private vector(tail: AST.Address)(head: AST.Address)(mixed: bool) : RichVector =
+        let private vector(tail: AST.Address)(head: AST.Address)(mixed: bool)(include_constant: bool) : RichVector =
             let tailXYP = (tail.X, tail.Y, fullPath tail)
             if mixed then
                 let X = match head.XMode with
@@ -90,8 +89,13 @@
                 let Y = match head.YMode with
                         | AST.AddressMode.Absolute -> Abs(head.Y)
                         | AST.AddressMode.Relative -> Rel(head.Y)
-                let headXYP = (X, Y, fullPath head)
-                MixedFQVector(tailXYP, headXYP)
+                
+                if include_constant then
+                    let headXYP = (X, Y, fullPath head, 0.0)
+                    MixedFQVectorWithConstant(tailXYP, headXYP)
+                else
+                    let headXYP = (X, Y, fullPath head)
+                    MixedFQVector(tailXYP, headXYP)
             else
                 let headXYP = (head.X, head.Y, fullPath head)
                 AbsoluteFQVector(tailXYP, headXYP)
@@ -290,9 +294,9 @@
 
             tdVect None dCell depth |> List.toArray
 
-        let private makeVector(isMixed: bool): VectorMaker =
+        let private makeVector(isMixed: bool)(includeConstant: bool): VectorMaker =
             (fun (source: AST.Address)(sink: AST.Address) ->
-                vector source sink isMixed
+                vector source sink isMixed includeConstant
             )
 
         let private nopConstantVector : ConstantVectorMaker =
@@ -315,9 +319,11 @@
                          | Yes -> (fun (rc: AST.ReferenceConstant) -> rc.Value)
                          | No -> (fun (rc: AST.ReferenceConstant) -> if rc.Value <> 0.0 then 1.0 else 0.0)
 
-                Array.map (fun (c: AST.ReferenceConstant) ->
-                    RichVector.MixedFQVectorWithConstant(tailXYP, (cvc, cvc, path, cf c))
-                ) constants |> Array.toList
+                let vs = Array.map (fun (c: AST.ReferenceConstant) ->
+                             RichVector.MixedFQVectorWithConstant(tailXYP, (cvc, cvc, path, cf c))
+                         ) constants |> Array.toList
+
+                vs
             )
 
         let getVectors(cell: AST.Address)(dag: DAG)(vector_f: VectorMaker)(cvector_f: ConstantVectorMaker)(transitive: bool)(isForm: bool) : RichVector[] =
@@ -559,31 +565,32 @@
             let res = acDist_p / ((1.0 / float k) * Array.sum acs)
             res
 
-        let getRebasedVectors(cell: AST.Address)(dag: DAG)(isMixed: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(isRelative: bool) =
-            getVectors cell dag (makeVector isMixed) nopConstantVector isTransitive isFormula
+        let getRebasedVectors(cell: AST.Address)(dag: DAG)(isMixed: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(isRelative: bool)(includeConstant: bool) =
+            getVectors cell dag (makeVector isMixed includeConstant) nopConstantVector isTransitive isFormula
             |> Array.map (fun v ->
                    (if isRelative then relativeToTail else relativeToOrigin) v dag isOffSheetInsensitive
                )
 
         let L2NormSumMaker(cell: AST.Address)(dag: DAG)(isMixed: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(rebase_f: Rebaser) =
-            getVectors cell dag (makeVector isMixed) nopConstantVector isTransitive isFormula
+            getVectors cell dag (makeVector isMixed false) nopConstantVector isTransitive isFormula
             |> Array.map (fun v -> rebase_f v dag isOffSheetInsensitive)
             |> L2NormRVSum
             |> Num
 
         let L2NormSumMakerCS(cell: AST.Address)(dag: DAG)(isMixed: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(rebase_f: Rebaser) =
-            getVectors cell dag (makeVector isMixed) nopConstantVector isTransitive isFormula
+            getVectors cell dag (makeVector isMixed false) nopConstantVector isTransitive isFormula
             |> Array.map (fun v -> rebase_f v dag isOffSheetInsensitive)
             |> L2NormRVSum
             |> Num
 
-        let ResultantMaker(cell: AST.Address)(dag: DAG)(isMixed: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(constant_f: ConstantVectorMaker)(rebase_f: Rebaser) =
-            getVectors cell dag (makeVector isMixed) constant_f isTransitive isFormula
-            |> Array.map (fun v -> rebase_f v dag isOffSheetInsensitive)
-            |> Resultant
+        let ResultantMaker(cell: AST.Address)(dag: DAG)(isMixed: bool)(includeConstant: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(constant_f: ConstantVectorMaker)(rebase_f: Rebaser) =
+            let vs = getVectors cell dag (makeVector isMixed includeConstant) constant_f isTransitive isFormula
+            let rvs = vs |> Array.map (fun v -> rebase_f v dag isOffSheetInsensitive)
+            let rvsr = rvs |> Resultant
+            rvsr
             |> (fun rv ->
                     match rv with
-                    | Constant(x,y,z,c) -> CVector(double x, double y, double z, double c)
+                    | Constant(x,y,z,c) -> CVectorResultant(double x, double y, double z, double c)
                     | NoConstant(x,y,z) -> Vector(double x, double y, double z)
                )
 
@@ -713,9 +720,10 @@
                 let isTransitive = false
                 let isFormula = true
                 let isOffSheetInsensitive = true
+                let includeConstant = false
                 let rebase_f = relativeToTail
                 let constant_f = nopConstantVector
-                ResultantMaker cell dag isMixed isTransitive isFormula isOffSheetInsensitive constant_f rebase_f 
+                ResultantMaker cell dag isMixed includeConstant isTransitive isFormula isOffSheetInsensitive constant_f rebase_f 
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorMixedResultant>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedResultant.run } )
@@ -727,9 +735,10 @@
                 let isTransitive = false
                 let isFormula = true
                 let isOffSheetInsensitive = false
+                let includeConstant = true
                 let rebase_f = relativeToTail
                 let constant_f = (makeConstantVectorsFromConstants KeepConstantValue.No)
-                ResultantMaker cell dag isMixed isTransitive isFormula isOffSheetInsensitive constant_f rebase_f 
+                ResultantMaker cell dag isMixed includeConstant isTransitive isFormula isOffSheetInsensitive constant_f rebase_f 
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorMixedCVectorResultantNotOSI>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedCVectorResultantNotOSI.run } )
@@ -832,7 +841,7 @@
             static let instance = new ShallowInputVectorMixedCOFNoAspect()
             member self.BuildDistDict(dag: DAG) : Dictionary<WorksheetName,Dictionary<AST.Address,SquareVector>>*Dictionary<WorksheetName,DistDict> =
                 let vector_f =
-                    (fun (source: AST.Address)(sink: AST.Address) -> vector source sink true)
+                    (fun (source: AST.Address)(sink: AST.Address) -> vector source sink true false)
                 MutateCache bigcache cache dag ShallowInputVectorMixedCOFNoAspect.normalizeRefSpace ShallowInputVectorMixedCOFNoAspect.normalizeSSSpace vector_f
                 let c = cache.[dag.getWorkbookName()]
                 let bc = bigcache.[dag.getWorkbookName()]
@@ -866,7 +875,7 @@
             static let instance = new ShallowInputVectorMixedCOFAspect()
             member self.BuildDistDict(dag: DAG) : Dictionary<WorksheetName,Dictionary<AST.Address,SquareVector>>*Dictionary<WorksheetName,DistDict> =
                 let vector_f =
-                    (fun (source: AST.Address)(sink: AST.Address) -> vector source sink true)
+                    (fun (source: AST.Address)(sink: AST.Address) -> vector source sink true false)
                 MutateCache bigcache cache dag ShallowInputVectorMixedCOFAspect.normalizeRefSpace ShallowInputVectorMixedCOFAspect.normalizeSSSpace vector_f
                 let c = cache.[dag.getWorkbookName()]
                 let bc = bigcache.[dag.getWorkbookName()]

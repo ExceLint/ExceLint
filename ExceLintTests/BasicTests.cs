@@ -18,7 +18,7 @@ namespace ExceLintTests
         // gets the set of shallow intransitive mixed input vectors pointed to by the formula
         private static Tuple<int,int,int>[] getSIMIVs(AST.Address formula, Depends.DAG dag)
         {
-            var vs = ExceLint.Vector.getRebasedVectors(formula, dag, isMixed: true, isTransitive: false, isFormula: true, isOffSheetInsensitive: true, isRelative: true);
+            var vs = ExceLint.Vector.getRebasedVectors(formula, dag, isMixed: true, isTransitive: false, isFormula: true, isOffSheetInsensitive: true, isRelative: true, includeConstant: false);
             return vs.Select(v =>
             {
                 if (v.IsConstant)

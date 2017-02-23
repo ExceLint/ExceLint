@@ -1,9 +1,8 @@
 ﻿module Proximity
 
-open Feature
 open Depends
+open ExceLint
 open ExceLint.Vector
-
 
 type Outcome =
 | Same = 1

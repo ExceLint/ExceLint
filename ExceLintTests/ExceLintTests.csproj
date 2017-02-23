@@ -62,6 +62,7 @@
   <ItemGroup>
     <Compile Include="BasicTests.cs" />
     <Compile Include="COFTests.cs" />
+    <Compile Include="CVectorTests.cs" />
     <Compile Include="DistanceTests.cs" />
     <Compile Include="PerformanceCodedUITests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

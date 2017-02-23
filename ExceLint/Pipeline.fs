@@ -4,7 +4,6 @@
         open System.Collections
         open System
         open Utils
-        open Feature
 
         type Weight = double
         type Feature = string

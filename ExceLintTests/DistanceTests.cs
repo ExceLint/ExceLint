@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using ExceLint;
 
 namespace ExceLintTests
 {
@@ -9,27 +10,27 @@ namespace ExceLintTests
         [TestMethod]
         public void TestEuclideanDistanceForScalars()
         {
-            var h1 = Feature.makeNum(1.0);
-            var h2 = Feature.makeNum(0.0);
-            var dist = ExceLint.ModelBuilder.euclideanDistance(h1, h2);
+            var h1 = FeatureUtil.makeNum(1.0);
+            var h2 = FeatureUtil.makeNum(0.0);
+            var dist = ModelBuilder.euclideanDistance(h1, h2);
             Assert.AreEqual(dist, 1.0);
         }
 
         [TestMethod]
         public void TestEuclideanDistanceForVectors()
         {
-            var v1 = Feature.makeVector(0.0, 0.0, 0.0);
-            var v2 = Feature.makeVector(1.0, 1.0, 1.0);
-            var dist = ExceLint.ModelBuilder.euclideanDistance(v1, v2);
+            var v1 = FeatureUtil.makeVector(0.0, 0.0, 0.0);
+            var v2 = FeatureUtil.makeVector(1.0, 1.0, 1.0);
+            var dist = ModelBuilder.euclideanDistance(v1, v2);
             Assert.AreEqual(dist, Math.Sqrt(3.0));
         }
 
         [TestMethod]
         public void TestEuclideanDistanceForSpatialVectors()
         {
-            var v1 = Feature.makeSpatialVector(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-            var v2 = Feature.makeSpatialVector(1.0, -1.0, 1.0, -1.0, 1.0, -1.0);
-            var dist = ExceLint.ModelBuilder.euclideanDistance(v1, v2);
+            var v1 = FeatureUtil.makeSpatialVector(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+            var v2 = FeatureUtil.makeSpatialVector(1.0, -1.0, 1.0, -1.0, 1.0, -1.0);
+            var dist = ModelBuilder.euclideanDistance(v1, v2);
             Assert.AreEqual(dist, Math.Sqrt(6.0));
         }
     }

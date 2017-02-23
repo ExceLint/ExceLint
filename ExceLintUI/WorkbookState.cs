@@ -5,7 +5,7 @@ using Excel = Microsoft.Office.Interop.Excel;
 using FullyQualifiedVector = ExceLint.Vector.RichVector;
 using RelativeVector = System.Tuple<int, int, int>;
 using Score = System.Collections.Generic.KeyValuePair<AST.Address, double>;
-using HypothesizedFixes = System.Collections.Generic.Dictionary<AST.Address, System.Collections.Generic.Dictionary<string, Feature.Countable>>;
+using HypothesizedFixes = System.Collections.Generic.Dictionary<AST.Address, System.Collections.Generic.Dictionary<string, ExceLint.Countable>>;
 using Microsoft.FSharp.Core;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -214,7 +214,7 @@ namespace ExceLintUI
             System.Windows.Forms.MessageBox.Show(cursorStr + "\n\n" + String.Join("\n", outputStrings));
         }
 
-        private string[] prettyPrintSelectScores(KeyValuePair<AST.Address, Tuple<string, Feature.Countable>[]> addrScores)
+        private string[] prettyPrintSelectScores(KeyValuePair<AST.Address, Tuple<string, ExceLint.Countable>[]> addrScores)
         {
             var addr = addrScores.Key;
             var scores = addrScores.Value;
@@ -315,11 +315,11 @@ namespace ExceLintUI
             var cursorStr = "(" + cursorAddr.X + "," + cursorAddr.Y + ")";  // for sanity-preservation purposes
 
             // find all sources for formula under the cursor
-            Feature.Countable fc = ExceLint.Vector.DeepInputVectorRelativeL2NormSum.run(cursorAddr, _dag);
+            ExceLint.Countable fc = ExceLint.Vector.DeepInputVectorRelativeL2NormSum.run(cursorAddr, _dag);
             double l2ns = 0.0;
             if (fc.IsNum)
             {
-                var fcn = (Feature.Countable.Num)fc;
+                var fcn = (ExceLint.Countable.Num)fc;
                 l2ns = fcn.Item;
             }
 

@@ -2,16 +2,15 @@
     open System.Collections.Generic
     open System.Collections
     open System
-    open Feature
 
     module ConfUtils =
         type RunnerMap = Map<string, AST.Address -> Depends.DAG -> Countable>
 
     // a C#-friendly configuration object that is also pure/fluent
-    type FeatureConf private (userConf: Map<string,Feature.Capability>) =
-        let _base = Feature.BaseFeature.run 
+    type FeatureConf private (userConf: Map<string,Capability>) =
+        let _base = BaseFeature.run
 
-        let _capabilities : Map<string,Feature.Capability> =
+        let _capabilities : Map<string,Capability> =
             [   Degree.InDegree.capability;
                 Degree.OutDegree.capability;
                 Degree.CombinedDegree.capability;
@@ -34,10 +33,10 @@
                 Proximity.Right.capability
             ] |> Map.ofList
 
-        let nop(cell: AST.Address)(dag: Depends.DAG) : Feature.Countable = Feature.Countable.Num 0.0
+        let nop(cell: AST.Address)(dag: Depends.DAG) : Countable = Countable.Num 0.0
 
-        let _config = Map.fold (fun (acc: Map<string,Feature.Capability>)(fname: string)(cap: Feature.Capability) ->
-                        let cap' : Feature.Capability =
+        let _config = Map.fold (fun (acc: Map<string,Capability>)(fname: string)(cap: Capability) ->
+                        let cap' : Capability =
                             {   enabled = cap.enabled;
                                 kind = cap.kind;
                                 runner = if cap.enabled then cap.runner else nop
@@ -45,7 +44,7 @@
                         Map.add fname cap acc
                         ) _capabilities userConf
 
-        let _features : ConfUtils.RunnerMap = Map.map (fun (fname: string)(cap: Feature.Capability) -> cap.runner) _config
+        let _features : ConfUtils.RunnerMap = Map.map (fun (fname: string)(cap: Capability) -> cap.runner) _config
 
         new() = FeatureConf(Map.empty)
 
@@ -309,7 +308,7 @@
                     self
         member self.analyzeRelativeToAllCells(on: bool) : FeatureConf =
             let name = "ScopeAllCells"
-            let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Scope; runner = nop}
+            let cap : Capability = { enabled = true; kind = ConfigKind.Scope; runner = nop}
             if on then
                 FeatureConf(
                     _config.Add(name, cap)
@@ -323,7 +322,7 @@
                     self
         member self.analyzeRelativeToColumns(on: bool) : FeatureConf =
             let name = "ScopeColumns"
-            let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Scope; runner = nop}
+            let cap : Capability = { enabled = true; kind = ConfigKind.Scope; runner = nop}
             if on then
                 FeatureConf(
                     _config.Add(name, cap)
@@ -337,7 +336,7 @@
                     self
         member self.analyzeRelativeToRows(on: bool) : FeatureConf =
             let name = "ScopeRows"
-            let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Scope; runner = nop}
+            let cap : Capability = { enabled = true; kind = ConfigKind.Scope; runner = nop}
             if on then
                 FeatureConf(
                     _config.Add(name, cap)
@@ -351,7 +350,7 @@
                     self
         member self.analyzeRelativeToLevels(on: bool) : FeatureConf =
             let name = "ScopeLevels"
-            let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Scope; runner = nop}
+            let cap : Capability = { enabled = true; kind = ConfigKind.Scope; runner = nop}
             if on then
                 FeatureConf(
                     _config.Add(name, cap)
@@ -365,7 +364,7 @@
                     self
         member self.analyzeRelativeToSheet(on: bool) : FeatureConf =
             let name = "ScopeSheets"
-            let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Scope; runner = nop}
+            let cap : Capability = { enabled = true; kind = ConfigKind.Scope; runner = nop}
             if on then
                 FeatureConf(
                     _config.Add(name, cap)
@@ -379,7 +378,7 @@
                     self
         member self.inferAddressModes(on: bool) : FeatureConf =
             let name = "InferAddressModes"
-            let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Misc; runner = nop }
+            let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
             if on then
                 FeatureConf(
                     _config.Add(name, cap)
@@ -393,7 +392,7 @@
                     self
         member self.analyzeOnlyFormulas(on: bool) : FeatureConf =
             let name = "AnalyzeOnlyFormulas"
-            let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Misc; runner = nop }
+            let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
             if on then
                 FeatureConf(
                     _config.Add(name, cap)
@@ -407,7 +406,7 @@
                     self
         member self.weightByIntrinsicAnomalousness(on: bool) : FeatureConf =
             let name = "WeightByIntrinsicAnomalousness"
-            let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Misc; runner = nop }
+            let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
             if on then
                 FeatureConf(
                     _config.Add(name, cap)
@@ -421,7 +420,7 @@
                     self
         member self.weightByConditioningSetSize(on: bool) : FeatureConf =
             let name = "WeightByConditioningSetSize"
-            let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Misc; runner = nop }
+            let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
             if on then
                 FeatureConf(
                     _config.Add(name, cap)
@@ -435,7 +434,7 @@
                     self
         member self.spectralRanking(on: bool) : FeatureConf =
             let name = "SpectralRanking"
-            let cap : Feature.Capability = { enabled = true; kind = Feature.ConfigKind.Misc; runner = nop }
+            let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
             if on then
                 FeatureConf(
                     _config.Add(name, cap)
@@ -456,7 +455,7 @@
                 _config |>
                     Map.toArray |>
                     Array.choose (fun (fname,cap) ->
-                                    if cap.enabled && cap.kind = Feature.ConfigKind.Feature then
+                                    if cap.enabled && cap.kind = ConfigKind.Feature then
                                         Some fname
                                     else None)
         member self.EnabledScopes
@@ -464,7 +463,7 @@
                 _config |>
                     Map.toArray |>
                     Array.choose (fun (confname,cap) ->
-                                    if cap.enabled && cap.kind = Feature.ConfigKind.Scope then
+                                    if cap.enabled && cap.kind = ConfigKind.Scope then
                                         match confname with
                                         | "ScopeAllCells" -> Some Scope.AllCells
                                         | "ScopeColumns" -> Some Scope.SameColumn
@@ -570,8 +569,8 @@
             let removed = Set.difference my_keys your_keys
             (changed, removed, added)
 
-        static member simpleConf(m: Map<string,Feature.Capability>) : Map<string,bool> =
-            Map.map (fun (k: string)(v: Feature.Capability) -> v.enabled) m
+        static member simpleConf(m: Map<string,Capability>) : Map<string,bool> =
+            Map.map (fun (k: string)(v: Capability) -> v.enabled) m
 
         override self.Equals(obj: Object) : bool =
             let other_fc = obj :?> FeatureConf

@@ -1,4 +1,4 @@
-module Feature
+namespace ExceLint
     open Depends
     open System
 
@@ -7,12 +7,11 @@ module Feature
     | Scope
     | Misc
     
-        type Countable =
+    type Countable =
     | Num of double
     | Vector of double*double*double
-    | ResultantVectorWithConstant of double*double*double*double
     | SquareVector of double*double*double*double*double*double
-    | CVector of double*double*double*double
+    | CVectorResultant of double*double*double*double
         override self.ToString() : string =
             match self with
             | Num d -> d.ToString()
@@ -20,22 +19,22 @@ module Feature
                 "<" + x.ToString() + "," + y.ToString() + "," + z.ToString() + ">"
             | SquareVector(dx,dy,dz,x,y,z) ->
                 "<" + dx.ToString() + "," + dy.ToString() + "," + dz.ToString() + "," + x.ToString() + "," + y.ToString() + "," + z.ToString() +  ">"
-            | CVector(x,y,z,c) ->
+            | CVectorResultant(x,y,z,c) ->
                 "<" + x.ToString() + "," + y.ToString() + "," + z.ToString() + "," + c.ToString() + ">"
         member self.MeanFoldDefault : Countable =
             match self with
             | Num _ -> Num(0.0)
             | Vector _ -> Vector(0.0,0.0,0.0)
             | SquareVector _ -> SquareVector(0.0,0.0,0.0,0.0,0.0,0.0)
-            | CVector _ -> CVector(0.0,0.0,0.0,0.0)
+            | CVectorResultant _ -> CVectorResultant(0.0,0.0,0.0,0.0)
         member self.Add(co: Countable) : Countable =
             match (self,co) with
             | Num d1, Num d2 -> Num(d1 + d2)
             | Vector(x1,y1,z1), Vector(x2,y2,z2) -> Vector(x1 + x2, y1 + y2, z1 + z2)
             | SquareVector(dx1,dy1,dz1,x1,y1,z1), SquareVector(dx2,dy2,dz2,x2,y2,z2) ->
                 SquareVector(dx1 + dx2, dy1 + dy2, dz1 + dz2, x1 + x2, y1 + y2, z1 + z2)
-            | CVector(x1,y1,z1,c1), CVector(x2,y2,z2,c2) ->
-                CVector(x1 + x2, y1 + y2, z1 + z2, c1 + c2)
+            | CVectorResultant(x1,y1,z1,c1), CVectorResultant(x2,y2,z2,c2) ->
+                CVectorResultant(x1 + x2, y1 + y2, z1 + z2, c1 + c2)
             | _ -> failwith "Invalid operation.  Both Countables must be of the same type."
         member self.Negate : Countable =
             match self with
@@ -43,23 +42,23 @@ module Feature
             | Vector(x,y,z) -> Vector(-x, -y, -z)
             | SquareVector(dx,dy,dz,x,y,z) ->
                 SquareVector(-dx,-dy,-dz,-x,-y,-z)
-            | CVector(x1,y1,z1,c1) ->
-                CVector(-x1,-y1,-z1,-c1)
+            | CVectorResultant(x1,y1,z1,c1) ->
+                CVectorResultant(-x1,-y1,-z1,-c1)
         member self.ScalarDivide(d: double) : Countable =
             match self with
             | Num n -> Num(n / d)
             | Vector(x,y,z) -> Vector(x / d, y / d, z / d)
             | SquareVector(dx,dy,dz,x,y,z) ->
                 SquareVector(dx / d, dy / d, dz / d, x / d, y / d, z / d)
-            | CVector(x1,y1,z1,c1) ->
-                CVector(x1 / d, y1 / d, z1 / d, c1 / d)
+            | CVectorResultant(x1,y1,z1,c1) ->
+                CVectorResultant(x1 / d, y1 / d, z1 / d, c1 / d)
         member self.VectorMultiply(co: Countable) : double =
             match (self,co) with
             | Num d1, Num d2 -> d1 * d2
             | Vector(x1,y1,z1), Vector(x2,y2,z2) -> x1 * x2 + y1 * y2 + z1 * z2
             | SquareVector(dx1,dy1,dz1,x1,y1,z1), SquareVector(dx2,dy2,dz2,x2,y2,z2) ->
                 dx1 * dx2 + dy1 * dy2 + dz1 * dz2 + x1 * x2 + y1 * y2 + z1 * z2
-            | CVector(x1,y1,z1,c1), CVector(x2,y2,z2,c2) ->
+            | CVectorResultant(x1,y1,z1,c1), CVectorResultant(x2,y2,z2,c2) ->
                 x1 * x2 + y1 * y2 + z1 * z2 + c1 * c2
             | _ -> failwith "Invalid operation.  Both Countables must be of the same type."
         member self.Sqrt : Countable =
@@ -68,16 +67,16 @@ module Feature
             | Vector(x,y,z) -> Vector(Math.Sqrt(x), Math.Sqrt(y), Math.Sqrt(z))
             | SquareVector(dx,dy,dz,x,y,z) ->
                 SquareVector(Math.Sqrt(dx), Math.Sqrt(dy), Math.Sqrt(dz), Math.Sqrt(x), Math.Sqrt(y), Math.Sqrt(z))
-            | CVector(x,y,z,c) ->
-                CVector(Math.Sqrt(x), Math.Sqrt(y), Math.Sqrt(z), Math.Sqrt(c))
+            | CVectorResultant(x,y,z,c) ->
+                CVectorResultant(Math.Sqrt(x), Math.Sqrt(y), Math.Sqrt(z), Math.Sqrt(c))
         member self.Abs : Countable =
             match self with
             | Num n -> Num(Math.Abs(n))
             | Vector(x,y,z) -> Vector(Math.Abs(x),Math.Abs(y),Math.Abs(z))
             | SquareVector(dx,dy,dz,x,y,z) ->
                 SquareVector(Math.Abs(dx),Math.Abs(dy),Math.Abs(dz),Math.Abs(x),Math.Abs(y),Math.Abs(z))
-            | CVector(x,y,z,c) ->
-                CVector(Math.Abs(x), Math.Abs(y), Math.Abs(z), Math.Abs(c))
+            | CVectorResultant(x,y,z,c) ->
+                CVectorResultant(Math.Abs(x), Math.Abs(y), Math.Abs(z), Math.Abs(c))
 
     type Capability = { enabled : bool; kind: ConfigKind; runner: AST.Address -> Depends.DAG -> Countable; }
 
@@ -89,6 +88,7 @@ module Feature
 
     // the following are for C# interop because
     // discriminated union types are not exported
-    let makeNum(d: double) = Num d
-    let makeVector(x: double, y: double, z: double) = Vector(x,y,z)
-    let makeSpatialVector(dx: double, dy: double, dz: double, x: double, y: double, z: double) = SquareVector(dx,dy,dz,x,y,z)
+    type FeatureUtil =
+        static member makeNum(d: double) = Num d
+        static member makeVector(x: double, y: double, z: double) = Vector(x,y,z)
+        static member makeSpatialVector(dx: double, dy: double, dz: double, x: double, y: double, z: double) = SquareVector(dx,dy,dz,x,y,z)

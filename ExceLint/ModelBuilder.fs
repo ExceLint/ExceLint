@@ -5,7 +5,6 @@
     open Utils
     open ConfUtils
     open Pipeline
-    open Feature
 
         module ModelBuilder =
             let private nop = Depends.Progress.NOPProgress()

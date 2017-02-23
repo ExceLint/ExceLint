@@ -5,7 +5,6 @@
     open Utils
     open ConfUtils
     open Pipeline
-    open Feature
 
     type ErrorModel(input: Input, analysis: Analysis, config: FeatureConf) =
         let r = match analysis with

@@ -1,6 +1,6 @@
 ﻿module Degree
     open Depends
-    open Feature
+    open ExceLint
 
     type InDegree() = 
          inherit BaseFeature()
