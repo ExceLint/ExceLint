@@ -24,6 +24,14 @@ namespace ExceLintTests
             return graph;
         }
 
+        private Depends.DAG SimpleDAGWithConstants()
+        {
+            var app = new Application();
+            var wb = app.OpenWorkbook(@"..\..\TestData\SimpleWorkbookWithConstants.xlsx");
+            var graph = wb.buildDependenceGraph();
+            return graph;
+        }
+
         [TestMethod]
         public void BasicCVectorResultantTest()
         {
@@ -49,6 +57,20 @@ namespace ExceLintTests
             var formula = AST.Address.fromA1withMode(1, "B", AST.AddressMode.Relative, AST.AddressMode.Relative, wsname, wbname, path);
             var resultant = (Resultant)ExceLint.Vector.ShallowInputVectorMixedCVectorResultantNotOSI.run(formula, dag);
             var resultant_shouldbe = Resultant.NewCVectorResultant(-1, 0, 0, 1);
+            Assert.AreEqual(resultant_shouldbe, resultant);
+        }
+
+        [TestMethod]
+        public void BasicCVectorResultantTest3()
+        {
+            // tests that A1 in cell B1 on the same sheet returns the relative resultant vector (-1,1,0,3)
+            var dag = SimpleDAGWithConstants();
+            var wbname = dag.getWorkbookName();
+            var wsname = dag.getWorksheetNames()[0];
+            var path = dag.getWorkbookDirectory();
+            var formula = AST.Address.fromA1withMode(1, "B", AST.AddressMode.Relative, AST.AddressMode.Relative, wsname, wbname, path);
+            var resultant = (Resultant)ExceLint.Vector.ShallowInputVectorMixedCVectorResultantNotOSI.run(formula, dag);
+            var resultant_shouldbe = Resultant.NewCVectorResultant(-1, 0, 0, 3);
             Assert.AreEqual(resultant_shouldbe, resultant);
         }
     }
