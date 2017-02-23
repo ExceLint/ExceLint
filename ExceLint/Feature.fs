@@ -21,7 +21,7 @@ namespace ExceLint
                 "<" + dx.ToString() + "," + dy.ToString() + "," + dz.ToString() + "," + x.ToString() + "," + y.ToString() + "," + z.ToString() +  ">"
             | CVectorResultant(x,y,z,c) ->
                 "<" + x.ToString() + "," + y.ToString() + "," + z.ToString() + "," + c.ToString() + ">"
-        member self.MeanFoldDefault : Countable =
+        member self.Zero : Countable =
             match self with
             | Num _ -> Num(0.0)
             | Vector _ -> Vector(0.0,0.0,0.0)
@@ -44,6 +44,8 @@ namespace ExceLint
                 SquareVector(-dx,-dy,-dz,-x,-y,-z)
             | CVectorResultant(x1,y1,z1,c1) ->
                 CVectorResultant(-x1,-y1,-z1,-c1)
+        member self.Sub(co: Countable) : Countable =
+            self.Add(co.Negate)
         member self.ScalarDivide(d: double) : Countable =
             match self with
             | Num n -> Num(n / d)
@@ -77,6 +79,51 @@ namespace ExceLint
                 SquareVector(Math.Abs(dx),Math.Abs(dy),Math.Abs(dz),Math.Abs(x),Math.Abs(y),Math.Abs(z))
             | CVectorResultant(x,y,z,c) ->
                 CVectorResultant(Math.Abs(x), Math.Abs(y), Math.Abs(z), Math.Abs(c))
+        member self.ElementwiseMin(co: Countable) : Countable =
+            self.ElementwiseOp co (fun x1 x2 -> if x1 < x2 then x1 else x2)
+        member self.ElementwiseMax(co: Countable) : Countable =
+            self.ElementwiseOp co (fun x1 x2 -> if x1 > x2 then x1 else x2)
+        member self.ElementwiseDivide(co: Countable) : Countable =
+            self.ElementwiseOp co (fun x1 x2 -> x1 / x2)
+        // Hadamard product for two vectors
+        member self.ElementwiseMultiply(co: Countable) : Countable =
+            self.ElementwiseOp co (fun x1 x2 -> x1 * x2)
+        member self.ElementwiseOp(co: Countable)(op: double -> double -> double) : Countable =
+            match self,co with
+            | Num n1,Num n2 -> Num(op n1 n2)
+            | Vector(x1,y1,z1),Vector(x2,y2,z2) ->
+                Vector(
+                    op x1 x2,
+                    op y1 y2,
+                    op z1 z2
+                )
+            | SquareVector(dx1,dy1,dz1,x1,y1,z1),SquareVector(dx2,dy2,dz2,x2,y2,z2) ->
+                SquareVector(
+                    op dx1 dx2, 
+                    op dy1 dy2, 
+                    op dz1 dz2, 
+                    op x1 x2,
+                    op y1 y2,
+                    op z1 z2
+                )
+            | CVectorResultant(x1,y1,z1,c1), CVectorResultant(x2,y2,z2,c2) ->
+                CVectorResultant(
+                    op x1 x2,
+                    op y1 y2,
+                    op z1 z2,
+                    op c1 c2
+                )
+            | _ -> failwith "Cannot do operation on vectors of different lengths."
+        static member Normalize(X: Countable[]) : Countable[] =
+            let min = Array.fold (fun (a:Countable)(x: Countable) -> a.ElementwiseMin x) X.[0] X 
+            let max = Array.fold (fun (a:Countable)(x: Countable) -> a.ElementwiseMax x) X.[0] X 
+            let rng = max.Sub(min)
+            let div = (fun x1 x2 -> if x1 = 0.0 && x2 = 0.0 then 0.0 else x1 / x2)
+            Array.map (fun (x:Countable) ->
+                let diff = x.Sub(min)
+                let scaled = diff.ElementwiseOp rng div
+                scaled
+            ) X
 
     type Capability = { enabled : bool; kind: ConfigKind; runner: AST.Address -> Depends.DAG -> Countable; }
 

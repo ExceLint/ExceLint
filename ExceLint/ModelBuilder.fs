@@ -681,7 +681,7 @@
                 let n = double (cells.Length)
 
                 cells
-                |> Array.fold (fun (acc: Countable)(c: Countable) -> acc.Add c) (cells.[0].MeanFoldDefault)
+                |> Array.fold (fun (acc: Countable)(c: Countable) -> acc.Add c) (cells.[0].Zero)
                 |> (fun c -> c.ScalarDivide n)
 
             let euclideanDistance(cell1: Countable)(cell2: Countable) : double =
