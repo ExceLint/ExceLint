@@ -27,11 +27,15 @@
         type public Coordinates = (X*Y*Path)
         type public RelativeVector =
         | NoConstant of X*Y*Z
+        | NoConstantWithLoc of X*Y*Z*X*Y*Z
         | Constant of X*Y*Z*C
+        | ConstantWithLoc of X*Y*Z*X*Y*Z*C
             member self.Zero =
                 match self with
                 | Constant(_,_,_,_) -> Constant(0,0,0,0.0)
+                | ConstantWithLoc(_,_,_,_,_,_,_) -> ConstantWithLoc(0,0,0,0,0,0,0.0)
                 | NoConstant(_,_,_) -> NoConstant(0,0,0)
+                | NoConstantWithLoc(_,_,_,_,_,_) -> NoConstantWithLoc(0,0,0,0,0,0)
         type public MixedVector = (VectorComponent*VectorComponent*Path)
         type public MixedVectorWithConstant = (VectorComponent*VectorComponent*Path*C)
         type public SquareVector(dx: double, dy: double, x: double, y: double) =
@@ -113,15 +117,21 @@
 
         // represent the position of the head of the vector relative to the tail, (x1,y1,z1)
         // if the reference is off-sheet then optionally ignore X and Y vector components
-        let private relativeToTail(absVect: RichVector)(dag: DAG)(offSheetInsensitive: bool) : RelativeVector =
+        let private relativeToTail(absVect: RichVector)(dag: DAG)(offSheetInsensitive: bool)(includeLoc: bool) : RelativeVector =
             match absVect with
             | AbsoluteFQVector(tail,head) ->
                 let (x1,y1,p1) = tail
                 let (x2,y2,p2) = head
                 if offSheetInsensitive && p1 <> p2 then
-                    NoConstant(0, 0, dag.getPathClosureIndex(p2))
+                    if includeLoc then
+                        NoConstantWithLoc(x1, y1, dag.getPathClosureIndex(p1), 0, 0, dag.getPathClosureIndex(p2))
+                    else
+                        NoConstant(0, 0, dag.getPathClosureIndex(p2))
                 else
-                    NoConstant(x2-x1, y2-y1, vectorPathDiff p2 p1)
+                    if includeLoc then
+                        NoConstantWithLoc(x1, y1, dag.getPathClosureIndex(p1), x2-x1, y2-y1, vectorPathDiff p2 p1)
+                    else
+                        NoConstant(x2-x1, y2-y1, vectorPathDiff p2 p1)
             | MixedFQVector(tail,head) ->
                 let (x1,y1,p1) = tail
                 let (x2,y2,p2) = head
@@ -132,9 +142,15 @@
                             | Rel(y) -> y - y1
                             | Abs(y) -> y
                 if offSheetInsensitive && p1 <> p2 then
-                    NoConstant(0, 0, dag.getPathClosureIndex(p2))
+                    if includeLoc then
+                        NoConstantWithLoc(x1, y1, dag.getPathClosureIndex(p1), 0, 0, dag.getPathClosureIndex(p2))
+                    else
+                        NoConstant(0, 0, dag.getPathClosureIndex(p2))
                 else
-                    NoConstant(x', y', vectorPathDiff p2 p1)
+                    if includeLoc then
+                        NoConstantWithLoc(x1, y1, dag.getPathClosureIndex(p1), x', y', vectorPathDiff p2 p1)
+                    else
+                        NoConstant(x', y', vectorPathDiff p2 p1)
             | MixedFQVectorWithConstant(tail,head) ->
                 let (x1,y1,p1) = tail
                 let (x2,y2,p2,c) = head
@@ -145,38 +161,62 @@
                             | Rel(y) -> y - y1
                             | Abs(y) -> y
                 if offSheetInsensitive && p1 <> p2 then
-                    Constant(0, 0, dag.getPathClosureIndex(p2), c)
+                    if includeLoc then
+                        ConstantWithLoc(x1, y1, dag.getPathClosureIndex(p1), 0, 0, dag.getPathClosureIndex(p2), c)
+                    else
+                        Constant(0, 0, dag.getPathClosureIndex(p2), c)
                 else
-                    Constant(x', y', vectorPathDiff p2 p1, c)
+                    if includeLoc then
+                        ConstantWithLoc(x1, y1, dag.getPathClosureIndex(p1), x', y', vectorPathDiff p2 p1, c)
+                    else
+                        Constant(x', y', vectorPathDiff p2 p1, c)
 
         // represent the position of the the head of the vector relative to the origin, (0,0,0)
-        let private relativeToOrigin(absVect: RichVector)(dag: DAG)(offSheetInsensitive: bool) : RelativeVector =
+        let private relativeToOrigin(absVect: RichVector)(dag: DAG)(offSheetInsensitive: bool)(includeLoc: bool) : RelativeVector =
             match absVect with
             | AbsoluteFQVector(tail,head) ->
-                let (_,_,tp) = tail
+                let (tx,ty,tp) = tail
                 let (x,y,p) = head
                 if offSheetInsensitive && tp <> p then
-                    NoConstant(0, 0, dag.getPathClosureIndex(p))
+                    if includeLoc then
+                        NoConstantWithLoc(tx, ty, dag.getPathClosureIndex(tp), 0, 0, dag.getPathClosureIndex(p))
+                    else
+                        NoConstant(0, 0, dag.getPathClosureIndex(p))
                 else
-                    NoConstant(x, y, pathDiff p dag)
+                    if includeLoc then
+                        NoConstantWithLoc(tx, ty, dag.getPathClosureIndex(tp), x, y, pathDiff p dag)
+                    else
+                        NoConstant(x, y, pathDiff p dag)
             | MixedFQVector(tail,head) ->
-                let (_,_,tp) = tail
+                let (tx,ty,tp) = tail
                 let (x,y,p) = head
                 let x' = match x with | Abs(xa) -> xa | Rel(xr) -> xr
                 let y' = match y with | Abs(ya) -> ya | Rel(yr) -> yr
                 if offSheetInsensitive && tp <> p then
-                    NoConstant(0, 0, dag.getPathClosureIndex(p))
+                    if includeLoc then
+                        NoConstantWithLoc(tx, ty, dag.getPathClosureIndex(tp), 0, 0, dag.getPathClosureIndex(p))
+                    else
+                        NoConstant(0, 0, dag.getPathClosureIndex(p))
                 else
-                    NoConstant(x', y', pathDiff p dag)
+                    if includeLoc then
+                        NoConstantWithLoc(tx, ty, dag.getPathClosureIndex(tp), x', y', pathDiff p dag)
+                    else
+                        NoConstant(x', y', pathDiff p dag)
             | MixedFQVectorWithConstant(tail,head) ->
-                let (_,_,tp) = tail
+                let (tx,ty,tp) = tail
                 let (x,y,p,c) = head
                 let x' = match x with | Abs(xa) -> xa | Rel(xr) -> xr
                 let y' = match y with | Abs(ya) -> ya | Rel(yr) -> yr
                 if offSheetInsensitive && tp <> p then
-                    Constant(0, 0, dag.getPathClosureIndex(p), c)
+                    if includeLoc then
+                        ConstantWithLoc(tx, ty, dag.getPathClosureIndex(p), 0, 0, dag.getPathClosureIndex(p), c)
+                    else
+                        Constant(0, 0, dag.getPathClosureIndex(p), c)
                 else
-                    Constant(x', y', pathDiff p dag, c)
+                    if includeLoc then
+                        ConstantWithLoc(tx, ty, dag.getPathClosureIndex(p), x', y', pathDiff p dag, c)
+                    else
+                        Constant(x', y', pathDiff p dag, c)
 
         let private L2Norm(X: double[]) : double =
             Math.Sqrt(
@@ -206,8 +246,16 @@
             match v1,v2 with
             | NoConstant(x1,y1,z1), NoConstant(x2,y2,z2) ->
                 NoConstant(x1 + x2, y1 + y2, z1 + z2)
+            | NoConstantWithLoc(x1,y1,z1,dx1,dy1,dz1), NoConstantWithLoc(x2,y2,z2,dx2,dy2,dz2) ->
+                assert (x1 = x2 && y1 = y2 && z1 = z2)
+                // we don't add reference sources, just reference destinations
+                NoConstantWithLoc(x1, y1, z1, dx1 + dx2, dy1 + dy2, dz1 + dz2)
             | Constant(x1,y1,z1,c1), Constant(x2,y2,z2,c2) ->
                 Constant(x1 + x2, y1 + y2, z1 + z2, c1 + c2)
+            | ConstantWithLoc(x1,y1,z1,dx1,dy1,dz1,dc1), ConstantWithLoc(x2,y2,z2,dx2,dy2,dz2,dc2) ->
+                assert (x1 = x2 && y1 = y2 && z1 = z2)
+                // we don't add reference sources, just reference destinations
+                ConstantWithLoc(x1, y1, z1, dx1 + dx2, dy1 + dy2, dz1 + dz2, dc1 + dc2)
             | _ -> failwith "Cannot sum RelativeVectors of different subtypes."
 
         let private L2NormRVSum(vs: RelativeVector[]) : double =
@@ -234,6 +282,7 @@
                                 match rv with
                                 | Constant(x,y,_,_) -> x,y
                                 | NoConstant(x,y,_) -> x,y
+                                | _ -> failwith "not supported"
                             xacc + x', yacc + y'
                         ) (0,0)
             (fst xyoff, snd xyoff, x, y)
@@ -371,7 +420,7 @@
 
         let SquareVectorForCell(cell: AST.Address)(dag: DAG)(vector_f: VectorMaker)(cvector_f: ConstantVectorMaker) : SquareVector =
             let vs = getVectors cell dag vector_f cvector_f (*transitive*) false (*isForm*) true
-            let rvs = Array.map (fun rv -> relativeToTail rv dag (*isOffSheetInsensitive*) true) vs
+            let rvs = Array.map (fun rv -> relativeToTail rv dag (*isOffSheetInsensitive*) true false) vs
             let sm = SquareMatrix (cell.X, cell.Y) rvs
             let (dx,dy,x,y) = sm
             SquareVector(float dx,float dy,float x,float y)
@@ -389,18 +438,6 @@
             for i in 0..len-1 do
                 rows <- SquareVector(cols.[0].[i], cols.[1].[i], cols.[2].[i], cols.[3].[i]) :: rows
             List.rev rows |> List.toArray
-
-//        let AllSquareVectors(fs: AST.Address[])(dag: DAG)(normalizeRefSpace: bool)(normalizeSSSpace: bool) : Dictionary<AST.Address,SquareVector> =
-//            let mats = Array.map (fun f -> SquareMatrixForCell f dag) fs
-//
-//            let sdx_vect = if normalizeRefSpace then normalizeColumn (column 0 mats) else column 0 mats
-//            let sdy_vect = if normalizeRefSpace then normalizeColumn (column 1 mats) else column 1 mats
-//            let x_vect = if normalizeSSSpace then normalizeColumn (column 2 mats) else column 2 mats
-//            let y_vect = if normalizeSSSpace then normalizeColumn (column 3 mats) else column 3 mats
-//
-//            let sqvect = combine([| sdx_vect; sdy_vect; x_vect; y_vect |])
-//
-//            Array.mapi (fun i f square-> f,sqvect.[i]) fs |> adict
 
         let DistDictToSVHashSet(dd: DistDict) : HashSet<SquareVector> =
             let hs = new HashSet<SquareVector>()
@@ -568,7 +605,7 @@
         let getRebasedVectors(cell: AST.Address)(dag: DAG)(isMixed: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(isRelative: bool)(includeConstant: bool) =
             getVectors cell dag (makeVector isMixed includeConstant) nopConstantVector isTransitive isFormula
             |> Array.map (fun v ->
-                   (if isRelative then relativeToTail else relativeToOrigin) v dag isOffSheetInsensitive
+                   (if isRelative then relativeToTail else relativeToOrigin) v dag isOffSheetInsensitive includeConstant
                )
 
         let L2NormSumMaker(cell: AST.Address)(dag: DAG)(isMixed: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(rebase_f: Rebaser) =
@@ -741,6 +778,21 @@
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorMixedCVectorResultantNotOSI>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedCVectorResultantNotOSI.run } )
+
+        type ShallowInputVectorMixedFullCVectorResultantNotOSI() =
+            inherit BaseFeature()
+            static member run(cell: AST.Address)(dag: DAG) : Countable =
+                let isMixed = true
+                let isTransitive = false
+                let isFormula = true
+                let isOffSheetInsensitive = false
+                let includeConstant = true
+                let rebase_f = relativeToTail
+                let constant_f = (makeConstantVectorsFromConstants KeepConstantValue.No)
+                ResultantMaker cell dag isMixed includeConstant isTransitive isFormula isOffSheetInsensitive constant_f rebase_f 
+            static member capability : string*Capability =
+                (typeof<ShallowInputVectorMixedFullCVectorResultantNotOSI>.Name,
+                    { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedFullCVectorResultantNotOSI.run } )
 
         type ShallowOutputVectorMixedL2NormSum() =
             inherit BaseFeature()
