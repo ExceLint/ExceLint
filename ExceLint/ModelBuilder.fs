@@ -109,7 +109,7 @@
 
                 match analysis with
                 | Histogram h -> Success(Histogram({ h with weights = weights }))
-                | Cluster c -> Success(Cluster({ c with weights = weights }))
+                | COF c -> Success(COF({ c with weights = weights }))
 
             // sanity check: are scores monotonically increasing?
             let monotonicallyIncreasing(r: Ranking) : bool =
@@ -191,8 +191,8 @@
                     dderiv(rank_nums')
 
             let private kneeIndexOpt(input: Input)(analysis: Analysis) : AnalysisOutcome =
-                let ranking = match analysis with | Histogram h -> h.ranking | Cluster c -> c.ranking
-                let sig_threshold_idx = match analysis with | Histogram h -> h.sig_threshold_idx | Cluster c -> c.sig_threshold_idx
+                let ranking = match analysis with | Histogram h -> h.ranking | COF c -> c.ranking
+                let sig_threshold_idx = match analysis with | Histogram h -> h.sig_threshold_idx | COF c -> c.sig_threshold_idx
 
                 let idx =
                     if input.config.IsEnabledSpectralRanking then
@@ -206,10 +206,10 @@
 
                 match analysis with
                 | Histogram h -> Success(Histogram({ h with cutoff_idx = ce }))
-                | Cluster c -> Success(Cluster({ c with cutoff_idx = ce }))
+                | COF c -> Success(COF({ c with cutoff_idx = ce }))
 
             let private cutoffIndex(input: Input)(analysis: Analysis) : AnalysisOutcome =
-                let ranking = match analysis with | Histogram h -> h.ranking | Cluster c -> c.ranking
+                let ranking = match analysis with | Histogram h -> h.ranking | COF c -> c.ranking
 
                 // compute total mass of distribution
                 let total_mass = double ranking.Length
@@ -218,10 +218,10 @@
 
                 match analysis with
                 | Histogram h -> Success(Histogram({ h with sig_threshold_idx = idx }))
-                | Cluster c -> Success(Cluster({ c with sig_threshold_idx = idx }))
+                | COF c -> Success(COF({ c with sig_threshold_idx = idx }))
 
             let private canonicalSort(input: Input)(analysis: Analysis) : AnalysisOutcome =
-                let r = match analysis with | Histogram h -> h.ranking | Cluster c -> c.ranking
+                let r = match analysis with | Histogram h -> h.ranking | COF c -> c.ranking
                 let arr = Array.sortWith (fun (a: KeyValuePair<AST.Address,double>)(b: KeyValuePair<AST.Address,double>) ->
                                               let a_addr: AST.Address = a.Key
                                               let a_score: double = a.Value
@@ -249,11 +249,11 @@
 
                 match analysis with
                 | Histogram h -> Success(Histogram({ h with ranking = arr }))
-                | Cluster c -> Success(Cluster({ c with ranking = Array.rev arr }))
+                | COF c -> Success(COF({ c with ranking = Array.rev arr }))
 
             let private reweightRanking(input: Input)(analysis: Analysis) : AnalysisOutcome =
-                let ranking = match analysis with | Histogram h -> h.ranking | Cluster c -> c.ranking
-                let weights = match analysis with | Histogram h -> h.weights | Cluster c -> c.weights
+                let ranking = match analysis with | Histogram h -> h.ranking | COF c -> c.ranking
+                let weights = match analysis with | Histogram h -> h.weights | COF c -> c.weights
 
                 let ranking' = 
                     ranking
@@ -265,7 +265,7 @@
 
                 match analysis with
                 | Histogram h -> Success(Histogram({ h with ranking = ranking' }))
-                | Cluster c -> Success(Cluster({ c with ranking = ranking' }))
+                | COF c -> Success(COF({ c with ranking = ranking' }))
 
             let private getChangeSetAddresses(cs: ChangeSet) : AST.Address[] =
                 Array.map (fun (kvp: KeyValuePair<AST.Address,string>) ->
@@ -659,9 +659,9 @@
                             raise e
                     else
                         Success(Histogram h)
-                | Cluster c ->
+                | COF c ->
                     // do nothing for now
-                    Success(Cluster c)
+                    Success(COF c)
 
             let private cancellableWait(input: Input)(analysis: Analysis) : AnalysisOutcome =
                 let mutable timer = 10
@@ -884,7 +884,7 @@
                     let _fixf = fun () -> getCOFFixes scores input.dag input.config.NormalizeRefs input.config.NormalizeSS (input.config.BDD input.dag) (input.config.DD input.dag)
                     let (fixes,fixes_time) = PerfUtils.runMillis _fixf ()
 
-                    Success(Cluster
+                    Success(COF
                         {
                             scores = scores;
                             ranking = ranking;
@@ -977,6 +977,8 @@
                     match pipeline input with
                     | Success(analysis) -> Some (ErrorModel(input, analysis, config'))
                     | Cancellation -> None
+                elif input.config.Cluster then
+                    None
                 else
                     let pipeline = runModel                 // produce initial (unsorted) ranking
                                     +> weights              // compute weights

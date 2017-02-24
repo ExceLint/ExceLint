@@ -9,6 +9,7 @@
     type ErrorModel(input: Input, analysis: Analysis, config: FeatureConf) =
         let r = match analysis with
                       | Histogram h -> h.ranking
+                      | COF c -> c.ranking
                       | Cluster c -> c.ranking
 
         let rankByAddress = Array.mapi (fun rank (pair: KeyValuePair<AST.Address,double>) ->
@@ -23,42 +24,42 @@
         member self.ScoreTimeInMilliseconds : int64 =
             match analysis with 
             | Histogram h -> h.score_time
-            | Cluster c -> c.score_time
+            | COF c -> c.score_time
 
         member self.FrequencyTable : Pipeline.FreqTable =
             match analysis with 
             | Histogram h -> h.ftable
-            | Cluster c -> failwith "Not valid for COF analysis."
+            | COF c -> failwith "Not valid for COF analysis."
 
         member self.IsCOF : bool =
             match analysis with
             | Histogram _ -> false
-            | Cluster _ -> true
+            | COF _ -> true
 
         member self.FrequencyTableTimeInMilliseconds : int64 =
             match analysis with 
             | Histogram h -> h.ftable_time
-            | Cluster c -> 0L
+            | COF c -> 0L
 
         member self.RankingTimeInMilliseconds : int64 =
             match analysis with 
             | Histogram h -> h.ranking_time
-            | Cluster c -> c.ranking_time
+            | COF c -> c.ranking_time
 
         member self.ConditioningSetSizeTimeInMilliseconds: int64 =
             match analysis with 
             | Histogram h -> h.csstable_time
-            | Cluster c -> 0L
+            | COF c -> 0L
 
         member self.CausesTimeInMilliseconds: int64 =
             match analysis with 
             | Histogram h -> h.causes_time
-            | Cluster c -> c.fixes_time
+            | COF c -> c.fixes_time
 
         member self.NumScoreEntries : int =
             let scores = match analysis with 
                          | Histogram h -> h.scores
-                         | Cluster c -> c.scores
+                         | COF c -> c.scores
 
             Array.fold (fun acc (pairs: (AST.Address*Countable)[]) ->
                 acc + pairs.Length
@@ -67,12 +68,12 @@
         member self.NumFreqEntries : int =
             match analysis with 
             | Histogram h -> h.ftable.Count
-            | Cluster c -> 0
+            | COF c -> 0
 
         member self.NumRankedEntries : int =
             match analysis with 
             | Histogram h -> h.ranking.Length
-            | Cluster c -> c.ranking.Length
+            | COF c -> c.ranking.Length
 
         member self.Scopes : Scope.Selector[] = config.EnabledScopes
 
@@ -81,22 +82,22 @@
         member self.Fixes : HypothesizedFixes option =
             match analysis with 
             | Histogram h -> h.fixes
-            | Cluster c -> failwith "Not valid for COF analysis."
+            | COF c -> failwith "Not valid for COF analysis."
 
         member self.COFFixes : Dictionary<AST.Address,HashSet<AST.Address>> =
             match analysis with
             | Histogram _ -> failwith "Not valid for non-COF analysis."
-            | Cluster c -> c.fixes
+            | COF c -> c.fixes
 
         member self.Scores : ScoreTable =
             match analysis with 
             | Histogram h -> h.scores
-            | Cluster c -> c.scores
+            | COF c -> c.scores
 
         member self.causeOf(addr: AST.Address) : KeyValuePair<HistoBin,Tuple<int,double>>[] =
             let causes = match analysis with 
                          | Histogram h -> h.causes
-                         | Cluster c -> failwith "Not valid for COF analysis."
+                         | COF c -> failwith "Not valid for COF analysis."
 
             Array.map (fun cause ->
                 let (bin,count,beta) = cause
@@ -113,7 +114,7 @@
         member self.weightOf(addr: AST.Address) : double =
             match analysis with 
             | Histogram h -> h.weights.[addr]
-            | Cluster c -> c.weights.[addr]
+            | COF c -> c.weights.[addr]
 
         member self.ranking() : Ranking =
             if ErrorModel.rankingIsSane r input.dag (input.config.IsEnabled "AnalyzeOnlyFormulas") then
@@ -125,12 +126,12 @@
         member self.Cutoff : int =
             match analysis with 
             | Histogram h -> h.cutoff_idx
-            | Cluster c -> c.cutoff_idx
+            | COF c -> c.cutoff_idx
 
         member self.Distribution : Distribution =
             match analysis with 
             | Histogram h -> ErrorModel.toDistribution h.causes
-            | Cluster c -> failwith "Not valid for COF analysis."
+            | COF c -> failwith "Not valid for COF analysis."
 
         member self.inspectSelectorFor(addr: AST.Address, sel: Scope.Selector, dag: Depends.DAG) : KeyValuePair<AST.Address,(string*Countable)[]>[] =
             let selcache = Scope.SelectorCache()
@@ -140,7 +141,7 @@
 
             let scores = match analysis with
                          | Histogram h -> h.scores
-                         | Cluster c -> c.scores
+                         | COF c -> c.scores
 
             Seq.iter (fun (kvp: KeyValuePair<string,(AST.Address*Countable)[]>) ->
                 let fname: string = kvp.Key

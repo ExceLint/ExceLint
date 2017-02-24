@@ -488,6 +488,9 @@
         member self.IsEnabledSpectralRanking : bool = _config.ContainsKey "SpectralRanking" && _config.["SpectralRanking"].enabled
         member self.IsEnabledAnalyzeOnlyFormulas : bool = _config.ContainsKey "AnalyzeOnlyFormulas" && _config.["AnalyzeOnlyFormulas"].enabled
         member self.IsEnabledAnalyzeAllCells : bool = _config.ContainsKey "AnalyzeOnlyFormulas" && not (_config.["AnalyzeOnlyFormulas"].enabled)
+        member self.Cluster : bool =
+            let (name,_) = Vector.ShallowInputVectorMixedFullCVectorResultantNotOSI.capability
+            _config.ContainsKey name && _config.[name].enabled
         member self.IsCOF : bool =
             let (name,_) = Vector.ShallowInputVectorMixedCOFNoAspect.capability
             _config.ContainsKey name && _config.[name].enabled

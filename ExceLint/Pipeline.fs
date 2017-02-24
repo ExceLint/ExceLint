@@ -65,9 +65,17 @@
             weights: Weights;
         }
 
+        type ClusterAnalysis = {
+            scores: ScoreTable;
+            ranking: Ranking;
+            sig_threshold_idx: int;
+            cutoff_idx: int;
+        }
+
         type Analysis =
         | Histogram of HistoAnalysis
-        | Cluster of COFAnalysis
+        | COF of COFAnalysis
+        | Cluster of ClusterAnalysis
 
         type AnalysisOutcome =
         | Success of Analysis
