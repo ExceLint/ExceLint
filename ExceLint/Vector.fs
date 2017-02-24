@@ -33,9 +33,9 @@
             member self.Zero =
                 match self with
                 | Constant(_,_,_,_) -> Constant(0,0,0,0.0)
-                | ConstantWithLoc(_,_,_,_,_,_,_) -> ConstantWithLoc(0,0,0,0,0,0,0.0)
+                | ConstantWithLoc(x,y,z,_,_,_,_) -> ConstantWithLoc(x,y,z,0,0,0,0.0)
                 | NoConstant(_,_,_) -> NoConstant(0,0,0)
-                | NoConstantWithLoc(_,_,_,_,_,_) -> NoConstantWithLoc(0,0,0,0,0,0)
+                | NoConstantWithLoc(x,y,z,_,_,_) -> NoConstantWithLoc(x,y,z,0,0,0)
         type public MixedVector = (VectorComponent*VectorComponent*Path)
         type public MixedVectorWithConstant = (VectorComponent*VectorComponent*Path*C)
         type public SquareVector(dx: double, dy: double, x: double, y: double) =
@@ -78,7 +78,7 @@
 
         type private VectorMaker = AST.Address -> AST.Address -> RichVector
         type private ConstantVectorMaker = AST.Address -> AST.Expression -> RichVector list
-        type private Rebaser = RichVector -> DAG -> bool -> RelativeVector
+        type private Rebaser = RichVector -> DAG -> bool -> bool -> RelativeVector
 
         let private fullPath(addr: AST.Address) : string*string*string =
             // portably create full path from components
@@ -610,24 +610,26 @@
 
         let L2NormSumMaker(cell: AST.Address)(dag: DAG)(isMixed: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(rebase_f: Rebaser) =
             getVectors cell dag (makeVector isMixed false) nopConstantVector isTransitive isFormula
-            |> Array.map (fun v -> rebase_f v dag isOffSheetInsensitive)
+            |> Array.map (fun v -> rebase_f v dag isOffSheetInsensitive false)
             |> L2NormRVSum
             |> Num
 
         let L2NormSumMakerCS(cell: AST.Address)(dag: DAG)(isMixed: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(rebase_f: Rebaser) =
             getVectors cell dag (makeVector isMixed false) nopConstantVector isTransitive isFormula
-            |> Array.map (fun v -> rebase_f v dag isOffSheetInsensitive)
+            |> Array.map (fun v -> rebase_f v dag isOffSheetInsensitive false)
             |> L2NormRVSum
             |> Num
 
-        let ResultantMaker(cell: AST.Address)(dag: DAG)(isMixed: bool)(includeConstant: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(constant_f: ConstantVectorMaker)(rebase_f: Rebaser) =
+        let ResultantMaker(cell: AST.Address)(dag: DAG)(isMixed: bool)(includeConstant: bool)(includeLoc: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(constant_f: ConstantVectorMaker)(rebase_f: Rebaser) =
             getVectors cell dag (makeVector isMixed includeConstant) constant_f isTransitive isFormula
-            |> Array.map (fun v -> rebase_f v dag isOffSheetInsensitive)
+            |> Array.map (fun v -> rebase_f v dag isOffSheetInsensitive includeLoc)
             |> Resultant
             |> (fun rv ->
                     match rv with
                     | Constant(x,y,z,c) -> CVectorResultant(double x, double y, double z, double c)
                     | NoConstant(x,y,z) -> Vector(double x, double y, double z)
+                    | ConstantWithLoc(x,y,z,dx,dy,dz,dc) -> FullCVectorResultant(double x, double y, double z, double dx, double dy, double dz, double dc)
+                    | NoConstantWithLoc(x,y,z,dx,dy,dz) -> Countable.SquareVector(double dx, double dy, double dz, double x, double y, double z)
                )
 
         type DeepInputVectorRelativeL2NormSum() = 
@@ -757,9 +759,10 @@
                 let isFormula = true
                 let isOffSheetInsensitive = true
                 let includeConstant = false
+                let includeLoc = false
                 let rebase_f = relativeToTail
                 let constant_f = nopConstantVector
-                ResultantMaker cell dag isMixed includeConstant isTransitive isFormula isOffSheetInsensitive constant_f rebase_f 
+                ResultantMaker cell dag isMixed includeConstant includeLoc isTransitive isFormula isOffSheetInsensitive constant_f rebase_f 
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorMixedResultant>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedResultant.run } )
@@ -772,9 +775,10 @@
                 let isFormula = true
                 let isOffSheetInsensitive = false
                 let includeConstant = true
+                let includeLoc = false
                 let rebase_f = relativeToTail
                 let constant_f = (makeConstantVectorsFromConstants KeepConstantValue.No)
-                ResultantMaker cell dag isMixed includeConstant isTransitive isFormula isOffSheetInsensitive constant_f rebase_f 
+                ResultantMaker cell dag isMixed includeConstant includeLoc isTransitive isFormula isOffSheetInsensitive constant_f rebase_f 
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorMixedCVectorResultantNotOSI>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedCVectorResultantNotOSI.run } )
@@ -787,9 +791,10 @@
                 let isFormula = true
                 let isOffSheetInsensitive = false
                 let includeConstant = true
+                let includeLoc = true
                 let rebase_f = relativeToTail
                 let constant_f = (makeConstantVectorsFromConstants KeepConstantValue.No)
-                ResultantMaker cell dag isMixed includeConstant isTransitive isFormula isOffSheetInsensitive constant_f rebase_f 
+                ResultantMaker cell dag isMixed includeConstant includeLoc isTransitive isFormula isOffSheetInsensitive constant_f rebase_f 
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorMixedFullCVectorResultantNotOSI>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedFullCVectorResultantNotOSI.run } )

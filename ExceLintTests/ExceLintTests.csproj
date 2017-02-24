@@ -64,6 +64,7 @@
     <Compile Include="COFTests.cs" />
     <Compile Include="CVectorTests.cs" />
     <Compile Include="DistanceTests.cs" />
+    <Compile Include="FullCVectorTests.cs" />
     <Compile Include="PerformanceCodedUITests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UIMap.cs">

@@ -95,6 +95,10 @@ namespace ExceLint
                 CVectorResultant(Math.Abs(x), Math.Abs(y), Math.Abs(z), Math.Abs(c))
             | FullCVectorResultant(x,y,z,dx,dy,dz,dc) ->
                 FullCVectorResultant(Math.Abs(x), Math.Abs(y), Math.Abs(z), Math.Abs(dx), Math.Abs(dy), Math.Abs(dz), Math.Abs(dc))
+        member self.ToCVectorResultant : Countable =
+            match self with
+            | FullCVectorResultant(x,y,z,dx,dy,dz,dc) -> CVectorResultant(dx,dy,dz,dc)
+            | _ -> failwith "Unsupported conversion."
         member self.ElementwiseMin(co: Countable) : Countable =
             self.ElementwiseOp co (fun x1 x2 -> if x1 < x2 then x1 else x2)
         member self.ElementwiseMax(co: Countable) : Countable =
