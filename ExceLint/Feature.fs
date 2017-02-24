@@ -12,6 +12,7 @@ namespace ExceLint
     | Vector of double*double*double
     | SquareVector of double*double*double*double*double*double
     | CVectorResultant of double*double*double*double
+    | FullCVectorResultant of double*double*double*double*double*double*double
         override self.ToString() : string =
             match self with
             | Num d -> d.ToString()
@@ -21,12 +22,15 @@ namespace ExceLint
                 "<" + dx.ToString() + "," + dy.ToString() + "," + dz.ToString() + "," + x.ToString() + "," + y.ToString() + "," + z.ToString() +  ">"
             | CVectorResultant(x,y,z,c) ->
                 "<" + x.ToString() + "," + y.ToString() + "," + z.ToString() + "," + c.ToString() + ">"
+            | FullCVectorResultant(x,y,z,dx,dy,dz,dc) ->
+                "<" + x.ToString() + "," + y.ToString() + "," + z.ToString() + "," + dx.ToString() + "," + dy.ToString() + "," + dz.ToString() + "," + dc.ToString() + ">"
         member self.Zero : Countable =
             match self with
             | Num _ -> Num(0.0)
             | Vector _ -> Vector(0.0,0.0,0.0)
             | SquareVector _ -> SquareVector(0.0,0.0,0.0,0.0,0.0,0.0)
             | CVectorResultant _ -> CVectorResultant(0.0,0.0,0.0,0.0)
+            | FullCVectorResultant _ -> FullCVectorResultant(0.0,0.0,0.0,0.0,0.0,0.0,0.0)
         member self.Add(co: Countable) : Countable =
             match (self,co) with
             | Num d1, Num d2 -> Num(d1 + d2)
@@ -35,6 +39,8 @@ namespace ExceLint
                 SquareVector(dx1 + dx2, dy1 + dy2, dz1 + dz2, x1 + x2, y1 + y2, z1 + z2)
             | CVectorResultant(x1,y1,z1,c1), CVectorResultant(x2,y2,z2,c2) ->
                 CVectorResultant(x1 + x2, y1 + y2, z1 + z2, c1 + c2)
+            | FullCVectorResultant(x1,y1,z1,dx1,dy1,dz1,dc1),FullCVectorResultant(x2,y2,z2,dx2,dy2,dz2,dc2) ->
+                FullCVectorResultant(x1 + x2, y1 + y2, z1 + z2, dx1 + dx2, dy1 + dy2, dz1 + dz2, dc1 + dc2)
             | _ -> failwith "Invalid operation.  Both Countables must be of the same type."
         member self.Negate : Countable =
             match self with
@@ -44,6 +50,8 @@ namespace ExceLint
                 SquareVector(-dx,-dy,-dz,-x,-y,-z)
             | CVectorResultant(x1,y1,z1,c1) ->
                 CVectorResultant(-x1,-y1,-z1,-c1)
+            | FullCVectorResultant(x,y,z,dx,dy,dz,dc) ->
+                FullCVectorResultant(-x,-y,-z,-dx,-dy,-dz,-dc)
         member self.Sub(co: Countable) : Countable =
             self.Add(co.Negate)
         member self.ScalarDivide(d: double) : Countable =
@@ -54,6 +62,8 @@ namespace ExceLint
                 SquareVector(dx / d, dy / d, dz / d, x / d, y / d, z / d)
             | CVectorResultant(x1,y1,z1,c1) ->
                 CVectorResultant(x1 / d, y1 / d, z1 / d, c1 / d)
+            | FullCVectorResultant(x,y,z,dx,dy,dz,dc) ->
+                FullCVectorResultant(x / d, y / d, z / d, dx / d, dy / d, dz / d, dc / d)
         member self.VectorMultiply(co: Countable) : double =
             match (self,co) with
             | Num d1, Num d2 -> d1 * d2
@@ -62,6 +72,8 @@ namespace ExceLint
                 dx1 * dx2 + dy1 * dy2 + dz1 * dz2 + x1 * x2 + y1 * y2 + z1 * z2
             | CVectorResultant(x1,y1,z1,c1), CVectorResultant(x2,y2,z2,c2) ->
                 x1 * x2 + y1 * y2 + z1 * z2 + c1 * c2
+            | FullCVectorResultant(x1,y1,z1,dx1,dy1,dz1,dc1),FullCVectorResultant(x2,y2,z2,dx2,dy2,dz2,dc2) ->
+                x1 * x2 + y1 * y2 + z1 * z2 + dx1 * dx2 + dy1 * dy2 + dz1 * dz2 + dc1 * dc2
             | _ -> failwith "Invalid operation.  Both Countables must be of the same type."
         member self.Sqrt : Countable =
             match self with
@@ -71,6 +83,8 @@ namespace ExceLint
                 SquareVector(Math.Sqrt(dx), Math.Sqrt(dy), Math.Sqrt(dz), Math.Sqrt(x), Math.Sqrt(y), Math.Sqrt(z))
             | CVectorResultant(x,y,z,c) ->
                 CVectorResultant(Math.Sqrt(x), Math.Sqrt(y), Math.Sqrt(z), Math.Sqrt(c))
+            | FullCVectorResultant(x,y,z,dx,dy,dz,dc) ->
+                FullCVectorResultant(Math.Sqrt(x), Math.Sqrt(y), Math.Sqrt(z), Math.Sqrt(dx), Math.Sqrt(dy), Math.Sqrt(dz), Math.Sqrt(dc))
         member self.Abs : Countable =
             match self with
             | Num n -> Num(Math.Abs(n))
@@ -79,6 +93,8 @@ namespace ExceLint
                 SquareVector(Math.Abs(dx),Math.Abs(dy),Math.Abs(dz),Math.Abs(x),Math.Abs(y),Math.Abs(z))
             | CVectorResultant(x,y,z,c) ->
                 CVectorResultant(Math.Abs(x), Math.Abs(y), Math.Abs(z), Math.Abs(c))
+            | FullCVectorResultant(x,y,z,dx,dy,dz,dc) ->
+                FullCVectorResultant(Math.Abs(x), Math.Abs(y), Math.Abs(z), Math.Abs(dx), Math.Abs(dy), Math.Abs(dz), Math.Abs(dc))
         member self.ElementwiseMin(co: Countable) : Countable =
             self.ElementwiseOp co (fun x1 x2 -> if x1 < x2 then x1 else x2)
         member self.ElementwiseMax(co: Countable) : Countable =
@@ -112,6 +128,16 @@ namespace ExceLint
                     op y1 y2,
                     op z1 z2,
                     op c1 c2
+                )
+            | FullCVectorResultant(x1,y1,z1,dx1,dy1,dz1,dc1), FullCVectorResultant(x2,y2,z2,dx2,dy2,dz2,dc2) ->
+                FullCVectorResultant(
+                    op x1 x2,
+                    op y1 y2,
+                    op z1 z2,
+                    op dx1 dx2,
+                    op dy1 dy2,
+                    op dz1 dz2,
+                    op dc1 dc2
                 )
             | _ -> failwith "Cannot do operation on vectors of different lengths."
         static member Normalize(X: Countable[]) : Countable[] =

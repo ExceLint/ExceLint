@@ -1,8 +1,6 @@
-﻿using System;
-using COMWrapper;
+﻿using COMWrapper;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Resultant = ExceLint.Countable.CVectorResultant;
-using System.Linq;
 
 namespace ExceLintTests
 {
