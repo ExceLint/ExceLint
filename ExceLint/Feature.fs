@@ -24,6 +24,10 @@ namespace ExceLint
                 "<" + x.ToString() + "," + y.ToString() + "," + z.ToString() + "," + c.ToString() + ">"
             | FullCVectorResultant(x,y,z,dx,dy,dz,dc) ->
                 "<" + x.ToString() + "," + y.ToString() + "," + z.ToString() + "," + dx.ToString() + "," + dy.ToString() + "," + dz.ToString() + "," + dc.ToString() + ">"
+        member self.LocationFree : Countable =
+            match self with
+            | FullCVectorResultant(x,y,z,dx,dy,dz,dc) -> CVectorResultant(dx,dy,dz,dc)
+            | _ -> self
         member self.Zero : Countable =
             match self with
             | Num _ -> Num(0.0)

@@ -883,6 +883,26 @@
 
                 d
 
+            let private runClusterModel(input: Input) : AnalysisOutcome =
+                try
+                    // initially cluster points by location-free representation (LFR)
+
+                    // run Ward's method (http://iv.slis.indiana.edu/sw/data/ward.pdf)
+                    // while there is more than one cluster:
+
+                        // compute the error sum of squares (ESS) for every cluster
+
+                        // compute the pairwise change in ESS for all clusters
+
+                        // select the cluster that minimizes the increase in ESS and
+                        // set all of its members to rank = number of clusters
+
+                    // rank from high to low
+
+                    failwith "nerp"
+                with
+                | AnalysisCancelled -> Cancellation
+
             let private runCOFModel(input: Input) : AnalysisOutcome =
                 try
                     let cells = (analysisBase input.config input.dag)
@@ -996,7 +1016,11 @@
                     | Success(analysis) -> Some (ErrorModel(input, analysis, config'))
                     | Cancellation -> None
                 elif input.config.Cluster then
-                    None
+                    let pipeline = runClusterModel
+
+                    match pipeline input with
+                    | Success(analysis) -> Some (ErrorModel(input, analysis, config'))
+                    | Cancellation -> None
                 else
                     let pipeline = runModel                 // produce initial (unsorted) ranking
                                     +> weights              // compute weights
