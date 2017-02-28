@@ -899,6 +899,8 @@
 
                     // rank from high to low
 
+                    // compute cutoff based on elbow?
+
                     failwith "nerp"
                 with
                 | AnalysisCancelled -> Cancellation
