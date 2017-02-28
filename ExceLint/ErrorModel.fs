@@ -126,7 +126,7 @@
             match analysis with 
             | Histogram h -> h.weights.[addr]
             | COF c -> c.weights.[addr]
-            | Cluster c -> failwith "Not valid for cluster analysis."
+            | Cluster c -> c.weights.[addr]
 
         member self.ranking() : Ranking =
             if ErrorModel.rankingIsSane r input.dag (input.config.IsEnabled "AnalyzeOnlyFormulas") then

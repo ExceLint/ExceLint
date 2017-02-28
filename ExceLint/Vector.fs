@@ -238,6 +238,25 @@
                     System.Convert.ToDouble(z);
                     c;
                 |]
+            | NoConstantWithLoc(x,y,z,dx,dy,dz) ->
+                [|
+                    System.Convert.ToDouble(x);
+                    System.Convert.ToDouble(y);
+                    System.Convert.ToDouble(z);
+                    System.Convert.ToDouble(dx);
+                    System.Convert.ToDouble(dy);
+                    System.Convert.ToDouble(dz);
+                |]
+            | ConstantWithLoc(x,y,z,dx,dy,dz,dc) ->
+                [|
+                    System.Convert.ToDouble(x);
+                    System.Convert.ToDouble(y);
+                    System.Convert.ToDouble(z);
+                    System.Convert.ToDouble(dx);
+                    System.Convert.ToDouble(dy);
+                    System.Convert.ToDouble(dz);
+                    System.Convert.ToDouble(dc);
+                |]
 
         let private L2NormRV(v: RelativeVector) : double =
             L2Norm(relativeVectorToRealVectorArr(v))
@@ -898,7 +917,7 @@
             member self.BuildDistDict(dag: DAG) : Dictionary<WorksheetName,Dictionary<AST.Address,SquareVector>>*Dictionary<WorksheetName,DistDict> =
                 let vector_f =
                     (fun (source: AST.Address)(sink: AST.Address) -> vector source sink true false)
-                MutateCache bigcache cache dag ShallowInputVectorMixedCOFNoAspect.normalizeRefSpace ShallowInputVectorMixedCOFNoAspect.normalizeSSSpace vector_f
+                MutateCache bigcache cache dag ShallowInputVectorMixedCOFNoAspect.normalizeRefSpace ShallowInputVectorMixedCOFNoAspect.normalizeSSSpace vector_f nopConstantVector
                 let c = cache.[dag.getWorkbookName()]
                 let bc = bigcache.[dag.getWorkbookName()]
                 bc,c
@@ -932,7 +951,7 @@
             member self.BuildDistDict(dag: DAG) : Dictionary<WorksheetName,Dictionary<AST.Address,SquareVector>>*Dictionary<WorksheetName,DistDict> =
                 let vector_f =
                     (fun (source: AST.Address)(sink: AST.Address) -> vector source sink true false)
-                MutateCache bigcache cache dag ShallowInputVectorMixedCOFAspect.normalizeRefSpace ShallowInputVectorMixedCOFAspect.normalizeSSSpace vector_f
+                MutateCache bigcache cache dag ShallowInputVectorMixedCOFAspect.normalizeRefSpace ShallowInputVectorMixedCOFAspect.normalizeSSSpace vector_f nopConstantVector
                 let c = cache.[dag.getWorkbookName()]
                 let bc = bigcache.[dag.getWorkbookName()]
                 bc,c

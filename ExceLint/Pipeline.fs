@@ -72,7 +72,7 @@
             ranking_time: int64;
             sig_threshold_idx: int;
             cutoff_idx: int;
-
+            weights: Weights;
         }
 
         type Analysis =
