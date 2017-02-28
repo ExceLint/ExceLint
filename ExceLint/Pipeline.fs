@@ -68,8 +68,11 @@
         type ClusterAnalysis = {
             scores: ScoreTable;
             ranking: Ranking;
+            score_time: int64;
+            ranking_time: int64;
             sig_threshold_idx: int;
             cutoff_idx: int;
+
         }
 
         type Analysis =
