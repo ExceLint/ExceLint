@@ -254,6 +254,20 @@
                     )
                 else
                     self
+        member self.enableShallowInputVectorMixedFullCVectorResultantNotOSI(on: bool) : FeatureConf =
+            let (name,cap) = Vector.ShallowInputVectorMixedFullCVectorResultantNotOSI.capability
+            if on then
+                FeatureConf(
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+
         member self.enableProximityAbove(on: bool) : FeatureConf =
             let (name,cap) = Proximity.Above.capability
             if on then
@@ -489,8 +503,10 @@
         member self.IsEnabledAnalyzeOnlyFormulas : bool = _config.ContainsKey "AnalyzeOnlyFormulas" && _config.["AnalyzeOnlyFormulas"].enabled
         member self.IsEnabledAnalyzeAllCells : bool = _config.ContainsKey "AnalyzeOnlyFormulas" && not (_config.["AnalyzeOnlyFormulas"].enabled)
         member self.Cluster : bool =
-            let (name,_) = Vector.ShallowInputVectorMixedFullCVectorResultantNotOSI.capability
-            _config.ContainsKey name && _config.[name].enabled
+            let (name1,_) = Vector.ShallowInputVectorMixedFullCVectorResultantNotOSI.capability
+            let (name2,_) = Vector.ShallowInputVectorMixedCVectorResultantNotOSI.capability
+            (_config.ContainsKey name1 && _config.[name1].enabled) ||
+            (_config.ContainsKey name2 && _config.[name2].enabled)
         member self.IsCOF : bool =
             let (name,_) = Vector.ShallowInputVectorMixedCOFNoAspect.capability
             _config.ContainsKey name && _config.[name].enabled
@@ -533,6 +549,12 @@
                                 .analyzeRelativeToColumns(false)
                                 .analyzeRelativeToLevels(false)
                                 .analyzeRelativeToSheet(true)
+                         else if self.Cluster then
+                            self.analyzeRelativeToAllCells(false)
+                                .analyzeRelativeToRows(false)
+                                .analyzeRelativeToColumns(false)
+                                .analyzeRelativeToLevels(false)
+                                .analyzeRelativeToSheet(true)
                          else
                             self
 
@@ -543,13 +565,12 @@
                           else
                               config
 
-            let (cof,_) = Vector.ShallowInputVectorMixedCOFNoAspect.capability
-            let (resf,_) = Vector.ShallowInputVectorMixedResultant.capability
-
             // set count type
             if self.IsCOF then
                 config'
             elif self.IsResultant then
+                config'
+            elif self.Cluster then
                 config'
             else
                 // fall back on L2 norm sums is not specified

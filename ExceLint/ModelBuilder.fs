@@ -883,9 +883,68 @@
 
                 d
 
+            let private normalizeScores(ss: ScoreTable) : ScoreTable =
+                let d = new Dict<string, (AST.Address*Countable) list>()
+
+                // for each feature
+                for feat in ss.Keys do
+                    // initialize storage for feature
+                    d.Add(feat, [])
+
+                    // get all values for feature
+                    let vs = ss.[feat]
+
+                    // group by path, wb, sheet
+                    let vs_s = Array.groupBy (fun (a: AST.Address, c: Countable) ->
+                                   a.A1Path() + a.A1Workbook() + a.A1Worksheet()
+                               ) vs |> toDict
+
+                    // for each sheet
+                    for kvp in vs_s do
+                        let sheet = kvp.Key
+                        // get all (addr,countable) pairs
+                        let cells = kvp.Value
+                        // normalize
+                        let ncount = cells |> Array.map (fun (a,c) -> c) |> Countable.Normalize 
+                        // recombine with addrs
+                        let cells' = cells |> Array.mapi (fun i (a,_) -> (a,ncount.[i])) |> Array.toList
+
+                        d.[feat] <- cells' @ d.[feat]
+
+                d |> Seq.map (fun kvp -> kvp.Key, kvp.Value |> List.toArray) |> Seq.toArray |> toDict
+
+            let private convertToLFR(ss: ScoreTable) : ScoreTable =
+                let d = new ScoreTable()
+
+                for kvp in ss do
+                    let feat = kvp.Key
+                    let cells = kvp.Value
+                    let cells' = cells |> Array.map (fun (a,c) -> a, c.ToCVectorResultant)
+                    d.[feat] <- cells'
+
+                d 
+
+            let private ESS(ft: FreqTable, ss: ScoreTable) : double =
+                ft |> Seq.map (fun (bin,i) -> )
+
             let private runClusterModel(input: Input) : AnalysisOutcome =
                 try
+                    // initialize selector cache
+                    let selcache = Scope.SelectorCache()
+
+                    // determine the set of cells to be analyzed
+                    let cells = (analysisBase input.config input.dag)
+
+                    // get all NLFRs for every formula cell
+                    let _runf = fun () -> runEnabledFeatures cells input.dag input.config input.progress
+                    let (nlfrs: ScoreTable,score_time: int64) = PerfUtils.runMillis _runf ()
+
+                    // get LFRs
+                    let lfrs = convertToLFR nlfrs
+
                     // initially cluster points by location-free representation (LFR)
+                    let _freqf = fun () -> buildFrequencyTable lfrs selcache input.progress input.dag input.config
+                    let (ftable,sidcache),ftable_time = PerfUtils.runMillis _freqf ()
 
                     // run Ward's method (http://iv.slis.indiana.edu/sw/data/ward.pdf)
                     // while there is more than one cluster:

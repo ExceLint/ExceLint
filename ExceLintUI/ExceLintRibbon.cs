@@ -902,6 +902,7 @@ namespace ExceLintUI
                 this.showFixes.Enabled = disabled;
                 this.annotate.Enabled = disabled;
                 this.useResultant.Enabled = disabled;
+                this.ClusterBox.Enabled = disabled;
 
                 // tell the user ExceLint doesn't work
                 SetTooltips(disabled_text);
@@ -938,6 +939,7 @@ namespace ExceLintUI
                 this.spectralRanking.Enabled = enable_config;
                 this.useResultant.Enabled = enable_config;
                 this.showFixes.Enabled = enable_config && this.spectralRanking.Checked;
+                this.ClusterBox.Enabled = enable_config;
 
                 // toggle the heatmap label depending on the heatmap shown/hidden state
                 if (wbs.HeatMap_Hidden)
@@ -968,7 +970,10 @@ namespace ExceLintUI
             var c = new ExceLint.FeatureConf();
 
             // spatiostructual vectors
-            if (this.useResultant.Checked) {
+            if (this.ClusterBox.Checked)
+            {
+                c = c.enableShallowInputVectorMixedFullCVectorResultantNotOSI(true);
+            } else if (this.useResultant.Checked) {
                 c = c.enableShallowInputVectorMixedResultant(true);
             } else {
                 c = c.enableShallowInputVectorMixedL2NormSum(true);

@@ -65,6 +65,7 @@
             this.separator4 = this.Factory.CreateRibbonSeparator();
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
+            this.ClusterBox = this.Factory.CreateRibbonCheckBox();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -86,6 +87,7 @@
             // CheckCellGroup
             // 
             this.CheckCellGroup.Items.Add(this.box1);
+            this.CheckCellGroup.Items.Add(this.ClusterBox);
             this.CheckCellGroup.Items.Add(this.useResultant);
             this.CheckCellGroup.Items.Add(this.normSSCheckBox);
             this.CheckCellGroup.Items.Add(this.normRefCheckBox);
@@ -292,6 +294,11 @@
             this.annotateThisCell.ShowImage = true;
             this.annotateThisCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotateThisCell_Click);
             // 
+            // ClusterBox
+            // 
+            this.ClusterBox.Label = "Cluster";
+            this.ClusterBox.Name = "ClusterBox";
+            // 
             // ExceLintRibbon
             // 
             this.Name = "ExceLintRibbon";
@@ -343,6 +350,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox normSSCheckBox;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox useResultant;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox sheetFreq;
+        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox ClusterBox;
     }
 
     partial class ThisRibbonCollection

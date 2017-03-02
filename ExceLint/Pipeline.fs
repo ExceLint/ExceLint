@@ -9,8 +9,8 @@
         type Feature = string
         type Count = int
         type Distribution = Dict<Feature,Dict<Scope.SelectID,Dict<Countable,Set<AST.Address>>>>
-        type ScoreTable = Dict<string,(AST.Address*Countable)[]>
-        type FlatScoreTable = Dict<string*AST.Address,Countable>
+        type ScoreTable = Dict<Feature,(AST.Address*Countable)[]> // feature -> (address, countable)
+        type FlatScoreTable = Dict<Feature*AST.Address,Countable>
         type ConditioningSetSizeTable = Dict<Scope.Selector,Dict<AST.Address,Count>>
         type HistoBin = Feature*Scope.SelectID*Countable
         type FreqTable = Dict<HistoBin,Count>
