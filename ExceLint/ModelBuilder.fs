@@ -288,7 +288,7 @@
             let private mutateDAG(cs: ChangeSet)(dag: Depends.DAG)(app: Microsoft.Office.Interop.Excel.Application)(p: Depends.Progress) : Depends.DAG =
                 dag.CopyWithUpdatedFormulas(cs.mutants, app, true, p)
 
-            let private makeFastScoreTable(scores: ScoreTable) : FlatScoreTable =
+            let private makeFlatScoreTable(scores: ScoreTable) : FlatScoreTable =
                 let mutable max = 0
                 for arr in scores do
                     if arr.Value.Length > max then
@@ -336,7 +336,7 @@
                 ) (config.EnabledFeatures)
 
             let private causes(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(csstable: ConditioningSetSizeTable)(selcache: Scope.SelectorCache)(config: FeatureConf)(progress: Depends.Progress)(dag: Depends.DAG) : Causes =
-                let fscores = makeFastScoreTable scores
+                let fscores = makeFlatScoreTable scores
 
                 // get histogram bin heights for every given cell
                 // and for every enabled scope and feature
@@ -371,7 +371,7 @@
             // of these bin heights to produce a total ranking score
             // THIS IS WHERE ALL THE ACTION HAPPENS, FOLKS
             let private totalHistoSums(cells: AST.Address[])(ftable: FreqTable)(scores: ScoreTable)(csstable: ConditioningSetSizeTable)(selcache: Scope.SelectorCache)(config: FeatureConf)(progress: Depends.Progress)(dag: Depends.DAG) : Ranking*HypothesizedFixes option =
-                let fscores = makeFastScoreTable scores
+                let fscores = makeFlatScoreTable scores
 
                 // get sums for every given cell
                 // and for every enabled scope
@@ -427,6 +427,8 @@
 
                 xs.[idx]
 
+            let private argmax(f: 'a -> double)(xs: seq<'a>) : 'a =
+                Seq.reduce (fun arg x -> if f arg > f x then arg else x) xs
 
             let private transpose(mat: 'a[][]) : 'a[][] =
                 // assumes that all subarrays are the same length
@@ -924,8 +926,77 @@
 
                 d 
 
-            let private ESS(ft: FreqTable, ss: ScoreTable) : double =
-                ft |> Seq.map (fun (bin,i) -> )
+            // Bin addresses by HistoBin
+            let private binCountables(scoretable: ScoreTable)(selcache: Scope.SelectorCache)(dag: Depends.DAG)(config: FeatureConf) : ClusterTable =
+                let t = new ClusterTable()
+
+                // as a side-effect, maintain a selectID cache to make
+                // conditioning set size lookup fast
+                let s = new Scope.SelectIDCache()
+
+                Array.iter (fun fname ->
+                    Array.iter (fun (sel: Scope.Selector) ->
+                        Array.iter (fun (addr: AST.Address, score: Countable) ->
+
+                            // fetch SelectID for this selector and address
+                            let sID = sel.id addr dag selcache
+
+                            let binname = fname,sID,score
+
+                            if t.ContainsKey binname then
+                                let bin = t.[binname]
+                                t.[binname] <- addr :: bin
+                            else
+                                t.Add(binname, [addr])
+                        ) (scoretable.[fname])
+                    ) (config.EnabledScopes)
+                ) (config.EnabledFeatures)
+                t
+
+            let private mergeBins(source: HistoBin)(target: HistoBin)(ct: ClusterTable) : ClusterTable =
+                let ct' = new ClusterTable(ct)
+                ct'.Remove source |> ignore
+                ct'.[target] <- ct.[source] @ ct.[target]
+                ct'
+
+            let private cartesianProduct(xs: 'a list)(ys: 'b list) : ('a*'b) list =
+                xs |> List.collect (fun x -> ys |> List.map (fun y -> x, y))
+
+            let private induceCompleteGraph(vertices: HistoBin list)(targets: Set<HistoBin>) : (HistoBin*HistoBin) list =
+                cartesianProduct vertices vertices
+                |> List.filter (fun (source,target) ->
+                                    source <> target &&               // no self edges
+                                    not (Set.contains target targets) // filter disallowed targets
+                               )  
+
+            let private maxDistance(lfr1: HistoBin)(lfr2: HistoBin)(addrs_by_lfr: ClusterTable)(nlfrs: FlatScoreTable) : double =
+                // get cluster 1's points
+                let (lfr1_feature,_,_) = lfr1
+                let pts1 = addrs_by_lfr.[lfr1] |> List.map (fun addr -> nlfrs.[lfr1_feature,addr])
+
+                // get cluster 2's points
+                let (lfr2_feature,_,_) = lfr2
+                let pts2 = addrs_by_lfr.[lfr2] |> List.map (fun addr -> nlfrs.[lfr2_feature,addr])
+
+                // get cartesian product
+                let p1p2 = cartesianProduct pts1 pts2
+
+                // define distance function
+                let d = (fun (pair: Countable*Countable) ->
+                            let (a,b) = pair
+                            a.EuclideanDistance b
+                        )
+
+                // find maximum distance between any two points
+                p1p2
+                |> List.map (fun (p1,p2) -> p1.EuclideanDistance p2)
+                |> List.max
+
+            let private completeLinkageDistances(g: (HistoBin*HistoBin) list)(ct: ClusterTable)(fst: FlatScoreTable) : Dict<HistoBin*HistoBin,double> =
+                g
+                |> List.map (fun (source,target) -> (source,target),maxDistance source target ct fst)
+                |> List.toArray
+                |> toDict
 
             let private runClusterModel(input: Input) : AnalysisOutcome =
                 try
@@ -946,19 +1017,18 @@
                     let _freqf = fun () -> buildFrequencyTable lfrs selcache input.progress input.dag input.config
                     let (ftable,sidcache),ftable_time = PerfUtils.runMillis _freqf ()
 
-                    // run Ward's method (http://iv.slis.indiana.edu/sw/data/ward.pdf)
-                    // while there is more than one cluster:
+                    // bin by LFR
+                    let lfr_bins = binCountables lfrs selcache input.dag input.config
 
-                        // compute the error sum of squares (ESS) for every cluster
+                    // make flat score table for NLFRs
+                    let nlfr_fst = makeFlatScoreTable nlfrs
 
-                        // compute the pairwise change in ESS for all clusters
+                    // compute initial graph using LFRs
+                    let vs = ftable.Keys |> Seq.toList
+                    let g = induceCompleteGraph vs (set [])
 
-                        // select the cluster that minimizes the increase in ESS and
-                        // set all of its members to rank = number of clusters
-
-                    // rank from high to low
-
-                    // compute cutoff based on elbow?
+                    // compute pairwise distances
+                    let dists = completeLinkageDistances g lfr_bins nlfr_fst 
 
                     failwith "nerp"
                 with

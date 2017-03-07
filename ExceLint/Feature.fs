@@ -35,6 +35,13 @@ namespace ExceLint
             | SquareVector _ -> SquareVector(0.0,0.0,0.0,0.0,0.0,0.0)
             | CVectorResultant _ -> CVectorResultant(0.0,0.0,0.0,0.0)
             | FullCVectorResultant _ -> FullCVectorResultant(0.0,0.0,0.0,0.0,0.0,0.0,0.0)
+        member self.ToVector : double[] =
+            match self with
+            | Num n -> [| n |]
+            | Vector(x,y,z) -> [| x; y; z |]
+            | SquareVector(dx,dy,dz,x,y,z) -> [| dx; dy; dz; x; y; z |]
+            | CVectorResultant(x1,y1,z1,c1) -> [| x1; y1; z1; c1 |]
+            | FullCVectorResultant(x,y,z,dx,dy,dz,dc) -> [| x; y; z; dx; dy; dz; dc |]
         member self.Add(co: Countable) : Countable =
             match (self,co) with
             | Num d1, Num d2 -> Num(d1 + d2)
@@ -148,6 +155,11 @@ namespace ExceLint
                     op dc1 dc2
                 )
             | _ -> failwith "Cannot do operation on vectors of different lengths."
+        member self.EuclideanDistance(co: Countable) : double =
+            let diff = self.Sub co
+            (diff.ElementwiseMultiply diff).ToVector
+            |> Array.sum
+            |> Math.Sqrt
         static member Normalize(X: Countable[]) : Countable[] =
             let min = Array.fold (fun (a:Countable)(x: Countable) -> a.ElementwiseMin x) X.[0] X 
             let max = Array.fold (fun (a:Countable)(x: Countable) -> a.ElementwiseMax x) X.[0] X 

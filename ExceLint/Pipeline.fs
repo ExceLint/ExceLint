@@ -14,6 +14,7 @@
         type ConditioningSetSizeTable = Dict<Scope.Selector,Dict<AST.Address,Count>>
         type HistoBin = Feature*Scope.SelectID*Countable
         type FreqTable = Dict<HistoBin,Count>
+        type ClusterTable = Dict<HistoBin,AST.Address list>
         type Weights = IDictionary<AST.Address,Weight>
         type Ranking = KeyValuePair<AST.Address,double>[]
         type HypothesizedFixes = Dict<AST.Address,Dict<Feature,Countable>>
