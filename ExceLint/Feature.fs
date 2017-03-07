@@ -75,6 +75,10 @@ namespace ExceLint
                 CVectorResultant(x1 / d, y1 / d, z1 / d, c1 / d)
             | FullCVectorResultant(x,y,z,dx,dy,dz,dc) ->
                 FullCVectorResultant(x / d, y / d, z / d, dx / d, dy / d, dz / d, dc / d)
+        member self.UpdateResultant(co: Countable) : Countable =
+            match (self,co) with
+            | FullCVectorResultant(x,y,z,dx,dy,dz,dc),CVectorResultant(dx2,dy2,dz2,dc2) -> FullCVectorResultant(x,y,z,dx2,dy2,dz2,dc2)
+            | _ -> failwith "Operation not supported."
         member self.VectorMultiply(co: Countable) : double =
             match (self,co) with
             | Num d1, Num d2 -> d1 * d2

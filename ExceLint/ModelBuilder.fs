@@ -969,7 +969,33 @@
                                     not (Set.contains target targets) // filter disallowed targets
                                )  
 
-            let private maxDistance(lfr1: HistoBin)(lfr2: HistoBin)(addrs_by_lfr: ClusterTable)(nlfrs: FlatScoreTable) : double =
+            type LinkageDistance = HistoBin -> HistoBin -> ClusterTable -> FlatScoreTable -> double
+
+            let private SSE(lfr1: HistoBin)(lfr2: HistoBin)(addrs_by_lfr: ClusterTable)(nlfrs: FlatScoreTable) : double =
+                // get cluster 1's points
+                let (lfr1_feature,_,lfr1c) = lfr1
+                let pts1 = addrs_by_lfr.[lfr1] |> List.map (fun addr -> nlfrs.[lfr1_feature,addr])
+
+                // get cluster 2's points
+                let (lfr2_feature,_,_) = lfr2
+                let pts2 = addrs_by_lfr.[lfr2] |> List.map (fun addr -> nlfrs.[lfr2_feature,addr])
+
+                // compute delta SSE
+                let pts1_mean = pts1 |> List.reduce (fun acc p -> acc.Add p) |> (fun p -> p.ScalarDivide (double (pts1.Length)))
+                let pts1_sse = pts1 |> List.map (fun p -> (p.Sub pts1_mean).VectorMultiply (p.Sub pts1_mean)) |> List.sum
+
+                let pts_merged = pts1 @ pts2
+                let pts_merged_mean = pts_merged |> List.reduce (fun acc p -> acc.Add p) |> (fun p -> p.ScalarDivide (double (pts_merged.Length)))
+                let pts_merged_sse = pts_merged |> List.map (fun p -> (p.Sub pts_merged_mean).VectorMultiply (p.Sub pts_merged_mean)) |> List.sum
+//                let pts2_fixed = pts2 |> List.map (fun p -> p.UpdateResultant lfr1c)
+//                let merged_pts = pts1 @ pts2_fixed
+//
+//                let pts_merged_mean = merged_pts |> List.reduce (fun acc p -> acc.Add p) |> (fun p -> p.ScalarDivide (double (merged_pts.Length)))
+//                let pts_merged_sse = merged_pts |> List.map (fun p -> (p.Sub pts_merged_mean).VectorMultiply (p.Sub pts_merged_mean)) |> List.sum
+
+                Math.Abs(pts1_sse - pts_merged_sse)
+
+            let private maxEuclid(lfr1: HistoBin)(lfr2: HistoBin)(addrs_by_lfr: ClusterTable)(nlfrs: FlatScoreTable) : double =
                 // get cluster 1's points
                 let (lfr1_feature,_,_) = lfr1
                 let pts1 = addrs_by_lfr.[lfr1] |> List.map (fun addr -> nlfrs.[lfr1_feature,addr])
@@ -981,22 +1007,22 @@
                 // get cartesian product
                 let p1p2 = cartesianProduct pts1 pts2
 
-                // define distance function
-                let d = (fun (pair: Countable*Countable) ->
-                            let (a,b) = pair
-                            a.EuclideanDistance b
-                        )
-
                 // find maximum distance between any two points
                 p1p2
                 |> List.map (fun (p1,p2) -> p1.EuclideanDistance p2)
                 |> List.max
 
-            let private completeLinkageDistances(g: (HistoBin*HistoBin) list)(ct: ClusterTable)(fst: FlatScoreTable) : Dict<HistoBin*HistoBin,double> =
+            let private completeLinkageDistances(g: (HistoBin*HistoBin) list)(ct: ClusterTable)(fst: FlatScoreTable)(d: LinkageDistance) : Dict<HistoBin*HistoBin,double> =
                 g
-                |> List.map (fun (source,target) -> (source,target),maxDistance source target ct fst)
+                |> List.map (fun (source,target) -> (source,target),d source target ct fst)
                 |> List.toArray
                 |> toDict
+
+            // do not propose fixes where the target cluster is smaller than
+            // the source cluster
+            let noLargeToSmallMerges(g: (HistoBin*HistoBin) list)(ct: ClusterTable) : (HistoBin*HistoBin) list =
+                g
+                |> List.filter (fun (source,target) -> ct.[target].Length >= ct.[source].Length)
 
             let private runClusterModel(input: Input) : AnalysisOutcome =
                 try
@@ -1026,11 +1052,18 @@
                     // compute initial graph using LFRs
                     let vs = ftable.Keys |> Seq.toList
                     let g = induceCompleteGraph vs (set [])
+                    let g' = noLargeToSmallMerges g lfr_bins
 
                     // compute pairwise distances
-                    let dists = completeLinkageDistances g lfr_bins nlfr_fst 
+                    let dists_max_euclid = completeLinkageDistances g' lfr_bins nlfr_fst maxEuclid
+                    let dists_sse = completeLinkageDistances g' lfr_bins nlfr_fst SSE
+                    
+                    // choose the cluster merge that minimizes distance
+                    // and that merges a small bin into a big bin
 
                     failwith "nerp"
+
+                    // 
                 with
                 | AnalysisCancelled -> Cancellation
 
