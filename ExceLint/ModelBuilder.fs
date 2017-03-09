@@ -1158,7 +1158,7 @@
                         let (source,target) = argmin (fun pair -> dists.[pair]) dists.Keys
 
                         // record merge in log
-                        log <- (pp source, pp target) :: log
+                        log <- (pp source, pp target, dists.[source,target]) :: log
 
                         // merge them
                         source |> Seq.iter (fun addr -> target.Add(addr) |> ignore)
