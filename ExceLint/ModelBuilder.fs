@@ -1157,12 +1157,12 @@
                         // get the two clusters that minimize distance
                         let (source,target) = argmin (fun pair -> dists.[pair]) dists.Keys
 
+                        // record merge in log
+                        log <- (pp source, pp target) :: log
+
                         // merge them
                         source |> Seq.iter (fun addr -> target.Add(addr) |> ignore)
                         clusters.Remove(source) |> ignore
-
-                        // record merge in log
-                        log <- (pp source, pp target) :: log
 
                     failwith "nerp"
                 with
