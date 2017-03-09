@@ -1059,6 +1059,7 @@
             let private pairwiseClusterCentroidDistances(C: Clustering)(ih: InvertedHistogram)(d: Distance) : Dict<HashSet<AST.Address>*HashSet<AST.Address>,double> =
                 let dists = new Dict<HashSet<AST.Address>*HashSet<AST.Address>, double>()
                 let centroids = new Dict<Countable,HashSet<AST.Address>>()
+                C |> Seq.iter (fun c -> centroids.Add(centroid c ih, c))
                 let pairs = C |> Seq.map (fun c -> centroid c ih) |> (fun s -> induceCompleteGraph s (set []))
                 pairs |> Seq.iter (fun (s,t) -> dists.Add((centroids.[s], centroids.[t]), d centroids.[s] centroids.[t]))
                 dists
