@@ -1113,6 +1113,20 @@
                 with
                 | AnalysisCancelled -> Cancellation
 
+            // find s vector guaranteed to be longer than any of the given vectors
+            let diagonalScaleFactor(ss: ScoreTable) : double =
+                let points = ss
+                             |> Seq.map (fun kvp -> kvp.Value |> Seq.map (fun (_,c: Countable) -> c))
+                             |> Seq.concat
+                             |> Seq.toArray
+                let min_init: Countable = points.[0]
+                let max_init: Countable = points.[0]
+                let minf = (fun (a: double)(b: double) -> if a < b then a else b )
+                let maxf = (fun (a: double)(b: double) -> if a > b then a else b )
+                let min = points |> Seq.fold (fun (minc:Countable)(c:Countable) -> minc.ElementwiseOp c minf) min_init
+                let max = points |> Seq.fold (fun (maxc:Countable)(c:Countable) -> maxc.ElementwiseOp c maxf) max_init
+                min.EuclideanDistance max
+                
             let private runClusterModel(input: Input) : AnalysisOutcome =
                 try
                     // initialize selector cache
@@ -1123,10 +1137,22 @@
 
                     // get all NLFRs for every formula cell
                     let _runf = fun () -> runEnabledFeatures cells input.dag input.config input.progress
-                    let (nlfrs: ScoreTable,score_time: int64) = PerfUtils.runMillis _runf ()
+                    let (ns: ScoreTable,score_time: int64) = PerfUtils.runMillis _runf ()
 
-                    // convert to flat table
-                    let nflrs_flat = makeFlatScoreTable nlfrs
+                    // scale
+                    let factor = diagonalScaleFactor ns
+                    let nlfrs: ScoreTable =
+                        ns
+                        |> Seq.map (fun kvp ->
+                                        kvp.Key,
+                                        kvp.Value
+                                        |> Array.map (fun (addr,c) ->
+                                            addr,
+                                            // only scale the resultant, not the location
+                                            c.UpdateResultant (c.ToCVectorResultant.ScalarMultiply factor)
+                                           ))
+                        |> Seq.toArray
+                        |> toDict
 
                     // make HistoBin lookup by address
                     let hb_inv = invertedHistogram nlfrs selcache input.dag input.config

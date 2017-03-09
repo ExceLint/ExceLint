@@ -65,6 +65,16 @@ namespace ExceLint
                 FullCVectorResultant(-x,-y,-z,-dx,-dy,-dz,-dc)
         member self.Sub(co: Countable) : Countable =
             self.Add(co.Negate)
+        member self.ScalarMultiply(d: double) : Countable =
+            match self with
+            | Num n -> Num(n * d)
+            | Vector(x,y,z) -> Vector(x * d, y * d, z * d)
+            | SquareVector(dx,dy,dz,x,y,z) ->
+                SquareVector(dx * d, dy * d, dz * d, x * d, y * d, z * d)
+            | CVectorResultant(x1,y1,z1,c1) ->
+                CVectorResultant(x1 * d, y1 * d, z1 * d, c1 * d)
+            | FullCVectorResultant(x,y,z,dx,dy,dz,dc) ->
+                FullCVectorResultant(x * d, y * d, z * d, dx * d, dy * d, dz * d, dc * d)
         member self.ScalarDivide(d: double) : Countable =
             match self with
             | Num n -> Num(n / d)
