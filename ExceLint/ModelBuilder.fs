@@ -1096,7 +1096,7 @@
 
                     // compute initial graph using LFRs
                     let vs = ftable.Keys |> Seq.toList
-                    let g = induceCompleteGraph vs (set [])
+                    let g = induceCompleteGraph vs (set []) |> Seq.toList
                     let g' = noLargeToSmallMerges g lfr_bins
 
                     // compute pairwise distances
