@@ -1164,7 +1164,7 @@
                         source |> Seq.iter (fun addr -> target.Add(addr) |> ignore)
                         clusters.Remove(source) |> ignore
 
-                    failwith "nerp"
+                    failwith (List.rev log |> (fun xs -> String.Join("\n", xs)))
                 with
                 | AnalysisCancelled -> Cancellation
 
