@@ -19,6 +19,7 @@
         type Ranking = KeyValuePair<AST.Address,double>[]
         type HypothesizedFixes = Dict<AST.Address,Dict<Feature,Countable>>
         type Causes = Dict<AST.Address,(HistoBin*Count*Weight)[]>
+        type Clustering = HashSet<HashSet<AST.Address>>
         type ChangeSet = {
             mutants: KeyValuePair<AST.Address,string>[];
             scores: ScoreTable;

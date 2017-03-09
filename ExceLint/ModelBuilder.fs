@@ -414,7 +414,7 @@
                         arg
                 ) -1 
 
-            let private argmin(f: 'a -> double)(xs: 'a[]) : 'a =
+            let private also_crappy_argmin(f: 'a -> double)(xs: 'a[]) : 'a =
                 let fxs = Array.map f xs
 
                 let idx = Array.mapi (fun i fx -> (i, fx)) fxs |>
@@ -427,8 +427,12 @@
 
                 xs.[idx]
 
+            let private argwhatever(f: 'a -> double)(xs: seq<'a>)(whatev: double -> double -> bool) : 'a =
+                Seq.reduce (fun arg x -> if whatev (f arg) (f x) then arg else x) xs
             let private argmax(f: 'a -> double)(xs: seq<'a>) : 'a =
-                Seq.reduce (fun arg x -> if f arg > f x then arg else x) xs
+                argwhatever f xs (fun a b -> a > b)
+            let private argmin(f: 'a -> double)(xs: seq<'a>) : 'a =
+                argwhatever f xs (fun a b -> a < b)
 
             let private transpose(mat: 'a[][]) : 'a[][] =
                 // assumes that all subarrays are the same length
@@ -789,7 +793,7 @@
 
                         if bigger.Length > 0 then
                             let f = (fun h -> earthMoversDistance P feature fname scope h a) 
-                            let min_hash = argmin f bigger
+                            let min_hash = also_crappy_argmin f bigger
                             let min_distance = f min_hash
                             assert (sameSheet P fname scope a min_hash)
                             a, (min_hash, min_distance)
@@ -930,10 +934,6 @@
             let private binCountables(scoretable: ScoreTable)(selcache: Scope.SelectorCache)(dag: Depends.DAG)(config: FeatureConf) : ClusterTable =
                 let t = new ClusterTable()
 
-                // as a side-effect, maintain a selectID cache to make
-                // conditioning set size lookup fast
-                let s = new Scope.SelectIDCache()
-
                 Array.iter (fun fname ->
                     Array.iter (fun (sel: Scope.Selector) ->
                         Array.iter (fun (addr: AST.Address, score: Countable) ->
@@ -953,23 +953,59 @@
                 ) (config.EnabledFeatures)
                 t
 
+            let private initialClustering(scoretable: ScoreTable)(dag: Depends.DAG)(config: FeatureConf) : Clustering =
+                let t: Clustering = new Clustering()
+
+                Array.iter (fun fname ->
+                    Array.iter (fun (addr: AST.Address, score: Countable) ->
+                        t.Add(new HashSet<AST.Address>([addr])) |> ignore
+                    ) (scoretable.[fname])
+                ) (config.EnabledFeatures)
+                t
+
+            type InvertedHistogram = Dict<AST.Address,HistoBin>
+
+            let private invertedHistogram(scoretable: ScoreTable)(selcache: Scope.SelectorCache)(dag: Depends.DAG)(config: FeatureConf) : InvertedHistogram =
+                let d = new InvertedHistogram()
+
+                assert (config.EnabledScopes.Length = 1 && config.EnabledFeatures.Length = 1)
+
+                Array.iter (fun fname ->
+                    Array.iter (fun (sel: Scope.Selector) ->
+                        Array.iter (fun (addr: AST.Address, score: Countable) ->
+
+                            // fetch SelectID for this selector and address
+                            let sID = sel.id addr dag selcache
+
+                            // get binname
+                            let binname = fname,sID,score
+
+                            d.Add(addr,binname)
+                            
+                        ) (scoretable.[fname])
+                    ) (config.EnabledScopes)
+                ) (config.EnabledFeatures)
+
+                d
+
             let private mergeBins(source: HistoBin)(target: HistoBin)(ct: ClusterTable) : ClusterTable =
                 let ct' = new ClusterTable(ct)
                 ct'.Remove source |> ignore
                 ct'.[target] <- ct.[source] @ ct.[target]
                 ct'
 
-            let private cartesianProduct(xs: 'a list)(ys: 'b list) : ('a*'b) list =
-                xs |> List.collect (fun x -> ys |> List.map (fun y -> x, y))
+            let private cartesianProduct(xs: seq<'a>)(ys: seq<'b>) : seq<'a*'b> =
+                xs |> Seq.collect (fun x -> ys |> Seq.map (fun y -> x, y))
 
-            let private induceCompleteGraph(vertices: HistoBin list)(targets: Set<HistoBin>) : (HistoBin*HistoBin) list =
-                cartesianProduct vertices vertices
-                |> List.filter (fun (source,target) ->
-                                    source <> target &&               // no self edges
-                                    not (Set.contains target targets) // filter disallowed targets
-                               )  
+            let private induceCompleteGraph(xs: seq<'a>)(excluding: Set<'a>) : seq<'a*'a> =
+                cartesianProduct xs xs
+                |> Seq.filter (fun (source,target) ->
+                                    source <> target &&                 // no self edges
+                                    not (Set.contains target excluding) // filter disallowed targets
+                              )
 
-            type LinkageDistance = HistoBin -> HistoBin -> ClusterTable -> FlatScoreTable -> double
+            type HBDistance = HistoBin -> HistoBin -> ClusterTable -> FlatScoreTable -> double
+            type Distance = HashSet<AST.Address> -> HashSet<AST.Address> -> double
 
             let private SSE(lfr1: HistoBin)(lfr2: HistoBin)(addrs_by_lfr: ClusterTable)(nlfrs: FlatScoreTable) : double =
                 // get cluster 1's points
@@ -987,11 +1023,6 @@
                 let pts_merged = pts1 @ pts2
                 let pts_merged_mean = pts_merged |> List.reduce (fun acc p -> acc.Add p) |> (fun p -> p.ScalarDivide (double (pts_merged.Length)))
                 let pts_merged_sse = pts_merged |> List.map (fun p -> (p.Sub pts_merged_mean).VectorMultiply (p.Sub pts_merged_mean)) |> List.sum
-//                let pts2_fixed = pts2 |> List.map (fun p -> p.UpdateResultant lfr1c)
-//                let merged_pts = pts1 @ pts2_fixed
-//
-//                let pts_merged_mean = merged_pts |> List.reduce (fun acc p -> acc.Add p) |> (fun p -> p.ScalarDivide (double (merged_pts.Length)))
-//                let pts_merged_sse = merged_pts |> List.map (fun p -> (p.Sub pts_merged_mean).VectorMultiply (p.Sub pts_merged_mean)) |> List.sum
 
                 Math.Abs(pts1_sse - pts_merged_sse)
 
@@ -1009,14 +1040,28 @@
 
                 // find maximum distance between any two points
                 p1p2
-                |> List.map (fun (p1,p2) -> p1.EuclideanDistance p2)
-                |> List.max
+                |> Seq.map (fun (p1,p2) -> p1.EuclideanDistance p2)
+                |> Seq.max
 
-            let private completeLinkageDistances(g: (HistoBin*HistoBin) list)(ct: ClusterTable)(fst: FlatScoreTable)(d: LinkageDistance) : Dict<HistoBin*HistoBin,double> =
+            let private pairwiseDistances(g: (HistoBin*HistoBin) list)(ct: ClusterTable)(fst: FlatScoreTable)(d: HBDistance) : Dict<HistoBin*HistoBin,double> =
                 g
                 |> List.map (fun (source,target) -> (source,target),d source target ct fst)
                 |> List.toArray
                 |> toDict
+
+            let private centroid(c: HashSet<AST.Address>)(ih: InvertedHistogram) : Countable =
+                c
+                |> Seq.map (fun a -> ih.[a])    // get histobin for address
+                |> Seq.map (fun (_,_,c) -> c)   // get countable from bin
+                |> Seq.toArray                  // convert to array
+                |> Countable.Mean               // get mean
+
+            let private pairwiseClusterCentroidDistances(C: Clustering)(ih: InvertedHistogram)(d: Distance) : Dict<HashSet<AST.Address>*HashSet<AST.Address>,double> =
+                let dists = new Dict<HashSet<AST.Address>*HashSet<AST.Address>, double>()
+                let centroids = new Dict<Countable,HashSet<AST.Address>>()
+                let pairs = C |> Seq.map (fun c -> centroid c ih) |> (fun s -> induceCompleteGraph s (set []))
+                pairs |> Seq.iter (fun (s,t) -> dists.Add((centroids.[s], centroids.[t]), d centroids.[s] centroids.[t]))
+                dists
 
             // do not propose fixes where the target cluster is smaller than
             // the source cluster
@@ -1024,7 +1069,7 @@
                 g
                 |> List.filter (fun (source,target) -> ct.[target].Length >= ct.[source].Length)
 
-            let private runClusterModel(input: Input) : AnalysisOutcome =
+            let private runOldClusterModel(input: Input) : AnalysisOutcome =
                 try
                     // initialize selector cache
                     let selcache = Scope.SelectorCache()
@@ -1055,8 +1100,8 @@
                     let g' = noLargeToSmallMerges g lfr_bins
 
                     // compute pairwise distances
-                    let dists_max_euclid = completeLinkageDistances g' lfr_bins nlfr_fst maxEuclid
-                    let dists_sse = completeLinkageDistances g' lfr_bins nlfr_fst SSE
+                    let dists_max_euclid = pairwiseDistances g' lfr_bins nlfr_fst maxEuclid
+                    let dists_sse = pairwiseDistances g' lfr_bins nlfr_fst SSE
                     
                     // choose the cluster merge that minimizes distance
                     // and that merges a small bin into a big bin
@@ -1064,6 +1109,61 @@
                     failwith "nerp"
 
                     // 
+                with
+                | AnalysisCancelled -> Cancellation
+
+            let private runClusterModel(input: Input) : AnalysisOutcome =
+                try
+                    // initialize selector cache
+                    let selcache = Scope.SelectorCache()
+
+                    // determine the set of cells to be analyzed
+                    let cells = (analysisBase input.config input.dag)
+
+                    // get all NLFRs for every formula cell
+                    let _runf = fun () -> runEnabledFeatures cells input.dag input.config input.progress
+                    let (nlfrs: ScoreTable,score_time: int64) = PerfUtils.runMillis _runf ()
+
+                    // convert to flat table
+                    let nflrs_flat = makeFlatScoreTable nlfrs
+
+                    // make HistoBin lookup by address
+                    let hb_inv = invertedHistogram nlfrs selcache input.dag input.config
+
+                    // initially assign every cell to its own cluster
+                    let clusters = initialClustering nlfrs input.dag input.config
+
+                    // define distance
+                    let distance = (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>) ->
+                                        let s_centroid = centroid source hb_inv
+                                        let t_centroid = centroid target hb_inv
+                                        let dist = s_centroid.EuclideanDistance t_centroid
+                                        dist * (double source.Count)
+                                   )
+
+                    let pp(c: HashSet<AST.Address>) : string =
+                        c
+                        |> Seq.map (fun a -> a.A1Local())
+                        |> (fun addrs -> "[" + String.Join(",", addrs) + "] with centroid " + (centroid c hb_inv).ToString())
+
+                    let mutable log = []
+
+                    // while there is more than 1 cluster, merge the two clusters with the smallest distance
+                    while clusters.Count > 1 do
+                        // get pairwise distances
+                        let dists = pairwiseClusterCentroidDistances clusters hb_inv distance
+
+                        // get the two clusters that minimize distance
+                        let (source,target) = argmin (fun pair -> dists.[pair]) dists.Keys
+
+                        // merge them
+                        source |> Seq.iter (fun addr -> target.Add(addr) |> ignore)
+                        clusters.Remove(source) |> ignore
+
+                        // record merge in log
+                        log <- (pp source, pp target) :: log
+
+                    failwith "nerp"
                 with
                 | AnalysisCancelled -> Cancellation
 
