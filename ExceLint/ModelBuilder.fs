@@ -17,6 +17,24 @@
                 ) arr
                 d
 
+            let private sToDict(s: seq<'a*'b>) : Dict<'a,'b> =
+                // assumes that 'a is unique
+                // and s is finite
+                let d = new Dict<'a,'b>()
+                Seq.iter (fun (a,b) ->
+                    d.Add(a,b)
+                ) s
+                d
+
+            let private skvpToDict(s: seq<KeyValuePair<'a,'b>>) : Dict<'a,'b> =
+                // assumes that 'a is unique
+                // and s is finite
+                let d = new Dict<'a,'b>()
+                Seq.iter (fun (kvp: KeyValuePair<'a,'b>) ->
+                    d.Add(kvp.Key,kvp.Value)
+                ) s
+                d
+
             // _analysis_base specifies which cells should be ranked:
             // 1. allCells means all cells in the spreadsheet
             // 2. onlyFormulas means only formulas
@@ -963,17 +981,16 @@
                 ) (config.EnabledFeatures)
                 t
 
-            type InvertedHistogram = Dict<AST.Address,HistoBin>
+            type InvertedHistogram = System.Collections.ObjectModel.ReadOnlyDictionary<AST.Address,HistoBin>
 
             let private invertedHistogram(scoretable: ScoreTable)(selcache: Scope.SelectorCache)(dag: Depends.DAG)(config: FeatureConf) : InvertedHistogram =
-                let d = new InvertedHistogram()
-
                 assert (config.EnabledScopes.Length = 1 && config.EnabledFeatures.Length = 1)
+
+                let d = new Dict<AST.Address,HistoBin>()
 
                 Array.iter (fun fname ->
                     Array.iter (fun (sel: Scope.Selector) ->
                         Array.iter (fun (addr: AST.Address, score: Countable) ->
-
                             // fetch SelectID for this selector and address
                             let sID = sel.id addr dag selcache
 
@@ -981,12 +998,11 @@
                             let binname = fname,sID,score
 
                             d.Add(addr,binname)
-                            
                         ) (scoretable.[fname])
                     ) (config.EnabledScopes)
                 ) (config.EnabledFeatures)
 
-                d
+                new InvertedHistogram(d)
 
             let private mergeBins(source: HistoBin)(target: HistoBin)(ct: ClusterTable) : ClusterTable =
                 let ct' = new ClusterTable(ct)
@@ -1005,7 +1021,8 @@
                               )
 
             type HBDistance = HistoBin -> HistoBin -> ClusterTable -> FlatScoreTable -> double
-            type Distance = HashSet<AST.Address> -> HashSet<AST.Address> -> double
+            type DistanceF = HashSet<AST.Address> -> HashSet<AST.Address> -> double
+            type Distances = Dict<HashSet<AST.Address>*HashSet<AST.Address>,double>
 
             let private SSE(lfr1: HistoBin)(lfr2: HistoBin)(addrs_by_lfr: ClusterTable)(nlfrs: FlatScoreTable) : double =
                 // get cluster 1's points
@@ -1056,7 +1073,7 @@
                 |> Seq.toArray                  // convert to array
                 |> Countable.Mean               // get mean
 
-            let private pairwiseClusterCentroidDistances(C: Clustering)(ih: InvertedHistogram)(d: Distance) : Dict<HashSet<AST.Address>*HashSet<AST.Address>,double> =
+            let private pairwiseClusterDistances(C: Clustering)(ih: InvertedHistogram)(d: DistanceF) : Distances =
                 let dists = new Dict<HashSet<AST.Address>*HashSet<AST.Address>, double>()
                 let centroids = new Dict<Countable,HashSet<AST.Address>>()
                 C |> Seq.iter (fun c -> centroids.Add(centroid c ih, c))
@@ -1127,6 +1144,33 @@
                 let max = points |> Seq.fold (fun (maxc:Countable)(c:Countable) -> maxc.ElementwiseOp c maxf) max_init
                 min.EuclideanDistance max
                 
+            // all updates here are as side-effects
+            let updatePairwiseClusterDistancesAndCluster(C: Clustering)(ih: InvertedHistogram)(d: DistanceF)(dists: Distances)(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : unit =
+                // update clustering
+                source |> Seq.iter (fun addr -> target.Add(addr) |> ignore)
+                C.Remove(source) |> ignore
+
+                // find vertices not source or target
+                let C' = C |> Seq.filter (fun v -> v <> source && v <> target)
+                
+                // remove edges incident on source and target
+                let removals = dists |> Seq.filter (fun kvp ->
+                                            let (edge_to,edge_from) = kvp.Key
+                                            edge_to = source ||
+                                            edge_from = source ||
+                                            edge_to = target ||
+                                            edge_from = target
+                                        )
+                                     |> Seq.toArray // laziness is bad
+                removals |> Seq.iter (fun kvp -> dists.Remove(kvp.Key) |> ignore)
+
+                // compute edges incident on merged source-target
+                C'
+                |> Seq.iter (fun v ->
+                       dists.Add((v,target), d v target) |> ignore
+                       dists.Add((target,v), d target v) |> ignore
+                   )
+
             let private runClusterModel(input: Input) : AnalysisOutcome =
                 try
                     // initialize selector cache
@@ -1188,11 +1232,11 @@
 
                     let mutable log = []
 
+                    // get initial pairwise distances
+                    let dists = pairwiseClusterDistances clusters hb_inv distance
+
                     // while there is more than 1 cluster, merge the two clusters with the smallest distance
                     while clusters.Count > 1 do
-                        // get pairwise distances
-                        let dists = pairwiseClusterCentroidDistances clusters hb_inv distance
-
                         // get the two clusters that minimize distance
                         let (source,target) = argmin (fun pair -> dists.[pair]) dists.Keys
 
@@ -1200,8 +1244,7 @@
                         log <- (pp source, pp target, dists.[source,target]) :: log
 
                         // merge them
-                        source |> Seq.iter (fun addr -> target.Add(addr) |> ignore)
-                        clusters.Remove(source) |> ignore
+                        updatePairwiseClusterDistancesAndCluster clusters hb_inv distance dists source target
 
                     failwith (List.rev log |> (fun xs -> String.Join("\n", xs)))
                 with
