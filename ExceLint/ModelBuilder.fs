@@ -7,6 +7,24 @@
     open Pipeline
 
         module ModelBuilder =
+            type HBDistance = HistoBin -> HistoBin -> ClusterTable -> FlatScoreTable -> double
+            type Edge = HashSet<AST.Address>*HashSet<AST.Address>
+            type DistanceF = HashSet<AST.Address> -> HashSet<AST.Address> -> double
+            type Distances = Dict<Edge,double>
+            type MinDistComparer(d: DistanceF) =
+                interface IComparer<Edge> with
+                    member self.Compare(x: Edge, y: Edge) =
+                        let (xs,xt) = x
+                        let (yz,yt) = y
+                        let distx = d xs xt
+                        let disty = d yz yt
+                        if distx < disty then
+                            -1
+                        else if distx = disty then
+                            0
+                        else
+                            1
+
             let private nop = Depends.Progress.NOPProgress()
 
             let private toDict(arr: ('a*'b)[]) : Dict<'a,'b> =
@@ -1013,16 +1031,16 @@
             let private cartesianProduct(xs: seq<'a>)(ys: seq<'b>) : seq<'a*'b> =
                 xs |> Seq.collect (fun x -> ys |> Seq.map (fun y -> x, y))
 
-            let private induceCompleteGraph(xs: seq<'a>)(excluding: Set<'a>) : seq<'a*'a> =
+            let private induceCompleteGraph(xs: seq<'a>) : seq<'a*'a> =
+                cartesianProduct xs xs
+                |> Seq.filter (fun (source,target) -> source <> target ) // no self edges
+
+            let private induceCompleteGraphExcl(xs: seq<'a>)(excluding: Set<'a>) : seq<'a*'a> =
                 cartesianProduct xs xs
                 |> Seq.filter (fun (source,target) ->
                                     source <> target &&                 // no self edges
                                     not (Set.contains target excluding) // filter disallowed targets
                               )
-
-            type HBDistance = HistoBin -> HistoBin -> ClusterTable -> FlatScoreTable -> double
-            type DistanceF = HashSet<AST.Address> -> HashSet<AST.Address> -> double
-            type Distances = Dict<HashSet<AST.Address>*HashSet<AST.Address>,double>
 
             let private SSE(lfr1: HistoBin)(lfr2: HistoBin)(addrs_by_lfr: ClusterTable)(nlfrs: FlatScoreTable) : double =
                 // get cluster 1's points
@@ -1073,11 +1091,19 @@
                 |> Seq.toArray                  // convert to array
                 |> Countable.Mean               // get mean
 
+            let private pairwiseClusterDistances2(C: Clustering)(d: DistanceF) : SortedSet<Edge> =
+                let dists = new SortedSet<Edge>(new MinDistComparer(d))
+                
+                // get all pairs of clusters and add to set
+                induceCompleteGraph C |> Seq.iter (fun e -> dists.Add e |> ignore)
+
+                dists
+
             let private pairwiseClusterDistances(C: Clustering)(ih: InvertedHistogram)(d: DistanceF) : Distances =
                 let dists = new Dict<HashSet<AST.Address>*HashSet<AST.Address>, double>()
                 let centroids = new Dict<Countable,HashSet<AST.Address>>()
                 C |> Seq.iter (fun c -> centroids.Add(centroid c ih, c))
-                let pairs = C |> Seq.map (fun c -> centroid c ih) |> (fun s -> induceCompleteGraph s (set []))
+                let pairs = C |> Seq.map (fun c -> centroid c ih) |> (fun s -> induceCompleteGraphExcl s (set []))
                 pairs |> Seq.iter (fun (s,t) -> dists.Add((centroids.[s], centroids.[t]), d centroids.[s] centroids.[t]))
                 dists
 
@@ -1114,7 +1140,7 @@
 
                     // compute initial graph using LFRs
                     let vs = ftable.Keys |> Seq.toList
-                    let g = induceCompleteGraph vs (set []) |> Seq.toList
+                    let g = induceCompleteGraphExcl vs (set []) |> Seq.toList
                     let g' = noLargeToSmallMerges g lfr_bins
 
                     // compute pairwise distances
@@ -1145,7 +1171,7 @@
                 min.EuclideanDistance max
                 
             // all updates here are as side-effects
-            let updatePairwiseClusterDistancesAndCluster(C: Clustering)(ih: InvertedHistogram)(d: DistanceF)(dists: Distances)(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : unit =
+            let updatePairwiseClusterDistancesAndCluster(C: Clustering)(ih: InvertedHistogram)(d: DistanceF)(dists: SortedSet<Edge>)(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : unit =
                 // update clustering
                 source |> Seq.iter (fun addr -> target.Add(addr) |> ignore)
                 C.Remove(source) |> ignore
@@ -1154,21 +1180,21 @@
                 let C' = C |> Seq.filter (fun v -> v <> source && v <> target)
                 
                 // remove edges incident on source and target
-                let removals = dists |> Seq.filter (fun kvp ->
-                                            let (edge_to,edge_from) = kvp.Key
+                let removals = dists |> Seq.filter (fun edge ->
+                                            let (edge_to,edge_from) = edge
                                             edge_to = source ||
                                             edge_from = source ||
                                             edge_to = target ||
                                             edge_from = target
                                         )
                                      |> Seq.toArray // laziness is bad
-                removals |> Seq.iter (fun kvp -> dists.Remove(kvp.Key) |> ignore)
+                removals |> Seq.iter (fun edge -> dists.Remove(edge) |> ignore)
 
                 // compute edges incident on merged source-target
                 C'
                 |> Seq.iter (fun v ->
-                       dists.Add((v,target), d v target) |> ignore
-                       dists.Add((target,v), d target v) |> ignore
+                       dists.Add((v,target)) |> ignore
+                       dists.Add((target,v)) |> ignore
                    )
 
             let private runClusterModel(input: Input) : AnalysisOutcome =
@@ -1233,15 +1259,18 @@
                     let mutable log = []
 
                     // get initial pairwise distances
-                    let dists = pairwiseClusterDistances clusters hb_inv distance
+                    let dists = pairwiseClusterDistances2 clusters distance
 
                     // while there is more than 1 cluster, merge the two clusters with the smallest distance
                     while clusters.Count > 1 do
                         // get the two clusters that minimize distance
-                        let (source,target) = argmin (fun pair -> dists.[pair]) dists.Keys
+//                        let (source,target) = argmin (fun pair -> dists.[pair]) dists.Keys
+
+                        let e = dists.Min
+                        let (source,target) = e
 
                         // record merge in log
-                        log <- (pp source, pp target, dists.[source,target]) :: log
+                        log <- (pp source, pp target, distance source target) :: log
 
                         // merge them
                         updatePairwiseClusterDistancesAndCluster clusters hb_inv distance dists source target
