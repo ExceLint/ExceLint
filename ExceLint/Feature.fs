@@ -75,6 +75,10 @@ namespace ExceLint
                 CVectorResultant(x1 * d, y1 * d, z1 * d, c1 * d)
             | FullCVectorResultant(x,y,z,dx,dy,dz,dc) ->
                 FullCVectorResultant(x * d, y * d, z * d, dx * d, dy * d, dz * d, dc * d)
+        member self.Location : Countable =
+            match self with
+            | FullCVectorResultant(x,y,z,_,_,_,_) -> Vector(x,y,z)
+            | _ -> failwith "undefined"
         member self.ScalarDivide(d: double) : Countable =
             match self with
             | Num n -> Num(n / d)

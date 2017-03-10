@@ -1116,11 +1116,11 @@
             // find s vector guaranteed to be longer than any of the given vectors
             let diagonalScaleFactor(ss: ScoreTable) : double =
                 let points = ss
-                             |> Seq.map (fun kvp -> kvp.Value |> Seq.map (fun (_,c: Countable) -> c))
+                             |> Seq.map (fun kvp -> kvp.Value |> Seq.map (fun (_,c: Countable) -> c.Location))
                              |> Seq.concat
                              |> Seq.toArray
-                let min_init: Countable = points.[0]
-                let max_init: Countable = points.[0]
+                let min_init = points.[0]
+                let max_init = points.[0]
                 let minf = (fun (a: double)(b: double) -> if a < b then a else b )
                 let maxf = (fun (a: double)(b: double) -> if a > b then a else b )
                 let min = points |> Seq.fold (fun (minc:Countable)(c:Countable) -> minc.ElementwiseOp c minf) min_init
@@ -1161,6 +1161,19 @@
                     let clusters = initialClustering nlfrs input.dag input.config
 
                     // define distance
+                    let distance' = (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>) ->
+                                        let pairs = cartesianProduct source target
+                                        let f = (fun (a,b) ->
+                                                    let (_,_,ac) = hb_inv.[a]
+                                                    let (_,_,bc) = hb_inv.[b]
+                                                    ac.EuclideanDistance bc
+                                                )
+                                        let minpair = argmin f pairs
+                                        let dist = f minpair
+                                        dist * (double source.Count)
+                                   )
+
+                    // define distance (min distance between clusters)
                     let distance = (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>) ->
                                         let s_centroid = centroid source hb_inv
                                         let t_centroid = centroid target hb_inv
