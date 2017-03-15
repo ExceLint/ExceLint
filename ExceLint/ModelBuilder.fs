@@ -8,20 +8,39 @@
 
         module ModelBuilder =
             type HBDistance = HistoBin -> HistoBin -> ClusterTable -> FlatScoreTable -> double
-            type Edge = HashSet<AST.Address>*HashSet<AST.Address>
-            type DistanceF = HashSet<AST.Address> -> HashSet<AST.Address> -> double
+            type Edge(pair: HashSet<AST.Address>*HashSet<AST.Address>) = 
+                member self.tupled = fst pair, snd pair
+                override self.Equals(o: obj) =
+                    let (x,y) = self.tupled
+                    let (x',y') = (o :?> Edge).tupled
+                    x = x' && y = y'
+                override self.ToString() =
+                    let (x,y) = self.tupled
+                    x.ToString() + " -> " + y.ToString()
+
+            type DistCache = Dictionary<AST.Address*AST.Address,double>
+            type DistanceF = HashSet<AST.Address> -> HashSet<AST.Address> -> DistCache option -> double
             type Distances = Dict<Edge,double>
-            type MinDistComparer(d: DistanceF) =
+            type MinDistComparer(d: DistanceF, cache: DistCache option) =
                 interface IComparer<Edge> with
                     member self.Compare(x: Edge, y: Edge) =
-                        let (xs,xt) = x
-                        let (yz,yt) = y
-                        let distx = d xs xt
-                        let disty = d yz yt
+                        let (xs,xt) = x.tupled
+                        let (ys,yt) = y.tupled
+                        let distx = d xs xt cache
+                        let disty = d ys yt cache
+
                         if distx < disty then
                             -1
                         else if distx = disty then
-                            0
+                            // sortedset discards elements with the same
+                            // sort order even if they are not defined as equal;
+                            // this behavior is very bad for ExceLint.
+                            // return zero only iff x = y, otherwise
+                            // sort deterministically but arbitrarily
+                            if x.Equals(y) then
+                                0
+                            else
+                                x.GetHashCode().CompareTo(y.GetHashCode())
                         else
                             1
 
@@ -1091,20 +1110,37 @@
                 |> Seq.toArray                  // convert to array
                 |> Countable.Mean               // get mean
 
-            let private pairwiseClusterDistances2(C: Clustering)(d: DistanceF) : SortedSet<Edge> =
-                let dists = new SortedSet<Edge>(new MinDistComparer(d))
-                
+            let private pairwiseClusterDistances2(C: Clustering)(d: DistanceF)(cache_opt: DistCache option) : SortedSet<Edge> =
                 // get all pairs of clusters and add to set
-                induceCompleteGraph C |> Seq.iter (fun e -> dists.Add e |> ignore)
+                let G: Edge[] = induceCompleteGraph (C |> Seq.toArray) |> Seq.map (fun (a,b) -> Edge(a,b)) |> Seq.toArray
 
-                dists
+                // precompute all distances in parallel and cache
+//                match cache_opt with
+//                | None -> ()
+//                | Some cache ->
+//                    let addresses = C |> Seq.concat |> Seq.distinct |> Seq.toArray
+//                    let pairs = cartesianProduct addresses addresses |> Seq.toArray
+//                    let dists = Array.zeroCreate(pairs.Length)
+//                    let p = System.Threading.Tasks.ParallelOptions()
+//                    p.MaxDegreeOfParallelism <- Environment.ProcessorCount
+//                    let a = (fun (i: int) ->
+//                                let (s,t) = pairs.[i]
+//                                dists.[i] <- d (new HashSet<AST.Address>([s])) (new HashSet<AST.Address>([t])) None
+//                            )
+//                    System.Threading.Tasks.Parallel.For(0, G.Length, p, a) |> ignore
+//                    dists |> Array.iteri (fun i dst -> cache.Add(pairs.[i], dst))
 
-            let private pairwiseClusterDistances(C: Clustering)(ih: InvertedHistogram)(d: DistanceF) : Distances =
-                let dists = new Dict<HashSet<AST.Address>*HashSet<AST.Address>, double>()
+                let edges = new SortedSet<Edge>(new MinDistComparer(d, cache_opt))
+                G |> Array.iter (fun e -> edges.Add(e) |> ignore)
+
+                edges
+
+            let private pairwiseClusterDistances(C: Clustering)(ih: InvertedHistogram)(d: DistanceF)(cache: DistCache option) : Distances =
+                let dists = new Dict<Edge, double>()
                 let centroids = new Dict<Countable,HashSet<AST.Address>>()
                 C |> Seq.iter (fun c -> centroids.Add(centroid c ih, c))
                 let pairs = C |> Seq.map (fun c -> centroid c ih) |> (fun s -> induceCompleteGraphExcl s (set []))
-                pairs |> Seq.iter (fun (s,t) -> dists.Add((centroids.[s], centroids.[t]), d centroids.[s] centroids.[t]))
+                pairs |> Seq.iter (fun (s,t) -> dists.Add(Edge(centroids.[s], centroids.[t]), d centroids.[s] centroids.[t] cache))
                 dists
 
             // do not propose fixes where the target cluster is smaller than
@@ -1171,36 +1207,54 @@
                 min.EuclideanDistance max
                 
             // all updates here are as side-effects
-            let updatePairwiseClusterDistancesAndCluster(C: Clustering)(ih: InvertedHistogram)(d: DistanceF)(dists: SortedSet<Edge>)(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : unit =
-                // update clustering
-                source |> Seq.iter (fun addr -> target.Add(addr) |> ignore)
-                C.Remove(source) |> ignore
+            let updatePairwiseClusterDistancesAndCluster(C: Clustering)(ih: InvertedHistogram)(d: DistanceF)(edges: SortedSet<Edge>)(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : unit =
+                let edgecount = edges.Count
+                
+                // find vertices neither source nor target
+                let Ccount = C.Count
+                let C' = C |> Seq.filter (fun v -> v <> source && v <> target) |> Seq.toArray
+                let Cpcount = C'.Length
 
-                // find vertices not source or target
-                let C' = C |> Seq.filter (fun v -> v <> source && v <> target)
+                if Ccount <= Cpcount then
+                    failwith "not possible"
+
+                // remove source from graph
+                C.Remove(source) |> ignore
                 
                 // remove edges incident on source and target
-                let removals = dists |> Seq.filter (fun edge ->
-                                            let (edge_to,edge_from) = edge
+                let removals = edges |> Seq.filter (fun edge ->
+                                            let (edge_to,edge_from) = edge.tupled
                                             edge_to = source ||
                                             edge_from = source ||
                                             edge_to = target ||
                                             edge_from = target
                                         )
                                      |> Seq.toArray // laziness is bad
-                removals |> Seq.iter (fun edge -> dists.Remove(edge) |> ignore)
+                if removals.Length = 0 then
+                    failwith "no!"
+                removals |> Seq.iter (fun edge -> edges.Remove(edge) |> ignore)
 
-                // compute edges incident on merged source-target
+                // add source to target
+                source |> Seq.iter (fun addr -> target.Add(addr) |> ignore)
+
+                // add edges incident on merged source-target
                 C'
                 |> Seq.iter (fun v ->
-                       dists.Add((v,target)) |> ignore
-                       dists.Add((target,v)) |> ignore
+                       edges.Add(Edge(v,target)) |> ignore
+                       edges.Add(Edge(target,v)) |> ignore
                    )
+
+                let edgecount' = edges.Count
+                if edgecount' > edgecount then
+                    failwith "marcia marcia marcia!!!"
 
             let private runClusterModel(input: Input) : AnalysisOutcome =
                 try
                     // initialize selector cache
                     let selcache = Scope.SelectorCache()
+
+                    // initialize distance cache
+                    let distcache = DistCache()
 
                     // determine the set of cells to be analyzed
                     let cells = (analysisBase input.config input.dag)
@@ -1231,25 +1285,52 @@
                     let clusters = initialClustering nlfrs input.dag input.config
 
                     // define distance
-                    let distance' = (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>) ->
+                    let min_dist = (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>)(cache_opt: DistCache option) ->
                                         let pairs = cartesianProduct source target
+
+                                        let compute = (fun (a,b) ->
+                                                        let (_,_,ac) = hb_inv.[a]
+                                                        let (_,_,bc) = hb_inv.[b]
+                                                        ac.EuclideanDistance bc
+                                                      )
                                         let f = (fun (a,b) ->
-                                                    let (_,_,ac) = hb_inv.[a]
-                                                    let (_,_,bc) = hb_inv.[b]
-                                                    ac.EuclideanDistance bc
+                                                    match cache_opt with
+                                                    | Some(cache) ->
+                                                        if cache.ContainsKey (a,b) then
+                                                            cache.[(a,b)]
+                                                        else
+                                                            let dst = compute (a,b)
+                                                            cache.Add((a,b), dst)
+                                                            dst
+                                                    | None -> compute (a,b)
                                                 )
                                         let minpair = argmin f pairs
                                         let dist = f minpair
                                         dist * (double source.Count)
                                    )
 
+                    let refvect_same(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : bool =
+                        // check that all of the location-free vectors in the source and target are the same
+                        let slf = source
+                                    |> Seq.map (fun addr ->
+                                                    let (_,_,ac) = hb_inv.[addr]
+                                                    ac.LocationFree
+                                               ) |> Seq.toArray
+                        let tlf = target
+                                    |> Seq.map (fun addr ->
+                                                    let (_,_,ac) = hb_inv.[addr]
+                                                    ac.LocationFree
+                                               ) |> Seq.toArray
+                        (Array.forall (fun s -> s.Equals(slf.[0])) slf) &&
+                        (Array.forall (fun t -> t.Equals(slf.[0])) tlf)
+
                     // define distance (min distance between clusters)
-                    let distance = (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>) ->
+                    let cent_dist = (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>)(cache: DistCache) ->
                                         let s_centroid = centroid source hb_inv
                                         let t_centroid = centroid target hb_inv
                                         let dist = s_centroid.EuclideanDistance t_centroid
                                         dist * (double source.Count)
-                                   )
+                                    )
 
                     let pp(c: HashSet<AST.Address>) : string =
                         c
@@ -1259,21 +1340,32 @@
                     let mutable log = []
 
                     // get initial pairwise distances
-                    let dists = pairwiseClusterDistances2 clusters distance
+//                    let sw = new System.Diagnostics.Stopwatch()
+//                    sw.Start()
+                    let edges = pairwiseClusterDistances2 clusters min_dist (Some distcache)
+//                    sw.Stop()
+//                    failwith (sw.ElapsedMilliseconds.ToString())
+
+                    let mutable edgecount = edges.Count
+                    let mutable clustercount = clusters.Count
+                    let addrcount = clustercount
 
                     // while there is more than 1 cluster, merge the two clusters with the smallest distance
+
+                    let mutable probable_knee = false
                     while clusters.Count > 1 do
                         // get the two clusters that minimize distance
-//                        let (source,target) = argmin (fun pair -> dists.[pair]) dists.Keys
+                        let e = edges.Min
+                        let (source,target) = e.tupled
 
-                        let e = dists.Min
-                        let (source,target) = e
+                        if not (refvect_same source target) then
+                            probable_knee <- true
 
                         // record merge in log
-                        log <- (pp source, pp target, distance source target) :: log
+                        log <- (probable_knee, pp source, pp target, (min_dist source target (Some distcache))) :: log
 
                         // merge them
-                        updatePairwiseClusterDistancesAndCluster clusters hb_inv distance dists source target
+                        updatePairwiseClusterDistancesAndCluster clusters hb_inv min_dist edges source target
 
                     failwith (List.rev log |> (fun xs -> String.Join("\n", xs)))
                 with
