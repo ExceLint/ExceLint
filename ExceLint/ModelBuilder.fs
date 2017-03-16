@@ -1248,6 +1248,46 @@
                 if edgecount' > edgecount then
                     failwith "marcia marcia marcia!!!"
 
+            let private ToCountable(a: AST.Address)(ih: InvertedHistogram) : Countable =
+                let (_,_,v) = ih.[a]
+                v
+
+            let private FScore(C: Clustering)(ih: InvertedHistogram) : double =
+                let k = C.Count
+                let clusters = C |> Seq.toArray |> Array.map (fun c -> c |> Seq.toArray)
+                let means = clusters
+                                    |> Array.map (fun c ->
+                                          let vs = c |> Array.map (fun addr -> ToCountable addr ih)
+                                          Countable.Mean(vs)
+                                       )
+                let mean = clusters
+                                   |> Array.map (fun c -> c |> Seq.toArray)
+                                   |> Array.concat
+                                   |> Array.map (fun addr -> ToCountable addr ih)
+                                   |> (fun cs -> Countable.Mean(cs))
+                let ns = clusters |> Array.map (fun cs -> cs.Length)
+                let n = Array.sum ns
+
+                let explained_variance = [|0..k-1|]
+                                         |> Array.sumBy (fun i ->
+                                              let error = means.[i].Sub(mean)
+                                              (double ns.[i] * error.VectorMultiply(error)) / (double k - 1.0)
+                                            )
+
+                let unexplained_variance = [|0..k-1|]
+                                           |> Array.sumBy (fun i ->
+                                                  let ni = ns.[i]
+                                                  [|0..ni-1|]
+                                                  |> Array.sumBy (fun j ->
+                                                         let addr = clusters.[i].[j]
+                                                         let obs = ToCountable addr ih
+                                                         let error = obs.Sub(means.[i])
+                                                         (double ns.[i] * error.VectorMultiply(error)) / (double n - double k)
+                                                     )
+                                              )
+
+                explained_variance / unexplained_variance
+
             let private runClusterModel(input: Input) : AnalysisOutcome =
                 try
                     // initialize selector cache
