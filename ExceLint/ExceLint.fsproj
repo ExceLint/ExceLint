@@ -75,6 +75,11 @@
     <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ExceLintFileFormats\ExceLintFileFormats.csproj">
+      <Name>ExceLintFileFormats</Name>
+      <Project>{bf7683ed-f2e1-42d4-916c-d8dd2e58f389}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <Reference Include="Microsoft.Office.Interop.Excel, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c" />
     <Reference Include="mscorlib" />
     <Reference Include="System" />

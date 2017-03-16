@@ -1290,6 +1290,9 @@
 
             let private runClusterModel(input: Input) : AnalysisOutcome =
                 try
+                    // init CSV writer
+                    let csvw = new ExceLintFileFormats.ClusterSteps("C:\\Users\\dbarowy\\Desktop\\clustersteps.csv")
+
                     // initialize selector cache
                     let selcache = Scope.SelectorCache()
 
@@ -1402,12 +1405,25 @@
                             probable_knee <- true
 
                         // record merge in log
-                        log <- (probable_knee, pp source, pp target, (min_dist source target (Some distcache))) :: log
+                        log <- (probable_knee, pp source, pp target, min_dist source target (Some distcache), FScore clusters hb_inv) :: log
 
                         // merge them
                         updatePairwiseClusterDistancesAndCluster clusters hb_inv min_dist edges source target
 
-                    failwith (List.rev log |> (fun xs -> String.Join("\n", xs)))
+                    List.rev log
+                    |> List.iter (fun (show,s,t,dist,fscore) ->
+                           let row = new ExceLintFileFormats.ClusterStepsRow()
+                           row.Show <- show
+                           row.Merge <- s + " with " + t
+                           row.Distance <- dist
+                           row.FScore <- fscore
+
+                           csvw.WriteRow row      
+                       )
+
+                    csvw.Dispose()
+
+                    failwith "done"
                 with
                 | AnalysisCancelled -> Cancellation
 
