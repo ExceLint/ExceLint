@@ -1252,39 +1252,33 @@
                 let (_,_,v) = ih.[a]
                 v
 
-            let private FScore(C: Clustering)(ih: InvertedHistogram) : double =
+            let private F(C: Clustering)(ih: InvertedHistogram) : double =
                 let k = C.Count
-                let clusters = C |> Seq.toArray |> Array.map (fun c -> c |> Seq.toArray)
-                let means = clusters
-                                    |> Array.map (fun c ->
-                                          let vs = c |> Array.map (fun addr -> ToCountable addr ih)
-                                          Countable.Mean(vs)
-                                       )
-                let mean = clusters
-                                   |> Array.map (fun c -> c |> Seq.toArray)
-                                   |> Array.concat
-                                   |> Array.map (fun addr -> ToCountable addr ih)
-                                   |> (fun cs -> Countable.Mean(cs))
+                let clusters = C |> Seq.toArray |> Array.map (fun c -> c |> Seq.toArray |> Array.map (fun addr -> ToCountable addr ih))
+                let means = clusters |> Array.map (fun c -> Countable.Mean(c))
+                let mean = clusters |> Array.concat
+                                    |> (fun cs -> Countable.Mean(cs))
                 let ns = clusters |> Array.map (fun cs -> cs.Length)
                 let n = Array.sum ns
 
                 let explained_variance = [|0..k-1|]
                                          |> Array.sumBy (fun i ->
                                               let error = means.[i].Sub(mean)
-                                              (double ns.[i] * error.VectorMultiply(error)) / (double k - 1.0)
+                                              (double ns.[i]) * error.VectorMultiply(error)
                                             )
+                                         |> (fun denominator -> denominator / (double k - 1.0))  
 
                 let unexplained_variance = [|0..k-1|]
                                            |> Array.sumBy (fun i ->
                                                   let ni = ns.[i]
                                                   [|0..ni-1|]
                                                   |> Array.sumBy (fun j ->
-                                                         let addr = clusters.[i].[j]
-                                                         let obs = ToCountable addr ih
+                                                         let obs = clusters.[i].[j]
                                                          let error = obs.Sub(means.[i])
-                                                         (double ns.[i] * error.VectorMultiply(error)) / (double n - double k)
+                                                         double ns.[i] * error.VectorMultiply(error)
                                                      )
                                               )
+                                            |> (fun denominator -> denominator / (double n - double k))
 
                 explained_variance / unexplained_variance
 
@@ -1405,18 +1399,19 @@
                             probable_knee <- true
 
                         // record merge in log
-                        log <- (probable_knee, pp source, pp target, min_dist source target (Some distcache), FScore clusters hb_inv) :: log
+                        log <- (probable_knee, pp source, pp target, min_dist source target (Some distcache), F clusters hb_inv, clusters.Count) :: log
 
                         // merge them
                         updatePairwiseClusterDistancesAndCluster clusters hb_inv min_dist edges source target
 
                     List.rev log
-                    |> List.iter (fun (show,s,t,dist,fscore) ->
+                    |> List.iter (fun (show,s,t,dist,fscore,k) ->
                            let row = new ExceLintFileFormats.ClusterStepsRow()
                            row.Show <- show
                            row.Merge <- s + " with " + t
                            row.Distance <- dist
                            row.FScore <- fscore
+                           row.k <- k
 
                            csvw.WriteRow row      
                        )
