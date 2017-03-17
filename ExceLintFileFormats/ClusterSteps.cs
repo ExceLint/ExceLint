@@ -59,6 +59,8 @@ namespace ExceLintFileFormats
         public double Distance { get; set; }
         public double FScore { get; set; }
         public double WCSS { get; set; }
+        public double BCSS { get; set; }
+        public double TSS { get; set; }
         public int k { get; set; }
     }
 }

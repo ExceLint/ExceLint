@@ -1252,15 +1252,25 @@
                 let (_,_,v) = ih.[a]
                 v
 
+            // the total sum of squares
+            let private TSS(C: Clustering)(ih: InvertedHistogram) : double =
+                let all_observations = C |> Seq.concat |> Seq.toArray |> Array.map (fun addr -> ToCountable addr ih)
+                let n = all_observations.Length
+                let mean = Countable.Mean all_observations 
+
+                [|0..n-1|]
+                |> Array.sumBy (fun i ->
+                       let obs = all_observations.[i]
+                       let error = obs.Sub(mean)
+                       error.VectorMultiply(error)
+                   )
+
             // the within-cluster sum of squares
             let private WCSS(C: Clustering)(ih: InvertedHistogram) : double =
                 let k = C.Count
                 let clusters = C |> Seq.toArray |> Array.map (fun c -> c |> Seq.toArray |> Array.map (fun addr -> ToCountable addr ih))
                 let means = clusters |> Array.map (fun c -> Countable.Mean(c))
-                let mean = clusters |> Array.concat
-                                    |> (fun cs -> Countable.Mean(cs))
                 let ns = clusters |> Array.map (fun cs -> cs.Length)
-                let n = Array.sum ns
 
                 // for every cluster
                 [|0..k-1|]
@@ -1276,6 +1286,24 @@
                          error.VectorMultiply(error)
                        )
                     // and double sum
+                )
+
+            // the between-cluster sum of squares
+            let private BCSS(C: Clustering)(ih: InvertedHistogram) : double =
+                let k = C.Count
+                let clusters = C |> Seq.toArray |> Array.map (fun c -> c |> Seq.toArray |> Array.map (fun addr -> ToCountable addr ih))
+                let means = clusters |> Array.map (fun c -> Countable.Mean(c))
+                let mean = clusters |> Array.concat
+                                    |> (fun cs -> Countable.Mean(cs))
+                let ns = clusters |> Array.map (fun cs -> cs.Length)
+                let n = Array.sum ns
+
+                // for every cluster
+                [|0..k-1|]
+                |> Array.sumBy (fun i ->
+                    let ni = ns.[i]
+                    let error = means.[i].Sub(mean)
+                    (double ni) * error.VectorMultiply(error)
                 )
 
             let private F(C: Clustering)(ih: InvertedHistogram) : double =
@@ -1434,7 +1462,15 @@
                             probable_knee <- true
 
                         // record merge in log
-                        log <- (probable_knee, pp source, pp target, min_dist source target (Some distcache), F clusters hb_inv, WCSS clusters hb_inv, clusters.Count) :: log
+                        log <- (probable_knee,
+                                pp source,
+                                pp target,
+                                min_dist source target (Some distcache),
+                                F clusters hb_inv,
+                                WCSS clusters hb_inv,
+                                BCSS clusters hb_inv,
+                                TSS clusters hb_inv,
+                                clusters.Count) :: log
 
                         // dump clusters to csv
                         clusters
@@ -1464,13 +1500,15 @@
 
 
                     List.rev log
-                    |> List.iter (fun (show,s,t,dist,fscore,wcss,k) ->
+                    |> List.iter (fun (show,s,t,dist,fscore,wcss,bcss,tss,k) ->
                            let row = new ExceLintFileFormats.ClusterStepsRow()
                            row.Show <- show
                            row.Merge <- s + " with " + t
                            row.Distance <- dist
                            row.FScore <- fscore
                            row.WCSS <- wcss
+                           row.BCSS <- bcss
+                           row.TSS <- tss
                            row.k <- k
 
                            csvw.WriteRow row      
