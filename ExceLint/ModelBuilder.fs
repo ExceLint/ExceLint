@@ -1275,7 +1275,7 @@
                                                   |> Array.sumBy (fun j ->
                                                          let obs = clusters.[i].[j]
                                                          let error = obs.Sub(means.[i])
-                                                         double ns.[i] * error.VectorMultiply(error)
+                                                         error.VectorMultiply(error)
                                                      )
                                               )
                                             |> (fun denominator -> denominator / (double n - double k))
@@ -1285,7 +1285,7 @@
             let private runClusterModel(input: Input) : AnalysisOutcome =
                 try
                     // init CSV writer
-                    let csvw = new ExceLintFileFormats.ClusterSteps("C:\\Users\\dbarowy\\Desktop\\clustersteps.csv")
+                    let csvw = new ExceLintFileFormats.ClusterSteps("C:\\Users\\dbarowy\\Desktop\\clusterdump\\clustersteps.csv")
 
                     // initialize selector cache
                     let selcache = Scope.SelectorCache()
@@ -1320,6 +1320,13 @@
 
                     // initially assign every cell to its own cluster
                     let clusters = initialClustering nlfrs input.dag input.config
+
+                    // create cluster ID map
+                    let (_,ids: Dict<HashSet<AST.Address>,int>) =
+                        Seq.fold (fun (idx,m) cl ->
+                            m.Add(cl, idx)
+                            (idx + 1, m)
+                        ) (0,new Dict<HashSet<AST.Address>,int>()) clusters
 
                     // define distance
                     let min_dist = (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>)(cache_opt: DistCache option) ->
@@ -1391,6 +1398,8 @@
 
                     let mutable probable_knee = false
                     while clusters.Count > 1 do
+                        let veccsvw = ExceLintFileFormats.VectorDump("C:\\Users\\dbarowy\\Desktop\\clusterdump\\vectorstep" + (clustercount - clusters.Count).ToString() + ".csv")
+
                         // get the two clusters that minimize distance
                         let e = edges.Min
                         let (source,target) = e.tupled
@@ -1401,8 +1410,32 @@
                         // record merge in log
                         log <- (probable_knee, pp source, pp target, min_dist source target (Some distcache), F clusters hb_inv, clusters.Count) :: log
 
+                        // dump clusters to csv
+                        clusters
+                        |> Seq.iter (fun cl ->
+                                cl
+                                |> Seq.iter (fun addr ->
+                                    let v = ToCountable addr hb_inv
+                                    match v with
+                                    | FullCVectorResultant(x,y,z,dx,dy,dz,dc) ->
+                                        let row = new ExceLintFileFormats.VectorDumpRow()
+                                        row.clusterID <- ids.[cl]
+                                        row.x <- x
+                                        row.y <- y
+                                        row.z <- z
+                                        row.dx <- dx
+                                        row.dy <- dy
+                                        row.dz <- dz
+                                        row.dc <- dc
+                                        veccsvw.WriteRow row
+                                    | _ -> ()
+                                )
+                            )
+                        veccsvw.Dispose()
+
                         // merge them
                         updatePairwiseClusterDistancesAndCluster clusters hb_inv min_dist edges source target
+
 
                     List.rev log
                     |> List.iter (fun (show,s,t,dist,fscore,k) ->
