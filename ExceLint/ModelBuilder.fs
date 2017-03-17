@@ -1388,6 +1388,39 @@
                                         dist * (double source.Count)
                                    )
 
+                    // this is kinda-sorta EMD; it has no notion of flows because I have
+                    // no idea what that means in terms of spreadsheet formula fixes
+                    let earth_movers_dist =
+                        (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>)(cache_opt: DistCache option) ->
+                            let compute = (fun (a,b) ->
+                                            let (_,_,ac) = hb_inv.[a]
+                                            let (_,_,bc) = hb_inv.[b]
+                                            ac.EuclideanDistance bc
+                                            )
+
+                            let f = (fun (a,b) ->
+                                        match cache_opt with
+                                        | Some(cache) ->
+                                            if cache.ContainsKey (a,b) then
+                                                cache.[(a,b)]
+                                            else
+                                                let dst = compute (a,b)
+                                                cache.Add((a,b), dst)
+                                                dst
+                                        | None -> compute (a,b)
+                                    )
+
+                            // for every point in source, find the closest point in target
+                            let ds = source
+                                     |> Seq.map (fun addr ->
+                                            let pairs = target |> Seq.map (fun t -> addr,t)
+                                            let min_dist: double = pairs |> Seq.map f |> Seq.min
+                                            min_dist
+                                        )
+
+                            Seq.sum ds
+                        )
+
                     let refvect_same(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : bool =
                         // check that all of the location-free vectors in the source and target are the same
                         let slf = source
@@ -1418,12 +1451,11 @@
 
                     let mutable log = []
 
+                    // DEFINE DISTANCE
+                    let DISTANCE = earth_movers_dist
+
                     // get initial pairwise distances
-//                    let sw = new System.Diagnostics.Stopwatch()
-//                    sw.Start()
-                    let edges = pairwiseClusterDistances2 clusters min_dist (Some distcache)
-//                    sw.Stop()
-//                    failwith (sw.ElapsedMilliseconds.ToString())
+                    let edges = pairwiseClusterDistances2 clusters DISTANCE (Some distcache)
 
                     let mutable edgecount = edges.Count
                     let mutable clustercount = clusters.Count
@@ -1446,7 +1478,7 @@
                         log <- (probable_knee,
                                 pp source,
                                 pp target,
-                                min_dist source target (Some distcache),
+                                DISTANCE source target (Some distcache),
                                 F clusters hb_inv,
                                 WCSS clusters hb_inv,
                                 BCSS clusters hb_inv,
@@ -1477,7 +1509,7 @@
                         veccsvw.Dispose()
 
                         // merge them
-                        updatePairwiseClusterDistancesAndCluster clusters hb_inv min_dist edges source target
+                        updatePairwiseClusterDistancesAndCluster clusters hb_inv DISTANCE edges source target
 
 
                     List.rev log
