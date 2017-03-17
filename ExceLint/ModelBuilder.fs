@@ -1252,6 +1252,32 @@
                 let (_,_,v) = ih.[a]
                 v
 
+            // the within-cluster sum of squares
+            let private WCSS(C: Clustering)(ih: InvertedHistogram) : double =
+                let k = C.Count
+                let clusters = C |> Seq.toArray |> Array.map (fun c -> c |> Seq.toArray |> Array.map (fun addr -> ToCountable addr ih))
+                let means = clusters |> Array.map (fun c -> Countable.Mean(c))
+                let mean = clusters |> Array.concat
+                                    |> (fun cs -> Countable.Mean(cs))
+                let ns = clusters |> Array.map (fun cs -> cs.Length)
+                let n = Array.sum ns
+
+                // for every cluster
+                [|0..k-1|]
+                |> Array.sumBy (fun i ->
+                    let ni = ns.[i]
+
+                    // for every observation
+                    [|0..ni-1|]
+                    |> Array.sumBy (fun j ->
+                         // compute squared error
+                         let obs = clusters.[i].[j]
+                         let error = obs.Sub(means.[i])
+                         error.VectorMultiply(error)
+                       )
+                    // and double sum
+                )
+
             let private F(C: Clustering)(ih: InvertedHistogram) : double =
                 let k = C.Count
                 let clusters = C |> Seq.toArray |> Array.map (fun c -> c |> Seq.toArray |> Array.map (fun addr -> ToCountable addr ih))
@@ -1408,7 +1434,7 @@
                             probable_knee <- true
 
                         // record merge in log
-                        log <- (probable_knee, pp source, pp target, min_dist source target (Some distcache), F clusters hb_inv, clusters.Count) :: log
+                        log <- (probable_knee, pp source, pp target, min_dist source target (Some distcache), F clusters hb_inv, WCSS clusters hb_inv, clusters.Count) :: log
 
                         // dump clusters to csv
                         clusters
@@ -1438,12 +1464,13 @@
 
 
                     List.rev log
-                    |> List.iter (fun (show,s,t,dist,fscore,k) ->
+                    |> List.iter (fun (show,s,t,dist,fscore,wcss,k) ->
                            let row = new ExceLintFileFormats.ClusterStepsRow()
                            row.Show <- show
                            row.Merge <- s + " with " + t
                            row.Distance <- dist
                            row.FScore <- fscore
+                           row.WCSS <- wcss
                            row.k <- k
 
                            csvw.WriteRow row      

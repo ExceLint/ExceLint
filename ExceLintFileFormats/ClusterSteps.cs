@@ -58,6 +58,7 @@ namespace ExceLintFileFormats
         public string Merge { get; set; }
         public double Distance { get; set; }
         public double FScore { get; set; }
+        public double WCSS { get; set; }
         public int k { get; set; }
     }
 }
