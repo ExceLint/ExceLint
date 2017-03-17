@@ -1317,7 +1317,7 @@
                 // F is the ratio of the between-cluster variance to the within-cluster variance
                 bc_var / wc_var
 
-            type clusterModel(input: Input) =
+            type ClusterModel(input: Input) =
                 // initialize selector cache
                 let selcache = Scope.SelectorCache()
 
@@ -1456,6 +1456,7 @@
 
                 let mutable probable_knee = false
 
+                member self.CanStep : bool = clusters.Count > 1
                 member self.Step() : bool =
                     // get the two clusters that minimize distance
                     let e = edges.Min
@@ -1545,9 +1546,11 @@
                     // close file
                     csvw.Dispose()
 
+                member self.Clustering = clusters
+
             let private runClusterModel(input: Input) : AnalysisOutcome =
                 try
-                    let m = clusterModel input
+                    let m = ClusterModel input
 
                     let mutable notdone = true
                     while notdone do
@@ -1651,6 +1654,11 @@
                     )
                 with
                 | AnalysisCancelled -> Cancellation
+
+            let initStepClusterModel(app: Microsoft.Office.Interop.Excel.Application)(config: FeatureConf)(dag: Depends.DAG)(alpha: double)(progress: Depends.Progress) : ClusterModel =
+                let config' = config.validate
+                let input : Input = { app = app; config = config'; dag = dag; alpha = alpha; progress = progress; }
+                ClusterModel input
 
             let analyze(app: Microsoft.Office.Interop.Excel.Application)(config: FeatureConf)(dag: Depends.DAG)(alpha: double)(progress: Depends.Progress) =
                 let config' = config.validate

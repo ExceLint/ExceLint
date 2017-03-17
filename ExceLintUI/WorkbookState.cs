@@ -59,6 +59,8 @@ namespace ExceLintUI
         private Depends.DAG _dag;
         private bool _debug_mode = false;
         private bool _dag_changed = false;
+        private ExceLint.ModelBuilder.ClusterModel _m;
+        private Dictionary<HashSet<AST.Address>, System.Drawing.Color> _cluster_colors;
 
         #endregion DATASTRUCTURES
 
@@ -485,6 +487,58 @@ namespace ExceLintUI
             }
         }
 
+        public void StepClusterModel(ExceLint.FeatureConf conf, Boolean forceDAGBuild)
+        {
+            var p = Depends.Progress.NOPProgress();
+
+            // update if necessary
+            RefreshDAG(forceDAGBuild, p);
+
+            if (_m == null)
+            {
+                Excel.Application app = Globals.ThisAddIn.Application;
+
+                // create
+                _m = ExceLint.ModelBuilder.initStepClusterModel(app, conf, _dag, 0.05, p);
+
+                // get initial clustering
+                var clusters = _m.Clustering;
+
+                // create cluster color map
+                _cluster_colors = new Dictionary<HashSet<AST.Address>, System.Drawing.Color>();
+
+                // init rng
+                var r = new Random();
+
+                foreach (var cluster in clusters)
+                {
+                    var c = System.Drawing.Color.FromArgb(r.Next(256), r.Next(256), r.Next(256));
+                    _cluster_colors.Add(cluster, c);
+                    foreach (AST.Address addr in cluster)
+                    {
+                        paintColor(addr, c);
+                    }
+                }
+            }
+            else if(_m.CanStep)
+            {
+                // now step
+                _m.Step();
+
+                // get clusters
+                var clusters = _m.Clustering;
+
+                // paint cells
+                foreach (var cluster in clusters)
+                {
+                    foreach (AST.Address addr in cluster)
+                    {
+                        paintColor(addr, _cluster_colors[cluster]);
+                    }
+                }
+            }
+        }
+
         public Analysis rawAnalysis(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean forceDAGBuild, ProgBar pb)
         {
             Func<Depends.Progress, Analysis> f = (Depends.Progress p) =>
@@ -772,7 +826,7 @@ namespace ExceLintUI
             return ProtectionLevel.None;
         }
 
-        private void paintRed(AST.Address cell, double intensity)
+        private void paintColor(AST.Address cell, System.Drawing.Color c)
         {
             // get cell COM object
             var com = ParcelCOMShim.Address.GetCOMObject(cell, _app);
@@ -784,12 +838,20 @@ namespace ExceLintUI
             );
 
             // highlight cell
+            com.Interior.Color = c;
+        }
+
+        private void paintRed(AST.Address cell, double intensity)
+        {
+            // generate color
             byte A = System.Drawing.Color.Red.A;
             byte R = System.Drawing.Color.Red.R;
             byte G = Convert.ToByte((1.0 - intensity) * 255);
             byte B = Convert.ToByte((1.0 - intensity) * 255);
             var c = System.Drawing.Color.FromArgb(A, R, G, B);
-            com.Interior.Color = c;
+
+            // highlight
+            paintColor(cell, c);
         }
 
         private void restoreOutputColors()

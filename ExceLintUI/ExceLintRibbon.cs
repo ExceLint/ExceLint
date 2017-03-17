@@ -20,6 +20,11 @@ namespace ExceLintUI
         private ExceLintGroundTruth annotations;
 
         #region BUTTON_HANDLERS
+        private void stepModel_Click(object sender, RibbonControlEventArgs e)
+        {
+            currentWorkbook.StepClusterModel(getConfig(), this.forceBuildDAG.Checked);
+        }
+
         public WorkbookState CurrentWorkbook { 
             get
             {
