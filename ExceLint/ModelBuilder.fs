@@ -1317,217 +1317,245 @@
                 // F is the ratio of the between-cluster variance to the within-cluster variance
                 bc_var / wc_var
 
-            let private runClusterModel(input: Input) : AnalysisOutcome =
-                try
+            type clusterModel(input: Input) =
+                // initialize selector cache
+                let selcache = Scope.SelectorCache()
+
+                // initialize distance cache
+                let distcache = DistCache()
+
+                // determine the set of cells to be analyzed
+                let cells = (analysisBase input.config input.dag)
+
+                // get all NLFRs for every formula cell
+                let _runf = fun () -> runEnabledFeatures cells input.dag input.config input.progress
+                let (ns: ScoreTable,score_time: int64) = PerfUtils.runMillis _runf ()
+
+                // scale
+                let factor = diagonalScaleFactor ns
+                let nlfrs: ScoreTable =
+                    ns
+                    |> Seq.map (fun kvp ->
+                                    kvp.Key,
+                                    kvp.Value
+                                    |> Array.map (fun (addr,c) ->
+                                        addr,
+                                        // only scale the resultant, not the location
+                                        c.UpdateResultant (c.ToCVectorResultant.ScalarMultiply factor)
+                                        ))
+                    |> Seq.toArray
+                    |> toDict
+
+                // make HistoBin lookup by address
+                let hb_inv = invertedHistogram nlfrs selcache input.dag input.config
+
+                // initially assign every cell to its own cluster
+                let clusters = initialClustering nlfrs input.dag input.config
+
+                // create cluster ID map
+                let (_,ids: Dict<HashSet<AST.Address>,int>) =
+                    Seq.fold (fun (idx,m) cl ->
+                        m.Add(cl, idx)
+                        (idx + 1, m)
+                    ) (0,new Dict<HashSet<AST.Address>,int>()) clusters
+
+                // define distance
+                let min_dist = (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>)(cache_opt: DistCache option) ->
+                                    let pairs = cartesianProduct source target
+
+                                    let compute = (fun (a,b) ->
+                                                    let (_,_,ac) = hb_inv.[a]
+                                                    let (_,_,bc) = hb_inv.[b]
+                                                    ac.EuclideanDistance bc
+                                                    )
+                                    let f = (fun (a,b) ->
+                                                match cache_opt with
+                                                | Some(cache) ->
+                                                    if cache.ContainsKey (a,b) then
+                                                        cache.[(a,b)]
+                                                    else
+                                                        let dst = compute (a,b)
+                                                        cache.Add((a,b), dst)
+                                                        dst
+                                                | None -> compute (a,b)
+                                            )
+                                    let minpair = argmin f pairs
+                                    let dist = f minpair
+                                    dist * (double source.Count)
+                                )
+
+                // this is kinda-sorta EMD; it has no notion of flows because I have
+                // no idea what that means in terms of spreadsheet formula fixes
+                let earth_movers_dist =
+                    (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>)(cache_opt: DistCache option) ->
+                        let compute = (fun (a,b) ->
+                                        let (_,_,ac) = hb_inv.[a]
+                                        let (_,_,bc) = hb_inv.[b]
+                                        ac.EuclideanDistance bc
+                                        )
+
+                        let f = (fun (a,b) ->
+                                    match cache_opt with
+                                    | Some(cache) ->
+                                        if cache.ContainsKey (a,b) then
+                                            cache.[(a,b)]
+                                        else
+                                            let dst = compute (a,b)
+                                            cache.Add((a,b), dst)
+                                            dst
+                                    | None -> compute (a,b)
+                                )
+
+                        // for every point in source, find the closest point in target
+                        let ds = source
+                                    |> Seq.map (fun addr ->
+                                        let pairs = target |> Seq.map (fun t -> addr,t)
+                                        let min_dist: double = pairs |> Seq.map f |> Seq.min
+                                        min_dist
+                                    )
+
+                        Seq.sum ds
+                    )
+
+                let refvect_same(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : bool =
+                    // check that all of the location-free vectors in the source and target are the same
+                    let slf = source
+                                |> Seq.map (fun addr ->
+                                                let (_,_,ac) = hb_inv.[addr]
+                                                ac.LocationFree
+                                            ) |> Seq.toArray
+                    let tlf = target
+                                |> Seq.map (fun addr ->
+                                                let (_,_,ac) = hb_inv.[addr]
+                                                ac.LocationFree
+                                            ) |> Seq.toArray
+                    (Array.forall (fun s -> s.Equals(slf.[0])) slf) &&
+                    (Array.forall (fun t -> t.Equals(slf.[0])) tlf)
+
+                // define distance (min distance between clusters)
+                let cent_dist = (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>)(cache: DistCache) ->
+                                    let s_centroid = centroid source hb_inv
+                                    let t_centroid = centroid target hb_inv
+                                    let dist = s_centroid.EuclideanDistance t_centroid
+                                    dist * (double source.Count)
+                                )
+
+                let pp(c: HashSet<AST.Address>) : string =
+                    c
+                    |> Seq.map (fun a -> a.A1Local())
+                    |> (fun addrs -> "[" + String.Join(",", addrs) + "] with centroid " + (centroid c hb_inv).ToString())
+
+                let mutable log = []
+                let mutable per_log = []
+
+                // DEFINE DISTANCE
+                let DISTANCE = earth_movers_dist
+
+                // get initial pairwise distances
+                let edges = pairwiseClusterDistances2 clusters DISTANCE (Some distcache)
+
+                let mutable probable_knee = false
+
+                member self.Step() : bool =
+                    // get the two clusters that minimize distance
+                    let e = edges.Min
+                    let (source,target) = e.tupled
+
+                    if not (refvect_same source target) then
+                        probable_knee <- true
+
+                    // record merge in log
+                    log <- (probable_knee,
+                            pp source,
+                            pp target,
+                            DISTANCE source target (Some distcache),
+                            F clusters hb_inv,
+                            WCSS clusters hb_inv,
+                            BCSS clusters hb_inv,
+                            TSS clusters hb_inv,
+                            clusters.Count) :: log
+
+                    // dump clusters to log
+                    let mutable clusterlog = []
+                    clusters
+                    |> Seq.iter (fun cl ->
+                            
+
+                            cl
+                            |> Seq.iter (fun addr ->
+                                let v = ToCountable addr hb_inv
+                                match v with
+                                | FullCVectorResultant(x,y,z,dx,dy,dz,dc) ->
+                                    let row = new ExceLintFileFormats.VectorDumpRow()
+                                    row.clusterID <- ids.[cl]
+                                    row.x <- x
+                                    row.y <- y
+                                    row.z <- z
+                                    row.dx <- dx
+                                    row.dy <- dy
+                                    row.dz <- dz
+                                    row.dc <- dc
+                                    clusterlog <- row :: clusterlog
+                                | _ -> ()
+                            )
+                        )
+                    per_log <- (List.rev clusterlog) :: per_log
+
+                    // merge them
+                    updatePairwiseClusterDistancesAndCluster clusters hb_inv DISTANCE edges source target
+
+                    // tell the user whether more steps remain
+                    clusters.Count > 1
+
+                member self.WritePerLogs() =
+                    (List.rev per_log)
+                    |> List.iteri (fun i per_log ->
+                        // open file
+                        let veccsvw = ExceLintFileFormats.VectorDump("C:\\Users\\dbarowy\\Desktop\\clusterdump\\vectorstep" + i.ToString() + ".csv")
+
+                        // write rows
+                        List.iter (fun row ->
+                            veccsvw.WriteRow row
+                        ) per_log
+
+                        // close file
+                        veccsvw.Dispose()
+                    )
+                        
+                member self.WriteLog() =
                     // init CSV writer
                     let csvw = new ExceLintFileFormats.ClusterSteps("C:\\Users\\dbarowy\\Desktop\\clusterdump\\clustersteps.csv")
 
-                    // initialize selector cache
-                    let selcache = Scope.SelectorCache()
-
-                    // initialize distance cache
-                    let distcache = DistCache()
-
-                    // determine the set of cells to be analyzed
-                    let cells = (analysisBase input.config input.dag)
-
-                    // get all NLFRs for every formula cell
-                    let _runf = fun () -> runEnabledFeatures cells input.dag input.config input.progress
-                    let (ns: ScoreTable,score_time: int64) = PerfUtils.runMillis _runf ()
-
-                    // scale
-                    let factor = diagonalScaleFactor ns
-                    let nlfrs: ScoreTable =
-                        ns
-                        |> Seq.map (fun kvp ->
-                                        kvp.Key,
-                                        kvp.Value
-                                        |> Array.map (fun (addr,c) ->
-                                            addr,
-                                            // only scale the resultant, not the location
-                                            c.UpdateResultant (c.ToCVectorResultant.ScalarMultiply factor)
-                                           ))
-                        |> Seq.toArray
-                        |> toDict
-
-                    // make HistoBin lookup by address
-                    let hb_inv = invertedHistogram nlfrs selcache input.dag input.config
-
-                    // initially assign every cell to its own cluster
-                    let clusters = initialClustering nlfrs input.dag input.config
-
-                    // create cluster ID map
-                    let (_,ids: Dict<HashSet<AST.Address>,int>) =
-                        Seq.fold (fun (idx,m) cl ->
-                            m.Add(cl, idx)
-                            (idx + 1, m)
-                        ) (0,new Dict<HashSet<AST.Address>,int>()) clusters
-
-                    // define distance
-                    let min_dist = (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>)(cache_opt: DistCache option) ->
-                                        let pairs = cartesianProduct source target
-
-                                        let compute = (fun (a,b) ->
-                                                        let (_,_,ac) = hb_inv.[a]
-                                                        let (_,_,bc) = hb_inv.[b]
-                                                        ac.EuclideanDistance bc
-                                                      )
-                                        let f = (fun (a,b) ->
-                                                    match cache_opt with
-                                                    | Some(cache) ->
-                                                        if cache.ContainsKey (a,b) then
-                                                            cache.[(a,b)]
-                                                        else
-                                                            let dst = compute (a,b)
-                                                            cache.Add((a,b), dst)
-                                                            dst
-                                                    | None -> compute (a,b)
-                                                )
-                                        let minpair = argmin f pairs
-                                        let dist = f minpair
-                                        dist * (double source.Count)
-                                   )
-
-                    // this is kinda-sorta EMD; it has no notion of flows because I have
-                    // no idea what that means in terms of spreadsheet formula fixes
-                    let earth_movers_dist =
-                        (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>)(cache_opt: DistCache option) ->
-                            let compute = (fun (a,b) ->
-                                            let (_,_,ac) = hb_inv.[a]
-                                            let (_,_,bc) = hb_inv.[b]
-                                            ac.EuclideanDistance bc
-                                            )
-
-                            let f = (fun (a,b) ->
-                                        match cache_opt with
-                                        | Some(cache) ->
-                                            if cache.ContainsKey (a,b) then
-                                                cache.[(a,b)]
-                                            else
-                                                let dst = compute (a,b)
-                                                cache.Add((a,b), dst)
-                                                dst
-                                        | None -> compute (a,b)
-                                    )
-
-                            // for every point in source, find the closest point in target
-                            let ds = source
-                                     |> Seq.map (fun addr ->
-                                            let pairs = target |> Seq.map (fun t -> addr,t)
-                                            let min_dist: double = pairs |> Seq.map f |> Seq.min
-                                            min_dist
-                                        )
-
-                            Seq.sum ds
-                        )
-
-                    let refvect_same(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : bool =
-                        // check that all of the location-free vectors in the source and target are the same
-                        let slf = source
-                                    |> Seq.map (fun addr ->
-                                                    let (_,_,ac) = hb_inv.[addr]
-                                                    ac.LocationFree
-                                               ) |> Seq.toArray
-                        let tlf = target
-                                    |> Seq.map (fun addr ->
-                                                    let (_,_,ac) = hb_inv.[addr]
-                                                    ac.LocationFree
-                                               ) |> Seq.toArray
-                        (Array.forall (fun s -> s.Equals(slf.[0])) slf) &&
-                        (Array.forall (fun t -> t.Equals(slf.[0])) tlf)
-
-                    // define distance (min distance between clusters)
-                    let cent_dist = (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>)(cache: DistCache) ->
-                                        let s_centroid = centroid source hb_inv
-                                        let t_centroid = centroid target hb_inv
-                                        let dist = s_centroid.EuclideanDistance t_centroid
-                                        dist * (double source.Count)
-                                    )
-
-                    let pp(c: HashSet<AST.Address>) : string =
-                        c
-                        |> Seq.map (fun a -> a.A1Local())
-                        |> (fun addrs -> "[" + String.Join(",", addrs) + "] with centroid " + (centroid c hb_inv).ToString())
-
-                    let mutable log = []
-
-                    // DEFINE DISTANCE
-                    let DISTANCE = earth_movers_dist
-
-                    // get initial pairwise distances
-                    let edges = pairwiseClusterDistances2 clusters DISTANCE (Some distcache)
-
-                    let mutable edgecount = edges.Count
-                    let mutable clustercount = clusters.Count
-                    let addrcount = clustercount
-
-                    // while there is more than 1 cluster, merge the two clusters with the smallest distance
-
-                    let mutable probable_knee = false
-                    while clusters.Count > 1 do
-                        let veccsvw = ExceLintFileFormats.VectorDump("C:\\Users\\dbarowy\\Desktop\\clusterdump\\vectorstep" + (clustercount - clusters.Count).ToString() + ".csv")
-
-                        // get the two clusters that minimize distance
-                        let e = edges.Min
-                        let (source,target) = e.tupled
-
-                        if not (refvect_same source target) then
-                            probable_knee <- true
-
-                        // record merge in log
-                        log <- (probable_knee,
-                                pp source,
-                                pp target,
-                                DISTANCE source target (Some distcache),
-                                F clusters hb_inv,
-                                WCSS clusters hb_inv,
-                                BCSS clusters hb_inv,
-                                TSS clusters hb_inv,
-                                clusters.Count) :: log
-
-                        // dump clusters to csv
-                        clusters
-                        |> Seq.iter (fun cl ->
-                                cl
-                                |> Seq.iter (fun addr ->
-                                    let v = ToCountable addr hb_inv
-                                    match v with
-                                    | FullCVectorResultant(x,y,z,dx,dy,dz,dc) ->
-                                        let row = new ExceLintFileFormats.VectorDumpRow()
-                                        row.clusterID <- ids.[cl]
-                                        row.x <- x
-                                        row.y <- y
-                                        row.z <- z
-                                        row.dx <- dx
-                                        row.dy <- dy
-                                        row.dz <- dz
-                                        row.dc <- dc
-                                        veccsvw.WriteRow row
-                                    | _ -> ()
-                                )
-                            )
-                        veccsvw.Dispose()
-
-                        // merge them
-                        updatePairwiseClusterDistancesAndCluster clusters hb_inv DISTANCE edges source target
-
-
+                    // write rows
                     List.rev log
                     |> List.iter (fun (show,s,t,dist,fscore,wcss,bcss,tss,k) ->
-                           let row = new ExceLintFileFormats.ClusterStepsRow()
-                           row.Show <- show
-                           row.Merge <- s + " with " + t
-                           row.Distance <- dist
-                           row.FScore <- fscore
-                           row.WCSS <- wcss
-                           row.BCSS <- bcss
-                           row.TSS <- tss
-                           row.k <- k
+                            let row = new ExceLintFileFormats.ClusterStepsRow()
+                            row.Show <- show
+                            row.Merge <- s + " with " + t
+                            row.Distance <- dist
+                            row.FScore <- fscore
+                            row.WCSS <- wcss
+                            row.BCSS <- bcss
+                            row.TSS <- tss
+                            row.k <- k
 
-                           csvw.WriteRow row      
-                       )
+                            csvw.WriteRow row      
+                        )
 
+                    // close file
                     csvw.Dispose()
+
+            let private runClusterModel(input: Input) : AnalysisOutcome =
+                try
+                    let m = clusterModel input
+
+                    let mutable notdone = true
+                    while notdone do
+                        notdone <- m.Step()
+
+                    // write logs
+                    m.WriteLog()
+                    m.WritePerLogs()
 
                     failwith "done"
                 with
