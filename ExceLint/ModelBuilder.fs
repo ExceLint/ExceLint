@@ -1307,34 +1307,15 @@
                 )
 
             let private F(C: Clustering)(ih: InvertedHistogram) : double =
-                let k = C.Count
-                let clusters = C |> Seq.toArray |> Array.map (fun c -> c |> Seq.toArray |> Array.map (fun addr -> ToCountable addr ih))
-                let means = clusters |> Array.map (fun c -> Countable.Mean(c))
-                let mean = clusters |> Array.concat
-                                    |> (fun cs -> Countable.Mean(cs))
-                let ns = clusters |> Array.map (fun cs -> cs.Length)
-                let n = Array.sum ns
+                let k = double C.Count
+                let n = double (C |> Seq.sumBy (fun cl -> cl.Count))
 
-                let explained_variance = [|0..k-1|]
-                                         |> Array.sumBy (fun i ->
-                                              let error = means.[i].Sub(mean)
-                                              (double ns.[i]) * error.VectorMultiply(error)
-                                            )
-                                         |> (fun denominator -> denominator / (double k - 1.0))  
+                // variance is sum of squared error divided by sample size
+                let bc_var = (BCSS C ih) / (k - 1.0)
+                let wc_var = (WCSS C ih) / (n - k)
 
-                let unexplained_variance = [|0..k-1|]
-                                           |> Array.sumBy (fun i ->
-                                                  let ni = ns.[i]
-                                                  [|0..ni-1|]
-                                                  |> Array.sumBy (fun j ->
-                                                         let obs = clusters.[i].[j]
-                                                         let error = obs.Sub(means.[i])
-                                                         error.VectorMultiply(error)
-                                                     )
-                                              )
-                                            |> (fun denominator -> denominator / (double n - double k))
-
-                explained_variance / unexplained_variance
+                // F is the ratio of the between-cluster variance to the within-cluster variance
+                bc_var / wc_var
 
             let private runClusterModel(input: Input) : AnalysisOutcome =
                 try
