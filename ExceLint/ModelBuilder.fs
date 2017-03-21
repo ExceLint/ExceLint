@@ -21,6 +21,17 @@
             type DistCache = Dictionary<AST.Address*AST.Address,double>
             type DistanceF = HashSet<AST.Address> -> HashSet<AST.Address> -> DistCache option -> double
             type Distances = Dict<Edge,double>
+            type ClusterStep = {
+                    beyond_knee: bool;
+                    source: Set<AST.Address>;
+                    target: Set<AST.Address>;
+                    distance: double;
+                    f: double;
+                    within_cluster_sum_squares: double;
+                    between_cluster_sum_squares: double;
+                    total_sum_squares: double;
+                    num_clusters: int;
+                 }
             type MinDistComparer(d: DistanceF, cache: DistCache option) =
                 interface IComparer<Edge> with
                     member self.Compare(x: Edge, y: Edge) =
@@ -1103,7 +1114,7 @@
                 |> List.toArray
                 |> toDict
 
-            let private centroid(c: HashSet<AST.Address>)(ih: InvertedHistogram) : Countable =
+            let private centroid(c: seq<AST.Address>)(ih: InvertedHistogram) : Countable =
                 c
                 |> Seq.map (fun a -> ih.[a])    // get histobin for address
                 |> Seq.map (fun (_,_,c) -> c)   // get countable from bin
@@ -1440,12 +1451,12 @@
                                     dist * (double source.Count)
                                 )
 
-                let pp(c: HashSet<AST.Address>) : string =
+                let pp(c: Set<AST.Address>) : string =
                     c
                     |> Seq.map (fun a -> a.A1Local())
                     |> (fun addrs -> "[" + String.Join(",", addrs) + "] with centroid " + (centroid c hb_inv).ToString())
 
-                let mutable log = []
+                let mutable log: ClusterStep list = []
                 let mutable per_log = []
 
                 // DEFINE DISTANCE
@@ -1466,22 +1477,22 @@
                         probable_knee <- true
 
                     // record merge in log
-                    log <- (probable_knee,
-                            pp source,
-                            pp target,
-                            DISTANCE source target (Some distcache),
-                            F clusters hb_inv,
-                            WCSS clusters hb_inv,
-                            BCSS clusters hb_inv,
-                            TSS clusters hb_inv,
-                            clusters.Count) :: log
+                    log <- {
+                                beyond_knee = probable_knee;
+                                source = Set.ofSeq source;
+                                target = Set.ofSeq target;
+                                distance = DISTANCE source target (Some distcache);
+                                f = F clusters hb_inv;
+                                within_cluster_sum_squares = WCSS clusters hb_inv;
+                                between_cluster_sum_squares = BCSS clusters hb_inv;
+                                total_sum_squares = TSS clusters hb_inv;
+                                num_clusters = clusters.Count;
+                           } :: log
 
                     // dump clusters to log
                     let mutable clusterlog = []
                     clusters
                     |> Seq.iter (fun cl ->
-                            
-
                             cl
                             |> Seq.iter (fun addr ->
                                 let v = ToCountable addr hb_inv
@@ -1512,7 +1523,7 @@
                     (List.rev per_log)
                     |> List.iteri (fun i per_log ->
                         // open file
-                        let veccsvw = ExceLintFileFormats.VectorDump("C:\\Users\\dbarowy\\Desktop\\clusterdump\\vectorstep" + i.ToString() + ".csv")
+                        let veccsvw = new ExceLintFileFormats.VectorDump("C:\\Users\\dbarowy\\Desktop\\clusterdump\\vectorstep" + i.ToString() + ".csv")
 
                         // write rows
                         List.iter (fun row ->
@@ -1529,16 +1540,16 @@
 
                     // write rows
                     List.rev log
-                    |> List.iter (fun (show,s,t,dist,fscore,wcss,bcss,tss,k) ->
+                    |> List.iter (fun step ->
                             let row = new ExceLintFileFormats.ClusterStepsRow()
-                            row.Show <- show
-                            row.Merge <- s + " with " + t
-                            row.Distance <- dist
-                            row.FScore <- fscore
-                            row.WCSS <- wcss
-                            row.BCSS <- bcss
-                            row.TSS <- tss
-                            row.k <- k
+                            row.Show <- step.beyond_knee
+                            row.Merge <- (pp step.source) + " with " + (pp step.target)
+                            row.Distance <- step.distance
+                            row.FScore <- step.f
+                            row.WCSS <- step.within_cluster_sum_squares
+                            row.BCSS <- step.between_cluster_sum_squares
+                            row.TSS <- step.total_sum_squares
+                            row.k <- step.num_clusters
 
                             csvw.WriteRow row      
                         )
@@ -1547,6 +1558,10 @@
                     csvw.Dispose()
 
                 member self.Clustering = clusters
+
+                member self.Ranking =
+                    failwith "not yet"
+                    
 
             let private runClusterModel(input: Input) : AnalysisOutcome =
                 try
