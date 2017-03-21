@@ -1458,6 +1458,7 @@
 
                 let mutable log: ClusterStep list = []
                 let mutable per_log = []
+                let mutable steps_ms: int64 list = []
 
                 // DEFINE DISTANCE
                 let DISTANCE = earth_movers_dist
@@ -1469,6 +1470,9 @@
 
                 member self.CanStep : bool = clusters.Count > 1
                 member self.Step() : bool =
+                    let sw = new System.Diagnostics.Stopwatch()
+                    sw.Start()
+
                     // get the two clusters that minimize distance
                     let e = edges.Min
                     let (source,target) = e.tupled
@@ -1516,6 +1520,9 @@
                     // merge them
                     updatePairwiseClusterDistancesAndCluster clusters hb_inv DISTANCE edges source target
 
+                    sw.Stop()
+                    steps_ms <- sw.ElapsedMilliseconds :: steps_ms
+
                     // tell the user whether more steps remain
                     clusters.Count > 1
 
@@ -1560,8 +1567,27 @@
                 member self.Clustering = clusters
 
                 member self.Ranking =
-                    failwith "not yet"
-                    
+                    // for each step in the log,
+                    // add each source address and distance (score) to the ranking
+                    List.map (fun (step : ClusterStep) ->
+                        if step.beyond_knee then
+                            Some(
+                                Seq.map (fun addr -> 
+                                    new KeyValuePair<AST.Address,double>(addr, step.distance)
+                                ) step.source
+                            )
+                        else
+                            None
+                    ) log
+                    |> Seq.choose id
+                    |> Seq.concat
+                    |> Seq.rev
+                    |> Seq.toArray
+
+                member self.RankingTimeMs = List.sum steps_ms
+                member self.ScoreTimeMs = score_time
+                member self.Scores = nlfrs
+                member self.Cutoff = self.Ranking.Length - 1
 
             let private runClusterModel(input: Input) : AnalysisOutcome =
                 try
@@ -1571,11 +1597,17 @@
                     while notdone do
                         notdone <- m.Step()
 
-                    // write logs
-                    m.WriteLog()
-                    m.WritePerLogs()
-
-                    failwith "done"
+                    Success(Cluster
+                        {
+                            scores = m.Scores;
+                            ranking = m.Ranking;
+                            score_time = m.ScoreTimeMs;
+                            ranking_time = m.RankingTimeMs;
+                            sig_threshold_idx = 0;
+                            cutoff_idx = m.Cutoff;
+                            weights = new Dictionary<AST.Address,double>();
+                        }
+                    )
                 with
                 | AnalysisCancelled -> Cancellation
 
