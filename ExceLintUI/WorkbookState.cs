@@ -501,6 +501,12 @@ namespace ExceLintUI
                 // create
                 _m = ExceLint.ModelBuilder.initStepClusterModel(app, conf, _dag, 0.05, p);
 
+                // run agglomerative clustering until we reach inflection point
+                while(!_m.NextStepIsKnee)
+                {
+                    _m.Step();
+                }
+
                 // get initial clustering
                 var clusters = _m.Clustering;
 
@@ -520,7 +526,42 @@ namespace ExceLintUI
                     }
                 }
             }
-            else if(_m.CanStep)
+        }
+
+        public void OldStepClusterModel(ExceLint.FeatureConf conf, Boolean forceDAGBuild)
+        {
+            var p = Depends.Progress.NOPProgress();
+
+            // update if necessary
+            RefreshDAG(forceDAGBuild, p);
+
+            if (_m == null)
+            {
+                Excel.Application app = Globals.ThisAddIn.Application;
+
+                // create
+                _m = ExceLint.ModelBuilder.initStepClusterModel(app, conf, _dag, 0.05, p);
+
+                // get initial clustering
+                var clusters = _m.Clustering;
+
+                // create cluster color map
+                _cluster_colors = new Dictionary<HashSet<AST.Address>, System.Drawing.Color>();
+
+                // init rng
+                var r = new Random();
+
+                foreach (var cluster in clusters)
+                {
+                    var c = System.Drawing.Color.FromArgb(r.Next(256), r.Next(256), r.Next(256));
+                    _cluster_colors.Add(cluster, c);
+                    foreach (AST.Address addr in cluster)
+                    {
+                        paintColor(addr, c);
+                    }
+                }
+            }
+            else if (_m.CanStep)
             {
                 // now step
                 _m.Step();

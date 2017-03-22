@@ -1469,6 +1469,18 @@
                 let mutable probable_knee = false
 
                 member self.CanStep : bool = clusters.Count > 1
+                member private self.IsKnee(s: HashSet<AST.Address>)(t: HashSet<AST.Address>) : bool =
+                    // the first time we merge two clusters that have
+                    // different resultants, we've probably hit the knee
+                    not (refvect_same s t)
+
+                // determine whether the next step will be the knee
+                // without actually doing anohter agglomeration step
+                member self.NextStepIsKnee : bool =
+                    let e = edges.Min
+                    let (source,target) = e.tupled
+                    self.IsKnee source target
+
                 member self.Step() : bool =
                     let sw = new System.Diagnostics.Stopwatch()
                     sw.Start()
@@ -1477,7 +1489,7 @@
                     let e = edges.Min
                     let (source,target) = e.tupled
 
-                    if not (refvect_same source target) then
+                    if self.IsKnee source target then
                         probable_knee <- true
 
                     // record merge in log
