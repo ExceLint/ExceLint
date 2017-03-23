@@ -1126,22 +1126,6 @@
                 // get all pairs of clusters and add to set
                 let G: Edge[] = induceCompleteGraph (C |> Seq.toArray) |> Seq.map (fun (a,b) -> Edge(a,b)) |> Seq.toArray
 
-                // precompute all distances in parallel and cache
-//                match cache_opt with
-//                | None -> ()
-//                | Some cache ->
-//                    let addresses = C |> Seq.concat |> Seq.distinct |> Seq.toArray
-//                    let pairs = cartesianProduct addresses addresses |> Seq.toArray
-//                    let dists = Array.zeroCreate(pairs.Length)
-//                    let p = System.Threading.Tasks.ParallelOptions()
-//                    p.MaxDegreeOfParallelism <- Environment.ProcessorCount
-//                    let a = (fun (i: int) ->
-//                                let (s,t) = pairs.[i]
-//                                dists.[i] <- d (new HashSet<AST.Address>([s])) (new HashSet<AST.Address>([t])) None
-//                            )
-//                    System.Threading.Tasks.Parallel.For(0, G.Length, p, a) |> ignore
-//                    dists |> Array.iteri (fun i dst -> cache.Add(pairs.[i], dst))
-
                 let edges = new SortedSet<Edge>(new MinDistComparer(d, cache_opt))
                 G |> Array.iter (fun e -> edges.Add(e) |> ignore)
 
@@ -1284,11 +1268,8 @@
                 // initialize selector cache
                 let selcache = Scope.SelectorCache()
 
-                // initialize distance cache
-//                let distcache = DistCache()
-
                 // determine the set of cells to be analyzed
-                let cells = (analysisBase input.config input.dag)
+                let cells = analysisBase input.config input.dag
 
                 // get all NLFRs for every formula cell
                 let _runf = fun () -> runEnabledFeatures cells input.dag input.config input.progress
