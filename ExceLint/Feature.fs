@@ -188,10 +188,13 @@ namespace ExceLint
                 let scaled = diff.ElementwiseOp rng div
                 scaled
             ) X
-        static member Mean(C: Countable[]) : Countable =
-            C
-            |> Array.reduce (fun a c -> a.Add c)
-            |> (fun c -> c.ScalarDivide (double C.Length))
+        static member Mean(C: seq<Countable>) : Countable =
+            let mutable i = 1.0
+            let mutable sum = Seq.head C
+            for c in (Seq.tail C) do
+                sum <- sum.Add c
+                i <- i + 1.0
+            sum.ScalarDivide i
 
     type Capability = { enabled : bool; kind: ConfigKind; runner: AST.Address -> Depends.DAG -> Countable; }
 

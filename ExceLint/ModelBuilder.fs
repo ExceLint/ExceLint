@@ -1116,9 +1116,10 @@
 
             let private centroid(c: seq<AST.Address>)(ih: InvertedHistogram) : Countable =
                 c
-                |> Seq.map (fun a -> ih.[a])    // get histobin for address
-                |> Seq.map (fun (_,_,c) -> c)   // get countable from bin
-                |> Seq.toArray                  // convert to array
+                |> Seq.map (fun a ->
+                    let (_,_,c) = ih.[a]    // get histobin for address
+                    c                       // get countable from bin
+                   )
                 |> Countable.Mean               // get mean
 
             let private pairwiseClusterDistances2(C: Clustering)(d: DistanceF)(cache_opt: DistCache option) : SortedSet<Edge> =
@@ -1243,7 +1244,7 @@
                                      |> Seq.toArray // laziness is bad
                 if removals.Length = 0 then
                     failwith "no!"
-                removals |> Seq.iter (fun edge -> edges.Remove(edge) |> ignore)
+                removals |> Array.iter (fun edge -> edges.Remove(edge) |> ignore)
 
                 // add source to target
                 source |> Seq.iter (fun addr -> target.Add(addr) |> ignore)
@@ -1333,7 +1334,7 @@
                 let selcache = Scope.SelectorCache()
 
                 // initialize distance cache
-                let distcache = DistCache()
+//                let distcache = DistCache()
 
                 // determine the set of cells to be analyzed
                 let cells = (analysisBase input.config input.dag)
@@ -1444,7 +1445,7 @@
                     (Array.forall (fun t -> t.Equals(slf.[0])) tlf)
 
                 // define distance (min distance between clusters)
-                let cent_dist = (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>)(cache: DistCache) ->
+                let cent_dist = (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>)(cache_opt: DistCache option) ->
                                     let s_centroid = centroid source hb_inv
                                     let t_centroid = centroid target hb_inv
                                     let dist = s_centroid.EuclideanDistance t_centroid
@@ -1461,10 +1462,10 @@
                 let mutable steps_ms: int64 list = []
 
                 // DEFINE DISTANCE
-                let DISTANCE = earth_movers_dist
+                let DISTANCE = cent_dist
 
                 // get initial pairwise distances
-                let edges = pairwiseClusterDistances2 clusters DISTANCE (Some distcache)
+                let edges = pairwiseClusterDistances2 clusters DISTANCE None
 
                 let mutable probable_knee = false
 
@@ -1497,7 +1498,7 @@
                                 beyond_knee = probable_knee;
                                 source = Set.ofSeq source;
                                 target = Set.ofSeq target;
-                                distance = DISTANCE source target (Some distcache);
+                                distance = DISTANCE source target None;
                                 f = F clusters hb_inv;
                                 within_cluster_sum_squares = WCSS clusters hb_inv;
                                 between_cluster_sum_squares = BCSS clusters hb_inv;
