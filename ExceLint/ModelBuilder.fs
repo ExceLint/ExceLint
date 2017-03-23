@@ -1155,55 +1155,6 @@
                 pairs |> Seq.iter (fun (s,t) -> dists.Add(Edge(centroids.[s], centroids.[t]), d centroids.[s] centroids.[t] cache))
                 dists
 
-            // do not propose fixes where the target cluster is smaller than
-            // the source cluster
-            let noLargeToSmallMerges(g: (HistoBin*HistoBin) list)(ct: ClusterTable) : (HistoBin*HistoBin) list =
-                g
-                |> List.filter (fun (source,target) -> ct.[target].Length >= ct.[source].Length)
-
-            let private runOldClusterModel(input: Input) : AnalysisOutcome =
-                try
-                    // initialize selector cache
-                    let selcache = Scope.SelectorCache()
-
-                    // determine the set of cells to be analyzed
-                    let cells = (analysisBase input.config input.dag)
-
-                    // get all NLFRs for every formula cell
-                    let _runf = fun () -> runEnabledFeatures cells input.dag input.config input.progress
-                    let (nlfrs: ScoreTable,score_time: int64) = PerfUtils.runMillis _runf ()
-
-                    // get LFRs
-                    let lfrs = convertToLFR nlfrs
-
-                    // initially cluster points by location-free representation (LFR)
-                    let _freqf = fun () -> buildFrequencyTable lfrs selcache input.progress input.dag input.config
-                    let (ftable,sidcache),ftable_time = PerfUtils.runMillis _freqf ()
-
-                    // bin by LFR
-                    let lfr_bins = binCountables lfrs selcache input.dag input.config
-
-                    // make flat score table for NLFRs
-                    let nlfr_fst = makeFlatScoreTable nlfrs
-
-                    // compute initial graph using LFRs
-                    let vs = ftable.Keys |> Seq.toList
-                    let g = induceCompleteGraphExcl vs (set []) |> Seq.toList
-                    let g' = noLargeToSmallMerges g lfr_bins
-
-                    // compute pairwise distances
-                    let dists_max_euclid = pairwiseDistances g' lfr_bins nlfr_fst maxEuclid
-                    let dists_sse = pairwiseDistances g' lfr_bins nlfr_fst SSE
-                    
-                    // choose the cluster merge that minimizes distance
-                    // and that merges a small bin into a big bin
-
-                    failwith "nerp"
-
-                    // 
-                with
-                | AnalysisCancelled -> Cancellation
-
             // find s vector guaranteed to be longer than any of the given vectors
             let diagonalScaleFactor(ss: ScoreTable) : double =
                 let points = ss
