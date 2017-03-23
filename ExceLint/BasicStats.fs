@@ -38,3 +38,13 @@
             | Some i -> if i = 0 then xs'.[0] else xs'.[i - 1]
             // if an index is not found, take the max element
             | None   -> xs'.[xs'.Length - 1]
+
+        let mean(X: double[]) : double =
+            X |> Array.sum |> (fun acc -> acc / double X.Length)
+
+        let median(X: double[]) : double =
+            let X' = Array.sort X
+            if X'.Length % 2 = 0 then
+                mean([|X'.[X'.Length / 2]; X'.[X'.Length / 2 - 1]|])
+            else
+                X'.[X'.Length / 2]
