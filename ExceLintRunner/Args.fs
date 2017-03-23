@@ -62,6 +62,9 @@ open System.Text.RegularExpressions
         printfn "-spectral   find outliers by earth mover's distance, otherwise use raw frequency;"
         printfn "            forces the use of -sheets below and disables -allcells,"
         printfn "            -columns, -rows, and -levels"
+        printfn "-cluster    find outliers by agglomerative, location-aware clustering over"
+        printfn "            Euclidean distance; forces the use of -sheets and disables"
+        printfn "            -allcells, -columns, -rows, and -levels"
         printfn "-allcells   condition by all cells"
         printfn "-columns    condition by columns"
         printfn "-rows       condition by rows"
@@ -99,8 +102,9 @@ open System.Text.RegularExpressions
                                | [] -> knobs.verbose, knobs.dont_exit, knobs.alpha, conf
                                | "-verbose"   :: rest -> optParse rest { knobs with verbose = true } conf
                                | "-noexit"    :: rest -> optParse rest { knobs with dont_exit = true } conf
-                               | "-resultant" :: rest -> optParse rest knobs (conf.enableShallowInputVectorMixedResultant(true))
+                               | "-resultant" :: rest -> optParse rest knobs (conf.enableShallowInputVectorMixedResultant true)
                                | "-spectral"  :: rest -> optParse rest knobs (conf.spectralRanking true)
+                               | "-cluster"   :: rest -> optParse rest knobs (conf.enableShallowInputVectorMixedFullCVectorResultantNotOSI true)
                                | "-allcells"  :: rest -> optParse rest knobs (conf.analyzeRelativeToAllCells true)
                                | "-columns"   :: rest -> optParse rest knobs (conf.analyzeRelativeToColumns true)
                                | "-rows"      :: rest -> optParse rest knobs (conf.analyzeRelativeToRows true)
