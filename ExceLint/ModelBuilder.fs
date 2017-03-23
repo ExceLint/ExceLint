@@ -1122,6 +1122,8 @@
                    )
                 |> Countable.Mean               // get mean
 
+
+
             let private pairwiseClusterDistances2(C: Clustering)(d: DistanceF)(cache_opt: DistCache option) : SortedSet<Edge> =
                 // get all pairs of clusters and add to set
                 let G: Edge[] = induceCompleteGraph (C |> Seq.toArray) |> Seq.map (fun (a,b) -> Edge(a,b)) |> Seq.toArray
@@ -1138,6 +1140,15 @@
                 let pairs = C |> Seq.map (fun c -> centroid c ih) |> (fun s -> induceCompleteGraphExcl s (set []))
                 pairs |> Seq.iter (fun (s,t) -> dists.Add(Edge(centroids.[s], centroids.[t]), d centroids.[s] centroids.[t] cache))
                 dists
+
+            let private initClusterShortestDistances(C: Clustering)(ih: InvertedHistogram)(dist: DistanceF)(cache: DistCache option) : Dict<HashSet<AST.Address>,HashSet<AST.Address>> =
+                let d = new Dict<HashSet<AST.Address>,HashSet<AST.Address>>()
+                let dist' = (fun (a, b) -> dist a b cache)
+                for c in C do
+                    let cs = C |> Seq.map (fun c' -> if c <> c' then Some (c,c') else None) |> Seq.choose id
+                    let (_,c') = argmin dist' cs
+                    d.Add(c,c')
+                d
 
             // find s vector guaranteed to be longer than any of the given vectors
             let diagonalScaleFactor(ss: ScoreTable) : double =
