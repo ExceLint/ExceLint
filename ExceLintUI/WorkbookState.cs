@@ -663,8 +663,14 @@ namespace ExceLintUI
             // ensure that the cell is wide enough that we can actually see it
             widenIfNecessary(comobj, app);
 
-            // make sure that the printable area is big enough to show the cell
-            comobj.Worksheet.PageSetup.PrintArea = comobj.Worksheet.UsedRange.Address;
+            // make sure that the printable area is big enough to show the cell;
+            // don't change the printable area if the used range is a single cell
+            int ur_width = comobj.Worksheet.UsedRange.Columns.Count;
+            int ur_height = comobj.Worksheet.UsedRange.Rows.Count;
+            if (ur_width != 1 || ur_height != 1)
+            {
+                comobj.Worksheet.PageSetup.PrintArea = comobj.Worksheet.UsedRange.Address;
+            }
 
             // center screen on cell
             var visible_columns = app.ActiveWindow.VisibleRange.Columns.Count;
