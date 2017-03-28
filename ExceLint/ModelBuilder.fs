@@ -1389,9 +1389,15 @@
 
                 // define distance (min distance between clusters)
                 let cent_dist = (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>)(cache_opt: DistCache option) ->
+                                    // Euclidean distance with a small twist:
+                                    // The distance between any two cells on different
+                                    // sheets is defined as infinity.
                                     let s_centroid = centroid source hb_inv
                                     let t_centroid = centroid target hb_inv
-                                    let dist = s_centroid.EuclideanDistance t_centroid
+                                    let dist = if s_centroid.SameSheet t_centroid then
+                                                   s_centroid.EuclideanDistance t_centroid
+                                               else
+                                                   Double.PositiveInfinity
                                     dist * (double source.Count)
                                 )
 

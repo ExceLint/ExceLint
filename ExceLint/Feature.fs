@@ -178,6 +178,13 @@ namespace ExceLint
             (diff.ElementwiseMultiply diff).ToVector
             |> Array.sum
             |> Math.Sqrt
+        member self.SameSheet(co: Countable) : bool =
+            match (self,co) with
+            | Num _, Num _ -> failwith "Cannot check same sheet for two numbers."
+            | Vector(_,_,z1), Vector(_,_,z2) -> z1 = z2
+            | SquareVector(_,_,_,_,_,z1), SquareVector(_,_,_,_,_,z2) -> z1 = z2
+            | CVectorResultant(_,_,z1,_), CVectorResultant(_,_,z2,_) -> z1 = z2
+            | FullCVectorResultant(_,_,z1,_,_,_,_), FullCVectorResultant(_,_,z2,_,_,_,_) -> z1 = z2
         static member Normalize(X: Countable[]) : Countable[] =
             let min = Array.fold (fun (a:Countable)(x: Countable) -> a.ElementwiseMin x) X.[0] X 
             let max = Array.fold (fun (a:Countable)(x: Countable) -> a.ElementwiseMax x) X.[0] X 
