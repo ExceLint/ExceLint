@@ -1141,7 +1141,7 @@
                 pairs |> Seq.iter (fun (s,t) -> dists.Add(Edge(centroids.[s], centroids.[t]), d centroids.[s] centroids.[t] cache))
                 dists
 
-            let private initClusterShortestDistances(C: Clustering)(ih: InvertedHistogram)(dist: DistanceF)(cache: DistCache option) : Dict<HashSet<AST.Address>,HashSet<AST.Address>> =
+            let private initClusterShortestDistances(C: Clustering)(dist: DistanceF)(cache: DistCache option) : Dict<HashSet<AST.Address>,HashSet<AST.Address>> =
                 let d = new Dict<HashSet<AST.Address>,HashSet<AST.Address>>()
                 let dist' = (fun (a, b) -> dist a b cache)
                 for c in C do
