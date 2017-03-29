@@ -62,6 +62,7 @@
     <Compile Include="BasicStats.fs" />
     <Compile Include="Scope.fs" />
     <Compile Include="Feature.fs" />
+    <Compile Include="LSH.fs" />
     <Compile Include="Degree.fs" />
     <Compile Include="Vector.fs" />
     <Compile Include="Proximity.fs" />
@@ -73,7 +74,6 @@
     <Compile Include="ModelBuilder.fs" />
     <None Include="App.config" />
     <Content Include="packages.config" />
-    <Compile Include="LSH.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ExceLintFileFormats\ExceLintFileFormats.csproj">

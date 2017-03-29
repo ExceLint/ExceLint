@@ -1,28 +1,34 @@
 ﻿namespace ExceLint
-    module private Calc =
-        let XYBITS = 40
-        let ZBITS = 64 - XYBITS
+    module LSHCalc =
+        let XBITS = 20
+        let ZBITS = 64 - (2 * XBITS)
 
         let hash(x: uint64)(y: uint64)(z: uint64) : uint64 =
             // interleave x and y in lower XYBITS bits; z in upper ZBITS
-            let xyz = Seq.fold (fun vect i ->
-                        if i < ZBITS then
-                            let xm = (x &&& (1UL <<< i))
-                            let ym = (y &&& (1UL <<< i))
+            // [... ZBITS ... | ... 2 x XBITS ... ]
+
+            // x,y region of bitvector
+            let xyreg = Seq.fold (fun vect i ->
+                            let xm = x &&& (1UL <<< i)
+                            let ym = y &&& (1UL <<< i)
                             let vect'  = vect  ||| (xm <<< i)
-                            let vect'' = vect' ||| (ym <<< i)
+                            let vect'' = vect' ||| (ym <<< i + 1)
                             vect''
-                        else
-                            let zm = (z &&& (1UL <<< i - XYBITS))
-                            let vect' = vect ||| (zm <<< i)
-                            vect'
-                      ) (0UL) (seq { 0 .. (XYBITS + ZBITS) - 1 })
-            xyz
+                          ) (0UL) (seq { 0 .. XBITS - 1 })
+
+            // z region of bitvector
+            let zm = z &&& ((1UL <<< ZBITS) - 1UL)
+            let zreg = zm <<< 2 * XBITS
+
+            // combine
+            let bv = xyreg ||| zreg
+            bv
+
+        let hashi(x: int)(y: int)(z: int) : uint64 =
+            hash (uint64 x) (uint64 y) (uint64 z)
 
         let addr2Hash(a: AST.Address)(dag: Depends.DAG) : uint64 =
-            let x = System.Convert.ToUInt64(a.X);
-            let y = System.Convert.ToUInt64(a.Y);
-            let z = System.Convert.ToUInt64(dag.getPathClosureIndex(a.Path,a.WorkbookName,a.WorksheetName))
-            hash x y z
+            let z = dag.getPathClosureIndex(a.Path,a.WorkbookName,a.WorksheetName)
+            hashi a.X a.Y z
             
     type LSH(cells: seq<AST.Address>) = class end
