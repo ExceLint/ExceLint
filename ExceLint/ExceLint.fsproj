@@ -73,6 +73,7 @@
     <Compile Include="ModelBuilder.fs" />
     <None Include="App.config" />
     <Content Include="packages.config" />
+    <Compile Include="LSH.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ExceLintFileFormats\ExceLintFileFormats.csproj">

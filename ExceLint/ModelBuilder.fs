@@ -1392,6 +1392,8 @@
                                     // Euclidean distance with a small twist:
                                     // The distance between any two cells on different
                                     // sheets is defined as infinity.
+                                    // This ensures that we always agglomerate intra-sheet
+                                    // before agglomerating inter-sheet.
                                     let s_centroid = centroid source hb_inv
                                     let t_centroid = centroid target hb_inv
                                     let dist = if s_centroid.SameSheet t_centroid then
