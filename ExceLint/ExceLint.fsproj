@@ -62,9 +62,9 @@
     <Compile Include="BasicStats.fs" />
     <Compile Include="Scope.fs" />
     <Compile Include="Feature.fs" />
-    <Compile Include="LSH.fs" />
     <Compile Include="Degree.fs" />
     <Compile Include="Vector.fs" />
+    <Compile Include="LSH.fs" />
     <Compile Include="Proximity.fs" />
     <Compile Include="FeatureConf.fs" />
     <Compile Include="Pipeline.fs" />

@@ -217,3 +217,4 @@ namespace ExceLint
         static member makeNum(d: double) = Num d
         static member makeVector(x: double, y: double, z: double) = Vector(x,y,z)
         static member makeSpatialVector(dx: double, dy: double, dz: double, x: double, y: double, z: double) = SquareVector(dx,dy,dz,x,y,z)
+        static member makeFullCVR(x: double, y: double, z: double, dx: double, dy: double, dz: double, dc: double) = FullCVectorResultant(x,y,z,dx,dy,dz,dc)
