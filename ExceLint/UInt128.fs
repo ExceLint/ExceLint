@@ -26,11 +26,53 @@
         and Zero = UInt128(0UL,0UL)
         and One = UInt128(0UL,1UL)
 
+        and BitwiseNot(a: UInt128) : UInt128 =
+            UInt128(~~~ a.High, ~~~ a.Low)
+
         and BitwiseOr(a: UInt128)(b: UInt128) : UInt128 =
             UInt128(a.High ||| b.High, a.Low ||| b.Low)
 
         and BitwiseAnd(a: UInt128)(b: UInt128) : UInt128 =
             UInt128(a.High &&& b.High, a.Low &&& b.Low)
+
+        and BitwiseNand(a: UInt128)(b: UInt128) : UInt128 =
+            BitwiseNot (BitwiseAnd a b)
+
+        and BitwiseXor(a: UInt128)(b: UInt128) : UInt128 =
+            UInt128(a.High ^^^ b.High, a.Low ^^^ b.Low)
+
+        // from constant-time bit-counting algorithm here:
+        // https://blogs.msdn.microsoft.com/jeuge/2005/06/08/bit-fiddling-3/
+        and CountOnes32(a: uint32) : int =
+            let c = a - ((a >>> 1) &&& uint32 0o33333333333) - ((a >>> 2) &&& uint32 0o11111111111)
+            let sum = ((c + (c >>> 3)) &&& uint32 0o30707070707) % (uint32 63)
+            int32 sum
+
+        and CountOnes64(a: uint64) : int =
+            let lmask = (1UL <<< 32) - 1UL
+            let hmask = lmask <<< 32
+            let low = uint32 (a &&& lmask)
+            let high = uint32 (a &&& hmask)
+            CountOnes32 high + CountOnes32 low
+
+        and CountOnes(a: UInt128) : int =
+            CountOnes64 a.High + CountOnes64 a.Low
+
+        and CountZeroes(a: UInt128) : int =
+            128 - CountOnes a
+
+        and longestCommonPrefix(a: UInt128)(b: UInt128) : int =
+            let o = BitwiseOr a b
+            let n = BitwiseNand a b
+            let pr = BitwiseXor o n
+
+            let pa = prettyPrint a
+            let pb = prettyPrint b
+            let po = prettyPrint o
+            let pn = prettyPrint n
+            let ppr = prettyPrint pr
+
+            CountZeroes pr
 
         and LeftShift(a: UInt128)(shf: int) : UInt128 =
             if shf > 128 then

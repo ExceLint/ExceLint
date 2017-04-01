@@ -89,10 +89,6 @@
             // shift high
             let high = UInt128.LeftShift highu (5 * BXBITS)
 
-            let pplow = UInt128.prettyPrint low
-            let pphighu = UInt128.prettyPrint highu
-            let pphigh = UInt128.prettyPrint high
-
             // OR low and high
             UInt128.BitwiseOr high low
             

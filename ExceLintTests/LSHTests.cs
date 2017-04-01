@@ -92,5 +92,30 @@ namespace ExceLintTests
 
             Assert.AreEqual(bignum, bignum2);
         }
+
+        [TestMethod]
+        public void CountOnesTest()
+        {
+            var n = new UInt128.UInt128(1UL, 1UL);
+            var i = UInt128.CountOnes(n);
+            Assert.AreEqual(2, i);
+        }
+
+        [TestMethod]
+        public void CountZeroesTest()
+        {
+            var n = new UInt128.UInt128(3UL, 3UL);
+            var i = UInt128.CountZeroes(n);
+            Assert.AreEqual(124, i);
+        }
+
+        [TestMethod]
+        public void CommonPrefixTest()
+        {
+            var n = new UInt128.UInt128(123456789UL, 123456789UL);
+            var n2 = new UInt128.UInt128(123456789UL, ~123456789UL);
+            var len = UInt128.longestCommonPrefix(n, n2);
+            Assert.AreEqual(64, len);
+        }
     }
 }
