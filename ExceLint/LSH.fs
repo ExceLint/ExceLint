@@ -1,6 +1,7 @@
 ﻿namespace ExceLint
 
     open System.Numerics
+    open UInt128
 
     module LSHCalc =
         let XBITS = 20
@@ -37,57 +38,25 @@
             let z = dag.getPathClosureIndex(a.Path,a.WorkbookName,a.WorksheetName)
             hashi a.X a.Y z
 
-        let bimask(v: BigInteger)(len: int) : BigInteger =
-            BigInteger.op_BitwiseAnd(v,BigInteger.op_LeftShift(BigInteger.One, len))
+        let bimask(v: UInt128)(len: int) : UInt128 =
+            UInt128.BitwiseAnd v (UInt128.LeftShift UInt128.One len)
 
-        let orShiftMask(t: BigInteger)(s: BigInteger)(shf: int) : BigInteger =
-            BigInteger.op_BitwiseOr(t, BigInteger.op_LeftShift(s, shf))
+        let orShiftMask(t: UInt128)(s: UInt128)(shf: int) : UInt128 =
+            UInt128.BitwiseOr t (UInt128.LeftShift s shf)
 
-        (*
-            def divideBy2(decNumber):
-                remstack = Stack()
-
-                while decNumber > 0:
-                    rem = decNumber % 2
-                    remstack.push(rem)
-                    decNumber = decNumber // 2
-
-                binString = ""
-                while not remstack.isEmpty():
-                    binString = binString + str(remstack.pop())
-
-                return binString
-        *)
-
-        let ppbi(v: BigInteger) : string =
-            let mutable num = v
-            let mutable stack = []
-
-            let one = BigInteger.One
-            let two = BigInteger(2)
-
-            while BigInteger.op_GreaterThan(num, BigInteger.Zero) do
-                let rem = BigInteger.op_Modulus(num, two)
-                stack <- rem :: stack
-                num <- BigInteger.Divide(num, two)
-
-            List.fold (fun (a: string)(e: BigInteger) ->
-                a + (if BigInteger.op_Equality(one,e) then "1" else "0")
-            ) "" stack
-
-        let h7(co: Countable) : BigInteger =
+        let h7(co: Countable) : UInt128 =
             let (x,y,z,x',y',z',c) =
                 match co with
                 | FullCVectorResultant(x,y,z,x',y',z',c) -> x,y,z,x',y',z',c
                 | _ -> failwith "wrong vector type"
             // quantize
-            let bx  = BigInteger(int x)
-            let by  = BigInteger(int y)
-            let bz  = BigInteger(int z)
-            let bx' = BigInteger(int x')
-            let by' = BigInteger(int y')
-            let bz' = BigInteger(int z')
-            let bc  = BigInteger(int c)
+            let bx  = UInt128(int x)
+            let by  = UInt128(int y)
+            let bz  = UInt128(int z)
+            let bx' = UInt128(int x')
+            let by' = UInt128(int y')
+            let bz' = UInt128(int z')
+            let bc  = UInt128(int c)
 
             // interleave low order bits
             let low = Seq.fold (fun v0 i ->
@@ -104,7 +73,7 @@
                                    let v5 = orShiftMask v4 cm  (i + 4)
 
                                    v5
-                               ) (BigInteger.Zero) (seq { 0 .. BXBITS - 1 })
+                               ) (UInt128.Zero) (seq { 0 .. BXBITS - 1 })
 
             // interleave high order bits
             let highu = Seq.fold (fun v0 i ->
@@ -115,12 +84,16 @@
                                     let v2 = orShiftMask v1 zm' (i + 1)
 
                                     v2
-                                ) (BigInteger.Zero) (seq { 0 .. BZBITS - 1})
+                                 ) (UInt128.Zero) (seq { 0 .. BZBITS - 1})
 
             // shift high
-            let high = BigInteger.op_LeftShift(highu, 5 * BXBITS)
+            let high = UInt128.LeftShift highu (5 * BXBITS)
+
+            let pplow = UInt128.prettyPrint low
+            let pphighu = UInt128.prettyPrint highu
+            let pphigh = UInt128.prettyPrint high
 
             // OR low and high
-            BigInteger.op_BitwiseOr(high, low)
+            UInt128.BitwiseOr high low
             
     type LSH(cells: seq<AST.Address>) = class end

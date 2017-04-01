@@ -58,6 +58,7 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="UInt128.fs" />
     <Compile Include="Utils.fs" />
     <Compile Include="BasicStats.fs" />
     <Compile Include="Scope.fs" />
@@ -74,6 +75,7 @@
     <Compile Include="ModelBuilder.fs" />
     <None Include="App.config" />
     <Content Include="packages.config" />
+    <Compile Include="AdaptiveRadixTree.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ExceLintFileFormats\ExceLintFileFormats.csproj">
