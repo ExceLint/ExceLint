@@ -23,8 +23,21 @@
             let high = uint64 highbi
             UInt128(high, low)
 
+        and FromBinaryString(a: string) : UInt128 =
+            let cs = a.ToCharArray() |> Array.rev
+
+            seq { 0 .. 127 }
+            |> Seq.toArray
+            |> Array.fold (fun acc i ->
+                    if i < cs.Length && cs.[i] = '1' then
+                        BitwiseOr acc (LeftShift One i)
+                    else
+                        acc
+               ) Zero
+
         and Zero = UInt128(0UL,0UL)
         and One = UInt128(0UL,1UL)
+        and MaxValue = UInt128(System.UInt64.MaxValue, System.UInt64.MaxValue)
 
         and BitwiseNot(a: UInt128) : UInt128 =
             UInt128(~~~ a.High, ~~~ a.Low)
@@ -36,7 +49,7 @@
             UInt128(a.High &&& b.High, a.Low &&& b.Low)
 
         and BitwiseNand(a: UInt128)(b: UInt128) : UInt128 =
-            BitwiseNot (BitwiseAnd a b)
+            BitwiseOr (BitwiseNot a) (BitwiseNot b)
 
         and BitwiseXor(a: UInt128)(b: UInt128) : UInt128 =
             UInt128(a.High ^^^ b.High, a.Low ^^^ b.Low)
@@ -49,10 +62,8 @@
             int32 sum
 
         and CountOnes64(a: uint64) : int =
-            let lmask = (1UL <<< 32) - 1UL
-            let hmask = lmask <<< 32
-            let low = uint32 (a &&& lmask)
-            let high = uint32 (a &&& hmask)
+            let low = uint32 a
+            let high = uint32 (a >>> 32)
             CountOnes32 high + CountOnes32 low
 
         and CountOnes(a: UInt128) : int =
@@ -64,15 +75,11 @@
         and longestCommonPrefix(a: UInt128)(b: UInt128) : int =
             let o = BitwiseOr a b
             let n = BitwiseNand a b
-            let pr = BitwiseXor o n
+            let x = BitwiseXor o n
 
-            let pa = prettyPrint a
-            let pb = prettyPrint b
-            let po = prettyPrint o
-            let pn = prettyPrint n
-            let ppr = prettyPrint pr
+            let px = prettyPrint x
 
-            CountZeroes pr
+            CountOnes x
 
         and LeftShift(a: UInt128)(shf: int) : UInt128 =
             if shf > 128 then
@@ -128,20 +135,40 @@
                 a + (if one = e then "1" else "0")
             ) "" stack
 
-        and prettyPrint(v: UInt128) : string =
+        and prettyPrint32(v: uint32) : string =
             let mutable num = v
             let mutable stack = []
+
+            let zero = 0ul
+            let one = 1ul
+            let two = 2ul
+
+            while num > zero do
+                let rem = num % two
+                stack <- rem :: stack
+                num <- num / two
+
+            List.fold (fun (a: string)(e: uint32) ->
+                a + (if one = e then "1" else "0")
+            ) "" stack
+
+        and prettyPrint(v: UInt128) : string =
+            let mutable num = v
+            let stack : UInt128[] = Array.create 128 Zero
 
             let zero = Zero
             let one = One
             let two = UInt128(0UL,2UL)
 
+            let mutable i = 127
+
             while GreaterThan num zero do
                 let rem = Modulus num two
-                stack <- rem :: stack
+                stack.[i] <- rem
                 num <- Divide num two
+                i <- i - 1
 
-            List.fold (fun (a: string)(e: UInt128) ->
+            Array.fold (fun (a: string)(e: UInt128) ->
                 a + (if Equals one e then "1" else "0")
             ) "" stack
 

@@ -112,10 +112,55 @@ namespace ExceLintTests
         [TestMethod]
         public void CommonPrefixTest()
         {
-            var n = new UInt128.UInt128(123456789UL, 123456789UL);
-            var n2 = new UInt128.UInt128(123456789UL, ~123456789UL);
+            var n = new UInt128.UInt128(UInt64.MaxValue, UInt64.MaxValue);
+            var n2 = new UInt128.UInt128(UInt64.MaxValue, ~ UInt64.MaxValue);
             var len = UInt128.longestCommonPrefix(n, n2);
             Assert.AreEqual(64, len);
+        }
+
+        [TestMethod]
+        public void CommonPrefixTest2()
+        {
+            var n = new UInt128.UInt128(UInt64.MaxValue, 0UL);
+            var n2 = new UInt128.UInt128(UInt64.MaxValue, 3UL);
+            var len = UInt128.longestCommonPrefix(n, n2);
+            Assert.AreEqual(126, len);
+        }
+
+        [TestMethod]
+        public void CommonPrefixTest3()
+        {
+            var a = UInt128.FromBinaryString("11111010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010");
+            var b = UInt128.FromBinaryString("11110101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101");
+            var len = UInt128.longestCommonPrefix(a, b);
+            Assert.AreEqual(4, len);
+        }
+
+        [TestMethod]
+        public void XORTest()
+        {
+            var a = new UInt128.UInt128(0UL, 0UL);
+            var b = UInt128.MaxValue;
+            var c = UInt128.BitwiseXor(a, b);
+            Assert.AreEqual(UInt128.MaxValue, c);
+        }
+
+        [TestMethod]
+        public void XORTest2()
+        {
+            var a = new UInt128.UInt128(0UL, UInt64.MaxValue);
+            var b = new UInt128.UInt128(UInt64.MaxValue, 0UL);
+            var c = UInt128.BitwiseXor(a, b);
+            Assert.AreEqual(UInt128.MaxValue, c);
+        }
+
+        [TestMethod]
+        public void BinaryStringToUInt128Test()
+        {
+            var s = "10101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010";
+            var sb = UInt128.FromBigInteger(BigInteger.Parse("226854911280625642308916404954512140970"));
+            var n = UInt128.FromBinaryString(s);
+            Assert.AreEqual(sb, n);
         }
     }
 }
