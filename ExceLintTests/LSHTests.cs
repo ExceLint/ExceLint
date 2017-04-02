@@ -74,6 +74,30 @@ namespace ExceLintTests
         }
 
         [TestMethod]
+        public void UInt128LeftShiftOverflowTest3()
+        {
+            var n = UInt128.FromBigInteger(BigInteger.Parse("18446744073709551616"));
+            var n2 = UInt128.LeftShift(n, 1);
+            var sb = UInt128.FromBigInteger(BigInteger.Parse("36893488147419103232"));
+            Assert.AreEqual(sb, n2);
+        }
+
+        [TestMethod]
+        public void UInt128LeftShiftTest()
+        {
+            for (int i = 0; i < 128; i++)
+            {
+                var n = UInt128.LeftShift(UInt128.One, i);
+                var sb = UInt128.FromBigInteger(BigInteger.Pow(new BigInteger(2), i));
+                if (!UInt128.Equals(sb,n))
+                {
+                    Console.WriteLine("Whoa!");
+                }
+                Assert.AreEqual(sb, n);
+            }
+        }
+
+        [TestMethod]
         public void UInt128ToBigDecimalAndBackTest()
         {
             var bignum = new UInt128.UInt128(UInt64.MaxValue, UInt64.MaxValue);
@@ -132,6 +156,7 @@ namespace ExceLintTests
         {
             var a = UInt128.FromBinaryString("11111010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010");
             var b = UInt128.FromBinaryString("11110101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101");
+            var c = BigInteger.Parse("326103934965899360819067332122111202645");
             var len = UInt128.longestCommonPrefix(a, b);
             Assert.AreEqual(4, len);
         }
@@ -161,6 +186,66 @@ namespace ExceLintTests
             var sb = UInt128.FromBigInteger(BigInteger.Parse("226854911280625642308916404954512140970"));
             var n = UInt128.FromBinaryString(s);
             Assert.AreEqual(sb, n);
+        }
+
+        [TestMethod]
+        public void BinaryStringToUInt128Test2()
+        {
+            var a = UInt128.FromBinaryString("11110101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101");
+            var abi = UInt128.ToBigInteger(a);
+
+            var bbi = BigInteger.Parse("326103934965899360819067332122111202645");
+            var b = UInt128.FromBigInteger(bbi);
+
+            var ppa = UInt128.prettyPrint(a);
+            var ppb = UInt128.prettyPrint(b);
+
+            Assert.IsTrue(UInt128.Equals(a, b));
+            Assert.AreEqual(bbi, abi);
+        }
+
+        [TestMethod]
+        public void UInt128ToBinaryStringAndBack()
+        {
+            var b1 = BigInteger.Parse("123456789123456789");
+            var n1 = UInt128.FromBigInteger(b1);
+            var s = UInt128.prettyPrint(n1);
+            var n2 = UInt128.FromBinaryString(s);
+            var b2 = UInt128.ToBigInteger(n2);
+            Assert.AreEqual(b1, b2);
+        }
+
+        [TestMethod]
+        public void UInt128AddToZeroTest()
+        {
+            var result = UInt128.Add(UInt128.One, UInt128.Zero);
+            Assert.AreEqual(UInt128.One, result);
+        }
+
+        [TestMethod]
+        public void UInt128AddOverflowLow64Test()
+        {
+            var addend = new UInt128.UInt128(0UL, UInt64.MaxValue);
+            var result = UInt128.Add(addend, UInt128.One);
+            var sb = new UInt128.UInt128(1UL, 0UL);
+            Assert.AreEqual(sb, result);
+        }
+
+        [TestMethod]
+        public void UInt128SubToZeroTest()
+        {
+            var result = UInt128.Sub(UInt128.One, UInt128.One);
+            Assert.AreEqual(UInt128.Zero, result);
+        }
+
+        [TestMethod]
+        public void UInt128SubBorrowHigh64Test()
+        {
+            var minuend = new UInt128.UInt128(1UL, 0UL);
+            var subtrahend = UInt128.One;
+            var result = UInt128.Sub(minuend, subtrahend);
+            var sb = new UInt128.UInt128(0UL, UInt64.MaxValue);
+            Assert.AreEqual(sb, result);
         }
     }
 }

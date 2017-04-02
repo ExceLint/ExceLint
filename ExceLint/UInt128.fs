@@ -64,6 +64,11 @@
         and CountOnes64(a: uint64) : int =
             let low = uint32 a
             let high = uint32 (a >>> 32)
+
+            let ppa = prettyPrint64 a
+            let pplow = prettyPrint32 low
+            let pphigh = prettyPrint32 high
+
             CountOnes32 high + CountOnes32 low
 
         and CountOnes(a: UInt128) : int =
@@ -77,14 +82,30 @@
             let n = BitwiseNand a b
             let x = BitwiseXor o n
 
-            let px = prettyPrint x
-
             CountOnes x
 
+        and Add(a: UInt128)(b: UInt128) : UInt128 =
+            let mutable carry = BitwiseAnd a b
+            let mutable result = BitwiseXor a b
+            while not (Equals carry Zero) do
+                let shiftedcarry = LeftShift carry 1
+                carry <- BitwiseAnd result shiftedcarry
+                result <- BitwiseXor result shiftedcarry
+            result
+
+        and Sub(a: UInt128)(b: UInt128) : UInt128 =
+            let mutable a' = a
+            let mutable b' = b
+            while not (Equals b' Zero) do
+                let borrow = BitwiseAnd (BitwiseNot a') b'
+                a' <- BitwiseXor a' b'
+                b' <- LeftShift borrow 1
+            a'
+
         and LeftShift(a: UInt128)(shf: int) : UInt128 =
-            if shf > 128 then
+            if shf > 127 then
                 UInt128(0UL,0UL)
-            else if shf > 64 then
+            else if shf > 63 then
                 let ushf = shf - 64
                 let hi = a.Low <<< ushf
                 UInt128(hi,0UL)
