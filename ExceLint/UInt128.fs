@@ -118,7 +118,24 @@
                 // compute new high
                 let hi = (a.High <<< shf) ||| lupl
                 let low = a.Low <<< shf
+                UInt128(hi, low)
 
+        and RightShift(a: UInt128)(shf: int) : UInt128 =
+            if shf > 127 then 
+                UInt128(0UL,0UL)
+            else if shf > 63 then
+                let lshf = shf - 64
+                let low = a.High >>> lshf
+                UInt128(0UL,low)
+            else
+                // get lowermost shf bits in high
+                let hmask = (1UL <<< shf) - 1UL
+                let hlow = hmask &&& a.High
+                // left shift hlow to be shf high order bits of low dword
+                let luph = hlow <<< (64 - shf)
+                // compute new low & high
+                let low = (a.Low >>> shf) ||| luph
+                let hi = a.High >>> shf
                 UInt128(hi, low)
 
         and GreaterThan(a: UInt128)(b: UInt128) : bool =

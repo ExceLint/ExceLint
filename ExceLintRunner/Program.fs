@@ -180,7 +180,12 @@ open ExceLintFileFormats
             tp' / (tp' + fn')
 
     let append_stats(stats: Stats)(csv: ExceLintStats)(model: ErrorModel)(custodes: CUSTODES.OutputResult)(config: Args.Config) : unit =
-        let min_excelint_score = Array.map (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Value) (model.ranking()) |> Array.min
+        
+        let min_excelint_score =
+            if model.ranking().Length = 0 then
+                0.0
+            else
+                Array.map (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Value) (model.ranking()) |> Array.min
 
         // write stats
         let row = ExceLintStatsRow()
@@ -251,8 +256,8 @@ open ExceLintFileFormats
                 // get the set of cells in ExceLint's ranking
                 let excelint_analyzed = rankToSet ranking (ranking.Length - 1)
 
-                // get workbook selector
-                let this_wb = ranking.[0].Key.WorkbookName
+                // get workbook name
+                let this_wb = wb.WorkbookName
 
                 // get the set of cells flagged by CUSTODES
                 let (custodes_total_order,custodes_time) = match custodes with
