@@ -327,8 +327,13 @@
                                             List.concat
 
                     // find all constant inputs for source
-                    let fexpr = Parcel.parseFormulaAtAddress tail (dag.getFormulaAtAddress tail)
-                    let cvects = cvector_f tail fexpr
+                    let cvects =
+                        // Sometimes idiots denote comments with '='.
+                        try 
+                            let fexpr = Parcel.parseFormulaAtAddress tail (dag.getFormulaAtAddress tail)
+                            cvector_f tail fexpr
+                        with
+                        | e -> []
 
                     let heads = heads_single @ heads_vector
                     // recursively call this function
