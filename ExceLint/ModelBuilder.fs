@@ -1554,14 +1554,23 @@
                 member self.Clustering = clusters
 
                 member self.Ranking =
+                    // keep a record of reported cells
+                    let rptd = new HashSet<AST.Address>()
+
                     // for each step in the log,
                     // add each source address and distance (score) to the ranking
                     List.map (fun (step : ClusterStep) ->
                         if step.beyond_knee then
                             Some(
                                 Seq.map (fun addr -> 
-                                    new KeyValuePair<AST.Address,double>(addr, step.distance)
+                                    if not (rptd.Contains addr) then
+                                        let retval = Some(new KeyValuePair<AST.Address,double>(addr, step.distance))
+                                        rptd.Add(addr) |> ignore
+                                        retval
+                                    else
+                                        None
                                 ) step.source
+                                |> Seq.choose id
                             )
                         else
                             None
