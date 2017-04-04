@@ -1564,8 +1564,10 @@
                     // for each step in the log,
                     // add each source address and distance (score) to the ranking
                     let rnk = 
-                        List.map (fun (step : ClusterStep) ->
-                            if step.beyond_knee then
+                        log
+                        |> List.rev
+                        |> List.map (fun (step : ClusterStep) ->
+                             if step.beyond_knee then
                                 Some(
                                     Seq.map (fun addr -> 
                                         if not (rptd.Contains addr) then
@@ -1576,14 +1578,14 @@
                                             None
                                     ) step.source
                                     |> Seq.choose id
+                                    |> Seq.toList
                                 )
-                            else
+                             else
                                 None
-                        ) log
-                        |> Seq.choose id
-                        |> Seq.concat
-                        |> Seq.rev
-                        |> Seq.toArray
+                           )
+                        |> List.choose id
+                        |> List.concat
+                        |> List.toArray
 
                     // the ranking must contain all the formulas and nothing more;
                     // some formulas may never be reported depending on location
