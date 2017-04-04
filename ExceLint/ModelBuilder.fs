@@ -1129,16 +1129,16 @@
                    )
                 |> Countable.Mean               // get mean
 
-            let private pairwiseClusterDistances(C: Clustering)(d: DistanceF)(cache_opt: DistCache option) : SortedSet<Edge> =
-                // true iff on two clusters are on the same sheet;
-                // does not check entire cluster since, by induction,
-                // clusters on other sheets will never be merged
-                let zfilter = (fun (C1: HashSet<AST.Address>)(C2: HashSet<AST.Address>) ->
-                                let c1: AST.Address = Seq.head C1
-                                let c2: AST.Address = Seq.head C2
-                                c1.A1Worksheet() = c2.A1Worksheet()
-                              )
+            // true iff on two clusters are on the same sheet;
+            // does not check entire cluster since, by induction,
+            // clusters on other sheets will never be merged
+            let private zfilter = (fun (C1: HashSet<AST.Address>)(C2: HashSet<AST.Address>) ->
+                                    let c1: AST.Address = Seq.head C1
+                                    let c2: AST.Address = Seq.head C2
+                                    c1.A1Worksheet() = c2.A1Worksheet()
+                                  )
 
+            let private pairwiseClusterDistances(C: Clustering)(d: DistanceF)(cache_opt: DistCache option) : SortedSet<Edge> =
                 // get all pairs of clusters and add to set
                 let G: Edge[] = induceCompleteGraphExcluding (C |> Seq.toArray) zfilter |> Seq.map (fun (a,b) -> Edge(a,b)) |> Seq.toArray
 
@@ -1192,8 +1192,9 @@
                 let edgecount = edges.Count
                 
                 // find vertices neither source nor target
+                // and make sure that they're on the same sheet
                 let Ccount = C.Count
-                let C' = C |> Seq.filter (fun v -> v <> source && v <> target) |> Seq.toArray
+                let C' = C |> Seq.filter (fun v -> v <> source && v <> target && zfilter v source) |> Seq.toArray
                 let Cpcount = C'.Length
 
                 if Ccount <= Cpcount then
@@ -1462,6 +1463,7 @@
 
                     // get the two clusters that minimize distance
                     let e = edges.Min
+
                     let (source,target) = e.tupled
 
                     if self.IsKnee source target then
@@ -1511,7 +1513,7 @@
                     steps_ms <- sw.ElapsedMilliseconds :: steps_ms
 
                     // tell the user whether more steps remain
-                    clusters.Count > 1
+                    clusters.Count > 1 && edges.Count > 0
 
                 member self.WritePerLogs() =
                     (List.rev per_log)
