@@ -1554,31 +1554,41 @@
                 member self.Clustering = clusters
 
                 member self.Ranking =
+                    let numfrm = input.dag.getAllFormulaAddrs().Length
+
                     // keep a record of reported cells
                     let rptd = new HashSet<AST.Address>()
 
                     // for each step in the log,
                     // add each source address and distance (score) to the ranking
-                    List.map (fun (step : ClusterStep) ->
-                        if step.beyond_knee then
-                            Some(
-                                Seq.map (fun addr -> 
-                                    if not (rptd.Contains addr) then
-                                        let retval = Some(new KeyValuePair<AST.Address,double>(addr, step.distance))
-                                        rptd.Add(addr) |> ignore
-                                        retval
-                                    else
-                                        None
-                                ) step.source
-                                |> Seq.choose id
-                            )
-                        else
-                            None
-                    ) log
-                    |> Seq.choose id
-                    |> Seq.concat
-                    |> Seq.rev
-                    |> Seq.toArray
+                    let rnk = 
+                        List.map (fun (step : ClusterStep) ->
+                            if step.beyond_knee then
+                                Some(
+                                    Seq.map (fun addr -> 
+                                        if not (rptd.Contains addr) then
+                                            let retval = Some(new KeyValuePair<AST.Address,double>(addr, step.distance))
+                                            rptd.Add(addr) |> ignore
+                                            retval
+                                        else
+                                            None
+                                    ) step.source
+                                    |> Seq.choose id
+                                )
+                            else
+                                None
+                        ) log
+                        |> Seq.choose id
+                        |> Seq.concat
+                        |> Seq.rev
+                        |> Seq.toArray
+
+                    // the ranking must contain all the formulas and nothing more;
+                    // some formulas may never be reported depending on location
+                    // of knee
+                    assert (rnk.Length <= numfrm)
+
+                    rnk
 
                 member self.RankingTimeMs = List.sum steps_ms
                 member self.ScoreTimeMs = score_time
