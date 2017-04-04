@@ -1065,6 +1065,13 @@
                 cartesianProduct xs xs
                 |> Seq.filter (fun (source,target) -> source <> target ) // no self edges
 
+            let private induceCompleteGraphExcluding(xs: seq<'a>)(pred: 'a -> 'a -> bool) : seq<'a*'a> =
+                cartesianProduct xs xs
+                |> Seq.filter (fun (source,target) ->
+                                    source <> target &&     // no self edges
+                                    (pred source target)    // filter disallowed targets
+                              )
+
             let private induceCompleteGraphExcl(xs: seq<'a>)(excluding: Set<'a>) : seq<'a*'a> =
                 cartesianProduct xs xs
                 |> Seq.filter (fun (source,target) ->
@@ -1122,24 +1129,40 @@
                    )
                 |> Countable.Mean               // get mean
 
+            let private pairwiseClusterDistances(C: Clustering)(d: DistanceF)(cache_opt: DistCache option) : SortedSet<Edge> =
+                // true iff on two clusters are on the same sheet;
+                // does not check entire cluster since, by induction,
+                // clusters on other sheets will never be merged
+                let zfilter = (fun (C1: HashSet<AST.Address>)(C2: HashSet<AST.Address>) ->
+                                let c1: AST.Address = Seq.head C1
+                                let c2: AST.Address = Seq.head C2
+                                c1.A1Worksheet() = c2.A1Worksheet()
+                              )
 
-
-            let private pairwiseClusterDistances2(C: Clustering)(d: DistanceF)(cache_opt: DistCache option) : SortedSet<Edge> =
                 // get all pairs of clusters and add to set
-                let G: Edge[] = induceCompleteGraph (C |> Seq.toArray) |> Seq.map (fun (a,b) -> Edge(a,b)) |> Seq.toArray
+                let G: Edge[] = induceCompleteGraphExcluding (C |> Seq.toArray) zfilter |> Seq.map (fun (a,b) -> Edge(a,b)) |> Seq.toArray
 
                 let edges = new SortedSet<Edge>(new MinDistComparer(d, cache_opt))
                 G |> Array.iter (fun e -> edges.Add(e) |> ignore)
 
                 edges
 
-            let private pairwiseClusterDistances(C: Clustering)(ih: InvertedHistogram)(d: DistanceF)(cache: DistCache option) : Distances =
-                let dists = new Dict<Edge, double>()
-                let centroids = new Dict<Countable,HashSet<AST.Address>>()
-                C |> Seq.iter (fun c -> centroids.Add(centroid c ih, c))
-                let pairs = C |> Seq.map (fun c -> centroid c ih) |> (fun s -> induceCompleteGraphExcl s (set []))
-                pairs |> Seq.iter (fun (s,t) -> dists.Add(Edge(centroids.[s], centroids.[t]), d centroids.[s] centroids.[t] cache))
-                dists
+//            let private pairwiseClusterDistancesOld(C: Clustering)(d: DistanceF)(cache_opt: DistCache option) : SortedSet<Edge> =
+//                // get all pairs of clusters and add to set
+//                let G: Edge[] = induceCompleteGraph (C |> Seq.toArray) |> Seq.map (fun (a,b) -> Edge(a,b)) |> Seq.toArray
+//
+//                let edges = new SortedSet<Edge>(new MinDistComparer(d, cache_opt))
+//                G |> Array.iter (fun e -> edges.Add(e) |> ignore)
+//
+//                edges
+//
+//            let private pairwiseClusterDistances(C: Clustering)(ih: InvertedHistogram)(d: DistanceF)(cache: DistCache option) : Distances =
+//                let dists = new Dict<Edge, double>()
+//                let centroids = new Dict<Countable,HashSet<AST.Address>>()
+//                C |> Seq.iter (fun c -> centroids.Add(centroid c ih, c))
+//                let pairs = C |> Seq.map (fun c -> centroid c ih) |> (fun s -> induceCompleteGraphExcl s (set []))
+//                pairs |> Seq.iter (fun (s,t) -> dists.Add(Edge(centroids.[s], centroids.[t]), d centroids.[s] centroids.[t] cache))
+//                dists
 
             let private initClusterShortestDistances(C: Clustering)(dist: DistanceF)(cache: DistCache option) : Dict<HashSet<AST.Address>,HashSet<AST.Address>> =
                 let d = new Dict<HashSet<AST.Address>,HashSet<AST.Address>>()
@@ -1416,7 +1439,7 @@
                 let DISTANCE = cent_dist
 
                 // get initial pairwise distances
-                let edges = pairwiseClusterDistances2 clusters DISTANCE None
+                let edges = pairwiseClusterDistances clusters DISTANCE None
 
                 let mutable probable_knee = false
 
