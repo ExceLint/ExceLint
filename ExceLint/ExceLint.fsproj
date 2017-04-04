@@ -75,7 +75,7 @@
     <Compile Include="ModelBuilder.fs" />
     <None Include="App.config" />
     <Content Include="packages.config" />
-    <Compile Include="AdaptiveRadixTree.fs" />
+    <Compile Include="CompressedRadixTree.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ExceLintFileFormats\ExceLintFileFormats.csproj">
