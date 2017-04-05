@@ -6,6 +6,11 @@
     module ConfUtils =
         type RunnerMap = Map<string, AST.Address -> Depends.DAG -> Countable>
 
+    type DistanceMetric =
+    | NearestNeighbor
+    | EarthMover
+    | MeanCentroid
+
     // a C#-friendly configuration object that is also pure/fluent
     type FeatureConf private (userConf: Map<string,Capability>) =
         let _base = BaseFeature.run
@@ -460,6 +465,48 @@
                     )
                 else
                     self
+        member self.enableDistanceNearestNeighbor(on: bool) : FeatureConf =
+            let name = "NearestNeighborDistance"
+            let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
+            if on then
+                FeatureConf(
+                    _config.Add(name, cap)
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.enableDistanceMeanCentroid(on: bool) : FeatureConf =
+            let name = "MeanCentroidDistance"
+            let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
+            if on then
+                FeatureConf(
+                    _config.Add(name, cap)
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
+        member self.enableDistanceEarthMover(on: bool) : FeatureConf =
+            let name = "EarthMoverDistance"
+            let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
+            if on then
+                FeatureConf(
+                    _config.Add(name, cap)
+                )
+            else
+                if _config.ContainsKey(name) then
+                    FeatureConf(
+                        _config.Remove(name)
+                    )
+                else
+                    self
 
         // getters
         member self.FeatureByName
@@ -539,6 +586,15 @@
                 bdd
             else
                 failwith "Invalid operation for configured analysis."
+        member self.DistanceMetric =
+            if _config.ContainsKey "MeanCentroidDistance" then
+                DistanceMetric.MeanCentroid
+            else if _config.ContainsKey "NearestNeighborDistance" then
+                DistanceMetric.NearestNeighbor
+            else if _config.ContainsKey "EarthMoverDistance" then
+                DistanceMetric.EarthMover
+            else
+                DistanceMetric.MeanCentroid // default if nothing is specified
 
         // make sure that config option combinations make sense;
         // returns a 'corrected' config

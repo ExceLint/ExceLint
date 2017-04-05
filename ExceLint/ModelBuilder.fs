@@ -1438,6 +1438,13 @@
 
                 // DEFINE DISTANCE
                 let DISTANCE = cent_dist
+//                let DISTANCE = earth_movers_dist
+//                let DISTANCE = min_dist
+                let DISTANCE =
+                    match input.config.DistanceMetric with
+                    | DistanceMetric.NearestNeighbor -> min_dist
+                    | DistanceMetric.EarthMover -> earth_movers_dist
+                    | DistanceMetric.MeanCentroid -> cent_dist
 
                 // get initial pairwise distances
                 let edges = pairwiseClusterDistances clusters DISTANCE None

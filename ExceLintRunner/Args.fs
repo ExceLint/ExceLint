@@ -76,6 +76,11 @@ open System.Text.RegularExpressions
         printfn "-inputstoo  analyze inputs as well; by default ExceLint only"
         printfn "            analyzes formulas"
         printfn "-thresh <n> sets max %% to inspect at n%%; default 5%%"
+        printfn "-dist <d>   selects a distance metric for the clustering configuration;"
+        printfn "            one of:"
+        printfn "            NN     nearest neighbor euclidean distance (single linkage)"
+        printfn "            EMD    earth mover's distance (complete linkage)"
+        printfn "            MC     mean centroid (complete linkage)"
         printfn "\nExample:\n"
         printfn "ExceLintRunner.exe \"C:\\data\" \"C:\\output\" \"C:\\EXCELINT\\ground_truth.csv\" \"C:\\CUSTODES\\smell_detection_result.csv\" \"C:\\ProgramData\\Oracle\\Java\\javapath\\java.exe\" \"C:\\CUSTODES\\cc2.jar\" -verbose -allcells -rows -columns -levels -css"
         printfn "\nHelp:\n"
@@ -119,6 +124,12 @@ open System.Text.RegularExpressions
                                    if alpha < 0.0 || alpha > 1.0 then
                                        failwith "Threshold must be between 0 and 100."
                                    optParse rest { knobs with alpha = alpha } conf
+                               | "-dist"      :: s :: rest ->
+                                   let conf' = match s with
+                                               | "NN"  -> conf.enableDistanceNearestNeighbor true
+                                               | "EMD" -> conf.enableDistanceEarthMover true
+                                               | "MC"  -> conf.enableDistanceMeanCentroid true
+                                   optParse rest knobs conf'
                                | s :: rest -> failwith ("Unrecognized option: " + s)
                            )
 

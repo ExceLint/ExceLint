@@ -607,10 +607,17 @@ namespace ExceLintUI
             {
                 _analysis = rawAnalysis(max_duration_in_ms, config, forceDAGBuild, pb);
 
+                
+
                 if (!_analysis.ranOK)
                 {
                     System.Windows.Forms.MessageBox.Show("This spreadsheet contains no formulas.");
                     return;
+                } else
+                {
+                    var output = String.Join("\n", _analysis.model.ranking());
+                    System.Windows.Forms.Clipboard.SetText(output);
+                    System.Windows.Forms.MessageBox.Show("look in clipboard");
                 }
             }
             catch (AST.ParseException e)
