@@ -671,7 +671,7 @@
             else if _config.ContainsKey "EarthMoverDistance" then
                 DistanceMetric.EarthMover
             else
-                DistanceMetric.MeanCentroid // default if nothing is specified
+                DistanceMetric.EarthMover // default if nothing is specified
         member self.IsLimitedToSheet : string option = limitToSheet
 
         // make sure that config option combinations make sense;
