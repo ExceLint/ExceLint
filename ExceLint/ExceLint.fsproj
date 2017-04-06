@@ -74,7 +74,6 @@
     <Compile Include="ErrorModel.fs" />
     <Compile Include="ModelBuilder.fs" />
     <None Include="App.config" />
-    <Content Include="packages.config" />
     <Compile Include="CompressedRadixTree.fs" />
   </ItemGroup>
   <ItemGroup>

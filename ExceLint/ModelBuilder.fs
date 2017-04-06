@@ -87,10 +87,14 @@
             // 1. allCells means all cells in the spreadsheet
             // 2. onlyFormulas means only formulas
             let analysisBase(config: FeatureConf)(d: Depends.DAG) : AST.Address[] =
-                if config.IsEnabled("AnalyzeOnlyFormulas") then
-                    d.getAllFormulaAddrs()
-                else
-                    d.allCells()
+                let cs = if config.IsEnabled("AnalyzeOnlyFormulas") then
+                            d.getAllFormulaAddrs()
+                         else
+                            d.allCells()
+                let cs' = match config.IsLimitedToSheet with
+                          | Some(wsname) -> cs |> Array.filter (fun addr -> addr.A1Worksheet() = wsname)
+                          | None -> cs 
+                cs'
 
             let private transitiveInputs(faddr: AST.Address)(dag : Depends.DAG) : AST.Address[] =
                 let rec tf(addr: AST.Address) : AST.Address list =

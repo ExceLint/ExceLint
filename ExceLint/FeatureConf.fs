@@ -12,7 +12,8 @@
     | MeanCentroid
 
     // a C#-friendly configuration object that is also pure/fluent
-    type FeatureConf private (userConf: Map<string,Capability>) =
+    type FeatureConf private (userConf: Map<string,Capability>, limitToSheet: string option) =
+        
         let _base = BaseFeature.run
 
         let _capabilities : Map<string,Capability> =
@@ -51,19 +52,22 @@
 
         let _features : ConfUtils.RunnerMap = Map.map (fun (fname: string)(cap: Capability) -> cap.runner) _config
 
-        new() = FeatureConf(Map.empty)
+        new() = FeatureConf(Map.empty, None)
+//        new(userConf: Map<string,Capability>) = FeatureConf(userConf, None)
 
         // fluent constructors
         member self.enableInDegree(on: bool) : FeatureConf =
             let (name,cap) = Degree.InDegree.capability
             if on then
                 FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -71,12 +75,14 @@
             let (name,cap) = Degree.OutDegree.capability
             if on then
                 FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -84,12 +90,14 @@
             let (name,cap) = Degree.CombinedDegree.capability
             if on then
                 FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -97,12 +105,14 @@
             let (name,cap) = Vector.DeepInputVectorRelativeL2NormSum.capability
             if on then
                 FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -110,30 +120,35 @@
             let (name,cap) = Vector.DeepOutputVectorRelativeL2NormSum.capability
             if on then
                 FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
         member self.enableDeepInputVectorAbsoluteL2NormSum(on: bool) : FeatureConf =
             let (name,cap) = Vector.DeepInputVectorAbsoluteL2NormSum.capability
             FeatureConf(
-                _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
+                limitToSheet
             )
         member self.enableDeepOutputVectorAbsoluteL2NormSum(on: bool) : FeatureConf =
             let (name,cap) = Vector.DeepOutputVectorAbsoluteL2NormSum.capability
             if on then
                 FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -141,12 +156,14 @@
             let (name,cap) = Vector.DeepInputVectorMixedL2NormSum.capability
             if on then
                 FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -154,30 +171,35 @@
             let (name,cap) = Vector.DeepOutputVectorMixedL2NormSum.capability
             if on then
                 FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
         member self.enableShallowInputVectorRelativeL2NormSum(on: bool) : FeatureConf =
             let (name,cap) = Vector.ShallowInputVectorRelativeL2NormSum.capability
             FeatureConf(
-                _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
+                limitToSheet
             )
         member self.enableShallowOutputVectorRelativeL2NormSum(on: bool) : FeatureConf =
             let (name,cap) = Vector.ShallowOutputVectorRelativeL2NormSum.capability
             if on then
                 FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -185,12 +207,14 @@
             let (name,cap) = Vector.ShallowInputVectorAbsoluteL2NormSum.capability
             if on then
                 FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -198,12 +222,14 @@
             let (name,cap) = Vector.ShallowOutputVectorAbsoluteL2NormSum.capability
             if on then
                 FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -211,12 +237,14 @@
             let (name,cap) = Vector.ShallowInputVectorMixedL2NormSum.capability
             if on then
                 FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -224,12 +252,14 @@
             let (name,cap) = Vector.ShallowOutputVectorMixedL2NormSum.capability
             if on then
                 FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -237,12 +267,14 @@
             let (name,cap) = Vector.ShallowInputVectorMixedCOFNoAspect.capability
             if on then
                 FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -250,12 +282,14 @@
             let (name,cap) = Vector.ShallowInputVectorMixedResultant.capability
             if on then
                 FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -263,12 +297,14 @@
             let (name,cap) = Vector.ShallowInputVectorMixedFullCVectorResultantNotOSI.capability
             if on then
                 FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -277,12 +313,14 @@
             let (name,cap) = Proximity.Above.capability
             if on then
                 FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -290,12 +328,14 @@
             let (name,cap) = Proximity.Below.capability
             if on then
                 FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -303,12 +343,14 @@
             let (name,cap) = Proximity.Left.capability
             if on then
                 FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -316,12 +358,14 @@
             let (name,cap) = Proximity.Right.capability
             if on then
                 FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner })
+                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -330,12 +374,14 @@
             let cap : Capability = { enabled = true; kind = ConfigKind.Scope; runner = nop}
             if on then
                 FeatureConf(
-                    _config.Add(name, cap)
+                    _config.Add(name, cap),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -344,12 +390,14 @@
             let cap : Capability = { enabled = true; kind = ConfigKind.Scope; runner = nop}
             if on then
                 FeatureConf(
-                    _config.Add(name, cap)
+                    _config.Add(name, cap),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -358,12 +406,14 @@
             let cap : Capability = { enabled = true; kind = ConfigKind.Scope; runner = nop}
             if on then
                 FeatureConf(
-                    _config.Add(name, cap)
+                    _config.Add(name, cap),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -372,12 +422,14 @@
             let cap : Capability = { enabled = true; kind = ConfigKind.Scope; runner = nop}
             if on then
                 FeatureConf(
-                    _config.Add(name, cap)
+                    _config.Add(name, cap),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -386,12 +438,14 @@
             let cap : Capability = { enabled = true; kind = ConfigKind.Scope; runner = nop}
             if on then
                 FeatureConf(
-                    _config.Add(name, cap)
+                    _config.Add(name, cap),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -400,12 +454,14 @@
             let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
             if on then
                 FeatureConf(
-                    _config.Add(name, cap)
+                    _config.Add(name, cap),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -414,12 +470,14 @@
             let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
             if on then
                 FeatureConf(
-                    _config.Add(name, cap)
+                    _config.Add(name, cap),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -428,12 +486,14 @@
             let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
             if on then
                 FeatureConf(
-                    _config.Add(name, cap)
+                    _config.Add(name, cap),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -442,12 +502,14 @@
             let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
             if on then
                 FeatureConf(
-                    _config.Add(name, cap)
+                    _config.Add(name, cap),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -456,12 +518,14 @@
             let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
             if on then
                 FeatureConf(
-                    _config.Add(name, cap)
+                    _config.Add(name, cap),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -470,12 +534,14 @@
             let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
             if on then
                 FeatureConf(
-                    _config.Add(name, cap)
+                    _config.Add(name, cap),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -484,12 +550,14 @@
             let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
             if on then
                 FeatureConf(
-                    _config.Add(name, cap)
+                    _config.Add(name, cap),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
@@ -498,15 +566,24 @@
             let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
             if on then
                 FeatureConf(
-                    _config.Add(name, cap)
+                    _config.Add(name, cap),
+                    limitToSheet
                 )
             else
                 if _config.ContainsKey(name) then
                     FeatureConf(
-                        _config.Remove(name)
+                        _config.Remove(name),
+                        limitToSheet
                     )
                 else
                     self
+        member self.limitAnalysisToSheet(wsname: string) : FeatureConf =
+            let name = "limitToCurrentSheet"
+            let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
+            FeatureConf(
+                _config.Add(name, cap),
+                Some wsname
+            )
 
         // getters
         member self.FeatureByName
@@ -595,6 +672,7 @@
                 DistanceMetric.EarthMover
             else
                 DistanceMetric.MeanCentroid // default if nothing is specified
+        member self.IsLimitedToSheet : string option = limitToSheet
 
         // make sure that config option combinations make sense;
         // returns a 'corrected' config

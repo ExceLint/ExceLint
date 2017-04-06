@@ -1003,6 +1003,9 @@ namespace ExceLintUI
             // COF?
             c = c.enableShallowInputVectorMixedCOFRefUnnormSSNorm(false);
 
+            // limit analysis to a single sheet
+            c = c.limitAnalysisToSheet(((Excel.Worksheet)Globals.ThisAddIn.Application.ActiveWorkbook.ActiveSheet).Name);
+
             return c;
         }
 
