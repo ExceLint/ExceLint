@@ -1314,18 +1314,27 @@
                 let _runf = fun () -> runEnabledFeatures cells input.dag input.config input.progress
                 let (ns: ScoreTable,score_time: int64) = PerfUtils.runMillis _runf ()
 
-                // scale
+                // filter and scale
                 let factor = diagonalScaleFactor ns
                 let nlfrs: ScoreTable =
                     ns
                     |> Seq.map (fun kvp ->
                                     kvp.Key,
                                     kvp.Value
+                                    // remove all off-sheet refs
+                                    |> Array.map (fun (addr,c) ->
+                                        if c.IsOffSheet then
+                                            None
+                                        else 
+                                            Some (addr,c)
+                                        )
+                                    |> Array.choose id
                                     |> Array.map (fun (addr,c) ->
                                         addr,
                                         // only scale the resultant, not the location
                                         c.UpdateResultant (c.ToCVectorResultant.ScalarMultiply factor)
-                                        ))
+                                       )
+                                )
                     |> Seq.toArray
                     |> toDict
 

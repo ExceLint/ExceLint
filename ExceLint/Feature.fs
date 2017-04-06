@@ -178,6 +178,13 @@ namespace ExceLint
             (diff.ElementwiseMultiply diff).ToVector
             |> Array.sum
             |> Math.Sqrt
+        member self.IsOffSheet : bool =
+            match self with
+            | Num n -> false
+            | Vector(x,y,z) -> z <> 0.0
+            | SquareVector(dx,dy,dz,x,y,z) -> dz <> 0.0
+            | CVectorResultant(x1,y1,z1,c1) -> z1 <> 0.0
+            | FullCVectorResultant(x,y,z,dx,dy,dz,dc) -> dz <> 0.0
         member self.SameSheet(co: Countable) : bool =
             match (self,co) with
             | Num _, Num _ -> failwith "Cannot check same sheet for two numbers."
