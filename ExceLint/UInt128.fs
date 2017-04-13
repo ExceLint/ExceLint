@@ -85,7 +85,7 @@
         and CountZeroes(a: UInt128) : int =
             128 - CountOnes a
 
-        and longestCommonPrefix(a: UInt128)(b: UInt128) : int =
+        and LongestCommonPrefix(a: UInt128)(b: UInt128) : int =
             let o = BitwiseOr a b
             let n = BitwiseNand a b
             let x = BitwiseXor o n

@@ -60,5 +60,11 @@ namespace ExceLintTests
             Assert.IsTrue(FSharpOption<string>.get_IsSome(value));
             Assert.AreEqual(value.Value, "all one or none!");
         }
+
+        [TestMethod]
+        public void InsertTest()
+        {
+
+        }
     }
 }

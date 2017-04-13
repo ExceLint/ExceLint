@@ -138,7 +138,7 @@ namespace ExceLintTests
         {
             var n = new UInt128.UInt128(UInt64.MaxValue, UInt64.MaxValue);
             var n2 = new UInt128.UInt128(UInt64.MaxValue, ~ UInt64.MaxValue);
-            var len = UInt128.longestCommonPrefix(n, n2);
+            var len = UInt128.LongestCommonPrefix(n, n2);
             Assert.AreEqual(64, len);
         }
 
@@ -147,7 +147,7 @@ namespace ExceLintTests
         {
             var n = new UInt128.UInt128(UInt64.MaxValue, 0UL);
             var n2 = new UInt128.UInt128(UInt64.MaxValue, 3UL);
-            var len = UInt128.longestCommonPrefix(n, n2);
+            var len = UInt128.LongestCommonPrefix(n, n2);
             Assert.AreEqual(126, len);
         }
 
@@ -157,7 +157,7 @@ namespace ExceLintTests
             var a = UInt128.FromBinaryString("11111010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010");
             var b = UInt128.FromBinaryString("11110101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101");
             var c = BigInteger.Parse("326103934965899360819067332122111202645");
-            var len = UInt128.longestCommonPrefix(a, b);
+            var len = UInt128.LongestCommonPrefix(a, b);
             Assert.AreEqual(4, len);
         }
 
