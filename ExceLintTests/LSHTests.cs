@@ -247,5 +247,22 @@ namespace ExceLintTests
             var sb = new UInt128.UInt128(0UL, UInt64.MaxValue);
             Assert.AreEqual(sb, result);
         }
+
+        [TestMethod]
+        public void UInt128RightShiftTest()
+        {
+            var bstr = "11110101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101";
+            var a = UInt128.FromBinaryString(bstr);
+            var a_rs1 = UInt128.RightShift(a, 1);
+
+            // get reversed number
+            char[] rtsb = bstr.ToCharArray();
+            Array.Reverse(rtsb);
+            var bstr_rev = new String(rtsb);
+            var arev = UInt128.FromBinaryString(bstr_rev);
+            
+            var arev_ls1 = UInt128.LeftShift(arev, 1);
+            Assert.AreEqual(a_rs1, arev_ls1);
+        }
     }
 }
