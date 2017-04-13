@@ -2,12 +2,36 @@
     module UInt128 =
         open System.Numerics
 
+        [<CustomEquality; CustomComparison>]
         type UInt128 =
             struct
                val High: uint64
                val Low: uint64
                new(high: uint64, low: uint64) = { High = high; Low = low }
                new(n: int) = { High = 0UL; Low = uint64 n }
+               override self.GetHashCode() : int = int32 self.Low
+               override self.Equals(o: obj) : bool =
+                   match o with
+                   | :? UInt128 as other ->
+                       self.High = other.High &&
+                       self.Low = other.Low
+                   | _ -> invalidArg "o" "cannot compare values of different types"
+               interface System.IComparable with
+                   member self.CompareTo(o: obj) =
+                       match o with
+                       | :? UInt128 as other ->
+                           if self.High > other.High then
+                               1
+                           else if self.High = other.High then
+                               if self.Low > other.Low then
+                                   1
+                               else if self.Low = other.Low then
+                                   0
+                               else
+                                   -1
+                           else
+                               -1
+                       | _ -> invalidArg "o" "cannot compare values of different types"
             end
 
         let rec ToBigInteger(a: UInt128) : BigInteger =
