@@ -26,7 +26,7 @@ namespace ExceLintTests
                             ),
                             new CRTInner<string>(1, UInt128.FromZeroFilledPrefix("11"),
                                 new CRTEmptyLeaf<string>(UInt128.FromZeroFilledPrefix("110")),
-                                new CRTLeaf<string>(UInt128.Sub(UInt128.Zero, UInt128.One), "all one or none!")
+                                new CRTLeaf<string>(UInt128.Zero.Sub(UInt128.One), "all one or none!")
                             )
                         );
 
@@ -56,7 +56,7 @@ namespace ExceLintTests
                             ),
                             new CRTInner<string>(1, UInt128.FromZeroFilledPrefix("11"),
                                 new CRTEmptyLeaf<string>(UInt128.FromZeroFilledPrefix("110")),
-                                new CRTLeaf<string>(UInt128.Sub(UInt128.Zero, UInt128.One), "all one or none!")
+                                new CRTLeaf<string>(UInt128.Zero.Sub(UInt128.One), "all one or none!")
                             )
                         );
 
@@ -84,7 +84,7 @@ namespace ExceLintTests
             var t = setupTree();
 
             // lookup a value; should be "all one or none!"
-            var key = UInt128.Sub(UInt128.Zero, UInt128.One);
+            var key = UInt128.Zero.Sub(UInt128.One);
             var value = t.Lookup(key);
 
             Assert.IsTrue(FSharpOption<string>.get_IsSome(value));

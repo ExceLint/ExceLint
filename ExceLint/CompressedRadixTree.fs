@@ -1,14 +1,13 @@
 ﻿namespace ExceLint
 
     open System.Collections.Generic
-    open UInt128
 
     module CRTUtil =
         let nBitMask(n: int) : UInt128 =
-            UInt128.Sub (UInt128.LeftShift UInt128.One n) UInt128.One
+            (UInt128.One.LeftShift n).Sub UInt128.One
 
         let calcMask(startpos: int)(endpos: int) : UInt128 =
-            UInt128.LeftShift (nBitMask(endpos - startpos + 1)) (127 - startpos)
+            (nBitMask(endpos - startpos + 1)).LeftShift (127 - startpos)
 
     [<AbstractClass>]
     // endpos is inclusive
@@ -20,21 +19,21 @@
         
     and CRTRoot<'a when 'a : equality>(left: CRTNode<'a>, right: CRTNode<'a>) =
         inherit CRTNode<'a>(-1, UInt128.Zero)
-        let topbit = UInt128.LeftShift UInt128.One 127
+        let topbit = UInt128.One.LeftShift 127
         member self.Left = left
         member self.Right = right
         override self.IsLeaf = false
         override self.IsEmpty = false
         override self.Lookup(key: UInt128) : 'a option =
             // is the higest-order bit 0 or 1?
-            if UInt128.GreaterThan topbit key then
+            if topbit.GreaterThan key then
                 // top bit is 0
                 left.Lookup key
             else
                 // top bit is 1
                 right.Lookup key
         override self.Replace(key: UInt128)(value: 'a) : CRTNode<'a> =
-            if UInt128.GreaterThan topbit key then
+            if topbit.GreaterThan key then
                 // top bit is 0, replace left
                 CRTRoot(left.Replace key value, right) :> CRTNode<'a>
             else
@@ -52,7 +51,7 @@
     and CRTInner<'a when 'a : equality>(endpos: int, prefix: UInt128, left: CRTNode<'a>, right: CRTNode<'a>) =
         inherit CRTNode<'a>(endpos, prefix)
         let mask = CRTUtil.calcMask 0 endpos
-        let mybits = UInt128.BitwiseAnd mask prefix
+        let mybits = mask.BitwiseAnd prefix
         let nextBitMask = CRTUtil.calcMask (endpos + 1) (endpos + 1)
         member self.Left = left
         member self.Right = right
@@ -61,34 +60,34 @@
         override self.IsLeaf = false
         override self.IsEmpty = false
         override self.Lookup(key: UInt128) : 'a option =
-            let keybits = UInt128.BitwiseAnd mask key
-            if UInt128.Equals mybits keybits then
-                let nextbit = UInt128.BitwiseAnd nextBitMask key
-                if UInt128.GreaterThan nextBitMask nextbit then
+            let keybits = mask.BitwiseAnd key
+            if mybits = keybits then
+                let nextbit = nextBitMask.BitwiseAnd key
+                if nextBitMask.GreaterThan nextbit then
                     left.Lookup key
                 else
                     right.Lookup key
             else
                 None
         override self.Replace(key: UInt128)(value: 'a) : CRTNode<'a> =
-            let keybits = UInt128.BitwiseAnd mask key
-            if UInt128.Equals mybits keybits then
-                let nextbit = UInt128.BitwiseAnd nextBitMask key
-                if UInt128.GreaterThan nextBitMask nextbit then
+            let keybits = mask.BitwiseAnd key
+            if mybits = keybits then
+                let nextbit = nextBitMask.BitwiseAnd key
+                if nextBitMask.GreaterThan nextbit then
                     CRTInner(endpos, prefix, left.Replace key value, right) :> CRTNode<'a>
                 else
                     CRTInner(endpos, prefix, left, right.Replace key value) :> CRTNode<'a>
             else
                 // insert a new parent
                 // find longest common prefix
-                let pidx = UInt128.LongestCommonPrefix key prefix
+                let pidx = key.LongestCommonPrefix prefix
                 let mask' = CRTUtil.calcMask 0 endpos
-                let prefix' = UInt128.BitwiseAnd mask' key
+                let prefix' = mask'.BitwiseAnd key
 
                 // insert current subtree on the left or on the right of new parent node?
                 let nextBitMask' = CRTUtil.calcMask (pidx + 1) (pidx + 1)
-                let nextbit = UInt128.BitwiseAnd nextBitMask' prefix
-                if UInt128.GreaterThan nextBitMask' nextbit then
+                let nextbit = nextBitMask'.BitwiseAnd prefix
+                if nextBitMask'.GreaterThan nextbit then
                     // current node goes on the left
                     CRTInner(pidx, prefix', self, CRTLeaf(key, value)) :> CRTNode<'a>
                 else

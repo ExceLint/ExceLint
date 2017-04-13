@@ -1,7 +1,6 @@
 ﻿namespace ExceLint
 
     open System.Numerics
-    open UInt128
 
     module LSHCalc =
         let XBITS = 20
@@ -39,10 +38,10 @@
             hashi a.X a.Y z
 
         let bimask(v: UInt128)(len: int) : UInt128 =
-            UInt128.BitwiseAnd v (UInt128.LeftShift UInt128.One len)
+            v.BitwiseAnd (UInt128.One.LeftShift len)
 
         let orShiftMask(t: UInt128)(s: UInt128)(shf: int) : UInt128 =
-            UInt128.BitwiseOr t (UInt128.LeftShift s shf)
+            t.BitwiseOr (s.LeftShift shf)
 
         let h7(co: Countable) : UInt128 =
             let (x,y,z,x',y',z',c) =
@@ -87,9 +86,9 @@
                                  ) (UInt128.Zero) (seq { 0 .. BZBITS - 1})
 
             // shift high
-            let high = UInt128.LeftShift highu (5 * BXBITS)
+            let high = highu.LeftShift (5 * BXBITS)
 
             // OR low and high
-            UInt128.BitwiseOr high low
+            high.BitwiseOr low
             
     type LSH(cells: seq<AST.Address>) = class end
