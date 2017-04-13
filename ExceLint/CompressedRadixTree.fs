@@ -12,15 +12,17 @@
 
     [<AbstractClass>]
     // endpos is inclusive
-    type CRTNode<'a>(endpos: int, prefix: UInt128) =
+    type CRTNode<'a when 'a : equality>(endpos: int, prefix: UInt128) =
         abstract member IsLeaf: bool
         abstract member IsEmpty: bool
         abstract member Lookup: UInt128 -> 'a option
         abstract member Replace: UInt128 -> 'a -> CRTNode<'a>
         
-    and CRTRoot<'a>(left: CRTNode<'a>, right: CRTNode<'a>) =
+    and CRTRoot<'a when 'a : equality>(left: CRTNode<'a>, right: CRTNode<'a>) =
         inherit CRTNode<'a>(-1, UInt128.Zero)
         let topbit = UInt128.LeftShift UInt128.One 127
+        member self.Left = left
+        member self.Right = right
         override self.IsLeaf = false
         override self.IsEmpty = false
         override self.Lookup(key: UInt128) : 'a option =
@@ -38,12 +40,24 @@
             else
                 // top bit is 1, replace right
                 CRTRoot(left, right.Replace key value) :> CRTNode<'a>
+        override self.Equals(o: obj) : bool =
+            match o with
+            | :? CRTRoot<'a> as other ->
+                self.Left = other.Left &&
+                self.Right = other.Right
+            | _ -> false
+        override self.GetHashCode() : int =
+            self.Left.GetHashCode() ^^^ self.Right.GetHashCode()
 
-    and CRTInner<'a>(endpos: int, prefix: UInt128, left: CRTNode<'a>, right: CRTNode<'a>) =
+    and CRTInner<'a when 'a : equality>(endpos: int, prefix: UInt128, left: CRTNode<'a>, right: CRTNode<'a>) =
         inherit CRTNode<'a>(endpos, prefix)
         let mask = CRTUtil.calcMask 0 endpos
         let mybits = UInt128.BitwiseAnd mask prefix
         let nextBitMask = CRTUtil.calcMask (endpos + 1) (endpos + 1)
+        member self.Left = left
+        member self.Right = right
+        member self.PrefixLength = endpos + 1
+        member self.Prefix = prefix
         override self.IsLeaf = false
         override self.IsEmpty = false
         override self.Lookup(key: UInt128) : 'a option =
@@ -80,19 +94,47 @@
                 else
                     // current node goes on the right
                     CRTInner(pidx, prefix', CRTLeaf(key, value), self) :> CRTNode<'a>
+        override self.Equals(o: obj) : bool =
+            match o with
+            | :? CRTInner<'a> as other ->
+                self.Left = other.Left &&
+                self.Right = other.Right &&
+                self.PrefixLength = other.PrefixLength &&
+                self.Prefix = other.Prefix
+            | _ -> false
+        override self.GetHashCode() : int =
+            self.Left.GetHashCode() ^^^ self.Right.GetHashCode()
 
-    and CRTLeaf<'a>(prefix: UInt128, value: 'a) =
+    and CRTLeaf<'a when 'a : equality>(prefix: UInt128, value: 'a) =
         inherit CRTNode<'a>(127, prefix)
+        member self.Prefix = prefix
+        member self.Value = value
         override self.IsLeaf = true
         override self.IsEmpty = false
         override self.Lookup(str: UInt128) : 'a option = Some value
         override self.Replace(key: UInt128)(value: 'a) : CRTNode<'a> =
             CRTLeaf(prefix, value) :> CRTNode<'a>
+        override self.Equals(o: obj) : bool =
+            match o with
+            | :? CRTLeaf<'a> as other ->
+                self.Prefix = other.Prefix &&
+                self.Value = other.Value
+            | _ -> false
+        override self.GetHashCode() : int =
+            prefix.GetHashCode()
 
-    and CRTEmptyLeaf<'a>(prefix: UInt128) =
+    and CRTEmptyLeaf<'a when 'a : equality>(prefix: UInt128) =
         inherit CRTNode<'a>(127, prefix)
+        member self.Prefix = prefix
         override self.IsLeaf = true
         override self.IsEmpty = true
         override self.Lookup(str: UInt128) : 'a option = None
         override self.Replace(key: UInt128)(value: 'a) : CRTNode<'a> =
             CRTLeaf(prefix, value) :> CRTNode<'a>
+        override self.Equals(o: obj) : bool =
+            match o with
+            | :? CRTEmptyLeaf<'a> as other ->
+                self.Prefix = other.Prefix
+            | _ -> false
+        override self.GetHashCode() : int =
+            prefix.GetHashCode()
