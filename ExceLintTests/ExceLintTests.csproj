@@ -63,6 +63,7 @@
   <ItemGroup>
     <Compile Include="BasicTests.cs" />
     <Compile Include="COFTests.cs" />
+    <Compile Include="CompressedRadixTreeTests.cs" />
     <Compile Include="CVectorTests.cs" />
     <Compile Include="DistanceTests.cs" />
     <Compile Include="FullCVectorTests.cs" />

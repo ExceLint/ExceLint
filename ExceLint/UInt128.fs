@@ -39,6 +39,14 @@
         and One = UInt128(0UL,1UL)
         and MaxValue = UInt128(System.UInt64.MaxValue, System.UInt64.MaxValue)
 
+        // this function lets you supply a binary prefix string
+        // which is then zero-filled to yield a UInt128
+        and FromZeroFilledPrefix(prefix: string) : UInt128 =
+            assert (prefix.Length <= 128)
+            let b = FromBinaryString prefix
+            let lshft = 128 - prefix.Length
+            LeftShift b lshft
+
         and BitwiseNot(a: UInt128) : UInt128 =
             UInt128(~~~ a.High, ~~~ a.Low)
 
