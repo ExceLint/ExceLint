@@ -6,8 +6,10 @@
         let nBitMask(n: int) : UInt128 =
             (UInt128.One.LeftShift n).Sub UInt128.One
 
+        // calculate a UInt128 bitmask starting at startpos and ending at endpos (both inclusive)
         let calcMask(startpos: int)(endpos: int) : UInt128 =
-            (nBitMask(endpos - startpos + 1)).LeftShift (127 - startpos)
+            let numbits = endpos - startpos + 1
+            (nBitMask numbits).LeftShift (128 - numbits - startpos)
 
     [<AbstractClass>]
     // endpos is inclusive
