@@ -33,6 +33,36 @@ namespace ExceLintTests
             return t;
         }
 
+        private CRTNode<string> treeWithLeftMostInsert()
+        {
+            var t = new CRTRoot<string>(
+                        new CRTInner<string>(0, UInt128.FromZeroFilledPrefix("0"),
+                                new CRTInner<string>(1, UInt128.FromZeroFilledPrefix("00"),
+                                    new CRTInner<string>(3, UInt128.FromZeroFilledPrefix("0000"),
+                                        // START: difference
+                                        new CRTLeaf<string>(UInt128.FromZeroFilledPrefix("0000"), "none"),
+                                        new CRTInner<string>(4, UInt128.FromZeroFilledPrefix("00001"),
+                                            new CRTLeaf<string>(UInt128.FromZeroFilledPrefix("000010"), "hi!"),
+                                            new CRTEmptyLeaf<string>(UInt128.FromZeroFilledPrefix("000011"))
+                                        )
+                                        // END: difference
+                                    ),
+                                    new CRTInner<string>(3, UInt128.FromZeroFilledPrefix("0010"),
+                                        new CRTEmptyLeaf<string>(UInt128.FromZeroFilledPrefix("00100")),
+                                        new CRTEmptyLeaf<string>(UInt128.FromZeroFilledPrefix("00101"))
+                                    )
+                                ),
+                                new CRTEmptyLeaf<string>(UInt128.FromZeroFilledPrefix("01"))
+                            ),
+                            new CRTInner<string>(1, UInt128.FromZeroFilledPrefix("11"),
+                                new CRTEmptyLeaf<string>(UInt128.FromZeroFilledPrefix("110")),
+                                new CRTLeaf<string>(UInt128.Sub(UInt128.Zero, UInt128.One), "all one or none!")
+                            )
+                        );
+
+            return t;
+        }
+
         [TestMethod]
         public void LookupTest()
         {
@@ -44,7 +74,7 @@ namespace ExceLintTests
             var value = t.Lookup(key);
 
             Assert.IsTrue(FSharpOption<string>.get_IsSome(value));
-            Assert.AreEqual(value.Value, "hi!");
+            Assert.AreEqual("hi!", value.Value);
         }
 
         [TestMethod]
@@ -58,13 +88,22 @@ namespace ExceLintTests
             var value = t.Lookup(key);
 
             Assert.IsTrue(FSharpOption<string>.get_IsSome(value));
-            Assert.AreEqual(value.Value, "all one or none!");
+            Assert.AreEqual("all one or none!", value.Value);
         }
 
         [TestMethod]
         public void InsertTest()
         {
+            // initialize tree
+            var t = setupTree();
 
+            // insert a value
+            var t2 = t.Replace(UInt128.Zero, "none");
+
+            // expected outcome
+            var te = treeWithLeftMostInsert();
+
+            Assert.AreEqual(te, t2);
         }
     }
 }
