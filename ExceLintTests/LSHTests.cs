@@ -248,6 +248,15 @@ namespace ExceLintTests
             Assert.AreEqual(sb, result);
         }
 
+        private UInt128.UInt128 Reverse(UInt128.UInt128 n)
+        {
+            var n_str = UInt128.prettyPrint(n);
+            var n_chars = n_str.ToCharArray();
+            Array.Reverse(n_chars);
+            var rev_n_str = new String(n_chars);
+            return UInt128.FromBinaryString(rev_n_str);
+        }
+
         [TestMethod]
         public void UInt128RightShiftTest()
         {
@@ -256,13 +265,36 @@ namespace ExceLintTests
             var a_rs1 = UInt128.RightShift(a, 1);
 
             // get reversed number
-            char[] rtsb = bstr.ToCharArray();
-            Array.Reverse(rtsb);
-            var bstr_rev = new String(rtsb);
-            var arev = UInt128.FromBinaryString(bstr_rev);
+            var arev = Reverse(a);
             
+            // left shift the reversed number
             var arev_ls1 = UInt128.LeftShift(arev, 1);
-            Assert.AreEqual(a_rs1, arev_ls1);
+
+            // unreverse shifted number
+            var unrev_ls1 = Reverse(arev_ls1);
+
+            // compare
+            Assert.AreEqual(a_rs1, unrev_ls1);
+        }
+
+        [TestMethod]
+        public void UInt128RightShift64Test()
+        {
+            var bstr = "11110101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101";
+            var a = UInt128.FromBinaryString(bstr);
+            var a_rs64 = UInt128.RightShift(a, 64);
+
+            // get reversed number
+            var arev = Reverse(a);
+
+            // left shift the reversed number
+            var arev_ls64 = UInt128.LeftShift(arev, 64);
+
+            // unreverse shifted number
+            var unrev_ls1 = Reverse(arev_ls64);
+
+            // compare
+            Assert.AreEqual(a_rs64, unrev_ls1);
         }
     }
 }
