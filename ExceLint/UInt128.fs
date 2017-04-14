@@ -81,6 +81,12 @@
                 let b = UInt128.FromBinaryString prefix
                 let lshft = 128 - prefix.Length
                 b.LeftShift lshft
+            static member nBitMask(n: int) : UInt128 =
+                (UInt128.One.LeftShift n).Sub UInt128.One
+            // calculate a UInt128 bitmask starting at startpos and ending at endpos (both inclusive)
+            static member calcMask(startpos: int)(endpos: int) : UInt128 =
+                let numbits = endpos - startpos + 1
+                (UInt128.nBitMask numbits).LeftShift (128 - numbits - startpos)
 
             member self.ToBigInteger : BigInteger =
                 let l = BigInteger(self.Low)
@@ -163,10 +169,7 @@
             member self.CountZeroes : int =
                 128 - self.CountOnes
             member self.LongestCommonPrefix(b: UInt128) : int =
-                let o = self.BitwiseOr b
-                let n = self.BitwiseNand b
-                let x = o.BitwiseXor n
-                x.CountOnes
+                failwith "fix"
 
             override self.GetHashCode() : int = int32 self.Low
             override self.Equals(o: obj) : bool =

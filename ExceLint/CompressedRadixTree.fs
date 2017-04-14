@@ -2,15 +2,6 @@
 
     open System.Collections.Generic
 
-    module CRTUtil =
-        let nBitMask(n: int) : UInt128 =
-            (UInt128.One.LeftShift n).Sub UInt128.One
-
-        // calculate a UInt128 bitmask starting at startpos and ending at endpos (both inclusive)
-        let calcMask(startpos: int)(endpos: int) : UInt128 =
-            let numbits = endpos - startpos + 1
-            (nBitMask numbits).LeftShift (128 - numbits - startpos)
-
     [<AbstractClass>]
     // endpos is inclusive
     type CRTNode<'a when 'a : equality>(endpos: int, prefix: UInt128) =
@@ -52,9 +43,9 @@
 
     and CRTInner<'a when 'a : equality>(endpos: int, prefix: UInt128, left: CRTNode<'a>, right: CRTNode<'a>) =
         inherit CRTNode<'a>(endpos, prefix)
-        let mask = CRTUtil.calcMask 0 endpos
+        let mask = UInt128.calcMask 0 endpos
         let mybits = mask.BitwiseAnd prefix
-        let nextBitMask = CRTUtil.calcMask (endpos + 1) (endpos + 1)
+        let nextBitMask = UInt128.calcMask (endpos + 1) (endpos + 1)
         member self.Left = left
         member self.Right = right
         member self.PrefixLength = endpos + 1
@@ -83,11 +74,11 @@
                 // insert a new parent
                 // find longest common prefix
                 let pidx = key.LongestCommonPrefix prefix
-                let mask' = CRTUtil.calcMask 0 endpos
+                let mask' = UInt128.calcMask 0 endpos
                 let prefix' = mask'.BitwiseAnd key
 
                 // insert current subtree on the left or on the right of new parent node?
-                let nextBitMask' = CRTUtil.calcMask (pidx + 1) (pidx + 1)
+                let nextBitMask' = UInt128.calcMask (pidx + 1) (pidx + 1)
                 let nextbit = nextBitMask'.BitwiseAnd prefix
                 if nextBitMask'.GreaterThan nextbit then
                     // current node goes on the left
