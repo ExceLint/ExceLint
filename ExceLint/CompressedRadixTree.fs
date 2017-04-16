@@ -74,18 +74,18 @@
                 // insert a new parent
                 // find longest common prefix
                 let pidx = key.LongestCommonPrefix prefix
-                let mask' = UInt128.calcMask 0 endpos
+                let mask' = UInt128.calcMask 0 (endpos - 1)
                 let prefix' = mask'.BitwiseAnd key
 
                 // insert current subtree on the left or on the right of new parent node?
-                let nextBitMask' = UInt128.calcMask (pidx + 1) (pidx + 1)
+                let nextBitMask' = UInt128.calcMask pidx pidx
                 let nextbit = nextBitMask'.BitwiseAnd prefix
                 if nextBitMask'.GreaterThan nextbit then
                     // current node goes on the left
-                    CRTInner(pidx, prefix', self, CRTLeaf(key, value)) :> CRTNode<'a>
+                    CRTInner(pidx - 1, prefix', self, CRTLeaf(key, value)) :> CRTNode<'a>
                 else
                     // current node goes on the right
-                    CRTInner(pidx, prefix', CRTLeaf(key, value), self) :> CRTNode<'a>
+                    CRTInner(pidx - 1, prefix', CRTLeaf(key, value), self) :> CRTNode<'a>
         override self.Equals(o: obj) : bool =
             match o with
             | :? CRTInner<'a> as other ->
