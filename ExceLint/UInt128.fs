@@ -45,6 +45,59 @@
                 a + (if one = e then "1" else "0")
             ) "" stack
 
+        type BinarySearchOutcome =
+        | SearchLow
+        | SearchHigh
+        | KeyFound
+
+        type GenBinarySearchOutcome =
+        | Found of int
+        | Last of int
+
+        let midpoint(min: int)(max: int) : int = 
+            min + int32 (System.Math.Ceiling((double (System.Math.Abs(max - min))) / 2.0))
+
+        let GeneralizedBinarySearch(low: int)(high: int)(testFn: int -> BinarySearchOutcome)(saveWhen: BinarySearchOutcome) : GenBinarySearchOutcome =
+            let mutable min = low
+            let mutable max = high
+            let mutable last = -1
+            let mutable found = -1
+
+            let mutable test = None
+
+            // continue searching while [imin,imax] is not empty
+            while max >= min && test.IsNone do
+                let mid = midpoint min max
+
+                test <- match testFn mid with
+                           | BinarySearchOutcome.KeyFound ->
+                                // we found it; return the index
+                                Some (GenBinarySearchOutcome.Found mid)
+                           | BinarySearchOutcome.SearchLow ->
+                                // change max index to search lower subarray
+                                max <- mid - 1
+                                // if we're looking for a high bound, save whenever we search low
+                                if saveWhen = BinarySearchOutcome.SearchLow then
+                                    found <- mid
+                                last <- mid
+                                None
+                           | BinarySearchOutcome.SearchHigh ->
+                                // change min index to search upper subarray
+                                min <- mid + 1
+                                // if we're looking for a low bound, save whenever we search high
+                                if saveWhen = BinarySearchOutcome.SearchHigh then
+                                    found <- mid
+                                last <- mid
+                                None
+
+            match test with
+            | Some(f) -> f
+            | None ->
+                if found <> -1 then
+                    GenBinarySearchOutcome.Found found
+                else
+                    GenBinarySearchOutcome.Last last
+
     [<CustomEquality; CustomComparison>]
     type UInt128 =
         struct
@@ -169,7 +222,19 @@
             member self.CountZeroes : int =
                 128 - self.CountOnes
             member self.LongestCommonPrefix(b: UInt128) : int =
-                failwith "fix"
+                let a = self
+                let testFn = (fun i ->
+                                let mask = UInt128.calcMask 0 i
+                                let a' = a.BitwiseAnd mask
+                                let b' = b.BitwiseAnd mask
+                                if a' = b' then
+                                    UInt128Ops.BinarySearchOutcome.SearchHigh
+                                else
+                                    UInt128Ops.BinarySearchOutcome.SearchLow
+                             )
+                match UInt128Ops.GeneralizedBinarySearch 0 127 testFn UInt128Ops.BinarySearchOutcome.SearchLow with
+                | UInt128Ops.GenBinarySearchOutcome.Found i -> i
+                | UInt128Ops.GenBinarySearchOutcome.Last i -> i
 
             override self.GetHashCode() : int = int32 self.Low
             override self.Equals(o: obj) : bool =
