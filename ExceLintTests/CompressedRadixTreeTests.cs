@@ -116,7 +116,7 @@ namespace ExceLintTests
             // initialize tree
             var t = setupTree();
 
-            // lookup a subtree; should be the entire tree
+            // lookup a subtree
             var key = UInt128.Zero;
             var mask = UInt128.calcMask(0, 1);
             var st_opt = t.LookupSubtree(key, mask);
@@ -146,6 +146,39 @@ namespace ExceLintTests
             var st_ll_value = ((CRTLeaf<string>)st_ll).Value;
             Assert.IsTrue(FSharpOption<string>.get_IsSome(st_ll_value));
             Assert.AreEqual("hi!", st_ll_value.Value);
+        }
+
+        [TestMethod]
+        public void SubtreeLookupTest3()
+        {
+            // initialize tree
+            var t = setupTree();
+
+            // lookup a subtree using a mask not in the tree
+            var key = UInt128.Zero;
+            var mask = UInt128.calcMask(0, 3);
+            var st_opt = t.LookupSubtree(key, mask);
+
+            // the query should have returned a tree
+            Assert.IsTrue(FSharpOption<CRTNode<string>>.get_IsSome(st_opt));
+
+            var st = st_opt.Value;
+
+            // the returned tree should be an inner node with no value
+            Assert.AreEqual(FSharpOption<string>.None, st.Value);
+
+            // the returned tree should have a left subtree
+            Assert.IsTrue(st.GetType() == typeof(CRTInner<string>));
+
+            var st_l = ((CRTInner<string>)st).Left;
+
+            // the left subtree should be a leaf
+            Assert.IsTrue(st_l.GetType() == typeof(CRTLeaf<string>));
+
+            // the left subtree value should be "hi!"
+            var st_l_value = ((CRTLeaf<string>)st_l).Value;
+            Assert.IsTrue(FSharpOption<string>.get_IsSome(st_l_value));
+            Assert.AreEqual("hi!", st_l_value.Value);
         }
 
         [TestMethod]
