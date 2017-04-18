@@ -15,6 +15,7 @@
     and CRTRoot<'a when 'a : equality>(left: CRTNode<'a>, right: CRTNode<'a>) =
         inherit CRTNode<'a>(-1, UInt128.Zero)
         let topbit = UInt128.One.LeftShift 127
+        new() = CRTRoot(CRTEmptyLeaf(UInt128.Zero),CRTEmptyLeaf(UInt128.One.LeftShift 127))
         member self.Left = left
         member self.Right = right
         override self.IsLeaf = false
