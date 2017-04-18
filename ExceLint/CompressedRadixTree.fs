@@ -11,11 +11,13 @@
         abstract member LookupSubtree: UInt128 -> UInt128 -> CRTNode<'a> option
         abstract member Replace: UInt128 -> 'a -> CRTNode<'a>
         abstract member Value: 'a option
+        abstract member SubtreeValues: UInt128 -> UInt128 -> seq<'a>
+        abstract member LRTraversal: seq<'a>
         
     and CRTRoot<'a when 'a : equality>(left: CRTNode<'a>, right: CRTNode<'a>) =
         inherit CRTNode<'a>(-1, UInt128.Zero)
         let topbit = UInt128.One.LeftShift 127
-        new() = CRTRoot(CRTEmptyLeaf(UInt128.Zero),CRTEmptyLeaf(UInt128.One.LeftShift 127))
+        new() = CRTRoot(CRTEmptyLeaf(UInt128.Zero),CRTEmptyLeaf(UInt128.Zero.Sub(UInt128.One)))
         member self.Left = left
         member self.Right = right
         override self.IsLeaf = false
@@ -42,6 +44,13 @@
             else
                 // top bit is 1, replace right
                 CRTRoot(left, right.Replace key value) :> CRTNode<'a>
+        override self.SubtreeValues(key: UInt128)(value: UInt128) : seq<'a> =
+            match self.LookupSubtree key value with
+            | Some(st) -> st.LRTraversal
+            | None -> Seq.empty
+        override self.LRTraversal: seq<'a> =
+            // root nodes store no data
+            Seq.concat [ self.Left.LRTraversal; self.Right.LRTraversal ]
         override self.Equals(o: obj) : bool =
             match o with
             | :? CRTRoot<'a> as other ->
@@ -108,6 +117,13 @@
                 else
                     // current node goes on the right
                     CRTInner(pidx - 1, prefix', CRTLeaf(key, value), self) :> CRTNode<'a>
+        override self.SubtreeValues(key: UInt128)(value: UInt128) : seq<'a> =
+            match self.LookupSubtree key value with
+            | Some(st) -> st.LRTraversal
+            | None -> Seq.empty
+        override self.LRTraversal: seq<'a> =
+            // inner nodes store no data
+            Seq.concat [ self.Left.LRTraversal; self.Right.LRTraversal ]
         override self.Equals(o: obj) : bool =
             match o with
             | :? CRTInner<'a> as other ->
@@ -130,6 +146,8 @@
         override self.Lookup(str: UInt128) : 'a option = Some value
         override self.Replace(key: UInt128)(value: 'a) : CRTNode<'a> =
             CRTLeaf(prefix, value) :> CRTNode<'a>
+        override self.SubtreeValues(key: UInt128)(value: UInt128) : seq<'a> = self.LRTraversal
+        override self.LRTraversal: seq<'a> = seq [ value ]
         override self.Equals(o: obj) : bool =
             match o with
             | :? CRTLeaf<'a> as other ->
@@ -149,6 +167,8 @@
         override self.Lookup(str: UInt128) : 'a option = None
         override self.Replace(key: UInt128)(value: 'a) : CRTNode<'a> =
             CRTLeaf(prefix, value) :> CRTNode<'a>
+        override self.SubtreeValues(key: UInt128)(value: UInt128) : seq<'a> = self.LRTraversal
+        override self.LRTraversal: seq<'a> = Seq.empty
         override self.Equals(o: obj) : bool =
             match o with
             | :? CRTEmptyLeaf<'a> as other ->
