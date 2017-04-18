@@ -10,6 +10,7 @@
         abstract member Lookup: UInt128 -> 'a option
         abstract member LookupSubtree: UInt128 -> UInt128 -> CRTNode<'a> option
         abstract member Replace: UInt128 -> 'a -> CRTNode<'a>
+        abstract member Value: 'a option
         
     and CRTRoot<'a when 'a : equality>(left: CRTNode<'a>, right: CRTNode<'a>) =
         inherit CRTNode<'a>(-1, UInt128.Zero)
@@ -18,23 +19,21 @@
         member self.Right = right
         override self.IsLeaf = false
         override self.IsEmpty = false
+        override self.Value = None
         override self.LookupSubtree(key: UInt128)(mask: UInt128) : CRTNode<'a> option =
-            let ones = UInt128.Zero.Sub(UInt128.One)
-            if (ones.BitwiseAnd mask) = mask then
+            if mask = UInt128.Zero then
+                // return entire tree
                 Some (self :> CRTNode<'a>)
             else
+                // return subtree
                 if topbit.GreaterThan key then
                     left.LookupSubtree key mask
                 else
                     right.LookupSubtree key mask
         override self.Lookup(key: UInt128) : 'a option =
-            // is the higest-order bit 0 or 1?
-            if topbit.GreaterThan key then
-                // top bit is 0
-                left.Lookup key
-            else
-                // top bit is 1
-                right.Lookup key
+            match self.LookupSubtree key (UInt128.Zero.Sub(UInt128.One)) with
+            | Some st -> st.Value
+            | None -> None
         override self.Replace(key: UInt128)(value: 'a) : CRTNode<'a> =
             if topbit.GreaterThan key then
                 // top bit is 0, replace left
@@ -62,6 +61,7 @@
         member self.Prefix = prefix
         override self.IsLeaf = false
         override self.IsEmpty = false
+        override self.Value = None
         override self.LookupSubtree(key: UInt128)(mask: UInt128) : CRTNode<'a> option = 
             // the user wants this tree, or
             // the user wants a nonexistent parent tree
@@ -80,15 +80,9 @@
                 // the requested subtree is not in the tree
                     None
         override self.Lookup(key: UInt128) : 'a option =
-            let keybits = mymask.BitwiseAnd key
-            if mybits = keybits then
-                let nextbit = nextBitMask.BitwiseAnd key
-                if nextBitMask.GreaterThan nextbit then
-                    left.Lookup key
-                else
-                    right.Lookup key
-            else
-                None
+            match self.LookupSubtree key (UInt128.Zero.Sub(UInt128.One)) with
+            | Some st -> st.Value
+            | None -> None
         override self.Replace(key: UInt128)(value: 'a) : CRTNode<'a> =
             let keybits = mymask.BitwiseAnd key
             if mybits = keybits then
@@ -127,9 +121,9 @@
     and CRTLeaf<'a when 'a : equality>(prefix: UInt128, value: 'a) =
         inherit CRTNode<'a>(127, prefix)
         member self.Prefix = prefix
-        member self.Value = value
         override self.IsLeaf = true
         override self.IsEmpty = false
+        override self.Value = Some value
         override self.LookupSubtree(key: UInt128)(mask: UInt128) : CRTNode<'a> option = 
             Some (self :> CRTNode<'a>)
         override self.Lookup(str: UInt128) : 'a option = Some value
@@ -149,8 +143,8 @@
         member self.Prefix = prefix
         override self.IsLeaf = true
         override self.IsEmpty = true
-        override self.LookupSubtree(key: UInt128)(mask: UInt128) : CRTNode<'a> option = 
-            None
+        override self.Value = None
+        override self.LookupSubtree(key: UInt128)(mask: UInt128) : CRTNode<'a> option = None
         override self.Lookup(str: UInt128) : 'a option = None
         override self.Replace(key: UInt128)(value: 'a) : CRTNode<'a> =
             CRTLeaf(prefix, value) :> CRTNode<'a>
