@@ -1,5 +1,6 @@
 ﻿namespace ExceLint
 
+    open System.Collections.Generic
     open System.Numerics
     open Utils
 
@@ -90,12 +91,18 @@
 
             // OR low and high
             high.BitwiseOr low
-            
-    type LSH(cells: seq<AST.Address>, d: Dict<AST.Address, Countable>) = 
-//        let t = Seq.fold (fun t' addr ->
+
+//    type LSH(cells: seq<AST.Address>, d: Dict<AST.Address, Countable>) = 
+//        // merge values if the key is already in the tree
+//        let keyexists = (fun (oldaddrs: HashSet<AST.Address>)(newaddrs: HashSet<AST.Address>) ->
+//                            let addrs = new HashSet<AST.Address>(oldaddrs)
+//                            for a in newaddrs do
+//                                addrs.Add a |> ignore
+//                            addrs
+//                        )
+//        
+//        // initialize tree
+//        let t = Seq.fold (fun (t': CRTNode<HashSet<AST.Address>>)(addr: AST.Address) ->
 //                    let h = LSHCalc.h7 d.[addr]
-//                    t'.Replace h addr
-//
-//                ) (CRTRoot()) cells
-        class
-        end
+//                    t'.InsertOr h (new HashSet<AST.Address>([addr])) keyexists
+//                ) (CRTRoot() :> CRTNode<HashSet<AST.Address>>) cells
