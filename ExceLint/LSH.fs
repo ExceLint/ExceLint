@@ -1,13 +1,13 @@
 ﻿namespace ExceLint
 
     open System.Numerics
+    open Utils
 
     module LSHCalc =
-        let XBITS = 20
-        let ZBITS = 64 - (2 * XBITS)
-
-        let BXBITS = 20
-        let BZBITS = 10
+        let private XBITS = 20
+        let private ZBITS = 64 - (2 * XBITS)
+        let private BXBITS = 20
+        let private BZBITS = 10
 
         let hash(x: uint64)(y: uint64)(z: uint64) : uint64 =
             // interleave x and y in lower XYBITS bits; z in upper ZBITS
@@ -91,4 +91,11 @@
             // OR low and high
             high.BitwiseOr low
             
-    type LSH(cells: seq<AST.Address>) = class end
+    type LSH(cells: seq<AST.Address>, d: Dict<AST.Address, Countable>) = 
+//        let t = Seq.fold (fun t' addr ->
+//                    let h = LSHCalc.h7 d.[addr]
+//                    t'.Replace h addr
+//
+//                ) (CRTRoot()) cells
+        class
+        end

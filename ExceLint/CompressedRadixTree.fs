@@ -10,6 +10,7 @@
         abstract member Lookup: UInt128 -> 'a option
         abstract member LookupSubtree: UInt128 -> UInt128 -> CRTNode<'a> option
         abstract member Replace: UInt128 -> 'a -> CRTNode<'a>
+        abstract member InsertOr: UInt128 -> 'a -> ('a -> 'a) -> CRTNode<'a>
         abstract member Delete: UInt128 -> CRTNode<'a>
         abstract member Value: 'a option
         abstract member EnumerateSubtree: UInt128 -> UInt128 -> seq<'a>
@@ -43,13 +44,15 @@
                 CRTRoot(left.Delete key, right) :> CRTNode<'a>
             else
                 CRTRoot(left, right.Delete key) :> CRTNode<'a>
-        override self.Replace(key: UInt128)(value: 'a) : CRTNode<'a> =
+        override self.InsertOr(key: UInt128)(value: 'a)(keyexists: 'a -> 'a) : CRTNode<'a> =
             if topbit.GreaterThan key then
                 // top bit is 0, replace left
-                CRTRoot(left.Replace key value, right) :> CRTNode<'a>
+                CRTRoot(left.InsertOr key value keyexists, right) :> CRTNode<'a>
             else
                 // top bit is 1, replace right
-                CRTRoot(left, right.Replace key value) :> CRTNode<'a>
+                CRTRoot(left, right.InsertOr key value keyexists) :> CRTNode<'a>
+        override self.Replace(key: UInt128)(value: 'a) : CRTNode<'a> =
+            self.InsertOr key value (fun a -> a)
         override self.EnumerateSubtree(key: UInt128)(value: UInt128) : seq<'a> =
             match self.LookupSubtree key value with
             | Some(st) -> st.LRTraversal
@@ -121,14 +124,14 @@
             // the user wants to delete a node not in the tree
             // return the tree unmodified
                 self :> CRTNode<'a>
-        override self.Replace(key: UInt128)(value: 'a) : CRTNode<'a> =
+        override self.InsertOr(key: UInt128)(value: 'a)(keyexists: 'a -> 'a) : CRTNode<'a> =
             let keybits = mymask.BitwiseAnd key
             if mybits = keybits then
                 let nextbit = nextBitMask.BitwiseAnd key
                 if nextBitMask.GreaterThan nextbit then
-                    CRTInner(endpos, prefix, left.Replace key value, right) :> CRTNode<'a>
+                    CRTInner(endpos, prefix, left.InsertOr key value keyexists, right) :> CRTNode<'a>
                 else
-                    CRTInner(endpos, prefix, left, right.Replace key value) :> CRTNode<'a>
+                    CRTInner(endpos, prefix, left, right.InsertOr key value keyexists) :> CRTNode<'a>
             else
                 // insert a new parent
                 // find longest common prefix
@@ -145,6 +148,8 @@
                 else
                     // current node goes on the right
                     CRTInner(pidx - 1, prefix', CRTLeaf(key, value), self) :> CRTNode<'a>
+        override self.Replace(key: UInt128)(value: 'a) : CRTNode<'a> =
+            self.InsertOr key value (fun a -> a)
         override self.EnumerateSubtree(key: UInt128)(value: UInt128) : seq<'a> =
             match self.LookupSubtree key value with
             | Some(st) -> st.LRTraversal
@@ -172,8 +177,10 @@
         override self.LookupSubtree(key: UInt128)(mask: UInt128) : CRTNode<'a> option = 
             Some (self :> CRTNode<'a>)
         override self.Lookup(str: UInt128) : 'a option = Some value
+        override self.InsertOr(key: UInt128)(value: 'a)(keyexists: 'a -> 'a) : CRTNode<'a> =
+            CRTLeaf(prefix, keyexists value) :> CRTNode<'a>
         override self.Replace(key: UInt128)(value: 'a) : CRTNode<'a> =
-            CRTLeaf(prefix, value) :> CRTNode<'a>
+            self.InsertOr key value (fun a -> a)
         override self.EnumerateSubtree(key: UInt128)(value: UInt128) : seq<'a> = self.LRTraversal
         override self.LRTraversal: seq<'a> = seq [ value ]
         override self.Delete(key: UInt128) : CRTNode<'a> =
@@ -195,8 +202,10 @@
         override self.Value = None
         override self.LookupSubtree(key: UInt128)(mask: UInt128) : CRTNode<'a> option = None
         override self.Lookup(str: UInt128) : 'a option = None
-        override self.Replace(key: UInt128)(value: 'a) : CRTNode<'a> =
+        override self.InsertOr(key: UInt128)(value: 'a)(keyexists: 'a -> 'a) : CRTNode<'a> =
             CRTLeaf(prefix, value) :> CRTNode<'a>
+        override self.Replace(key: UInt128)(value: 'a) : CRTNode<'a> =
+            self.InsertOr key value (fun a -> a)
         override self.EnumerateSubtree(key: UInt128)(value: UInt128) : seq<'a> = self.LRTraversal
         override self.LRTraversal: seq<'a> = Seq.empty
         override self.Delete(key: UInt128) : CRTNode<'a> =
