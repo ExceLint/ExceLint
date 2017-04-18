@@ -11,7 +11,7 @@
         abstract member LookupSubtree: UInt128 -> UInt128 -> CRTNode<'a> option
         abstract member Replace: UInt128 -> 'a -> CRTNode<'a>
         abstract member Value: 'a option
-        abstract member SubtreeValues: UInt128 -> UInt128 -> seq<'a>
+        abstract member EnumerateSubtree: UInt128 -> UInt128 -> seq<'a>
         abstract member LRTraversal: seq<'a>
         
     and CRTRoot<'a when 'a : equality>(left: CRTNode<'a>, right: CRTNode<'a>) =
@@ -44,7 +44,7 @@
             else
                 // top bit is 1, replace right
                 CRTRoot(left, right.Replace key value) :> CRTNode<'a>
-        override self.SubtreeValues(key: UInt128)(value: UInt128) : seq<'a> =
+        override self.EnumerateSubtree(key: UInt128)(value: UInt128) : seq<'a> =
             match self.LookupSubtree key value with
             | Some(st) -> st.LRTraversal
             | None -> Seq.empty
@@ -117,7 +117,7 @@
                 else
                     // current node goes on the right
                     CRTInner(pidx - 1, prefix', CRTLeaf(key, value), self) :> CRTNode<'a>
-        override self.SubtreeValues(key: UInt128)(value: UInt128) : seq<'a> =
+        override self.EnumerateSubtree(key: UInt128)(value: UInt128) : seq<'a> =
             match self.LookupSubtree key value with
             | Some(st) -> st.LRTraversal
             | None -> Seq.empty
@@ -146,7 +146,7 @@
         override self.Lookup(str: UInt128) : 'a option = Some value
         override self.Replace(key: UInt128)(value: 'a) : CRTNode<'a> =
             CRTLeaf(prefix, value) :> CRTNode<'a>
-        override self.SubtreeValues(key: UInt128)(value: UInt128) : seq<'a> = self.LRTraversal
+        override self.EnumerateSubtree(key: UInt128)(value: UInt128) : seq<'a> = self.LRTraversal
         override self.LRTraversal: seq<'a> = seq [ value ]
         override self.Equals(o: obj) : bool =
             match o with
@@ -167,7 +167,7 @@
         override self.Lookup(str: UInt128) : 'a option = None
         override self.Replace(key: UInt128)(value: 'a) : CRTNode<'a> =
             CRTLeaf(prefix, value) :> CRTNode<'a>
-        override self.SubtreeValues(key: UInt128)(value: UInt128) : seq<'a> = self.LRTraversal
+        override self.EnumerateSubtree(key: UInt128)(value: UInt128) : seq<'a> = self.LRTraversal
         override self.LRTraversal: seq<'a> = Seq.empty
         override self.Equals(o: obj) : bool =
             match o with

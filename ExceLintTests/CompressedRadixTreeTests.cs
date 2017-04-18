@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ExceLint;
 using Microsoft.FSharp.Core;
+using System.Linq;
 
 namespace ExceLintTests
 {
@@ -194,6 +195,29 @@ namespace ExceLintTests
             var te = treeWithLeftMostInsert();
 
             Assert.AreEqual(te, t2);
+        }
+
+        [TestMethod]
+        public void EnumerateTreeTest()
+        {
+            // initialize tree
+            var t = setupTree();
+
+            // lookup a subtree; should be the entire tree
+            var zero = UInt128.Zero;
+            var values = t.EnumerateSubtree(zero, zero);
+
+            // the query should return a sequence containing two values
+            Assert.IsTrue(values.Count<string>() == 2);
+
+            Assert.IsTrue(values.Contains("hi!"));
+            Assert.IsTrue(values.Contains("all one or none!"));
+
+            // L-R order should be preserved
+            var values_arr = values.ToArray();
+
+            Assert.IsTrue(values_arr[0] == "hi!");
+            Assert.IsTrue(values_arr[1] == "all one or none!");
         }
     }
 }
