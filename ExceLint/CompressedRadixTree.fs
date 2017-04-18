@@ -8,6 +8,7 @@
         abstract member IsLeaf: bool
         abstract member IsEmpty: bool
         abstract member Lookup: UInt128 -> 'a option
+        abstract member LookupSubtree: UInt128 -> UInt128 -> CRTNode<'a> option
         abstract member Replace: UInt128 -> 'a -> CRTNode<'a>
         
     and CRTRoot<'a when 'a : equality>(left: CRTNode<'a>, right: CRTNode<'a>) =
@@ -17,6 +18,15 @@
         member self.Right = right
         override self.IsLeaf = false
         override self.IsEmpty = false
+        override self.LookupSubtree(key: UInt128)(mask: UInt128) : CRTNode<'a> option =
+            let ones = UInt128.Zero.Sub(UInt128.One)
+            if (ones.BitwiseAnd mask) = mask then
+                Some (self :> CRTNode<'a>)
+            else
+                if topbit.GreaterThan key then
+                    left.LookupSubtree key mask
+                else
+                    right.LookupSubtree key mask
         override self.Lookup(key: UInt128) : 'a option =
             // is the higest-order bit 0 or 1?
             if topbit.GreaterThan key then
@@ -43,8 +53,8 @@
 
     and CRTInner<'a when 'a : equality>(endpos: int, prefix: UInt128, left: CRTNode<'a>, right: CRTNode<'a>) =
         inherit CRTNode<'a>(endpos, prefix)
-        let mask = UInt128.calcMask 0 endpos
-        let mybits = mask.BitwiseAnd prefix
+        let mymask = UInt128.calcMask 0 endpos
+        let mybits = mymask.BitwiseAnd prefix
         let nextBitMask = UInt128.calcMask (endpos + 1) (endpos + 1)
         member self.Left = left
         member self.Right = right
@@ -52,8 +62,25 @@
         member self.Prefix = prefix
         override self.IsLeaf = false
         override self.IsEmpty = false
+        override self.LookupSubtree(key: UInt128)(mask: UInt128) : CRTNode<'a> option = 
+            // the user wants this tree, or
+            // the user wants a nonexistent parent tree
+            if mask = mymask || (mask.BitwiseAnd mymask) = mask then
+                Some (self :> CRTNode<'a>)
+            else
+            // the user wants a subtree
+                let keybits = mymask.BitwiseAnd key
+                if mybits = keybits then
+                    let nextbit = nextBitMask.BitwiseAnd key
+                    if nextBitMask.GreaterThan nextbit then
+                        left.LookupSubtree key mask
+                    else
+                        right.LookupSubtree key mask
+                else
+                // the requested subtree is not in the tree
+                    None
         override self.Lookup(key: UInt128) : 'a option =
-            let keybits = mask.BitwiseAnd key
+            let keybits = mymask.BitwiseAnd key
             if mybits = keybits then
                 let nextbit = nextBitMask.BitwiseAnd key
                 if nextBitMask.GreaterThan nextbit then
@@ -63,7 +90,7 @@
             else
                 None
         override self.Replace(key: UInt128)(value: 'a) : CRTNode<'a> =
-            let keybits = mask.BitwiseAnd key
+            let keybits = mymask.BitwiseAnd key
             if mybits = keybits then
                 let nextbit = nextBitMask.BitwiseAnd key
                 if nextBitMask.GreaterThan nextbit then
@@ -103,6 +130,8 @@
         member self.Value = value
         override self.IsLeaf = true
         override self.IsEmpty = false
+        override self.LookupSubtree(key: UInt128)(mask: UInt128) : CRTNode<'a> option = 
+            Some (self :> CRTNode<'a>)
         override self.Lookup(str: UInt128) : 'a option = Some value
         override self.Replace(key: UInt128)(value: 'a) : CRTNode<'a> =
             CRTLeaf(prefix, value) :> CRTNode<'a>
@@ -120,6 +149,8 @@
         member self.Prefix = prefix
         override self.IsLeaf = true
         override self.IsEmpty = true
+        override self.LookupSubtree(key: UInt128)(mask: UInt128) : CRTNode<'a> option = 
+            None
         override self.Lookup(str: UInt128) : 'a option = None
         override self.Replace(key: UInt128)(value: 'a) : CRTNode<'a> =
             CRTLeaf(prefix, value) :> CRTNode<'a>
