@@ -219,5 +219,20 @@ namespace ExceLintTests
             Assert.IsTrue(values_arr[0] == "hi!");
             Assert.IsTrue(values_arr[1] == "all one or none!");
         }
+
+        [TestMethod]
+        public void DeleteTest()
+        {
+            // initialize tree
+            var t = treeWithLeftMostInsert();
+
+            // delete a value
+            var t2 = t.Delete(UInt128.Zero);
+
+            // expected outcome
+            var te = setupTree();
+
+            Assert.AreEqual(te, t2);
+        }
     }
 }

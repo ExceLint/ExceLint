@@ -10,6 +10,7 @@
         abstract member Lookup: UInt128 -> 'a option
         abstract member LookupSubtree: UInt128 -> UInt128 -> CRTNode<'a> option
         abstract member Replace: UInt128 -> 'a -> CRTNode<'a>
+        abstract member Delete: UInt128 -> CRTNode<'a>
         abstract member Value: 'a option
         abstract member EnumerateSubtree: UInt128 -> UInt128 -> seq<'a>
         abstract member LRTraversal: seq<'a>
@@ -37,6 +38,11 @@
             match self.LookupSubtree key (UInt128.Zero.Sub(UInt128.One)) with
             | Some st -> st.Value
             | None -> None
+        override self.Delete(key: UInt128) : CRTNode<'a> =
+            if topbit.GreaterThan key then
+                CRTRoot(left.Delete key, right) :> CRTNode<'a>
+            else
+                CRTRoot(left, right.Delete key) :> CRTNode<'a>
         override self.Replace(key: UInt128)(value: 'a) : CRTNode<'a> =
             if topbit.GreaterThan key then
                 // top bit is 0, replace left
@@ -93,6 +99,28 @@
             match self.LookupSubtree key (UInt128.Zero.Sub(UInt128.One)) with
             | Some st -> st.Value
             | None -> None
+        override self.Delete(key: UInt128) : CRTNode<'a> =
+            let keybits = mymask.BitwiseAnd key
+            if mybits = keybits then
+                let nextbit = nextBitMask.BitwiseAnd key
+                if nextBitMask.GreaterThan nextbit then
+                    let nleft = left.Delete key
+                    match nleft with
+                    | :? CRTEmptyLeaf<'a> ->
+                        // this node is redundant; return the right subtree
+                        right
+                    | _ -> CRTInner(endpos, prefix, nleft, right) :> CRTNode<'a>
+                else
+                    let nright = right.Delete key
+                    match nright with
+                    | :? CRTEmptyLeaf<'a> ->
+                        // this node is redundant; return the left subtree
+                        left
+                    | _ -> CRTInner(endpos, prefix, left, nright) :> CRTNode<'a>
+            else
+            // the user wants to delete a node not in the tree
+            // return the tree unmodified
+                self :> CRTNode<'a>
         override self.Replace(key: UInt128)(value: 'a) : CRTNode<'a> =
             let keybits = mymask.BitwiseAnd key
             if mybits = keybits then
@@ -148,6 +176,8 @@
             CRTLeaf(prefix, value) :> CRTNode<'a>
         override self.EnumerateSubtree(key: UInt128)(value: UInt128) : seq<'a> = self.LRTraversal
         override self.LRTraversal: seq<'a> = seq [ value ]
+        override self.Delete(key: UInt128) : CRTNode<'a> =
+            CRTEmptyLeaf(prefix) :> CRTNode<'a>
         override self.Equals(o: obj) : bool =
             match o with
             | :? CRTLeaf<'a> as other ->
@@ -169,6 +199,10 @@
             CRTLeaf(prefix, value) :> CRTNode<'a>
         override self.EnumerateSubtree(key: UInt128)(value: UInt128) : seq<'a> = self.LRTraversal
         override self.LRTraversal: seq<'a> = Seq.empty
+        override self.Delete(key: UInt128) : CRTNode<'a> =
+            // user wants to delete key not in tree;
+            // do nothing
+            self :> CRTNode<'a>
         override self.Equals(o: obj) : bool =
             match o with
             | :? CRTEmptyLeaf<'a> as other ->
