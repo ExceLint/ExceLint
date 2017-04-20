@@ -1151,23 +1151,6 @@
 
                 edges
 
-//            let private pairwiseClusterDistancesOld(C: Clustering)(d: DistanceF)(cache_opt: DistCache option) : SortedSet<Edge> =
-//                // get all pairs of clusters and add to set
-//                let G: Edge[] = induceCompleteGraph (C |> Seq.toArray) |> Seq.map (fun (a,b) -> Edge(a,b)) |> Seq.toArray
-//
-//                let edges = new SortedSet<Edge>(new MinDistComparer(d, cache_opt))
-//                G |> Array.iter (fun e -> edges.Add(e) |> ignore)
-//
-//                edges
-//
-//            let private pairwiseClusterDistances(C: Clustering)(ih: InvertedHistogram)(d: DistanceF)(cache: DistCache option) : Distances =
-//                let dists = new Dict<Edge, double>()
-//                let centroids = new Dict<Countable,HashSet<AST.Address>>()
-//                C |> Seq.iter (fun c -> centroids.Add(centroid c ih, c))
-//                let pairs = C |> Seq.map (fun c -> centroid c ih) |> (fun s -> induceCompleteGraphExcl s (set []))
-//                pairs |> Seq.iter (fun (s,t) -> dists.Add(Edge(centroids.[s], centroids.[t]), d centroids.[s] centroids.[t] cache))
-//                dists
-
             let private initClusterShortestDistances(C: Clustering)(dist: DistanceF)(cache: DistCache option) : Dict<HashSet<AST.Address>,HashSet<AST.Address>> =
                 let d = new Dict<HashSet<AST.Address>,HashSet<AST.Address>>()
                 let dist' = (fun (a, b) -> dist a b cache)
