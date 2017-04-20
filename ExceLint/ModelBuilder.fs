@@ -1433,9 +1433,6 @@
                 let mutable steps_ms: int64 list = []
 
                 // DEFINE DISTANCE
-                let DISTANCE = cent_dist
-//                let DISTANCE = earth_movers_dist
-//                let DISTANCE = min_dist
                 let DISTANCE =
                     match input.config.DistanceMetric with
                     | DistanceMetric.NearestNeighbor -> min_dist
