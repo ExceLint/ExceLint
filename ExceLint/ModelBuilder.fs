@@ -18,8 +18,7 @@
                     let (x,y) = self.tupled
                     x.ToString() + " -> " + y.ToString()
 
-            type DistCache = Dictionary<AST.Address*AST.Address,double>
-            type DistanceF = HashSet<AST.Address> -> HashSet<AST.Address> -> DistCache option -> double
+            type DistanceF = HashSet<AST.Address> -> HashSet<AST.Address> -> double
             type Distances = Dict<Edge,double>
             type ClusterStep = {
                     beyond_knee: bool;
@@ -32,13 +31,13 @@
                     total_sum_squares: double;
                     num_clusters: int;
                  }
-            type MinDistComparer(d: DistanceF, cache: DistCache option) =
+            type MinDistComparer(d: DistanceF) =
                 interface IComparer<Edge> with
                     member self.Compare(x: Edge, y: Edge) =
                         let (xs,xt) = x.tupled
                         let (ys,yt) = y.tupled
-                        let distx = d xs xt cache
-                        let disty = d ys yt cache
+                        let distx = d xs xt
+                        let disty = d ys yt
 
                         if distx < disty then
                             -1
@@ -1142,18 +1141,18 @@
                                     c1.A1Worksheet() = c2.A1Worksheet()
                                   )
 
-            let private pairwiseClusterDistances(C: Clustering)(d: DistanceF)(cache_opt: DistCache option) : SortedSet<Edge> =
+            let private pairwiseClusterDistances(C: Clustering)(d: DistanceF): SortedSet<Edge> =
                 // get all pairs of clusters and add to set
                 let G: Edge[] = induceCompleteGraphExcluding (C |> Seq.toArray) zfilter |> Seq.map (fun (a,b) -> Edge(a,b)) |> Seq.toArray
 
-                let edges = new SortedSet<Edge>(new MinDistComparer(d, cache_opt))
+                let edges = new SortedSet<Edge>(new MinDistComparer(d))
                 G |> Array.iter (fun e -> edges.Add(e) |> ignore)
 
                 edges
 
-            let private initClusterShortestDistances(C: Clustering)(dist: DistanceF)(cache: DistCache option) : Dict<HashSet<AST.Address>,HashSet<AST.Address>> =
+            let private initClusterShortestDistances(C: Clustering)(dist: DistanceF) : Dict<HashSet<AST.Address>,HashSet<AST.Address>> =
                 let d = new Dict<HashSet<AST.Address>,HashSet<AST.Address>>()
-                let dist' = (fun (a, b) -> dist a b cache)
+                let dist' = (fun (a, b) -> dist a b)
                 for c in C do
                     let cs = C |> Seq.map (fun c' -> if c <> c' then Some (c,c') else None) |> Seq.choose id
                     let (_,c') = argmin dist' cs
@@ -1335,7 +1334,7 @@
                     ) (0,new Dict<HashSet<AST.Address>,int>()) clusters
 
                 // define distance
-                let min_dist = (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>)(cache_opt: DistCache option) ->
+                let min_dist = (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>) ->
                                     let pairs = cartesianProduct source target
 
                                     let compute = (fun (a,b) ->
@@ -1344,15 +1343,7 @@
                                                     ac.EuclideanDistance bc
                                                     )
                                     let f = (fun (a,b) ->
-                                                match cache_opt with
-                                                | Some(cache) ->
-                                                    if cache.ContainsKey (a,b) then
-                                                        cache.[(a,b)]
-                                                    else
-                                                        let dst = compute (a,b)
-                                                        cache.Add((a,b), dst)
-                                                        dst
-                                                | None -> compute (a,b)
+                                                compute (a,b)
                                             )
                                     let minpair = argmin f pairs
                                     let dist = f minpair
@@ -1362,7 +1353,7 @@
                 // this is kinda-sorta EMD; it has no notion of flows because I have
                 // no idea what that means in terms of spreadsheet formula fixes
                 let earth_movers_dist =
-                    (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>)(cache_opt: DistCache option) ->
+                    (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>) ->
                         let compute = (fun (a,b) ->
                                         let (_,_,ac) = hb_inv.[a]
                                         let (_,_,bc) = hb_inv.[b]
@@ -1370,15 +1361,7 @@
                                         )
 
                         let f = (fun (a,b) ->
-                                    match cache_opt with
-                                    | Some(cache) ->
-                                        if cache.ContainsKey (a,b) then
-                                            cache.[(a,b)]
-                                        else
-                                            let dst = compute (a,b)
-                                            cache.Add((a,b), dst)
-                                            dst
-                                    | None -> compute (a,b)
+                                    compute (a,b)
                                 )
 
                         // for every point in source, find the closest point in target
@@ -1408,7 +1391,7 @@
                     (Array.forall (fun t -> t.Equals(slf.[0])) tlf)
 
                 // define distance (min distance between clusters)
-                let cent_dist = (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>)(cache_opt: DistCache option) ->
+                let cent_dist = (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>) ->
                                     // Euclidean distance with a small twist:
                                     // The distance between any two cells on different
                                     // sheets is defined as infinity.
@@ -1440,7 +1423,7 @@
                     | DistanceMetric.MeanCentroid -> cent_dist
 
                 // get initial pairwise distances
-                let edges = pairwiseClusterDistances clusters DISTANCE None
+                let edges = pairwiseClusterDistances clusters DISTANCE
 
                 let mutable probable_knee = false
 
@@ -1474,7 +1457,7 @@
                                 beyond_knee = probable_knee;
                                 source = Set.ofSeq source;
                                 target = Set.ofSeq target;
-                                distance = DISTANCE source target None;
+                                distance = DISTANCE source target;
                                 f = F clusters hb_inv;
                                 within_cluster_sum_squares = WCSS clusters hb_inv;
                                 between_cluster_sum_squares = BCSS clusters hb_inv;
