@@ -74,7 +74,7 @@
                  let unm = c2 = HashSetUtils.union c1 ns'
 
                  // compute distance
-                 let dst = d c1 c2
+                 let dst = d c1 ns'
 
                  NN(c1, c2, mask, unm, dst)
             )
