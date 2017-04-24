@@ -91,3 +91,14 @@
 
             // OR low and high
             high.BitwiseOr low
+
+        let h7unmasker(mask: UInt128) : UInt128 =
+            // count the number of ones in current mask
+            let numones = mask.CountOnes
+
+            if numones < 5 * BXBITS then
+                // unmask 5 more bits
+                UInt128.calcMask 0 (numones - 5)
+            else
+                // unmask 2 more bits
+                UInt128.calcMask 0 (numones - 2)

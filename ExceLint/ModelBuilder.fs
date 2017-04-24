@@ -7,6 +7,8 @@
     open Pipeline
 
         module ModelBuilder =
+            type NoFormulasException(msg: string) =
+                inherit Exception(msg)
             type HBDistance = HistoBin -> HistoBin -> ClusterTable -> FlatScoreTable -> double
             type Edge(pair: HashSet<AST.Address>*HashSet<AST.Address>) = 
                 member self.tupled = fst pair, snd pair
@@ -1425,6 +1427,14 @@
                 // get initial pairwise distances
                 let edges = pairwiseClusterDistances clusters DISTANCE
 
+                // compute initial NN table
+                let keymaker = (fun (addr: AST.Address) ->
+                                    let (_,_,co) = hb_inv.[addr]
+                                    LSHCalc.h7 co
+                               )
+                let keyexists = (fun addr1 addr2 -> failwith "Duplicate keys should not happen.")
+                let hs = HashSpace<AST.Address>(cells, keymaker, keyexists, LSHCalc.h7unmasker, DISTANCE)
+
                 let mutable probable_knee = false
 
                 member self.CanStep : bool = clusters.Count > 1
@@ -1584,23 +1594,26 @@
 
             let private runClusterModel(input: Input) : AnalysisOutcome =
                 try
-                    let m = ClusterModel input
+                    if (analysisBase input.config input.dag).Length <> 0 then
+                        let m = ClusterModel input
 
-                    let mutable notdone = true
-                    while notdone do
-                        notdone <- m.Step()
+                        let mutable notdone = true
+                        while notdone do
+                            notdone <- m.Step()
 
-                    Success(Cluster
-                        {
-                            scores = m.Scores;
-                            ranking = m.Ranking;
-                            score_time = m.ScoreTimeMs;
-                            ranking_time = m.RankingTimeMs;
-                            sig_threshold_idx = 0;
-                            cutoff_idx = m.Cutoff;
-                            weights = new Dictionary<AST.Address,double>();
-                        }
-                    )
+                        Success(Cluster
+                            {
+                                scores = m.Scores;
+                                ranking = m.Ranking;
+                                score_time = m.ScoreTimeMs;
+                                ranking_time = m.RankingTimeMs;
+                                sig_threshold_idx = 0;
+                                cutoff_idx = m.Cutoff;
+                                weights = new Dictionary<AST.Address,double>();
+                            }
+                        )
+                    else
+                        CantRun "Cannot perform analysis. This worksheet contains no formulas."
                 with
                 | AnalysisCancelled -> Cancellation
 
@@ -1727,6 +1740,7 @@
                     match pipeline input with
                     | Success(analysis) -> Some (ErrorModel(input, analysis, config'))
                     | Cancellation -> None
+                    | CantRun msg -> raise (NoFormulasException msg)
                 else
                     let pipeline = runModel                 // produce initial (unsorted) ranking
                                     +> weights              // compute weights

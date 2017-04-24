@@ -85,6 +85,7 @@
         type AnalysisOutcome =
         | Success of Analysis
         | Cancellation
+        | CantRun of string
 
         type Pipe = Input -> Analysis -> AnalysisOutcome
 

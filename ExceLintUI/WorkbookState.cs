@@ -472,7 +472,16 @@ namespace ExceLintUI
             else
             {
                 // run analysis
-                var mopt = ExceLint.ModelBuilder.analyze(_app, config, _dag, _tool_significance, p);
+                FSharpOption<ExceLint.ErrorModel> mopt;
+                try
+                {
+                    mopt = ExceLint.ModelBuilder.analyze(_app, config, _dag, _tool_significance, p);
+                } catch (ExceLint.ModelBuilder.NoFormulasException e)
+                {
+                    System.Windows.Forms.MessageBox.Show(e.Message);
+                    throw new AnalysisCancelled();
+                }
+
                 if (FSharpOption<ExceLint.ErrorModel>.get_IsNone(mopt))
                 {
                     throw new AnalysisCancelled();

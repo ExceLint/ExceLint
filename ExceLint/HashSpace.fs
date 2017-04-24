@@ -36,7 +36,7 @@
                 { c_from = cluster_from; c_to = cluster_to; com = common_prefix; unm = unmask_after_merge; d = distance }
         end
 
-    type HashSpace(points: seq<'p>, keymaker: 'p -> UInt128, keyexists: 'p -> 'p -> 'p, unmasker: UInt128 -> UInt128, d: DistanceF<'p>) =
+    type HashSpace<'p when 'p : equality>(points: seq<'p>, keymaker: 'p -> UInt128, keyexists: 'p -> 'p -> 'p, unmasker: UInt128 -> UInt128, d: DistanceF<'p>) =
         // initialize tree
         let t = Seq.fold (fun (t': CRTNode<'p>)(point: 'p) ->
                     let key = keymaker point
