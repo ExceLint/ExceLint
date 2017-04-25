@@ -110,16 +110,18 @@
 
             let gznodes = List.map (fun (node: CRTNode<'a>) ->
                                 match node with
-                                | :? CRTRoot<'a> as r -> nums.[node].ToString() + " [label=\"root\"]"
+                                | :? CRTRoot<'a> as r ->
+                                    nums.[node].ToString() + " [label=\"root\"]"
                                 | :? CRTLeaf<'a> as  l ->
-                                    let prefix = l.Prefix.ToBigInteger.ToString()
+                                    let prefix = l.Prefix.MaskedBitsAsString(UInt128.MaxValue)
                                     let value = l.Value.Value.ToString()
                                     nums.[node].ToString() + "[shape=record, label=\"{" + prefix + "|" + value + "}\"]"
                                 | :? CRTEmptyLeaf<'a> as e ->
-                                    let prefix = e.Prefix.ToBigInteger.ToString()
+                                    let prefix = e.Prefix.MaskedBitsAsString(UInt128.MaxValue)
                                     let value = "ε"
                                     nums.[node].ToString() + "[shape=record, label=\"{" + prefix + "|" + value + "}\"]"
-                                | _ -> nums.[node].ToString() + " [label=\"" + node.Prefix.ToBigInteger.ToString() + "\"]"
+                                | :? CRTInner<'a> as i ->
+                                    nums.[node].ToString() + " [label=\"" + i.Prefix.MaskedBitsAsString(i.Mask) + "\"]"
                           ) nodes
             let gzedges = List.map (fun edge ->
                               match edge with
@@ -157,6 +159,7 @@
         member self.Left = left
         member self.Right = right
         member self.PrefixLength = endpos + 1
+        member self.Mask : UInt128 = mymask
         override self.Prefix = prefix
         override self.IsRoot = false
         override self.IsLeaf = false

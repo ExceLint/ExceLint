@@ -509,6 +509,18 @@ namespace ExceLintUI
             System.Windows.Forms.MessageBox.Show(m.ToGraphViz);
         }
 
+        public void getLSHforAddr(AST.Address cursorAddr, Boolean forceDAGBuild)
+        {
+            // update if necessary
+            var p = Depends.Progress.NOPProgress();
+            RefreshDAG(forceDAGBuild, p);
+
+            var resultant = ExceLint.Vector.ShallowInputVectorMixedFullCVectorResultantNotOSI.run(cursorAddr, _dag);
+            var lsh = ExceLint.LSHCalc.h7(resultant);
+
+            System.Windows.Forms.MessageBox.Show(lsh.MaskedBitsAsString(ExceLint.UInt128.MaxValue));
+        }
+
         public void StepClusterModel(ExceLint.FeatureConf conf, Boolean forceDAGBuild)
         {
             var p = Depends.Progress.NOPProgress();

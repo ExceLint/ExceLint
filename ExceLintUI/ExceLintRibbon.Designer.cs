@@ -68,6 +68,7 @@
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
             this.LSHTest = this.Factory.CreateRibbonButton();
+            this.getLSH = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -122,6 +123,7 @@
             this.box1.Items.Add(this.showHeatmap);
             this.box1.Items.Add(this.stepModel);
             this.box1.Items.Add(this.LSHTest);
+            this.box1.Items.Add(this.getLSH);
             this.box1.Name = "box1";
             // 
             // AnalyzeButton
@@ -315,6 +317,12 @@
             this.LSHTest.Name = "LSHTest";
             this.LSHTest.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.LSHTest_Click);
             // 
+            // getLSH
+            // 
+            this.getLSH.Label = "LSH for Cell";
+            this.getLSH.Name = "getLSH";
+            this.getLSH.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.getLSH_Click);
+            // 
             // ExceLintRibbon
             // 
             this.Name = "ExceLintRibbon";
@@ -369,6 +377,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox ClusterBox;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton stepModel;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton LSHTest;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton getLSH;
     }
 
     partial class ThisRibbonCollection

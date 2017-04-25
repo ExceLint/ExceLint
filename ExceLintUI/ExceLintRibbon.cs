@@ -30,6 +30,15 @@ namespace ExceLintUI
             currentWorkbook.LSHTest(getConfig(), this.forceBuildDAG.Checked);
         }
 
+        private void getLSH_Click(object sender, RibbonControlEventArgs e)
+        {
+            // get cursor location
+            var cursor = (Excel.Range)Globals.ThisAddIn.Application.Selection;
+            AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, Globals.ThisAddIn.Application.ActiveWorkbook);
+
+            currentWorkbook.getLSHforAddr(cursorAddr, false);
+        }
+
         public WorkbookState CurrentWorkbook { 
             get
             {

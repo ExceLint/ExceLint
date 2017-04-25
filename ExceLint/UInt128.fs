@@ -280,7 +280,19 @@
                     if maskchars.[i] = '1' then
                         outchars <- bvchars.[i] :: outchars
 
-                System.String.Join("", List.rev outchars)
+                let s = System.String.Join("", List.rev outchars)
+
+                // compress long runs of 0s and 1s
+                let r0 = System.Text.RegularExpressions.Regex("(00000*)")
+                let r1 = System.Text.RegularExpressions.Regex("(11111*)")
+                let mutable s' = s
+                while r0.IsMatch(s') do
+                    let m = r0.Match(s').Value
+                    s' <- r0.Replace(s', "0[x" + m.Length.ToString() + "]")
+                while r1.IsMatch(s') do
+                    let m = r1.Match(s').Value
+                    s' <- r1.Replace(s', "1[x" + m.Length.ToString() + "]")
+                s'
             interface System.IComparable with
                 member self.CompareTo(o: obj) =
                     match o with
