@@ -55,6 +55,7 @@
                                 x.GetHashCode().CompareTo(y.GetHashCode())
                         else
                             1
+            type InvertedHistogram = System.Collections.ObjectModel.ReadOnlyDictionary<AST.Address,HistoBin>
 
             let private nop = Depends.Progress.NOPProgress()
 
@@ -83,6 +84,82 @@
                     d.Add(kvp.Key,kvp.Value)
                 ) s
                 d
+
+            let private cartesianProductByX(xset: Set<'a>)(yset: Set<'a>) : ('a*'a[]) list =
+                // cartesian product, grouped by the first element,
+                // excluding the element itself
+                Set.map (fun x -> x, (Set.difference yset (Set.ofList [x])) |> Set.toArray) xset |> Set.toList
+
+            let private cartesianProduct(xs: seq<'a>)(ys: seq<'b>) : seq<'a*'b> =
+                xs |> Seq.collect (fun x -> ys |> Seq.map (fun y -> x, y))
+
+            let private centroid(c: seq<AST.Address>)(ih: InvertedHistogram) : Countable =
+                c
+                |> Seq.map (fun a ->
+                    let (_,_,c) = ih.[a]    // get histobin for address
+                    c                       // get countable from bin
+                   )
+                |> Countable.Mean               // get mean
+
+            // define distance
+            let min_dist(hb_inv: InvertedHistogram) =
+                (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>) ->
+                    let pairs = cartesianProduct source target
+
+                    let compute = (fun (a,b) ->
+                                    let (_,_,ac) = hb_inv.[a]
+                                    let (_,_,bc) = hb_inv.[b]
+                                    ac.EuclideanDistance bc
+                                    )
+                    let f = (fun (a,b) ->
+                                compute (a,b)
+                            )
+                    let minpair = argmin f pairs
+                    let dist = f minpair
+                    dist * (double source.Count)
+                )
+
+            // this is kinda-sorta EMD; it has no notion of flows because I have
+            // no idea what that means in terms of spreadsheet formula fixes
+            let earth_movers_dist(hb_inv: InvertedHistogram) =
+                (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>) ->
+                    let compute = (fun (a,b) ->
+                                    let (_,_,ac) = hb_inv.[a]
+                                    let (_,_,bc) = hb_inv.[b]
+                                    ac.EuclideanDistance bc
+                                    )
+
+                    let f = (fun (a,b) ->
+                                compute (a,b)
+                            )
+
+                    // for every point in source, find the closest point in target
+                    let ds = source
+                                |> Seq.map (fun addr ->
+                                    let pairs = target |> Seq.map (fun t -> addr,t)
+                                    let min_dist: double = pairs |> Seq.map f |> Seq.min
+                                    min_dist
+                                )
+
+                    Seq.sum ds
+                )
+
+            // define distance (min distance between clusters)
+            let cent_dist(hb_inv: InvertedHistogram) =
+                (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>) ->
+                    // Euclidean distance with a small twist:
+                    // The distance between any two cells on different
+                    // sheets is defined as infinity.
+                    // This ensures that we always agglomerate intra-sheet
+                    // before agglomerating inter-sheet.
+                    let s_centroid = centroid source hb_inv
+                    let t_centroid = centroid target hb_inv
+                    let dist = if s_centroid.SameSheet t_centroid then
+                                    s_centroid.EuclideanDistance t_centroid
+                                else
+                                    Double.PositiveInfinity
+                    dist * (double source.Count)
+                )
 
             // _analysis_base specifies which cells should be ranked:
             // 1. allCells means all cells in the spreadsheet
@@ -815,11 +892,6 @@
                                 Array.concat |>
                                 Set.ofArray
 
-            let private cartesianProductByX(xset: Set<'a>)(yset: Set<'a>) : ('a*'a[]) list =
-                // cartesian product, grouped by the first element,
-                // excluding the element itself
-                Set.map (fun x -> x, (Set.difference yset (Set.ofList [x])) |> Set.toArray) xset |> Set.toList
-
             let private justHashes(P: Distribution)(feature: Feature)(scope: Scope.SelectID) : Set<Countable> =
                 let mutable s = set[]
                 for hash_row in P.[feature].[scope] do
@@ -1027,8 +1099,6 @@
                 ) (config.EnabledFeatures)
                 t
 
-            type InvertedHistogram = System.Collections.ObjectModel.ReadOnlyDictionary<AST.Address,HistoBin>
-
             let private invertedHistogram(scoretable: ScoreTable)(selcache: Scope.SelectorCache)(dag: Depends.DAG)(config: FeatureConf) : InvertedHistogram =
                 assert (config.EnabledScopes.Length = 1 && config.EnabledFeatures.Length = 1)
 
@@ -1055,9 +1125,6 @@
                 ct'.Remove source |> ignore
                 ct'.[target] <- ct.[source] @ ct.[target]
                 ct'
-
-            let private cartesianProduct(xs: seq<'a>)(ys: seq<'b>) : seq<'a*'b> =
-                xs |> Seq.collect (fun x -> ys |> Seq.map (fun y -> x, y))
 
             let private induceCompleteGraph(xs: seq<'a>) : seq<'a*'a> =
                 cartesianProduct xs xs
@@ -1118,14 +1185,6 @@
                 |> List.map (fun (source,target) -> (source,target),d source target ct fst)
                 |> List.toArray
                 |> toDict
-
-            let private centroid(c: seq<AST.Address>)(ih: InvertedHistogram) : Countable =
-                c
-                |> Seq.map (fun a ->
-                    let (_,_,c) = ih.[a]    // get histobin for address
-                    c                       // get countable from bin
-                   )
-                |> Countable.Mean               // get mean
 
             // true iff on two clusters are on the same sheet;
             // does not check entire cluster since, by induction,
@@ -1328,48 +1387,6 @@
                         (idx + 1, m)
                     ) (0,new Dict<HashSet<AST.Address>,int>()) clusters
 
-                // define distance
-                let min_dist = (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>) ->
-                                    let pairs = cartesianProduct source target
-
-                                    let compute = (fun (a,b) ->
-                                                    let (_,_,ac) = hb_inv.[a]
-                                                    let (_,_,bc) = hb_inv.[b]
-                                                    ac.EuclideanDistance bc
-                                                    )
-                                    let f = (fun (a,b) ->
-                                                compute (a,b)
-                                            )
-                                    let minpair = argmin f pairs
-                                    let dist = f minpair
-                                    dist * (double source.Count)
-                                )
-
-                // this is kinda-sorta EMD; it has no notion of flows because I have
-                // no idea what that means in terms of spreadsheet formula fixes
-                let earth_movers_dist =
-                    (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>) ->
-                        let compute = (fun (a,b) ->
-                                        let (_,_,ac) = hb_inv.[a]
-                                        let (_,_,bc) = hb_inv.[b]
-                                        ac.EuclideanDistance bc
-                                        )
-
-                        let f = (fun (a,b) ->
-                                    compute (a,b)
-                                )
-
-                        // for every point in source, find the closest point in target
-                        let ds = source
-                                    |> Seq.map (fun addr ->
-                                        let pairs = target |> Seq.map (fun t -> addr,t)
-                                        let min_dist: double = pairs |> Seq.map f |> Seq.min
-                                        min_dist
-                                    )
-
-                        Seq.sum ds
-                    )
-
                 let refvect_same(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : bool =
                     // check that all of the location-free vectors in the source and target are the same
                     let slf = source
@@ -1385,22 +1402,6 @@
                     (Array.forall (fun s -> s.Equals(slf.[0])) slf) &&
                     (Array.forall (fun t -> t.Equals(slf.[0])) tlf)
 
-                // define distance (min distance between clusters)
-                let cent_dist = (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>) ->
-                                    // Euclidean distance with a small twist:
-                                    // The distance between any two cells on different
-                                    // sheets is defined as infinity.
-                                    // This ensures that we always agglomerate intra-sheet
-                                    // before agglomerating inter-sheet.
-                                    let s_centroid = centroid source hb_inv
-                                    let t_centroid = centroid target hb_inv
-                                    let dist = if s_centroid.SameSheet t_centroid then
-                                                   s_centroid.EuclideanDistance t_centroid
-                                               else
-                                                   Double.PositiveInfinity
-                                    dist * (double source.Count)
-                                )
-
                 let pp(c: Set<AST.Address>) : string =
                     c
                     |> Seq.map (fun a -> a.A1Local())
@@ -1413,9 +1414,9 @@
                 // DEFINE DISTANCE
                 let DISTANCE =
                     match input.config.DistanceMetric with
-                    | DistanceMetric.NearestNeighbor -> min_dist
-                    | DistanceMetric.EarthMover -> earth_movers_dist
-                    | DistanceMetric.MeanCentroid -> cent_dist
+                    | DistanceMetric.NearestNeighbor -> min_dist hb_inv
+                    | DistanceMetric.EarthMover -> earth_movers_dist hb_inv
+                    | DistanceMetric.MeanCentroid -> cent_dist hb_inv
 
                 // get initial pairwise distances
                 let edges = pairwiseClusterDistances clusters DISTANCE
@@ -1586,6 +1587,62 @@
                 member self.ScoreTimeMs = score_time
                 member self.Scores = nlfrs
                 member self.Cutoff = self.Ranking.Length - 1
+
+            type LSHViz(input: Input) =
+                // initialize selector cache
+                let selcache = Scope.SelectorCache()
+
+                // determine the set of cells to be analyzed
+                let cells = analysisBase input.config input.dag
+
+                // get all NLFRs for every formula cell
+                let _runf = fun () -> runEnabledFeatures cells input.dag input.config input.progress
+                let (ns: ScoreTable,score_time: int64) = PerfUtils.runMillis _runf ()
+
+                // filter and scale
+                let factor = diagonalScaleFactor ns
+                let nlfrs: ScoreTable =
+                    ns
+                    |> Seq.map (fun kvp ->
+                                    kvp.Key,
+                                    kvp.Value
+                                    // remove all off-sheet refs
+                                    |> Array.map (fun (addr,c) ->
+                                        if c.IsOffSheet then
+                                            None
+                                        else 
+                                            Some (addr,c)
+                                        )
+                                    |> Array.choose id
+                                    |> Array.map (fun (addr,c) ->
+                                        addr,
+                                        // only scale the resultant, not the location
+                                        c.UpdateResultant (c.ToCVectorResultant.ScalarMultiply factor)
+                                       )
+                                )
+                    |> Seq.toArray
+                    |> toDict
+
+                // make HistoBin lookup by address
+                let hb_inv = invertedHistogram nlfrs selcache input.dag input.config
+
+                // DEFINE DISTANCE
+                let DISTANCE =
+                    match input.config.DistanceMetric with
+                    | DistanceMetric.NearestNeighbor -> min_dist hb_inv
+                    | DistanceMetric.EarthMover -> earth_movers_dist hb_inv
+                    | DistanceMetric.MeanCentroid -> cent_dist hb_inv
+
+                // compute initial NN table
+                let keymaker = (fun (addr: AST.Address) ->
+                                    let (_,_,co) = hb_inv.[addr]
+                                    LSHCalc.h7 co
+                               )
+                let keyexists = (fun addr1 addr2 ->
+                                    failwith "Duplicate keys should not happen."
+                                )
+                let hs = HashSpace<AST.Address>(cells, keymaker, keyexists, LSHCalc.h7unmasker, DISTANCE)
+                let gztree = hs.HashTree.ToGraphViz
 
             let private runClusterModel(input: Input) : AnalysisOutcome =
                 try
