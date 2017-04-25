@@ -1644,6 +1644,13 @@
                 let hs = HashSpace<AST.Address>(cells, keymaker, keyexists, LSHCalc.h7unmasker, DISTANCE)
                 let gztree = hs.HashTree.ToGraphViz
 
+                member self.ToGraphViz = gztree
+
+            let VisualizeLSH(app: Microsoft.Office.Interop.Excel.Application)(config: FeatureConf)(dag: Depends.DAG)(alpha: double)(progress: Depends.Progress) =
+                let config' = config.validate
+                let input : Input = { app = app; config = config'; dag = dag; alpha = alpha; progress = progress; }
+                LSHViz(input)
+
             let private runClusterModel(input: Input) : AnalysisOutcome =
                 try
                     if (analysisBase input.config input.dag).Length <> 0 then

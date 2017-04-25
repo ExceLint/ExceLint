@@ -25,6 +25,11 @@ namespace ExceLintUI
             currentWorkbook.StepClusterModel(getConfig(), this.forceBuildDAG.Checked);
         }
 
+        private void LSHTest_Click(object sender, RibbonControlEventArgs e)
+        {
+            currentWorkbook.LSHTest(getConfig(), this.forceBuildDAG.Checked);
+        }
+
         public WorkbookState CurrentWorkbook { 
             get
             {

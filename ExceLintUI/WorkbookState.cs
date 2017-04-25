@@ -496,6 +496,19 @@ namespace ExceLintUI
             }
         }
 
+        public void LSHTest(ExceLint.FeatureConf conf, Boolean forceDAGBuild)
+        {
+            var p = Depends.Progress.NOPProgress();
+            Excel.Application app = Globals.ThisAddIn.Application;
+
+            // update if necessary
+            RefreshDAG(forceDAGBuild, p);
+
+            var m = ExceLint.ModelBuilder.VisualizeLSH(app, conf, _dag, 0.05, p);
+
+            System.Windows.Forms.MessageBox.Show(m.ToGraphViz);
+        }
+
         public void StepClusterModel(ExceLint.FeatureConf conf, Boolean forceDAGBuild)
         {
             var p = Depends.Progress.NOPProgress();

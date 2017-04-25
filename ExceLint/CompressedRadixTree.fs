@@ -79,9 +79,28 @@
         override self.GetHashCode() : int =
             self.Left.GetHashCode() ^^^ self.Right.GetHashCode()
         override self.ToGraphViz: string =
+            let lgv = self.Left.ToGraphViz 
+            let rgv = self.Right.ToGraphViz
+
+            let nl = [| "\n"; "\r\n" |]
+            let llines = lgv.Split(nl, System.StringSplitOptions.None)
+            let rlines = rgv.Split(nl, System.StringSplitOptions.None)
+
+            let labelrgx = System.Text.RegularExpressions.Regex("^.+\[label.+$")
+            let ldecls = llines |> Array.filter (fun line -> labelrgx.IsMatch line)
+            let rdecls = rlines |> Array.filter (fun line -> labelrgx.IsMatch line)
+
+            let ledges = llines |> Array.filter (fun line -> not (labelrgx.IsMatch line))
+            let redges = rlines |> Array.filter (fun line -> not (labelrgx.IsMatch line))
+
+            let lgv' = System.String.Join("\n", ledges)
+            let rgv' = System.String.Join("\n", redges)
+
             "graph {\n" +
-            "R -- " + self.Left.ToGraphViz + " \n" +
-            "R -- " + self.Right.ToGraphViz + " \n" +
+            System.String.Join("\n",ldecls) +
+            System.String.Join("\n",rdecls) +
+            "R -- " + lgv' + " \n" +
+            "R -- " + rgv' + " \n" +
             "}\n"
 
     /// <summary>
@@ -201,7 +220,8 @@
         override self.GetHashCode() : int =
             self.Left.GetHashCode() ^^^ self.Right.GetHashCode()
         override self.ToGraphViz: string =
-            let bits = self.Prefix.MaskedBitsAsString(mymask)
+//            let bits = self.Prefix.MaskedBitsAsString(mymask)
+            let bits = self.Prefix.ToBigInteger.ToString()
             bits + "\n" +
             bits + " -- " + self.Left.ToGraphViz + " \n" +
             bits + " -- " + self.Right.ToGraphViz + " \n"
@@ -250,9 +270,10 @@
         override self.GetHashCode() : int =
             prefix.GetHashCode()
         override self.ToGraphViz: string =
-            let bits = self.Prefix.MaskedBitsAsString(UInt128.MaxValue)
+//            let bits = self.Prefix.MaskedBitsAsString(UInt128.MaxValue)
+            let bits = self.Prefix.ToBigInteger.ToString()
             bits + "\n" + 
-            bits + " [label=" + value.ToString() + "]\n"
+            bits + " [label=\"" + value.ToString() + "\"]\n"
 
     and CRTEmptyLeaf<'a when 'a : equality>(prefix: UInt128) =
         inherit CRTNode<'a>(127, prefix)
@@ -281,6 +302,7 @@
         override self.GetHashCode() : int =
             prefix.GetHashCode()
         override self.ToGraphViz: string =
-            let bits = self.Prefix.MaskedBitsAsString(UInt128.MaxValue)
+//            let bits = self.Prefix.MaskedBitsAsString(UInt128.MaxValue)
+            let bits = self.Prefix.ToBigInteger.ToString()
             bits + "\n" + 
             bits + " [label=ε]\n"

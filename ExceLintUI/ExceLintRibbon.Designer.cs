@@ -43,6 +43,7 @@
             this.MarkAsOKButton = this.Factory.CreateRibbonButton();
             this.StartOverButton = this.Factory.CreateRibbonButton();
             this.showHeatmap = this.Factory.CreateRibbonButton();
+            this.stepModel = this.Factory.CreateRibbonButton();
             this.ClusterBox = this.Factory.CreateRibbonCheckBox();
             this.useResultant = this.Factory.CreateRibbonCheckBox();
             this.normSSCheckBox = this.Factory.CreateRibbonCheckBox();
@@ -66,7 +67,7 @@
             this.separator4 = this.Factory.CreateRibbonSeparator();
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
-            this.stepModel = this.Factory.CreateRibbonButton();
+            this.LSHTest = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -120,6 +121,7 @@
             this.box1.Items.Add(this.StartOverButton);
             this.box1.Items.Add(this.showHeatmap);
             this.box1.Items.Add(this.stepModel);
+            this.box1.Items.Add(this.LSHTest);
             this.box1.Name = "box1";
             // 
             // AnalyzeButton
@@ -157,6 +159,12 @@
             this.showHeatmap.Name = "showHeatmap";
             this.showHeatmap.ShowImage = true;
             this.showHeatmap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.showHeatmap_Click);
+            // 
+            // stepModel
+            // 
+            this.stepModel.Label = "Step Cluster Model";
+            this.stepModel.Name = "stepModel";
+            this.stepModel.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.stepModel_Click);
             // 
             // ClusterBox
             // 
@@ -301,11 +309,11 @@
             this.annotateThisCell.ShowImage = true;
             this.annotateThisCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotateThisCell_Click);
             // 
-            // stepModel
+            // LSHTest
             // 
-            this.stepModel.Label = "Step Cluster Model";
-            this.stepModel.Name = "stepModel";
-            this.stepModel.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.stepModel_Click);
+            this.LSHTest.Label = "LSH Test";
+            this.LSHTest.Name = "LSHTest";
+            this.LSHTest.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.LSHTest_Click);
             // 
             // ExceLintRibbon
             // 
@@ -360,6 +368,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox sheetFreq;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox ClusterBox;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton stepModel;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton LSHTest;
     }
 
     partial class ThisRibbonCollection
