@@ -3,7 +3,6 @@
     open System.Collections.Generic
 
     [<AbstractClass>]
-    // endpos is inclusive
     type CRTNode<'a when 'a : equality>(endpos: int, prefix: UInt128) =
         abstract member IsLeaf: bool
         abstract member IsEmpty: bool
@@ -16,6 +15,15 @@
         abstract member EnumerateSubtree: UInt128 -> UInt128 -> seq<'a>
         abstract member LRTraversal: seq<'a>
         
+    /// <summary>
+    /// The root node of a compressed radix tree.
+    /// </summary>
+    /// <param name="left">
+    /// The left subtree.
+    /// </param>
+    /// <param name="right">
+    /// The right subtree.
+    /// </param>
     and CRTRoot<'a when 'a : equality>(left: CRTNode<'a>, right: CRTNode<'a>) =
         inherit CRTNode<'a>(-1, UInt128.Zero)
         let topbit = UInt128.One.LeftShift 127
@@ -63,12 +71,30 @@
         override self.Equals(o: obj) : bool =
             match o with
             | :? CRTRoot<'a> as other ->
-                self.Left = other.Left &&
-                self.Right = other.Right
+                let ok = self.Left = other.Left &&
+                         self.Right = other.Right
+                ok
             | _ -> false
         override self.GetHashCode() : int =
             self.Left.GetHashCode() ^^^ self.Right.GetHashCode()
 
+    /// <summary>
+    /// An inner node of a compressed radix tree.
+    /// </summary>
+    /// <param name="endpos">
+    /// The end index in the UInt128 of this node's bitmask.
+    /// </param>
+    /// <param name="prefix">
+    /// The UInt128 key associated with this node. The prefix bits
+    /// used in comparisons are the node's bitmask AND'ed with
+    /// the prefix.
+    /// </param
+    /// <param name="left">
+    /// The left subtree.
+    /// </param>
+    /// <param name="right">
+    /// The right subtree.
+    /// </param>
     and CRTInner<'a when 'a : equality>(endpos: int, prefix: UInt128, left: CRTNode<'a>, right: CRTNode<'a>) =
         inherit CRTNode<'a>(endpos, prefix)
         let mymask = UInt128.calcMask 0 endpos
@@ -160,10 +186,11 @@
         override self.Equals(o: obj) : bool =
             match o with
             | :? CRTInner<'a> as other ->
-                self.Left = other.Left &&
-                self.Right = other.Right &&
-                self.PrefixLength = other.PrefixLength &&
-                self.Prefix = other.Prefix
+                let ok = self.Left = other.Left &&
+                         self.Right = other.Right &&
+                         self.PrefixLength = other.PrefixLength &&
+                         self.Prefix = other.Prefix
+                ok
             | _ -> false
         override self.GetHashCode() : int =
             self.Left.GetHashCode() ^^^ self.Right.GetHashCode()
@@ -205,8 +232,9 @@
         override self.Equals(o: obj) : bool =
             match o with
             | :? CRTLeaf<'a> as other ->
-                self.Prefix = other.Prefix &&
-                self.Value = other.Value
+                let ok = self.Prefix = other.Prefix &&
+                         self.Value = other.Value
+                ok
             | _ -> false
         override self.GetHashCode() : int =
             prefix.GetHashCode()
@@ -232,7 +260,8 @@
         override self.Equals(o: obj) : bool =
             match o with
             | :? CRTEmptyLeaf<'a> as other ->
-                self.Prefix = other.Prefix
+                let ok = self.Prefix = other.Prefix
+                ok
             | _ -> false
         override self.GetHashCode() : int =
             prefix.GetHashCode()
