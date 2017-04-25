@@ -1432,7 +1432,9 @@
                                     let (_,_,co) = hb_inv.[addr]
                                     LSHCalc.h7 co
                                )
-                let keyexists = (fun addr1 addr2 -> failwith "Duplicate keys should not happen.")
+                let keyexists = (fun addr1 addr2 ->
+                                    failwith "Duplicate keys should not happen."
+                                )
                 let hs = HashSpace<AST.Address>(cells, keymaker, keyexists, LSHCalc.h7unmasker, DISTANCE)
 
                 let mutable probable_knee = false

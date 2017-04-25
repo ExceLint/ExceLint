@@ -178,7 +178,24 @@
             Some (self :> CRTNode<'a>)
         override self.Lookup(str: UInt128) : 'a option = Some value
         override self.InsertOr(key: UInt128)(value': 'a)(keyexists: 'a -> 'a -> 'a) : CRTNode<'a> =
-            CRTLeaf(prefix, keyexists value value') :> CRTNode<'a>
+            // find longest common prefix
+            let pidx = key.LongestCommonPrefix prefix
+            if pidx = 128 then  // the keys are exactly the same
+                CRTLeaf(prefix, keyexists value value') :> CRTNode<'a>
+            else
+                // insert a new parent
+                let mask' = UInt128.calcMask 0 (pidx - 1)
+                let prefix' = mask'.BitwiseAnd key
+
+                // insert current subtree on the left or on the right of new parent node?
+                let nextBitMask' = UInt128.calcMask pidx pidx
+                let nextbit = nextBitMask'.BitwiseAnd prefix
+                if nextBitMask'.GreaterThan nextbit then
+                    // current node goes on the left
+                    CRTInner(pidx - 1, prefix', self, CRTLeaf(key, value')) :> CRTNode<'a>
+                else
+                    // current node goes on the right
+                    CRTInner(pidx - 1, prefix', CRTLeaf(key, value'), self) :> CRTNode<'a>
         override self.Replace(key: UInt128)(value: 'a) : CRTNode<'a> =
             self.InsertOr key value (fun i _ -> i)
         override self.EnumerateSubtree(key: UInt128)(value: UInt128) : seq<'a> = self.LRTraversal

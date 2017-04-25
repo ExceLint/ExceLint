@@ -64,6 +64,34 @@ namespace ExceLintTests
             return t;
         }
 
+        private CRTNode<string> treeWithAlmostRightMostInsert()
+        {
+            var t = new CRTRoot<string>(
+                        new CRTInner<string>(0, UInt128.FromZeroFilledPrefix("0"),
+                                new CRTInner<string>(1, UInt128.FromZeroFilledPrefix("00"),
+                                    new CRTInner<string>(4, UInt128.FromZeroFilledPrefix("00001"),
+                                        new CRTLeaf<string>(UInt128.FromZeroFilledPrefix("000010"), "hi!"),
+                                        new CRTEmptyLeaf<string>(UInt128.FromZeroFilledPrefix("000011"))
+                                    ),
+                                    new CRTInner<string>(3, UInt128.FromZeroFilledPrefix("0010"),
+                                        new CRTEmptyLeaf<string>(UInt128.FromZeroFilledPrefix("00100")),
+                                        new CRTEmptyLeaf<string>(UInt128.FromZeroFilledPrefix("00101"))
+                                    )
+                                ),
+                                new CRTEmptyLeaf<string>(UInt128.FromZeroFilledPrefix("01"))
+                            ),
+                            new CRTInner<string>(1, UInt128.FromZeroFilledPrefix("11"),
+                                new CRTEmptyLeaf<string>(UInt128.FromZeroFilledPrefix("110")),
+                                new CRTInner<string>(1, UInt128.Zero.Sub(UInt128.One).Sub(UInt128.One),
+                                    new CRTLeaf<string>(UInt128.Zero.Sub(UInt128.One).Sub(UInt128.One), "stuff"),
+                                    new CRTLeaf<string>(UInt128.Zero.Sub(UInt128.One), "all one or none!")
+                                )
+                            )
+                        );
+
+            return t;
+        }
+
         [TestMethod]
         public void LookupTest()
         {
@@ -231,6 +259,21 @@ namespace ExceLintTests
 
             // expected outcome
             var te = setupTree();
+
+            Assert.AreEqual(te, t2);
+        }
+
+        [TestMethod]
+        public void InsertWhereLeafExistsTest()
+        {
+            // initialize a tree
+            var t = setupTree();
+
+            // insert a value
+            var t2 = t.Replace(UInt128.Zero.Sub(UInt128.One).Sub(UInt128.One), "stuff");
+
+            // expected outcome
+            var te = treeWithAlmostRightMostInsert();
 
             Assert.AreEqual(te, t2);
         }

@@ -136,7 +136,9 @@
                 b.LeftShift lshft
             static member nBitMask(n: int) : UInt128 =
                 (UInt128.One.LeftShift n).Sub UInt128.One
-            // calculate a UInt128 bitmask starting at startpos and ending at endpos (both inclusive)
+            /// <summary>
+            /// Calculate a UInt128 bitmask starting at startpos (inclusive) and ending at endpos (inclusive).
+            /// </summary>
             static member calcMask(startpos: int)(endpos: int) : UInt128 =
                 let numbits = endpos - startpos + 1
                 (UInt128.nBitMask numbits).LeftShift (128 - numbits - startpos)
@@ -221,6 +223,13 @@
                 UInt128Ops.CountOnes64 self.High + UInt128Ops.CountOnes64 self.Low
             member self.CountZeroes : int =
                 128 - self.CountOnes
+            /// <summary>
+            /// Find the longest common prefix (starting from high bits)
+            /// and return its length.
+            /// </summary>
+            /// <param name="b">
+            /// Another UInt128 to compare against this UInt128.
+            /// </param>
             member self.LongestCommonPrefix(b: UInt128) : int =
                 let a = self
                 let testFn = (fun i ->
