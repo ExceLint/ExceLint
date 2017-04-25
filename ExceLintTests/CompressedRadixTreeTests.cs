@@ -82,7 +82,7 @@ namespace ExceLintTests
                             ),
                             new CRTInner<string>(1, UInt128.FromZeroFilledPrefix("11"),
                                 new CRTEmptyLeaf<string>(UInt128.FromZeroFilledPrefix("110")),
-                                new CRTInner<string>(1, UInt128.Zero.Sub(UInt128.One).Sub(UInt128.One),
+                                new CRTInner<string>(126, UInt128.Zero.Sub(UInt128.One).Sub(UInt128.One),
                                     new CRTLeaf<string>(UInt128.Zero.Sub(UInt128.One).Sub(UInt128.One), "stuff"),
                                     new CRTLeaf<string>(UInt128.Zero.Sub(UInt128.One), "all one or none!")
                                 )
