@@ -14,6 +14,7 @@
         abstract member Value: 'a option
         abstract member EnumerateSubtree: UInt128 -> UInt128 -> seq<'a>
         abstract member LRTraversal: seq<'a>
+        abstract member ToGraphViz: string
         
     /// <summary>
     /// The root node of a compressed radix tree.
@@ -77,6 +78,11 @@
             | _ -> false
         override self.GetHashCode() : int =
             self.Left.GetHashCode() ^^^ self.Right.GetHashCode()
+        override self.ToGraphViz: string =
+            "graph {\n" +
+            "R -- " + self.Left.ToGraphViz + " \n" +
+            "R -- " + self.Right.ToGraphViz + " \n" +
+            "}\n"
 
     /// <summary>
     /// An inner node of a compressed radix tree.
@@ -194,6 +200,11 @@
             | _ -> false
         override self.GetHashCode() : int =
             self.Left.GetHashCode() ^^^ self.Right.GetHashCode()
+        override self.ToGraphViz: string =
+            let bits = self.Prefix.MaskedBitsAsString(mymask)
+            bits + "\n" +
+            bits + " -- " + self.Left.ToGraphViz + " \n" +
+            bits + " -- " + self.Right.ToGraphViz + " \n"
 
     and CRTLeaf<'a when 'a : equality>(prefix: UInt128, value: 'a) =
         inherit CRTNode<'a>(127, prefix)
@@ -238,6 +249,10 @@
             | _ -> false
         override self.GetHashCode() : int =
             prefix.GetHashCode()
+        override self.ToGraphViz: string =
+            let bits = self.Prefix.MaskedBitsAsString(UInt128.MaxValue)
+            bits + "\n" + 
+            bits + " [label=" + value.ToString() + "]\n"
 
     and CRTEmptyLeaf<'a when 'a : equality>(prefix: UInt128) =
         inherit CRTNode<'a>(127, prefix)
@@ -265,3 +280,7 @@
             | _ -> false
         override self.GetHashCode() : int =
             prefix.GetHashCode()
+        override self.ToGraphViz: string =
+            let bits = self.Prefix.MaskedBitsAsString(UInt128.MaxValue)
+            bits + "\n" + 
+            bits + " [label=ε]\n"

@@ -271,6 +271,16 @@
                 Array.fold (fun (a: string)(e: UInt128) ->
                     a + (if one = e then "1" else "0")
                 ) "" stack
+            member self.MaskedBitsAsString(mask: UInt128) : string =
+                let maskchars = mask.ToString().ToCharArray()
+                let bvchars = self.ToString().ToCharArray()
+
+                let mutable outchars = []
+                for i in 0..maskchars.Length - 1 do
+                    if maskchars.[i] = '1' then
+                        outchars <- bvchars.[i] :: outchars
+
+                System.String.Join("", List.rev outchars)
             interface System.IComparable with
                 member self.CompareTo(o: obj) =
                     match o with

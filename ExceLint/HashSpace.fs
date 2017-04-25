@@ -68,24 +68,26 @@
                  let nhs = Seq.map (fun n -> new HashSet<'p>([n])) ns
 
                  // choose the closest neighbor
-                 let c = Utils.argmin (fun c -> d c1 c) nhs
+                 let c2 = Utils.argmin (fun c -> d c1 c) nhs
 
                  // the new cluster
-                 let c2 = HashSetUtils.union c1 c
+                 let c_after = HashSetUtils.union c1 c2
 
                  // adjust mask after merge?
                  // yes iff c2 = c1 union ns
                  // in other words, the entire subtree is cluster c2
-                 let unm = c2 = HashSetUtils.union c1 (new HashSet<'p>(ns))
+                 let unm = c_after = HashSetUtils.union c1 (new HashSet<'p>(ns))
 
                  // compute distance
-                 let dst = d c1 c
+                 let dst = d c1 c2
 
                  NN(c1, c2, mask, unm, dst)
             )
             |> Seq.toArray
 
+        member self.Key(point: 'p) : UInt128 = keymaker point
         member self.NearestNeighborTable : NN<'p>[] = nn
+        member self.HashTree: CRTNode<'p> = t
 
         static member private NearestNeighbors(points: HashSet<'p>)(t: CRTNode<'p>)(key: UInt128)(initial_mask: UInt128)(unmasker: UInt128 -> UInt128) : seq<'p>*UInt128 =
             let mutable neighbors = Seq.empty<'p>
