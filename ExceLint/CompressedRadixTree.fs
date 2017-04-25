@@ -1,9 +1,11 @@
 ﻿namespace ExceLint
 
     open System.Collections.Generic
+    open Utils
 
     [<AbstractClass>]
     type CRTNode<'a when 'a : equality>(endpos: int, prefix: UInt128) =
+        abstract member IsRoot: bool
         abstract member IsLeaf: bool
         abstract member IsEmpty: bool
         abstract member Lookup: UInt128 -> 'a option
@@ -14,8 +16,14 @@
         abstract member Value: 'a option
         abstract member EnumerateSubtree: UInt128 -> UInt128 -> seq<'a>
         abstract member LRTraversal: seq<'a>
+        abstract member Prefix: UInt128
         abstract member ToGraphViz: string
-        
+        abstract member ToGraphVizEdges: GZEdge<'a> list
+
+    and GZEdge<'a when 'a : equality> =
+    | Left of CRTNode<'a>*CRTNode<'a>
+    | Right of CRTNode<'a>*CRTNode<'a>
+
     /// <summary>
     /// The root node of a compressed radix tree.
     /// </summary>
@@ -31,6 +39,8 @@
         new() = CRTRoot(CRTEmptyLeaf(UInt128.Zero),CRTEmptyLeaf(UInt128.Zero.Sub(UInt128.One)))
         member self.Left = left
         member self.Right = right
+        override self.Prefix : UInt128 = failwith "Root has no prefix"
+        override self.IsRoot = true
         override self.IsLeaf = false
         override self.IsEmpty = false
         override self.Value = None
@@ -78,29 +88,48 @@
             | _ -> false
         override self.GetHashCode() : int =
             self.Left.GetHashCode() ^^^ self.Right.GetHashCode()
+        override self.ToGraphVizEdges : GZEdge<'a> list =
+            [
+                Left(self, self.Left);
+                Right(self, self.Right)
+            ]
+            @ self.Left.ToGraphVizEdges
+            @ self.Right.ToGraphVizEdges
         override self.ToGraphViz: string =
-            let lgv = self.Left.ToGraphViz 
-            let rgv = self.Right.ToGraphViz
+            let edges = self.ToGraphVizEdges
+            let nums = new Dict<CRTNode<'a>,int>()
+            let nodes = List.map (fun edge ->
+                            match edge with
+                            | Left(r,c) -> [r;c]
+                            | Right(r,c) -> [r;c]
+                        ) edges |> List.concat |> List.distinct
+            let mutable i = 0
+            for node in nodes do
+                nums.Add(node, i)
+                i <- i + 1
 
-            let nl = [| "\n"; "\r\n" |]
-            let llines = lgv.Split(nl, System.StringSplitOptions.None)
-            let rlines = rgv.Split(nl, System.StringSplitOptions.None)
-
-            let labelrgx = System.Text.RegularExpressions.Regex("^.+\[label.+$")
-            let ldecls = llines |> Array.filter (fun line -> labelrgx.IsMatch line)
-            let rdecls = rlines |> Array.filter (fun line -> labelrgx.IsMatch line)
-
-            let ledges = llines |> Array.filter (fun line -> not (labelrgx.IsMatch line))
-            let redges = rlines |> Array.filter (fun line -> not (labelrgx.IsMatch line))
-
-            let lgv' = System.String.Join("\n", ledges)
-            let rgv' = System.String.Join("\n", redges)
+            let gznodes = List.map (fun (node: CRTNode<'a>) ->
+                                match node with
+                                | :? CRTRoot<'a> as r -> nums.[node].ToString() + " [label=\"root\"]"
+                                | :? CRTLeaf<'a> as  l ->
+                                    let prefix = l.Prefix.ToBigInteger.ToString()
+                                    let value = l.Value.Value.ToString()
+                                    nums.[node].ToString() + "[shape=record, label=\"{" + prefix + "|" + value + "}\"]"
+                                | :? CRTEmptyLeaf<'a> as e ->
+                                    let prefix = e.Prefix.ToBigInteger.ToString()
+                                    let value = "ε"
+                                    nums.[node].ToString() + "[shape=record, label=\"{" + prefix + "|" + value + "}\"]"
+                                | _ -> nums.[node].ToString() + " [label=\"" + node.Prefix.ToBigInteger.ToString() + "\"]"
+                          ) nodes
+            let gzedges = List.map (fun edge ->
+                              match edge with
+                              | Left(r,c) -> nums.[r].ToString() + " -- " + nums.[c].ToString() + " [label=\"0\"]"
+                              | Right(r,c) -> nums.[r].ToString() + " -- " + nums.[c].ToString() + " [label=\"1\"]"
+                          ) edges
 
             "graph {\n" +
-            System.String.Join("\n",ldecls) +
-            System.String.Join("\n",rdecls) +
-            "R -- " + lgv' + " \n" +
-            "R -- " + rgv' + " \n" +
+            System.String.Join("\n",gznodes) +
+            System.String.Join("\n",gzedges) +
             "}\n"
 
     /// <summary>
@@ -128,7 +157,8 @@
         member self.Left = left
         member self.Right = right
         member self.PrefixLength = endpos + 1
-        member self.Prefix = prefix
+        override self.Prefix = prefix
+        override self.IsRoot = false
         override self.IsLeaf = false
         override self.IsEmpty = false
         override self.Value = None
@@ -219,16 +249,19 @@
             | _ -> false
         override self.GetHashCode() : int =
             self.Left.GetHashCode() ^^^ self.Right.GetHashCode()
-        override self.ToGraphViz: string =
-//            let bits = self.Prefix.MaskedBitsAsString(mymask)
-            let bits = self.Prefix.ToBigInteger.ToString()
-            bits + "\n" +
-            bits + " -- " + self.Left.ToGraphViz + " \n" +
-            bits + " -- " + self.Right.ToGraphViz + " \n"
+        override self.ToGraphVizEdges : GZEdge<'a> list =
+            [
+                Left(self, self.Left);
+                Right(self, self.Right)
+            ]
+            @ self.Left.ToGraphVizEdges
+            @ self.Right.ToGraphVizEdges
+        override self.ToGraphViz: string = failwith "no"
 
     and CRTLeaf<'a when 'a : equality>(prefix: UInt128, value: 'a) =
         inherit CRTNode<'a>(127, prefix)
-        member self.Prefix = prefix
+        override self.Prefix = prefix
+        override self.IsRoot = false
         override self.IsLeaf = true
         override self.IsEmpty = false
         override self.Value = Some value
@@ -269,15 +302,13 @@
             | _ -> false
         override self.GetHashCode() : int =
             prefix.GetHashCode()
-        override self.ToGraphViz: string =
-//            let bits = self.Prefix.MaskedBitsAsString(UInt128.MaxValue)
-            let bits = self.Prefix.ToBigInteger.ToString()
-            bits + "\n" + 
-            bits + " [label=\"" + value.ToString() + "\"]\n"
+        override self.ToGraphVizEdges : GZEdge<'a> list = []
+        override self.ToGraphViz: string = failwith "no"
 
     and CRTEmptyLeaf<'a when 'a : equality>(prefix: UInt128) =
         inherit CRTNode<'a>(127, prefix)
-        member self.Prefix = prefix
+        override self.Prefix = prefix
+        override self.IsRoot = false
         override self.IsLeaf = true
         override self.IsEmpty = true
         override self.Value = None
@@ -301,8 +332,5 @@
             | _ -> false
         override self.GetHashCode() : int =
             prefix.GetHashCode()
-        override self.ToGraphViz: string =
-//            let bits = self.Prefix.MaskedBitsAsString(UInt128.MaxValue)
-            let bits = self.Prefix.ToBigInteger.ToString()
-            bits + "\n" + 
-            bits + " [label=ε]\n"
+        override self.ToGraphVizEdges : GZEdge<'a> list = []
+        override self.ToGraphViz: string = failwith "no"
