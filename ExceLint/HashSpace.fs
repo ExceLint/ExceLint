@@ -34,6 +34,11 @@
 
             new(cluster_from: HashSet<'p>, cluster_to: HashSet<'p>, common_prefix: UInt128, unmask_after_merge: bool, distance: float) =
                 { c_from = cluster_from; c_to = cluster_to; com = common_prefix; unm = unmask_after_merge; d = distance }
+            member self.FromCluster = self.c_from
+            member self.ToCluster = self.c_to
+            member self.CommonPrefix = self.com
+            member self.UnmaskAfterMerge = self.unm
+            member self.Distance = self.d
         end
 
     type HashSpace<'p when 'p : equality>(points: seq<'p>, keymaker: 'p -> UInt128, keyexists: 'p -> 'p -> 'p, unmasker: UInt128 -> UInt128, d: DistanceF<'p>) =
@@ -59,26 +64,28 @@
                  // get nearest neighbors
                  let (ns,mask) = HashSpace.NearestNeighbors c1 t key imsk unmasker
 
-                 // choose a neighbor arbitrarily
-                 let n = Seq.head ns
+                 // convert each neighboring point into a cluster (i.e., a HashSet)
+                 let nhs = Seq.map (fun n -> new HashSet<'p>([n])) ns
 
-                 // get ns as a set
-                 let ns' = new HashSet<'p>(ns)
+                 // choose the closest neighbor
+                 let c = Utils.argmin (fun c -> d c1 c) nhs
 
                  // the new cluster
-                 let c2 = HashSetUtils.unionElem c1 n
+                 let c2 = HashSetUtils.union c1 c
 
                  // adjust mask after merge?
-                 // yes iff c2 = c1 union ns'
+                 // yes iff c2 = c1 union ns
                  // in other words, the entire subtree is cluster c2
-                 let unm = c2 = HashSetUtils.union c1 ns'
+                 let unm = c2 = HashSetUtils.union c1 (new HashSet<'p>(ns))
 
                  // compute distance
-                 let dst = d c1 ns'
+                 let dst = d c1 c
 
                  NN(c1, c2, mask, unm, dst)
             )
             |> Seq.toArray
+
+        member self.NearestNeighborTable : NN<'p>[] = nn
 
         static member private NearestNeighbors(points: HashSet<'p>)(t: CRTNode<'p>)(key: UInt128)(initial_mask: UInt128)(unmasker: UInt128 -> UInt128) : seq<'p>*UInt128 =
             let mutable neighbors = Seq.empty<'p>

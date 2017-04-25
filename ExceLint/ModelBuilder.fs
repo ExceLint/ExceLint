@@ -498,13 +498,6 @@
 
                 xs.[idx]
 
-            let private argwhatever(f: 'a -> double)(xs: seq<'a>)(whatev: double -> double -> bool) : 'a =
-                Seq.reduce (fun arg x -> if whatev (f arg) (f x) then arg else x) xs
-            let private argmax(f: 'a -> double)(xs: seq<'a>) : 'a =
-                argwhatever f xs (fun a b -> a > b)
-            let private argmin(f: 'a -> double)(xs: seq<'a>) : 'a =
-                argwhatever f xs (fun a b -> a < b)
-
             let private transpose(mat: 'a[][]) : 'a[][] =
                 // assumes that all subarrays are the same length
                 Array.map (fun i ->
