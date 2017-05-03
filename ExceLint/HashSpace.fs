@@ -22,6 +22,10 @@
             hs2.Add elem |> ignore
             hs2
 
+        let equals<'a>(hs1: HashSet<'a>)(hs2: HashSet<'a>) : bool =
+            let hsu = union hs1 hs2
+            hs1.Count = hsu.Count
+
     type DistanceF<'p> = HashSet<'p> -> HashSet<'p> -> double
 
     type NN<'p> =
@@ -76,7 +80,7 @@
                  // adjust mask after merge?
                  // yes iff c2 = c1 union ns
                  // in other words, the entire subtree is cluster c2
-                 let unm = c_after = HashSetUtils.union c1 (new HashSet<'p>(ns))
+                 let unm = HashSetUtils.equals c_after (HashSetUtils.union c1 (new HashSet<'p>(ns)))
 
                  // compute distance
                  let dst = d c1 c2
