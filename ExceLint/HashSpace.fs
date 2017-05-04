@@ -49,7 +49,17 @@
         // initialize tree
         let t = Seq.fold (fun (t': CRTNode<'p>)(point: 'p) ->
                     let key = keymaker point
-                    t'.InsertOr key point keyexists
+
+                    let tstr = t'.ToGraphViz
+
+                    // debug
+                    let keys = Set.ofSeq t'.LRKeyTraversal
+                    if Set.contains key keys then
+                        failwith "whoa nelly"
+
+                    let t'' = t'.InsertOr key point keyexists
+                    
+                    t''
                 ) (CRTRoot<'p>() :> CRTNode<'p>) points
 
         // initial mask

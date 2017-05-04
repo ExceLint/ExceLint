@@ -38,14 +38,14 @@
             let z = dag.getPathClosureIndex(a.Path,a.WorkbookName,a.WorksheetName)
             hashi a.X a.Y z
 
-        let bimask(v: UInt128)(len: int) : UInt128 =
-            v.BitwiseAnd (UInt128.One.LeftShift len)
+        let bitAt(v: UInt128)(idx: int) : UInt128 =
+            v.BitwiseAnd (UInt128.One.LeftShift idx)
 
         let orShiftMask(t: UInt128)(s: UInt128)(shf: int) : UInt128 =
             t.BitwiseOr (s.LeftShift shf)
 
         let h7(co: Countable) : UInt128 =
-            let (x,y,z,x',y',z',c) =
+            let (x,y,z,dx,dy,dz,dc) =
                 match co with
                 | FullCVectorResultant(x,y,z,x',y',z',c) -> x,y,z,x',y',z',c
                 | _ -> failwith "wrong vector type"
@@ -53,32 +53,33 @@
             let bx  = UInt128(int x)
             let by  = UInt128(int y)
             let bz  = UInt128(int z)
-            let bx' = UInt128(int x')
-            let by' = UInt128(int y')
-            let bz' = UInt128(int z')
-            let bc  = UInt128(int c)
+            let bdx = UInt128(int dx)
+            let bdy = UInt128(int dy)
+            let bdz = UInt128(int dz)
+            let bdc = UInt128(int dc)
 
             // interleave low order bits
             let low = Seq.fold (fun v0 i ->
-                                   let xm =  bimask bx  i
-                                   let ym =  bimask by  i
-                                   let xm' = bimask bx' i
-                                   let ym' = bimask by' i
-                                   let cm =  bimask bc  i
+                                   let xm =  (bitAt bx  i).RightShift i
+                                   let ym =  (bitAt by  i).RightShift i
+                                   let dxm = (bitAt bdx i).RightShift i
+                                   let dym = (bitAt bdy i).RightShift i
+                                   let dcm = (bitAt bdc i).RightShift i
 
-                                   let v1 = orShiftMask v0 xm   i
-                                   let v2 = orShiftMask v1 ym  (i + 1)
-                                   let v3 = orShiftMask v2 xm' (i + 2)
-                                   let v4 = orShiftMask v3 ym' (i + 3)
-                                   let v5 = orShiftMask v4 cm  (i + 4)
+                                   let j = i * 5
+                                   let v1 = orShiftMask v0 xm   j
+                                   let v2 = orShiftMask v1 ym  (j + 1)
+                                   let v3 = orShiftMask v2 dxm (j + 2)
+                                   let v4 = orShiftMask v3 dym (j + 3)
+                                   let v5 = orShiftMask v4 dcm (j + 4)
 
                                    v5
                                ) (UInt128.Zero) (seq { 0 .. BXBITS - 1 })
 
             // interleave high order bits
             let highu = Seq.fold (fun v0 i ->
-                                    let zm  = bimask bz  i
-                                    let zm' = bimask bz' i
+                                    let zm  = bitAt bz  i
+                                    let zm' = bitAt bdz i
 
                                     let v1 = orShiftMask v0 zm   i
                                     let v2 = orShiftMask v1 zm' (i + 1)

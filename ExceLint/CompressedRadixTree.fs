@@ -16,6 +16,7 @@
         abstract member Value: 'a option
         abstract member EnumerateSubtree: UInt128 -> UInt128 -> seq<'a>
         abstract member LRTraversal: seq<'a>
+        abstract member LRKeyTraversal: seq<UInt128>
         abstract member Prefix: UInt128
         abstract member ToGraphViz: string
         abstract member ToGraphVizEdges: GZEdge<'a> list
@@ -139,6 +140,8 @@
             System.String.Join("\n",gznodes) +
             System.String.Join("\n",gzedges) +
             "}\n"
+        override self.LRKeyTraversal : seq<UInt128> =
+            Seq.concat [ self.Left.LRKeyTraversal; self.Right.LRKeyTraversal ]
 
     /// <summary>
     /// An inner node of a compressed radix tree.
@@ -252,6 +255,8 @@
         override self.LRTraversal: seq<'a> =
             // inner nodes store no data
             Seq.concat [ self.Left.LRTraversal; self.Right.LRTraversal ]
+        override self.LRKeyTraversal : seq<UInt128> =
+            Seq.concat [ self.Left.LRKeyTraversal; self.Right.LRKeyTraversal ]
         override self.Equals(o: obj) : bool =
             match o with
             | :? CRTInner<'a> as other ->
@@ -305,6 +310,7 @@
             self.InsertOr key value (fun i _ -> i)
         override self.EnumerateSubtree(key: UInt128)(value: UInt128) : seq<'a> = self.LRTraversal
         override self.LRTraversal: seq<'a> = seq [ value ]
+        override self.LRKeyTraversal: seq<UInt128> = seq [ prefix ]
         override self.Delete(key: UInt128) : CRTNode<'a> =
             CRTEmptyLeaf(prefix) :> CRTNode<'a>
         override self.Equals(o: obj) : bool =
@@ -334,6 +340,7 @@
             self.InsertOr key value (fun i _ -> i)
         override self.EnumerateSubtree(key: UInt128)(value: UInt128) : seq<'a> = self.LRTraversal
         override self.LRTraversal: seq<'a> = Seq.empty
+        override self.LRKeyTraversal: seq<UInt128> = Seq.empty
         override self.Delete(key: UInt128) : CRTNode<'a> =
             // user wants to delete key not in tree;
             // do nothing
