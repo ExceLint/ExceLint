@@ -275,6 +275,7 @@
                     a + (if one = e then "1" else "0")
                 ) "" stack
             member self.MaskedBitsAsString(mask: UInt128) : string =
+                let ss = self.ToString()
                 let maskchars = mask.ToString().ToCharArray()
                 let bvchars = self.ToString().ToCharArray()
 
@@ -291,10 +292,10 @@
                 let mutable s' = s
                 while r0.IsMatch(s') do
                     let m = r0.Match(s').Value
-                    s' <- r0.Replace(s', "0[x" + m.Length.ToString() + "]")
+                    s' <- r0.Replace(s', "0[x" + m.Length.ToString() + "]", 1)
                 while r1.IsMatch(s') do
                     let m = r1.Match(s').Value
-                    s' <- r1.Replace(s', "1[x" + m.Length.ToString() + "]")
+                    s' <- r1.Replace(s', "1[x" + m.Length.ToString() + "]", 1)
                 s'
             interface System.IComparable with
                 member self.CompareTo(o: obj) =
