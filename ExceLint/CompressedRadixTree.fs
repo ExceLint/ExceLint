@@ -36,7 +36,7 @@
     and CRTRoot<'a when 'a : equality>(left: CRTNode<'a>, right: CRTNode<'a>) =
         inherit CRTNode<'a>(-1, UInt128.Zero)
         let topbit = UInt128.One.LeftShift 127
-        new() = CRTRoot(CRTEmptyLeaf(UInt128.Zero),CRTEmptyLeaf(UInt128.Zero.Sub(UInt128.One)))
+        new() = CRTRoot(CRTEmptyLeaf(UInt128.Zero),CRTEmptyLeaf(UInt128.MaxValue))
         member self.Left = left
         member self.Right = right
         override self.Prefix : UInt128 = failwith "Root has no prefix"

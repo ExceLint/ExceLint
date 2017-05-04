@@ -277,5 +277,25 @@ namespace ExceLintTests
 
             Assert.AreEqual(te, t2);
         }
+
+        [TestMethod]
+        public void InsertEmptyTreeTest()
+        {
+            // initialize a tree
+            var t = new CRTRoot<String>();
+
+            // insert a value
+            var key = UInt128.FromBinaryString("00000000000000000000000101010000000000000000000000000000000000000000000000000000000000000000000000000000000000010001000110010111");
+            var value = "first";
+            var t2 = t.Replace(key, value);
+
+            // expected outcome
+            var te = new CRTRoot<String>(
+                         new CRTLeaf<String>(key, value),
+                         new CRTEmptyLeaf<String>(UInt128.MaxValue)
+                     );
+
+            Assert.AreEqual(te, t2);
+        }
     }
 }

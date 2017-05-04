@@ -108,7 +108,7 @@
 
             static member Zero = UInt128(0UL,0UL)
             static member One = UInt128(0UL,1UL)
-            static member MaxValue = UInt128(System.UInt64.MaxValue, System.UInt64.MaxValue)
+            static member MaxValue = UInt128.Zero.Sub(UInt128.One)
             static member FromBigInteger(a: BigInteger) : UInt128 =
                 let lmask = BigInteger.op_LeftShift(BigInteger.One, 64) - BigInteger.One
                 let hmask = BigInteger.op_LeftShift(lmask, 64)
