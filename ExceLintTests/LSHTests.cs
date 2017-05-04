@@ -282,5 +282,17 @@ namespace ExceLintTests
             // compare
             Assert.AreEqual(a_rs64, unrev_ls1);
         }
+
+        [TestMethod]
+        public void HashesShouldNotCollideTest()
+        {
+            var r1 = Countable.NewFullCVectorResultant(7, 9, 7, 14, 0, 0, 0);
+            var r2 = Countable.NewFullCVectorResultant(3, 9, 7, 14, 0, 0, 0);
+
+            var lsh1 = LSHCalc.h7(r1);
+            var lsh2 = LSHCalc.h7(r2);
+
+            Assert.AreNotEqual(lsh1, lsh2);
+        }
     }
 }
