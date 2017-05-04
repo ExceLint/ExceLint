@@ -104,7 +104,12 @@
             val High: uint64
             val Low: uint64
             new(high: uint64, low: uint64) = { High = high; Low = low }
-            new(n: int) = { High = 0UL; Low = uint64 n }
+            new(n: int) =
+                if n >= 0 then
+                    { High = 0UL; Low = uint64 n }
+                else
+                    // sign extend high dword
+                    { High = System.UInt64.MaxValue; Low = uint64 n }
 
             static member Zero = UInt128(0UL,0UL)
             static member One = UInt128(0UL,1UL)

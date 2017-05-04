@@ -294,5 +294,14 @@ namespace ExceLintTests
 
             Assert.AreNotEqual(lsh1, lsh2);
         }
+
+        [TestMethod]
+        public void NegativeNumberTest()
+        {
+            var num = -1;
+            var num128 = new UInt128(num);
+
+            Assert.AreEqual(UInt128.Zero.Sub(UInt128.One), num128);
+        }
     }
 }
