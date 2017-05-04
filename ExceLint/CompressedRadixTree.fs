@@ -318,7 +318,7 @@
         override self.LookupSubtree(key: UInt128)(mask: UInt128) : CRTNode<'a> option = None
         override self.Lookup(str: UInt128) : 'a option = None
         override self.InsertOr(key: UInt128)(value': 'a)(keyexists: 'a -> 'a -> 'a) : CRTNode<'a> =
-            CRTLeaf(prefix, value') :> CRTNode<'a>
+            CRTLeaf(key, value') :> CRTNode<'a>
         override self.Replace(key: UInt128)(value: 'a) : CRTNode<'a> =
             self.InsertOr key value (fun i _ -> i)
         override self.EnumerateSubtree(key: UInt128)(value: UInt128) : seq<'a> = self.LRTraversal
