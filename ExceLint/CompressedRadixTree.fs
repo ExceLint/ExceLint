@@ -19,6 +19,12 @@
         abstract member Prefix: UInt128
         abstract member ToGraphViz: string
         abstract member ToGraphVizEdges: GZEdge<'a> list
+        abstract member Mask: UInt128
+        abstract member NextBitMask: UInt128
+        abstract member PrefixAsString: string
+        default self.Mask: UInt128 = UInt128.calcMask 0 endpos
+        default self.PrefixAsString = prefix.MaskedBitsAsString self.Mask
+        default self.NextBitMask = UInt128.calcMask (endpos + 1) (endpos + 1)
 
     and GZEdge<'a when 'a : equality> =
     | Left of CRTNode<'a>*CRTNode<'a>
@@ -153,13 +159,9 @@
     /// </param>
     and CRTInner<'a when 'a : equality>(endpos: int, prefix: UInt128, left: CRTNode<'a>, right: CRTNode<'a>) =
         inherit CRTNode<'a>(endpos, prefix)
-        let mymask = UInt128.calcMask 0 endpos
-        let mybits = mymask.BitwiseAnd prefix
-        let nextBitMask = UInt128.calcMask (endpos + 1) (endpos + 1)
         member self.Left = left
         member self.Right = right
         member self.PrefixLength = endpos + 1
-        member self.Mask : UInt128 = mymask
         override self.Prefix = prefix
         override self.IsRoot = false
         override self.IsLeaf = false
@@ -168,14 +170,17 @@
         override self.LookupSubtree(key: UInt128)(mask: UInt128) : CRTNode<'a> option = 
             // the user wants this tree, or
             // the user wants a nonexistent parent tree
+            let mymask = self.Mask
             if mask = mymask || (mask.BitwiseAnd mymask) = mask then
                 Some (self :> CRTNode<'a>)
             else
             // the user wants a subtree
                 let keybits = mymask.BitwiseAnd key
+                let mybits = mymask.BitwiseAnd prefix
                 if mybits = keybits then
-                    let nextbit = nextBitMask.BitwiseAnd key
-                    if nextBitMask.GreaterThan nextbit then
+                    let nextbitmask = self.NextBitMask
+                    let nextbit = nextbitmask.BitwiseAnd key
+                    if nextbitmask.GreaterThan nextbit then
                         left.LookupSubtree key mask
                     else
                         right.LookupSubtree key mask
@@ -187,10 +192,13 @@
             | Some st -> st.Value
             | None -> None
         override self.Delete(key: UInt128) : CRTNode<'a> =
+            let mymask = self.Mask
             let keybits = mymask.BitwiseAnd key
+            let mybits = mymask.BitwiseAnd prefix
             if mybits = keybits then
-                let nextbit = nextBitMask.BitwiseAnd key
-                if nextBitMask.GreaterThan nextbit then
+                let nextbitmask = self.NextBitMask
+                let nextbit = nextbitmask.BitwiseAnd key
+                if nextbitmask.GreaterThan nextbit then
                     let nleft = left.Delete key
                     match nleft with
                     | :? CRTEmptyLeaf<'a> ->
@@ -209,10 +217,13 @@
             // return the tree unmodified
                 self :> CRTNode<'a>
         override self.InsertOr(key: UInt128)(value': 'a)(keyexists: 'a -> 'a -> 'a) : CRTNode<'a> =
+            let mymask = self.Mask
             let keybits = mymask.BitwiseAnd key
+            let mybits = mymask.BitwiseAnd prefix
             if mybits = keybits then
-                let nextbit = nextBitMask.BitwiseAnd key
-                if nextBitMask.GreaterThan nextbit then
+                let nextbitmask = self.NextBitMask
+                let nextbit = nextbitmask.BitwiseAnd key
+                if nextbitmask.GreaterThan nextbit then
                     CRTInner(endpos, prefix, left.InsertOr key value' keyexists, right) :> CRTNode<'a>
                 else
                     CRTInner(endpos, prefix, left, right.InsertOr key value' keyexists) :> CRTNode<'a>
