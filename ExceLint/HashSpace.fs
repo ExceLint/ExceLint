@@ -1,5 +1,6 @@
 ﻿namespace ExceLint
     open System.Collections.Generic
+    open Utils
 
     module HashSetUtils =
         let difference<'a>(hs1: HashSet<'a>)(hs2: HashSet<'a>) : HashSet<'a> =
@@ -21,6 +22,9 @@
             let hs2 = new HashSet<'a>(hs)
             hs2.Add elem |> ignore
             hs2
+
+        let inPlaceUnion<'a>(source: HashSet<'a>)(target: HashSet<'a>) : unit =
+            target.UnionWith(source)
 
         let equals<'a>(hs1: HashSet<'a>)(hs2: HashSet<'a>) : bool =
             let hsu = union hs1 hs2
@@ -55,6 +59,14 @@
         // initial mask
         let imsk = UInt128.Zero.Sub(UInt128.One)
 
+        // dict of clusters
+        let pt2Cluster =
+            points
+            |> Seq.map (fun p ->
+                 p,new HashSet<'p>([p])
+               )
+            |> adict
+
         // initialize NN table
         let nn =
             points
@@ -69,7 +81,7 @@
                  let (ns,mask) = HashSpace.NearestNeighbors c1 t key imsk unmasker
 
                  // convert each neighboring point into a cluster (i.e., a HashSet)
-                 let nhs = Seq.map (fun n -> new HashSet<'p>([n])) ns
+                 let nhs = Seq.map (fun n -> pt2Cluster.[n]) ns
 
                  // choose the closest neighbor
                  let c2 = Utils.argmin (fun c -> d c1 c) nhs
@@ -87,21 +99,43 @@
 
                  NN(c1, c2, mask, unm, dst)
             )
+            |> Seq.sortBy (fun nn -> nn.Distance)
             |> Seq.toArray
 
         member self.Key(point: 'p) : UInt128 = keymaker point
         member self.NearestNeighborTable : NN<'p>[] = nn
         member self.HashTree: CRTNode<'p> = t
+        member self.Merge(source: HashSet<'p>)(target: HashSet<'p>) : unit =
+            // add all points in source cluster to the target cluster
+            HashSetUtils.inPlaceUnion source target
 
-        static member private NearestNeighbors(points: HashSet<'p>)(t: CRTNode<'p>)(key: UInt128)(initial_mask: UInt128)(unmasker: UInt128 -> UInt128) : seq<'p>*UInt128 =
+            // update all points that map to the source so that
+            // they now map to the target
+            source
+            |> Seq.iter (fun p -> pt2Cluster.[p] <- target)
+        member self.NextNearestNeighbor : NN<'p> =
+            // TODO HERE
+            let (ns,mask) = HashSpace.NearestNeighbors c1 t key imsk unmasker
+            failwith "hey"
+
+        /// <summary>
+        /// Finds the set of closest points to a given cluster key,
+        /// excluding those points already in the cluster.
+        /// </summary>
+        /// <param name="cluster">the cluster in question</param>
+        /// <param name="root">the root of the prefix tree</param>
+        /// <param name="key">the key representing the cluster</param>
+        /// <param name="initial_mask">the last-searched mask</param>
+        /// <param name="unmasker">a function that gives the next mask given the current mask</param>
+        static member private NearestNeighbors(cluster: HashSet<'p>)(root: CRTNode<'p>)(key: UInt128)(initial_mask: UInt128)(unmasker: UInt128 -> UInt128) : seq<'p>*UInt128 =
             let mutable neighbors = Seq.empty<'p>
             let mutable mask = initial_mask 
             while (Seq.isEmpty neighbors) && mask <> UInt128.Zero do
-                let st_opt = t.LookupSubtree key mask
+                let st_opt = root.LookupSubtree key mask
                 match st_opt with
                 // don't include neighbors in the traversal that are
                 // already in the cluster
-                | Some(st) -> neighbors <- (st.LRTraversal |> Seq.filter (fun (p: 'p) -> not (points.Contains p)))
+                | Some(st) -> neighbors <- (st.LRTraversal |> Seq.filter (fun (p: 'p) -> not (cluster.Contains p)))
                 | None -> ()
                 // only adjust mask if neighbors is empty
                 if Seq.isEmpty neighbors then

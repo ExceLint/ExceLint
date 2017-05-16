@@ -1433,7 +1433,9 @@
 
                 let mutable probable_knee = false
 
-                member self.CanStep : bool = clusters.Count > 1
+                member self.CanStep : bool =
+//                    clusters.Count > 1
+                    hs.NearestNeighborTable.Length > 1
                 member private self.IsKnee(s: HashSet<AST.Address>)(t: HashSet<AST.Address>) : bool =
                     // the first time we merge two clusters that have
                     // different resultants, we've probably hit the knee
@@ -1442,8 +1444,11 @@
                 // determine whether the next step will be the knee
                 // without actually doing anohter agglomeration step
                 member self.NextStepIsKnee : bool =
-                    let e = edges.Min
-                    let (source,target) = e.tupled
+                    let nn_next = hs.NearestNeighborTable.[0]
+                    let source = nn_next.FromCluster
+                    let target = nn_next.ToCluster
+//                    let e = edges.Min
+//                    let (source,target) = e.tupled
                     self.IsKnee source target
 
                 member self.Step() : bool =
@@ -1451,9 +1456,12 @@
                     sw.Start()
 
                     // get the two clusters that minimize distance
-                    let e = edges.Min
+//                    let e = edges.Min
+                    let nn_next = hs.NearestNeighborTable.[0]
+                    let source = nn_next.FromCluster
+                    let target = nn_next.ToCluster
 
-                    let (source,target) = e.tupled
+//                    let (source,target) = e.tupled
 
                     if self.IsKnee source target then
                         probable_knee <- true
@@ -1473,10 +1481,30 @@
 
                     // dump clusters to log
                     let mutable clusterlog = []
-                    clusters
+//                    clusters
+//                    |> Seq.iter (fun cl ->
+//                            cl
+//                            |> Seq.iter (fun addr ->
+//                                let v = ToCountable addr hb_inv
+//                                match v with
+//                                | FullCVectorResultant(x,y,z,dx,dy,dz,dc) ->
+//                                    let row = new ExceLintFileFormats.VectorDumpRow()
+//                                    row.clusterID <- ids.[cl]
+//                                    row.x <- x
+//                                    row.y <- y
+//                                    row.z <- z
+//                                    row.dx <- dx
+//                                    row.dy <- dy
+//                                    row.dz <- dz
+//                                    row.dc <- dc
+//                                    clusterlog <- row :: clusterlog
+//                                | _ -> ()
+//                            )
+//                        )
+                    hs.HashTree.LRTraversal
                     |> Seq.iter (fun cl ->
-                            cl
-                            |> Seq.iter (fun addr ->
+                           cl
+                           |> Seq.iter (fun addr ->
                                 let v = ToCountable addr hb_inv
                                 match v with
                                 | FullCVectorResultant(x,y,z,dx,dy,dz,dc) ->
@@ -1492,7 +1520,7 @@
                                     clusterlog <- row :: clusterlog
                                 | _ -> ()
                             )
-                        )
+                       )
                     per_log <- (List.rev clusterlog) :: per_log
 
                     // merge them
