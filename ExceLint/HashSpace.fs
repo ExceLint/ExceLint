@@ -104,17 +104,21 @@
 
             // update all entries whose nearest neighbor was
             // either the source or the target
-            nn |> Seq.iter (fun kvp ->
-                      let nent = kvp.Value
-                      let cl_source = kvp.Key
-                      let cl_target = nent.ToCluster
+            let nn_old = new Dict<HashSet<'p>,NN<'p>>(nn)
+            nn_old |> Seq.iter (fun kvp ->
+                          let nent = kvp.Value
+                          let cl_source = kvp.Key
+                          let cl_target = nent.ToCluster
 
-                      if cl_target = source || cl_target = target then
-                          // find set of new nearest neighbors & update entry
-                          let key = nent.CommonPrefix
-                          let initial_mask = nent.CommonMask
-                          nn.[cl_source] <- HashSpace.NearestCluster t cl_source key initial_mask unmasker pt2Cluster d
-                  )
+                          if cl_target = source || cl_target = target then
+                              // find set of new nearest neighbors & update entry
+                              let key = nent.CommonPrefix
+                              let initial_mask = nent.CommonMask
+                              nn.[cl_source] <- HashSpace.NearestCluster t cl_source key initial_mask unmasker pt2Cluster d
+                      )
+
+            // remove the source cluster from the NN table
+            nn.Remove source |> ignore
         member self.NextNearestNeighbor : NN<'p> = self.NearestNeighborTable |> Array.head
         member self.Clusters : HashSet<HashSet<'p>> =
             let hss =  pt2Cluster.Values
