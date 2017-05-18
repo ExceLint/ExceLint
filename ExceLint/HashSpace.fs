@@ -75,7 +75,7 @@
             ) (0,new Dict<HashSet<'p>,int>()) (pt2Cluster.Values)
 
         // initialize NN table
-        let mutable nn =
+        let nn =
             points
             |> Seq.map (fun (p: 'p) ->
                  // get key
@@ -90,7 +90,7 @@
             |> adict
 
         member self.Key(point: 'p) : UInt128 = keymaker point
-        member self.NearestNeighborTable : NN<'p>[] = nn.Values |> Seq.toArray
+        member self.NearestNeighborTable : NN<'p>[] = nn.Values |> Seq.toArray |> Array.sortBy (fun nn -> nn.Distance)
         member self.HashTree: CRTNode<'p> = t
         member self.ClusterID(c: HashSet<'p>) = ids.[c]
         member self.Merge(source: HashSet<'p>)(target: HashSet<'p>) : unit =
@@ -115,8 +115,7 @@
                           let initial_mask = nent.CommonMask
                           nn.[cl_source] <- HashSpace.NearestCluster t cl_source key initial_mask unmasker pt2Cluster d
                   )
-        member self.NextNearestNeighbor : NN<'p> =
-            self.NearestNeighborTable |> Array.sortBy (fun nn -> nn.Distance) |> Array.head
+        member self.NextNearestNeighbor : NN<'p> = self.NearestNeighborTable |> Array.head
         member self.Clusters : HashSet<HashSet<'p>> =
             let hss =  pt2Cluster.Values
             let h = new HashSet<HashSet<'p>>()
