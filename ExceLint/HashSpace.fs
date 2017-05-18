@@ -67,6 +67,13 @@
                )
             |> adict
 
+        // create cluster ID map
+        let (_,ids: Dict<HashSet<'p>,int>) =
+            Seq.fold (fun (idx,m) cl ->
+                m.Add(cl, idx)
+                (idx + 1, m)
+            ) (0,new Dict<HashSet<'p>,int>()) (pt2Cluster.Values)
+
         // initialize NN table
         let mutable nn =
             points
@@ -85,6 +92,7 @@
         member self.Key(point: 'p) : UInt128 = keymaker point
         member self.NearestNeighborTable : NN<'p>[] = nn.Values |> Seq.toArray
         member self.HashTree: CRTNode<'p> = t
+        member self.ClusterID(c: HashSet<'p>) = ids.[c]
         member self.Merge(source: HashSet<'p>)(target: HashSet<'p>) : unit =
             // add all points in source cluster to the target cluster
             HashSetUtils.inPlaceUnion source target

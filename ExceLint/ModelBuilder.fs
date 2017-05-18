@@ -55,7 +55,6 @@
                                 x.GetHashCode().CompareTo(y.GetHashCode())
                         else
                             1
-            type InvertedHistogram = System.Collections.ObjectModel.ReadOnlyDictionary<AST.Address,HistoBin>
 
             let private nop = Depends.Progress.NOPProgress()
 
@@ -1377,16 +1376,6 @@
                 // make HistoBin lookup by address
                 let hb_inv = invertedHistogram nlfrs selcache input.dag input.config
 
-                // initially assign every cell to its own cluster
-                let clusters = initialClustering nlfrs input.dag input.config
-
-                // create cluster ID map
-                let (_,ids: Dict<HashSet<AST.Address>,int>) =
-                    Seq.fold (fun (idx,m) cl ->
-                        m.Add(cl, idx)
-                        (idx + 1, m)
-                    ) (0,new Dict<HashSet<AST.Address>,int>()) clusters
-
                 let refvect_same(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : bool =
                     // check that all of the location-free vectors in the source and target are the same
                     let slf = source
@@ -1417,9 +1406,6 @@
                     | DistanceMetric.NearestNeighbor -> min_dist hb_inv
                     | DistanceMetric.EarthMover -> earth_movers_dist hb_inv
                     | DistanceMetric.MeanCentroid -> cent_dist hb_inv
-
-                // get initial pairwise distances
-                let edges = pairwiseClusterDistances clusters DISTANCE
 
                 // compute initial NN table
                 let keymaker = (fun (addr: AST.Address) ->
@@ -1461,6 +1447,7 @@
                         probable_knee <- true
 
                     // record merge in log
+                    let clusters = hs.Clusters
                     log <- {
                                 beyond_knee = probable_knee;
                                 source = Set.ofSeq source;
@@ -1483,7 +1470,7 @@
                            match v with
                            | FullCVectorResultant(x,y,z,dx,dy,dz,dc) ->
                                let row = new ExceLintFileFormats.VectorDumpRow()
-                               row.clusterID <- ids.[cl]
+                               row.clusterID <- hs.ClusterID cl
                                row.x <- x
                                row.y <- y
                                row.z <- z
@@ -1498,14 +1485,13 @@
                     per_log <- (List.rev clusterlog) :: per_log
 
                     // merge them
-//                    updatePairwiseClusterDistancesAndCluster clusters hb_inv DISTANCE edges source target
                     hs.Merge source target
 
                     sw.Stop()
                     steps_ms <- sw.ElapsedMilliseconds :: steps_ms
 
                     // tell the user whether more steps remain
-                    clusters.Count > 1 && edges.Count > 0
+                    self.CanStep
 
                 member self.WritePerLogs() =
                     (List.rev per_log)
@@ -1545,7 +1531,7 @@
                     // close file
                     csvw.Dispose()
 
-                member self.Clustering = clusters
+                member self.Clustering = hs.Clusters
 
                 member self.Ranking =
                     let numfrm = input.dag.getAllFormulaAddrs().Length
