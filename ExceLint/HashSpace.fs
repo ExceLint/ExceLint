@@ -102,23 +102,25 @@
             source
             |> Seq.iter (fun p -> pt2Cluster.[p] <- target)
 
-            // update all entries whose nearest neighbor was
-            // either the source or the target
-            let nn_old = new Dict<HashSet<'p>,NN<'p>>(nn)
-            nn_old |> Seq.iter (fun kvp ->
-                          let nent = kvp.Value
-                          let cl_source = kvp.Key
-                          let cl_target = nent.ToCluster
-
-                          if cl_target = source || cl_target = target then
-                              // find set of new nearest neighbors & update entry
-                              let key = nent.CommonPrefix
-                              let initial_mask = nent.CommonMask
-                              nn.[cl_source] <- HashSpace.NearestCluster t cl_source key initial_mask unmasker pt2Cluster d
-                      )
-
             // remove the source cluster from the NN table
             nn.Remove source |> ignore
+
+            // stop if we're down to the last entry
+            if nn.Count > 1 then
+                // update all entries whose nearest neighbor was
+                // either the source or the target
+                let nn_old = new Dict<HashSet<'p>,NN<'p>>(nn)
+                nn_old |> Seq.iter (fun kvp ->
+                              let nent = kvp.Value
+                              let cl_source = kvp.Key
+                              let cl_target = nent.ToCluster
+
+                              if cl_target = source || cl_target = target then
+                                  // find set of new nearest neighbors & update entry
+                                  let key = nent.CommonPrefix
+                                  let initial_mask = nent.CommonMask
+                                  nn.[cl_source] <- HashSpace.NearestCluster t cl_source key initial_mask unmasker pt2Cluster d
+                          )
         member self.NextNearestNeighbor : NN<'p> = self.NearestNeighborTable |> Array.head
         member self.Clusters : HashSet<HashSet<'p>> =
             let hss =  pt2Cluster.Values
@@ -138,16 +140,19 @@
         /// <param name="unmasker">a function that gives the next mask given the current mask</param>
         static member private NearestPoints(cluster: HashSet<'p>)(root: CRTNode<'p>)(key: UInt128)(initial_mask: UInt128)(unmasker: UInt128 -> UInt128) : seq<'p>*UInt128 =
             let mutable neighbors = Seq.empty<'p>
-            let mutable mask = initial_mask 
-            while (Seq.isEmpty neighbors) && mask <> UInt128.Zero do
+            let mutable mask = initial_mask
+            let mutable no_more_neighbors = false
+            while (Seq.isEmpty neighbors) && not no_more_neighbors do
                 let st_opt = root.LookupSubtree key mask
                 match st_opt with
                 // don't include neighbors in the traversal that are
                 // already in the cluster
                 | Some(st) -> neighbors <- (st.LRTraversal |> Seq.filter (fun (p: 'p) -> not (cluster.Contains p)))
                 | None -> ()
+                if mask = UInt128.Zero then
+                    no_more_neighbors <- true
                 // only adjust mask if neighbors is empty
-                if Seq.isEmpty neighbors then
+                else if Seq.isEmpty neighbors then
                     mask <- unmasker mask
 
             assert not (Seq.isEmpty neighbors)
