@@ -1429,7 +1429,7 @@
                 // determine whether the next step will be the knee
                 // without actually doing anohter agglomeration step
                 member self.NextStepIsKnee : bool =
-                    let nn_next = hs.NearestNeighborTable.[0]
+                    let nn_next = hs.NextNearestNeighbor
                     let source = nn_next.FromCluster
                     let target = nn_next.ToCluster
                     self.IsKnee source target
