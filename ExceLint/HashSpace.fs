@@ -37,15 +37,15 @@
             val c_from: HashSet<'p>
             val c_to: HashSet<'p>
             val com: UInt128
-            val unm: bool
+            val mask: UInt128
             val d: float
 
-            new(cluster_from: HashSet<'p>, cluster_to: HashSet<'p>, common_prefix: UInt128, unmask_after_merge: bool, distance: float) =
-                { c_from = cluster_from; c_to = cluster_to; com = common_prefix; unm = unmask_after_merge; d = distance }
+            new(cluster_from: HashSet<'p>, cluster_to: HashSet<'p>, common_prefix: UInt128, common_mask: UInt128, distance: float) =
+                { c_from = cluster_from; c_to = cluster_to; com = common_prefix; mask = common_mask; d = distance }
             member self.FromCluster = self.c_from
             member self.ToCluster = self.c_to
             member self.CommonPrefix = self.com
-            member self.UnmaskAfterMerge = self.unm
+            member self.CommonMask = self.mask
             member self.Distance = self.d
         end
 
@@ -68,42 +68,22 @@
             |> adict
 
         // initialize NN table
-        let nn =
+        let mutable nn =
             points
             |> Seq.map (fun (p: 'p) ->
                  // get key
                  let key = keymaker p
 
                  // get the initial 'cluster'
-                 let c1 = new HashSet<'p>([p])
+                 let c1 = pt2Cluster.[p]
 
-                 // get nearest neighbors
-                 let (ns,mask) = HashSpace.NearestNeighbors c1 t key imsk unmasker
-
-                 // convert each neighboring point into a cluster (i.e., a HashSet)
-                 let nhs = Seq.map (fun n -> pt2Cluster.[n]) ns
-
-                 // choose the closest neighbor
-                 let c2 = Utils.argmin (fun c -> d c1 c) nhs
-
-                 // the new cluster
-                 let c_after = HashSetUtils.union c1 c2
-
-                 // adjust mask after merge?
-                 // yes iff c2 = c1 union ns
-                 // in other words, the entire subtree is cluster c2
-                 let unm = HashSetUtils.equals c_after (HashSetUtils.union c1 (new HashSet<'p>(ns)))
-
-                 // compute distance
-                 let dst = d c1 c2
-
-                 NN(c1, c2, mask, unm, dst)
+                 // index NN entry by cluster
+                 c1, HashSpace.NearestCluster t c1 key imsk unmasker pt2Cluster d
             )
-            |> Seq.sortBy (fun nn -> nn.Distance)
-            |> Seq.toArray
+            |> adict
 
         member self.Key(point: 'p) : UInt128 = keymaker point
-        member self.NearestNeighborTable : NN<'p>[] = nn
+        member self.NearestNeighborTable : NN<'p>[] = nn.Values |> Seq.toArray
         member self.HashTree: CRTNode<'p> = t
         member self.Merge(source: HashSet<'p>)(target: HashSet<'p>) : unit =
             // add all points in source cluster to the target cluster
@@ -113,27 +93,39 @@
             // they now map to the target
             source
             |> Seq.iter (fun p -> pt2Cluster.[p] <- target)
+
+            // update all entries whose nearest neighbor was
+            // either the source or the target
+            nn |> Seq.iter (fun kvp ->
+                      let nent = kvp.Value
+                      let cl_source = kvp.Key
+                      let cl_target = nent.ToCluster
+
+                      if cl_target = source || cl_target = target then
+                          // find set of new nearest neighbors & update entry
+                          let key = nent.CommonPrefix
+                          let initial_mask = nent.CommonMask
+                          nn.[cl_source] <- HashSpace.NearestCluster t cl_source key initial_mask unmasker pt2Cluster d
+                  )
         member self.NextNearestNeighbor : NN<'p> =
-            // TODO HERE
-            let (ns,mask) = HashSpace.NearestNeighbors c1 t key imsk unmasker
-            failwith "hey"
+            self.NearestNeighborTable |> Array.sortBy (fun nn -> nn.Distance) |> Array.head
         member self.Clusters : HashSet<HashSet<'p>> =
             let hss =  pt2Cluster.Values
             let h = new HashSet<HashSet<'p>>()
             hss |> Seq.iter (fun hs -> h.Add hs |> ignore)
             h
 
-
         /// <summary>
         /// Finds the set of closest points to a given cluster key,
-        /// excluding those points already in the cluster.
+        /// excluding those points already in the cluster, using
+        /// the LSH prefix tree.
         /// </summary>
         /// <param name="cluster">the cluster in question</param>
         /// <param name="root">the root of the prefix tree</param>
         /// <param name="key">the key representing the cluster</param>
         /// <param name="initial_mask">the last-searched mask</param>
         /// <param name="unmasker">a function that gives the next mask given the current mask</param>
-        static member private NearestNeighbors(cluster: HashSet<'p>)(root: CRTNode<'p>)(key: UInt128)(initial_mask: UInt128)(unmasker: UInt128 -> UInt128) : seq<'p>*UInt128 =
+        static member private NearestPoints(cluster: HashSet<'p>)(root: CRTNode<'p>)(key: UInt128)(initial_mask: UInt128)(unmasker: UInt128 -> UInt128) : seq<'p>*UInt128 =
             let mutable neighbors = Seq.empty<'p>
             let mutable mask = initial_mask 
             while (Seq.isEmpty neighbors) && mask <> UInt128.Zero do
@@ -149,3 +141,31 @@
 
             assert not (Seq.isEmpty neighbors)
             neighbors, mask
+
+        /// <summary>
+        /// Finds the closest cluster to a given cluster identified
+        /// by an LSH key and mask.
+        /// </summary>
+        /// <param name="root">the root of the prefix tree</param>
+        /// <param name="source">the cluster in question</param>
+        /// <param name="key">a key belonging to any one of the points in the cluster</param>
+        /// <param name="mask">the cluster's common bitmask</param>
+        /// <param name="unmasker">a function that gives the next mask given the current mask</param>
+        /// <param name="pt2Cluster">a mapping from points to clusters</param>
+        /// <param name="d">a cluster-to-cluster distance function</param>
+        static member private NearestCluster(root: CRTNode<'p>)(source: HashSet<'p>)(key: UInt128)(mask: UInt128)(unmasker: UInt128 -> UInt128)(pt2Cluster: Dict<'p,HashSet<'p>>)(d: DistanceF<'p>) =
+            // get nearest neighbors
+            let (ns,new_mask) = HashSpace.NearestPoints source root key mask unmasker
+
+            // find the cluster corresponding to each point nearest to cl_source;
+            // exclude the cl_source cluster itself
+            let nhs = Seq.map (fun p -> pt2Cluster.[p]) ns |> Seq.distinct |> Seq.filter (fun cl -> cl <> source)
+
+            // find the closest cluster
+            let closest = Utils.argmin (fun c -> d source c) nhs
+
+            // compute distance
+            let dst = d source closest
+
+            // return updated entry
+            NN(source, closest, key, new_mask, dst)

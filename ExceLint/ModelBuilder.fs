@@ -1434,7 +1434,6 @@
                 let mutable probable_knee = false
 
                 member self.CanStep : bool =
-//                    clusters.Count > 1
                     hs.NearestNeighborTable.Length > 1
                 member private self.IsKnee(s: HashSet<AST.Address>)(t: HashSet<AST.Address>) : bool =
                     // the first time we merge two clusters that have
@@ -1447,8 +1446,6 @@
                     let nn_next = hs.NearestNeighborTable.[0]
                     let source = nn_next.FromCluster
                     let target = nn_next.ToCluster
-//                    let e = edges.Min
-//                    let (source,target) = e.tupled
                     self.IsKnee source target
 
                 member self.Step() : bool =
@@ -1456,12 +1453,9 @@
                     sw.Start()
 
                     // get the two clusters that minimize distance
-//                    let e = edges.Min
-                    let nn_next = hs.NearestNeighborTable.[0]
+                    let nn_next = hs.NextNearestNeighbor
                     let source = nn_next.FromCluster
                     let target = nn_next.ToCluster
-
-//                    let (source,target) = e.tupled
 
                     if self.IsKnee source target then
                         probable_knee <- true
@@ -1504,7 +1498,8 @@
                     per_log <- (List.rev clusterlog) :: per_log
 
                     // merge them
-                    updatePairwiseClusterDistancesAndCluster clusters hb_inv DISTANCE edges source target
+//                    updatePairwiseClusterDistancesAndCluster clusters hb_inv DISTANCE edges source target
+                    hs.Merge source target
 
                     sw.Stop()
                     steps_ms <- sw.ElapsedMilliseconds :: steps_ms
