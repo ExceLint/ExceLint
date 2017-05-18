@@ -1481,46 +1481,26 @@
 
                     // dump clusters to log
                     let mutable clusterlog = []
-//                    clusters
-//                    |> Seq.iter (fun cl ->
-//                            cl
-//                            |> Seq.iter (fun addr ->
-//                                let v = ToCountable addr hb_inv
-//                                match v with
-//                                | FullCVectorResultant(x,y,z,dx,dy,dz,dc) ->
-//                                    let row = new ExceLintFileFormats.VectorDumpRow()
-//                                    row.clusterID <- ids.[cl]
-//                                    row.x <- x
-//                                    row.y <- y
-//                                    row.z <- z
-//                                    row.dx <- dx
-//                                    row.dy <- dy
-//                                    row.dz <- dz
-//                                    row.dc <- dc
-//                                    clusterlog <- row :: clusterlog
-//                                | _ -> ()
-//                            )
-//                        )
-                    hs.HashTree.LRTraversal
+                    hs.Clusters
                     |> Seq.iter (fun cl ->
-                           cl
-                           |> Seq.iter (fun addr ->
-                                let v = ToCountable addr hb_inv
-                                match v with
-                                | FullCVectorResultant(x,y,z,dx,dy,dz,dc) ->
-                                    let row = new ExceLintFileFormats.VectorDumpRow()
-                                    row.clusterID <- ids.[cl]
-                                    row.x <- x
-                                    row.y <- y
-                                    row.z <- z
-                                    row.dx <- dx
-                                    row.dy <- dy
-                                    row.dz <- dz
-                                    row.dc <- dc
-                                    clusterlog <- row :: clusterlog
-                                | _ -> ()
-                            )
+                        cl
+                        |> Seq.iter (fun addr ->
+                           let v = ToCountable addr hb_inv
+                           match v with
+                           | FullCVectorResultant(x,y,z,dx,dy,dz,dc) ->
+                               let row = new ExceLintFileFormats.VectorDumpRow()
+                               row.clusterID <- ids.[cl]
+                               row.x <- x
+                               row.y <- y
+                               row.z <- z
+                               row.dx <- dx
+                               row.dy <- dy
+                               row.dz <- dz
+                               row.dc <- dc
+                               clusterlog <- row :: clusterlog
+                           | _ -> () // we don't care about other vector types
                        )
+                    )
                     per_log <- (List.rev clusterlog) :: per_log
 
                     // merge them

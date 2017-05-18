@@ -117,6 +117,12 @@
             // TODO HERE
             let (ns,mask) = HashSpace.NearestNeighbors c1 t key imsk unmasker
             failwith "hey"
+        member self.Clusters : HashSet<HashSet<'p>> =
+            let hss =  pt2Cluster.Values
+            let h = new HashSet<HashSet<'p>>()
+            hss |> Seq.iter (fun hs -> h.Add hs |> ignore)
+            h
+
 
         /// <summary>
         /// Finds the set of closest points to a given cluster key,
