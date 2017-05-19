@@ -7,7 +7,7 @@
 
     module ClusterModelBuilder =
         // define distance
-        let private min_dist(hb_inv: InvertedHistogram) =
+        let min_dist(hb_inv: InvertedHistogram) =
             (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>) ->
                 let pairs = cartesianProduct source target
 
@@ -26,7 +26,7 @@
 
         // this is kinda-sorta EMD; it has no notion of flows because I have
         // no idea what that means in terms of spreadsheet formula fixes
-        let private earth_movers_dist(hb_inv: InvertedHistogram) =
+        let earth_movers_dist(hb_inv: InvertedHistogram) =
             (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>) ->
                 let compute = (fun (a,b) ->
                                 let (_,_,ac) = hb_inv.[a]
@@ -50,7 +50,7 @@
             )
 
         // define distance (min distance between clusters)
-        let private cent_dist(hb_inv: InvertedHistogram) =
+        let cent_dist(hb_inv: InvertedHistogram) =
             (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>) ->
                 // Euclidean distance with a small twist:
                 // The distance between any two cells on different
@@ -67,7 +67,7 @@
             )
 
         // find s vector guaranteed to be longer than any of the given vectors
-        let private diagonalScaleFactor(ss: ScoreTable) : double =
+        let diagonalScaleFactor(ss: ScoreTable) : double =
             let points = ss
                             |> Seq.map (fun kvp -> kvp.Value |> Seq.map (fun (_,c: Countable) -> c.Location))
                             |> Seq.concat
@@ -122,7 +122,7 @@
             |> adict
 
         // the total sum of squares
-        let private TSS(C: Clustering)(ih: InvertedHistogram) : double =
+        let TSS(C: Clustering)(ih: InvertedHistogram) : double =
             let all_observations = C |> Seq.concat |> Seq.toArray |> Array.map (fun addr -> ToCountable addr ih)
             let n = all_observations.Length
             let mean = Countable.Mean all_observations 
@@ -135,7 +135,7 @@
                 )
 
         // the within-cluster sum of squares
-        let private WCSS(C: Clustering)(ih: InvertedHistogram) : double =
+        let WCSS(C: Clustering)(ih: InvertedHistogram) : double =
             let k = C.Count
             let clusters = C |> Seq.toArray |> Array.map (fun c -> c |> Seq.toArray |> Array.map (fun addr -> ToCountable addr ih))
             let means = clusters |> Array.map (fun c -> Countable.Mean(c))
@@ -158,7 +158,7 @@
             )
 
         // the between-cluster sum of squares
-        let private BCSS(C: Clustering)(ih: InvertedHistogram) : double =
+        let BCSS(C: Clustering)(ih: InvertedHistogram) : double =
             let k = C.Count
             let clusters = C |> Seq.toArray |> Array.map (fun c -> c |> Seq.toArray |> Array.map (fun addr -> ToCountable addr ih))
             let means = clusters |> Array.map (fun c -> Countable.Mean(c))
@@ -175,7 +175,7 @@
                 (double ni) * error.VectorMultiply(error)
             )
 
-        let private F(C: Clustering)(ih: InvertedHistogram) : double =
+        let F(C: Clustering)(ih: InvertedHistogram) : double =
             let k = double C.Count
             let n = double (C |> Seq.sumBy (fun cl -> cl.Count))
 

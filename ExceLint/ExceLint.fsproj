@@ -76,6 +76,7 @@
     <Compile Include="ASTMutator.fs" />
     <Compile Include="ErrorModel.fs" />
     <Compile Include="ClusterModelBuilder.fs" />
+    <Compile Include="OldClusterModel.fs" />
     <Compile Include="COFModelBuilder.fs" />
     <Compile Include="SpectralModelBuilder.fs" />
     <Compile Include="ModelBuilder.fs" />
