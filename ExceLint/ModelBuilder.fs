@@ -17,24 +17,6 @@
                 ) arr
                 d
 
-            let private sToDict(s: seq<'a*'b>) : Dict<'a,'b> =
-                // assumes that 'a is unique
-                // and s is finite
-                let d = new Dict<'a,'b>()
-                Seq.iter (fun (a,b) ->
-                    d.Add(a,b)
-                ) s
-                d
-
-            let private skvpToDict(s: seq<KeyValuePair<'a,'b>>) : Dict<'a,'b> =
-                // assumes that 'a is unique
-                // and s is finite
-                let d = new Dict<'a,'b>()
-                Seq.iter (fun (kvp: KeyValuePair<'a,'b>) ->
-                    d.Add(kvp.Key,kvp.Value)
-                ) s
-                d
-
             let private cartesianProductByX(xset: Set<'a>)(yset: Set<'a>) : ('a*'a[]) list =
                 // cartesian product, grouped by the first element,
                 // excluding the element itself
