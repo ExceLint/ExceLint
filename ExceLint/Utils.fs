@@ -12,3 +12,8 @@ open System.Collections.Generic
             argwhatever f xs (fun a b -> a > b)
         let argmin(f: 'a -> double)(xs: seq<'a>) : 'a =
             argwhatever f xs (fun a b -> a < b)
+
+        let HsUnion<'a>(h1: HashSet<'a>)(h2: HashSet<'a>) : HashSet<'a> =
+            let h3 = new HashSet<'a>(h1)
+            h3.UnionWith h2
+            h3
