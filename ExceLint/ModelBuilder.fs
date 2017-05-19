@@ -1338,6 +1338,47 @@
                 // F is the ratio of the between-cluster variance to the within-cluster variance
                 bc_var / wc_var
 
+            /// <summary>
+            /// Scales the countables in the ScoreTable by a per-
+            /// sheet diagonal scale factor.
+            /// </summary>
+            /// <param name="s"></param>
+            let private ScaleBySheet(s: ScoreTable) : ScoreTable =
+                // scale each sheet separately
+                s
+                |> Seq.map (fun kvp ->
+                        let feature = kvp.Key
+                        let dist = kvp.Value
+                        let scaledDist =
+                            dist
+                            |> Seq.groupBy (fun (addr,co) ->
+                                    addr.WorksheetName
+                                )
+                            |> Seq.map (fun (wsname,cells) ->
+                                    // this is conditioned on sheet name, so
+                                    // turn into a ScoreTable again
+                                    let acells = cells |> Seq.toArray
+                                    let stForSheet: ScoreTable = [(feature,acells)] |> adict
+                                    // compute scale factor
+                                    let factor = diagonalScaleFactor stForSheet
+                                    // scale each vector unless it is off-sheet
+                                    cells |>
+                                    Seq.map (fun (addr,co) ->
+                                        if co.IsOffSheet then
+                                            // don't scale
+                                            addr,co
+                                        else
+                                            // scale
+                                            addr,co.UpdateResultant (co.ToCVectorResultant.ScalarMultiply factor)
+                                    )
+                                
+                                )
+                            |> Seq.concat
+                            |> Seq.toArray
+                        feature, scaledDist
+                    )
+                |> adict
+
             type ClusterModel(input: Input) =
                 // initialize selector cache
                 let selcache = Scope.SelectorCache()
@@ -1349,29 +1390,8 @@
                 let _runf = fun () -> runEnabledFeatures cells input.dag input.config input.progress
                 let (ns: ScoreTable,score_time: int64) = PerfUtils.runMillis _runf ()
 
-                // filter and scale
-                let factor = diagonalScaleFactor ns
-                let nlfrs: ScoreTable =
-                    ns
-                    |> Seq.map (fun kvp ->
-                                    kvp.Key,
-                                    kvp.Value
-                                    // remove all off-sheet refs
-                                    |> Array.map (fun (addr,c) ->
-                                        if c.IsOffSheet then
-                                            None
-                                        else 
-                                            Some (addr,c)
-                                        )
-                                    |> Array.choose id
-                                    |> Array.map (fun (addr,c) ->
-                                        addr,
-                                        // only scale the resultant, not the location
-                                        c.UpdateResultant (c.ToCVectorResultant.ScalarMultiply factor)
-                                       )
-                                )
-                    |> Seq.toArray
-                    |> toDict
+                // scale
+                let nlfrs: ScoreTable = ScaleBySheet ns
 
                 // make HistoBin lookup by address
                 let hb_inv = invertedHistogram nlfrs selcache input.dag input.config
