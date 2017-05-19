@@ -59,7 +59,7 @@ namespace ExceLintUI
         private Depends.DAG _dag;
         private bool _debug_mode = false;
         private bool _dag_changed = false;
-        private ExceLint.ModelBuilder.ClusterModel _m;
+        private ExceLint.ClusterModelBuilder.ClusterModel _m;
         private Dictionary<HashSet<AST.Address>, System.Drawing.Color> _cluster_colors;
 
         #endregion DATASTRUCTURES
