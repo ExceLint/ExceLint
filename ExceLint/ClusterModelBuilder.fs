@@ -361,7 +361,7 @@
             member self.Clustering = hs.Clusters
 
             member self.Ranking =
-                let numfrm = input.dag.getAllFormulaAddrs().Length
+                let numfrm = cells.Length
 
                 // keep a record of reported cells
                 let rptd = new HashSet<AST.Address>()
