@@ -73,4 +73,14 @@
 
             let ToCountable(a: AST.Address)(ih: InvertedHistogram) : Countable =
                 let (_,_,v) = ih.[a]
-                v  
+                v
+
+            let nop = Depends.Progress.NOPProgress()
+
+            let toDict(arr: ('a*'b)[]) : Dict<'a,'b> =
+                // assumes that 'a is unique
+                let d = new Dict<'a,'b>(arr.Length)
+                Array.iter (fun (a,b) ->
+                    d.Add(a,b)
+                ) arr
+                d
