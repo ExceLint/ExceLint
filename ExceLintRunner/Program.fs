@@ -42,13 +42,13 @@ open ExceLintFileFormats
         hs3.UnionWith(hs2)
         hs3
 
-    let rankToSet(ranking: Pipeline.Ranking)(cutoff: int) : HashSet<AST.Address> =
+    let rankToSet(ranking: CommonTypes.Ranking)(cutoff: int) : HashSet<AST.Address> =
         Array.mapi (fun i (kvp: KeyValuePair<AST.Address,double>) -> (i, kvp.Key)) ranking
         |> Array.filter (fun (i,e) -> i <= cutoff)
         |> Array.map (fun (i,e) -> e)
         |> (fun arr -> new HashSet<AST.Address>(arr))
 
-    let per_append_excelint(csv: WorkbookStats)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: Pipeline.Ranking)(dag: Depends.DAG) : unit =
+    let per_append_excelint(csv: WorkbookStats)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: CommonTypes.Ranking)(dag: Depends.DAG) : unit =
         let output = match custodes with
                      | CUSTODES.OKOutput(c,_) -> c.Smells
                      | _ -> [||]
@@ -81,7 +81,7 @@ open ExceLintFileFormats
             csv.WriteRow per_row
         ) ranking |> ignore
 
-    let per_append_custodes(csv: WorkbookStats)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: Pipeline.Ranking)(custodes_not_excelint: HashSet<AST.Address>)(dag: Depends.DAG) : unit =
+    let per_append_custodes(csv: WorkbookStats)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: CommonTypes.Ranking)(custodes_not_excelint: HashSet<AST.Address>)(dag: Depends.DAG) : unit =
         let output = match custodes with
                      | CUSTODES.OKOutput(c,_) -> c.Smells
                      | _ -> [||]
@@ -108,7 +108,7 @@ open ExceLintFileFormats
             csv.WriteRow per_row
         ) (custodes_not_excelint |> Seq.toArray)
 
-    let per_append_true_smells(csv: WorkbookStats)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: Pipeline.Ranking)(true_smells_not_found: HashSet<AST.Address>)(dag: Depends.DAG) : unit =
+    let per_append_true_smells(csv: WorkbookStats)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: CommonTypes.Ranking)(true_smells_not_found: HashSet<AST.Address>)(dag: Depends.DAG) : unit =
         let output = match custodes with
                      | CUSTODES.OKOutput(c,_) -> c.Smells
                      | _ -> [||]
@@ -136,7 +136,7 @@ open ExceLintFileFormats
             csv.WriteRow per_row
         ) (true_smells_not_found |> Seq.toArray)
 
-    let per_append_debug(csv: DebugInfo)(model: ErrorModel)(custodes_smells: HashSet<AST.Address>)(config: Args.Config)(ranking: Pipeline.Ranking) : unit =
+    let per_append_debug(csv: DebugInfo)(model: ErrorModel)(custodes_smells: HashSet<AST.Address>)(config: Args.Config)(ranking: CommonTypes.Ranking) : unit =
         // warn user if CUSTODES analysis contains cells not analyzed by ExceLint
         let rset = Array.map (fun (kvp: KeyValuePair<AST.Address, double>) -> kvp.Key) ranking
                    |> (fun arr -> new HashSet<AST.Address>(arr))

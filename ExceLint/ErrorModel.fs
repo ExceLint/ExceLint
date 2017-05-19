@@ -4,7 +4,7 @@
     open System
     open Utils
     open ConfUtils
-    open Pipeline
+    open CommonTypes
 
     type ErrorModel(input: Input, analysis: Analysis, config: FeatureConf) =
         let r = match analysis with
@@ -27,7 +27,7 @@
             | COF c -> c.score_time
             | Cluster c -> c.score_time
 
-        member self.FrequencyTable : Pipeline.FreqTable =
+        member self.FrequencyTable : CommonTypes.FreqTable =
             match analysis with 
             | Histogram h -> h.ftable
             | COF c -> failwith "Not valid for COF analysis."

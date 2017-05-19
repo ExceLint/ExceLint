@@ -4,58 +4,9 @@
     open System
     open Utils
     open ConfUtils
-    open Pipeline
+    open CommonTypes
 
         module ModelBuilder =
-            type NoFormulasException(msg: string) =
-                inherit Exception(msg)
-            type HBDistance = HistoBin -> HistoBin -> ClusterTable -> FlatScoreTable -> double
-            type Edge(pair: HashSet<AST.Address>*HashSet<AST.Address>) = 
-                member self.tupled = fst pair, snd pair
-                override self.Equals(o: obj) =
-                    let (x,y) = self.tupled
-                    let (x',y') = (o :?> Edge).tupled
-                    x = x' && y = y'
-                override self.ToString() =
-                    let (x,y) = self.tupled
-                    x.ToString() + " -> " + y.ToString()
-
-            type DistanceF = HashSet<AST.Address> -> HashSet<AST.Address> -> double
-            type Distances = Dict<Edge,double>
-            type ClusterStep = {
-                    beyond_knee: bool;
-                    source: Set<AST.Address>;
-                    target: Set<AST.Address>;
-                    distance: double;
-                    f: double;
-                    within_cluster_sum_squares: double;
-                    between_cluster_sum_squares: double;
-                    total_sum_squares: double;
-                    num_clusters: int;
-                 }
-            type MinDistComparer(d: DistanceF) =
-                interface IComparer<Edge> with
-                    member self.Compare(x: Edge, y: Edge) =
-                        let (xs,xt) = x.tupled
-                        let (ys,yt) = y.tupled
-                        let distx = d xs xt
-                        let disty = d ys yt
-
-                        if distx < disty then
-                            -1
-                        else if distx = disty then
-                            // sortedset discards elements with the same
-                            // sort order even if they are not defined as equal;
-                            // this behavior is very bad for ExceLint.
-                            // return zero only iff x = y, otherwise
-                            // sort deterministically but arbitrarily
-                            if x.Equals(y) then
-                                0
-                            else
-                                x.GetHashCode().CompareTo(y.GetHashCode())
-                        else
-                            1
-
             let private nop = Depends.Progress.NOPProgress()
 
             let private toDict(arr: ('a*'b)[]) : Dict<'a,'b> =
@@ -426,11 +377,6 @@
                 | Histogram h -> Success(Histogram({ h with ranking = ranking' }))
                 | COF c -> Success(COF({ c with ranking = ranking' }))
                 | Cluster c -> Success(Cluster({ c with ranking = ranking' }))
-
-            let private getChangeSetAddresses(cs: ChangeSet) : AST.Address[] =
-                Array.map (fun (kvp: KeyValuePair<AST.Address,string>) ->
-                    kvp.Key
-                ) cs.mutants
 
             let private mutateDAG(cs: ChangeSet)(dag: Depends.DAG)(app: Microsoft.Office.Interop.Excel.Application)(p: Depends.Progress) : Depends.DAG =
                 dag.CopyWithUpdatedFormulas(cs.mutants, app, true, p)
@@ -825,18 +771,6 @@
                     // do nothing for now
                     Success(Cluster c)
 
-            let private cancellableWait(input: Input)(analysis: Analysis) : AnalysisOutcome =
-                let mutable timer = 10
-                while not (input.progress.IsCancelled()) && timer > 0 do
-                    System.Threading.Thread.Sleep(1000)
-                    timer <- timer - 1
-                Success(analysis)
-
-            let private toRawCoords(cells: Set<AST.Address>) : Set<double*double> =
-                cells
-                // convert to raw coords
-                |> Set.map (fun cell -> (double cell.X, double cell.Y))
-
             // the mean
             let private binCentroid(cells: Countable[]) : Countable =
                 assert (cells.Length > 0)
@@ -1024,80 +958,6 @@
 
                 d
 
-            let private normalizeScores(ss: ScoreTable) : ScoreTable =
-                let d = new Dict<string, (AST.Address*Countable) list>()
-
-                // for each feature
-                for feat in ss.Keys do
-                    // initialize storage for feature
-                    d.Add(feat, [])
-
-                    // get all values for feature
-                    let vs = ss.[feat]
-
-                    // group by path, wb, sheet
-                    let vs_s = Array.groupBy (fun (a: AST.Address, c: Countable) ->
-                                   a.A1Path() + a.A1Workbook() + a.A1Worksheet()
-                               ) vs |> toDict
-
-                    // for each sheet
-                    for kvp in vs_s do
-                        let sheet = kvp.Key
-                        // get all (addr,countable) pairs
-                        let cells = kvp.Value
-                        // normalize
-                        let ncount = cells |> Array.map (fun (a,c) -> c) |> Countable.Normalize 
-                        // recombine with addrs
-                        let cells' = cells |> Array.mapi (fun i (a,_) -> (a,ncount.[i])) |> Array.toList
-
-                        d.[feat] <- cells' @ d.[feat]
-
-                d |> Seq.map (fun kvp -> kvp.Key, kvp.Value |> List.toArray) |> Seq.toArray |> toDict
-
-            let private convertToLFR(ss: ScoreTable) : ScoreTable =
-                let d = new ScoreTable()
-
-                for kvp in ss do
-                    let feat = kvp.Key
-                    let cells = kvp.Value
-                    let cells' = cells |> Array.map (fun (a,c) -> a, c.ToCVectorResultant)
-                    d.[feat] <- cells'
-
-                d 
-
-            // Bin addresses by HistoBin
-            let private binCountables(scoretable: ScoreTable)(selcache: Scope.SelectorCache)(dag: Depends.DAG)(config: FeatureConf) : ClusterTable =
-                let t = new ClusterTable()
-
-                Array.iter (fun fname ->
-                    Array.iter (fun (sel: Scope.Selector) ->
-                        Array.iter (fun (addr: AST.Address, score: Countable) ->
-
-                            // fetch SelectID for this selector and address
-                            let sID = sel.id addr dag selcache
-
-                            let binname = fname,sID,score
-
-                            if t.ContainsKey binname then
-                                let bin = t.[binname]
-                                t.[binname] <- addr :: bin
-                            else
-                                t.Add(binname, [addr])
-                        ) (scoretable.[fname])
-                    ) (config.EnabledScopes)
-                ) (config.EnabledFeatures)
-                t
-
-            let private initialClustering(scoretable: ScoreTable)(dag: Depends.DAG)(config: FeatureConf) : Clustering =
-                let t: Clustering = new Clustering()
-
-                Array.iter (fun fname ->
-                    Array.iter (fun (addr: AST.Address, score: Countable) ->
-                        t.Add(new HashSet<AST.Address>([addr])) |> ignore
-                    ) (scoretable.[fname])
-                ) (config.EnabledFeatures)
-                t
-
             let private invertedHistogram(scoretable: ScoreTable)(selcache: Scope.SelectorCache)(dag: Depends.DAG)(config: FeatureConf) : InvertedHistogram =
                 assert (config.EnabledScopes.Length = 1 && config.EnabledFeatures.Length = 1)
 
@@ -1119,98 +979,6 @@
 
                 new InvertedHistogram(d)
 
-            let private mergeBins(source: HistoBin)(target: HistoBin)(ct: ClusterTable) : ClusterTable =
-                let ct' = new ClusterTable(ct)
-                ct'.Remove source |> ignore
-                ct'.[target] <- ct.[source] @ ct.[target]
-                ct'
-
-            let private induceCompleteGraph(xs: seq<'a>) : seq<'a*'a> =
-                cartesianProduct xs xs
-                |> Seq.filter (fun (source,target) -> source <> target ) // no self edges
-
-            let private induceCompleteGraphExcluding(xs: seq<'a>)(pred: 'a -> 'a -> bool) : seq<'a*'a> =
-                cartesianProduct xs xs
-                |> Seq.filter (fun (source,target) ->
-                                    source <> target &&     // no self edges
-                                    (pred source target)    // filter disallowed targets
-                              )
-
-            let private induceCompleteGraphExcl(xs: seq<'a>)(excluding: Set<'a>) : seq<'a*'a> =
-                cartesianProduct xs xs
-                |> Seq.filter (fun (source,target) ->
-                                    source <> target &&                 // no self edges
-                                    not (Set.contains target excluding) // filter disallowed targets
-                              )
-
-            let private SSE(lfr1: HistoBin)(lfr2: HistoBin)(addrs_by_lfr: ClusterTable)(nlfrs: FlatScoreTable) : double =
-                // get cluster 1's points
-                let (lfr1_feature,_,lfr1c) = lfr1
-                let pts1 = addrs_by_lfr.[lfr1] |> List.map (fun addr -> nlfrs.[lfr1_feature,addr])
-
-                // get cluster 2's points
-                let (lfr2_feature,_,_) = lfr2
-                let pts2 = addrs_by_lfr.[lfr2] |> List.map (fun addr -> nlfrs.[lfr2_feature,addr])
-
-                // compute delta SSE
-                let pts1_mean = pts1 |> List.reduce (fun acc p -> acc.Add p) |> (fun p -> p.ScalarDivide (double (pts1.Length)))
-                let pts1_sse = pts1 |> List.map (fun p -> (p.Sub pts1_mean).VectorMultiply (p.Sub pts1_mean)) |> List.sum
-
-                let pts_merged = pts1 @ pts2
-                let pts_merged_mean = pts_merged |> List.reduce (fun acc p -> acc.Add p) |> (fun p -> p.ScalarDivide (double (pts_merged.Length)))
-                let pts_merged_sse = pts_merged |> List.map (fun p -> (p.Sub pts_merged_mean).VectorMultiply (p.Sub pts_merged_mean)) |> List.sum
-
-                Math.Abs(pts1_sse - pts_merged_sse)
-
-            let private maxEuclid(lfr1: HistoBin)(lfr2: HistoBin)(addrs_by_lfr: ClusterTable)(nlfrs: FlatScoreTable) : double =
-                // get cluster 1's points
-                let (lfr1_feature,_,_) = lfr1
-                let pts1 = addrs_by_lfr.[lfr1] |> List.map (fun addr -> nlfrs.[lfr1_feature,addr])
-
-                // get cluster 2's points
-                let (lfr2_feature,_,_) = lfr2
-                let pts2 = addrs_by_lfr.[lfr2] |> List.map (fun addr -> nlfrs.[lfr2_feature,addr])
-
-                // get cartesian product
-                let p1p2 = cartesianProduct pts1 pts2
-
-                // find maximum distance between any two points
-                p1p2
-                |> Seq.map (fun (p1,p2) -> p1.EuclideanDistance p2)
-                |> Seq.max
-
-            let private pairwiseDistances(g: (HistoBin*HistoBin) list)(ct: ClusterTable)(fst: FlatScoreTable)(d: HBDistance) : Dict<HistoBin*HistoBin,double> =
-                g
-                |> List.map (fun (source,target) -> (source,target),d source target ct fst)
-                |> List.toArray
-                |> toDict
-
-            // true iff on two clusters are on the same sheet;
-            // does not check entire cluster since, by induction,
-            // clusters on other sheets will never be merged
-            let private zfilter = (fun (C1: HashSet<AST.Address>)(C2: HashSet<AST.Address>) ->
-                                    let c1: AST.Address = Seq.head C1
-                                    let c2: AST.Address = Seq.head C2
-                                    c1.A1Worksheet() = c2.A1Worksheet()
-                                  )
-
-            let private pairwiseClusterDistances(C: Clustering)(d: DistanceF): SortedSet<Edge> =
-                // get all pairs of clusters and add to set
-                let G: Edge[] = induceCompleteGraphExcluding (C |> Seq.toArray) zfilter |> Seq.map (fun (a,b) -> Edge(a,b)) |> Seq.toArray
-
-                let edges = new SortedSet<Edge>(new MinDistComparer(d))
-                G |> Array.iter (fun e -> edges.Add(e) |> ignore)
-
-                edges
-
-            let private initClusterShortestDistances(C: Clustering)(dist: DistanceF) : Dict<HashSet<AST.Address>,HashSet<AST.Address>> =
-                let d = new Dict<HashSet<AST.Address>,HashSet<AST.Address>>()
-                let dist' = (fun (a, b) -> dist a b)
-                for c in C do
-                    let cs = C |> Seq.map (fun c' -> if c <> c' then Some (c,c') else None) |> Seq.choose id
-                    let (_,c') = argmin dist' cs
-                    d.Add(c,c')
-                d
 
             // find s vector guaranteed to be longer than any of the given vectors
             let diagonalScaleFactor(ss: ScoreTable) : double =
@@ -1225,49 +993,6 @@
                 let min = points |> Seq.fold (fun (minc:Countable)(c:Countable) -> minc.ElementwiseOp c minf) min_init
                 let max = points |> Seq.fold (fun (maxc:Countable)(c:Countable) -> maxc.ElementwiseOp c maxf) max_init
                 min.EuclideanDistance max
-                
-            // all updates here are as side-effects
-            let updatePairwiseClusterDistancesAndCluster(C: Clustering)(ih: InvertedHistogram)(d: DistanceF)(edges: SortedSet<Edge>)(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : unit =
-                let edgecount = edges.Count
-                
-                // find vertices neither source nor target
-                // and make sure that they're on the same sheet
-                let Ccount = C.Count
-                let C' = C |> Seq.filter (fun v -> v <> source && v <> target && zfilter v source) |> Seq.toArray
-                let Cpcount = C'.Length
-
-                if Ccount <= Cpcount then
-                    failwith "not possible"
-
-                // remove source from graph
-                C.Remove(source) |> ignore
-                
-                // remove edges incident on source and target
-                let removals = edges |> Seq.filter (fun edge ->
-                                            let (edge_to,edge_from) = edge.tupled
-                                            edge_to = source ||
-                                            edge_from = source ||
-                                            edge_to = target ||
-                                            edge_from = target
-                                        )
-                                     |> Seq.toArray // laziness is bad
-                if removals.Length = 0 then
-                    failwith "no!"
-                removals |> Array.iter (fun edge -> edges.Remove(edge) |> ignore)
-
-                // add source to target
-                source |> Seq.iter (fun addr -> target.Add(addr) |> ignore)
-
-                // add edges incident on merged source-target
-                C'
-                |> Seq.iter (fun v ->
-                       edges.Add(Edge(v,target)) |> ignore
-                       edges.Add(Edge(target,v)) |> ignore
-                   )
-
-                let edgecount' = edges.Count
-                if edgecount' > edgecount then
-                    failwith "marcia marcia marcia!!!"
 
             let private ToCountable(a: AST.Address)(ih: InvertedHistogram) : Countable =
                 let (_,_,v) = ih.[a]

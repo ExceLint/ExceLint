@@ -70,7 +70,7 @@
     <Compile Include="LSH.fs" />
     <Compile Include="HashSpace.fs" />
     <Compile Include="FeatureConf.fs" />
-    <Compile Include="Pipeline.fs" />
+    <Compile Include="CommonTypes.fs" />
     <Compile Include="PerfUtils.fs" />
     <Compile Include="ASTMutator.fs" />
     <Compile Include="ErrorModel.fs" />
