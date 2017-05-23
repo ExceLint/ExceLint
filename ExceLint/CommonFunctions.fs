@@ -3,6 +3,7 @@
     open System.Collections.Generic
     open Utils
     open CommonTypes
+    open HashSetUtils
 
     module CommonFunctions =
             // _analysis_base specifies which cells should be ranked:
@@ -457,3 +458,24 @@
 
                 // F is the ratio of the between-cluster variance to the within-cluster variance
                 bc_var / wc_var
+
+            let JaccardDistance(c1: HashSet<AST.Address>)(c2: HashSet<AST.Address>) : double =
+                let numerator = (intersection c1 c2).Count
+                let denominator = (union c1 c2).Count
+                (double numerator) / (double denominator)
+
+            let JaccardClusteringDistance(c1: Clustering)(c2: Clustering) : double =
+                // for each cluster in c1, find the cluster with the smallest distance
+                let correspondence =
+                    c1 |>
+                    Seq.map (fun cluster1 ->
+                        let closest =
+                            c2 |>
+                            argmin (fun cluster2 -> JaccardDistance cluster1 cluster2)
+                        cluster1, closest
+                    ) |> Seq.toArray
+
+                // compute total Jaccard distance
+                Array.fold (fun acc (cluster1,cluster2) ->
+                    acc + JaccardDistance cluster1 cluster2
+                ) 0.0 correspondence
