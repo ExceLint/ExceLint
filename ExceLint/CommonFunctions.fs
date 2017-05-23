@@ -337,3 +337,123 @@
                 | Histogram h -> Success(Histogram({ h with ranking = ranking' }))
                 | COF c -> Success(COF({ c with ranking = ranking' }))
                 | Cluster c -> Success(Cluster({ c with ranking = ranking' }))
+
+            // find a vector guaranteed to be longer than any of the given vectors
+            let diagonalScaleFactor(ss: ScoreTable) : double =
+                let points = ss
+                                |> Seq.map (fun kvp -> kvp.Value |> Seq.map (fun (_,c: Countable) -> c.Location))
+                                |> Seq.concat
+                                |> Seq.toArray
+                let min_init = points.[0]
+                let max_init = points.[0]
+                let minf = (fun (a: double)(b: double) -> if a < b then a else b )
+                let maxf = (fun (a: double)(b: double) -> if a > b then a else b )
+                let min = points |> Seq.fold (fun (minc:Countable)(c:Countable) -> minc.ElementwiseOp c minf) min_init
+                let max = points |> Seq.fold (fun (maxc:Countable)(c:Countable) -> maxc.ElementwiseOp c maxf) max_init
+                min.EuclideanDistance max
+
+            /// <summary>
+            /// Scales the countables in the ScoreTable by a per-
+            /// sheet diagonal scale factor.
+            /// </summary>
+            /// <param name="s"></param>
+            let ScaleBySheet(s: ScoreTable) : ScoreTable =
+                // scale each sheet separately
+                s
+                |> Seq.map (fun kvp ->
+                        let feature = kvp.Key
+                        let dist = kvp.Value
+                        let scaledDist =
+                            dist
+                            |> Seq.groupBy (fun (addr,co) ->
+                                    addr.WorksheetName
+                                )
+                            |> Seq.map (fun (wsname,cells) ->
+                                    // this is conditioned on sheet name, so
+                                    // turn into a ScoreTable again
+                                    let acells = cells |> Seq.toArray
+                                    let stForSheet: ScoreTable = [(feature,acells)] |> adict
+                                    // compute scale factor
+                                    let factor = diagonalScaleFactor stForSheet
+                                    // scale each vector unless it is off-sheet
+                                    cells |>
+                                    Seq.map (fun (addr,co) ->
+                                        if co.IsOffSheet then
+                                            // don't scale
+                                            addr,co
+                                        else
+                                            // scale
+                                            addr,co.UpdateResultant (co.ToCVectorResultant.ScalarMultiply factor)
+                                    )
+                                
+                                )
+                            |> Seq.concat
+                            |> Seq.toArray
+                        feature, scaledDist
+                    )
+                |> adict
+
+            // the total sum of squares
+            let TSS(C: Clustering)(ih: InvertedHistogram) : double =
+                let all_observations = C |> Seq.concat |> Seq.toArray |> Array.map (fun addr -> ToCountable addr ih)
+                let n = all_observations.Length
+                let mean = Countable.Mean all_observations 
+
+                [|0..n-1|]
+                |> Array.sumBy (fun i ->
+                        let obs = all_observations.[i]
+                        let error = obs.Sub(mean)
+                        error.VectorMultiply(error)
+                    )
+
+            // the within-cluster sum of squares
+            let WCSS(C: Clustering)(ih: InvertedHistogram) : double =
+                let k = C.Count
+                let clusters = C |> Seq.toArray |> Array.map (fun c -> c |> Seq.toArray |> Array.map (fun addr -> ToCountable addr ih))
+                let means = clusters |> Array.map (fun c -> Countable.Mean(c))
+                let ns = clusters |> Array.map (fun cs -> cs.Length)
+
+                // for every cluster
+                [|0..k-1|]
+                |> Array.sumBy (fun i ->
+                    let ni = ns.[i]
+
+                    // for every observation
+                    [|0..ni-1|]
+                    |> Array.sumBy (fun j ->
+                            // compute squared error
+                            let obs = clusters.[i].[j]
+                            let error = obs.Sub(means.[i])
+                            error.VectorMultiply(error)
+                        )
+                    // and double sum
+                )
+
+            // the between-cluster sum of squares
+            let BCSS(C: Clustering)(ih: InvertedHistogram) : double =
+                let k = C.Count
+                let clusters = C |> Seq.toArray |> Array.map (fun c -> c |> Seq.toArray |> Array.map (fun addr -> ToCountable addr ih))
+                let means = clusters |> Array.map (fun c -> Countable.Mean(c))
+                let mean = clusters |> Array.concat
+                                    |> (fun cs -> Countable.Mean(cs))
+                let ns = clusters |> Array.map (fun cs -> cs.Length)
+                let n = Array.sum ns
+
+                // for every cluster
+                [|0..k-1|]
+                |> Array.sumBy (fun i ->
+                    let ni = ns.[i]
+                    let error = means.[i].Sub(mean)
+                    (double ni) * error.VectorMultiply(error)
+                )
+
+            let F(C: Clustering)(ih: InvertedHistogram) : double =
+                let k = double C.Count
+                let n = double (C |> Seq.sumBy (fun cl -> cl.Count))
+
+                // variance is sum of squared error divided by sample size
+                let bc_var = (BCSS C ih) / (k - 1.0)
+                let wc_var = (WCSS C ih) / (n - k)
+
+                // F is the ratio of the between-cluster variance to the within-cluster variance
+                bc_var / wc_var

@@ -4,7 +4,7 @@
     open Utils
     open CommonTypes
     open CommonFunctions
-    open ClusterModelBuilder
+    open Distances
 
     module OldClusterModel =
         // true iff on two clusters are on the same sheet;

@@ -6,7 +6,7 @@
     open CommonFunctions
     open Distances
 
-    type MedoidClustering = Dict<AST.Address,HashSet<AST.Address>>
+    type MedioidClustering = Dict<AST.Address,HashSet<AST.Address>>
 
     module KMedioidsClusterModelBuilder =
         let private dist(d: DistanceF)(addr1: AST.Address)(addr2: AST.Address) : double =
@@ -14,10 +14,10 @@
             let addr2hs = new HashSet<AST.Address>([addr2])
             d addr1hs addr2hs
 
-        let private findClosestMedioids(medioids: AST.Address[])(points: AST.Address[])(d: DistanceF) : MedoidClustering =
+        let private findClosestMedioids(medioids: AST.Address[])(points: AST.Address[])(d: DistanceF) : MedioidClustering =
             let clustering =
                 points |>
-                Array.fold (fun (acc: MedoidClustering)(point: AST.Address) ->
+                Array.fold (fun (acc: MedioidClustering)(point: AST.Address) ->
                     let closest = medioids |> argmin (fun m -> dist d point m)
                     if acc.ContainsKey closest then
                         acc.[closest].Add point |> ignore
@@ -28,6 +28,24 @@
                     acc
                 ) (new Dict<AST.Address,HashSet<AST.Address>>())
             clustering
+
+        let swap(arr: 'a[])(e: 'a)(idx: int) : 'a[] =
+            let arr' = Array.copy arr
+            arr'.[idx] <- e
+            arr'
+
+        let cost(c: MedioidClustering)(d: DistanceF) : double =
+            Seq.fold (fun (bigsum: double)(kvp: KeyValuePair<AST.Address,HashSet<AST.Address>>) ->
+                let medioid = kvp.Key
+                let points = kvp.Value
+                bigsum +
+                Seq.fold (fun (littlesum: double)(point: AST.Address) ->
+                    dist d point medioid
+                ) 0.0 points
+            ) 0.0 c
+
+        let medioidClustering2Clustering(c: MedioidClustering) : Clustering =
+            new HashSet<HashSet<AST.Address>>(c.Values)
 
         let private kmedioids(k: int)(cells: AST.Address[])(s: ScoreTable)(hb_inv: InvertedHistogram)(d: DistanceF)(r: Random) : Clustering =
             // choose k random indices using rejection sampling
@@ -52,60 +70,52 @@
                 cost_decreased <- false
 
                 // for each medioid
-                for m in medioids do
-                    // swap medioid and any other point
+                for m in [| 0 .. medioids.Length - 1 |] do
+
+                    // swap medioid with every other point
                     for c in cells do
-                        
-                        failwith "hang on!"
+                        // new set of medioids
+                        let medioids' = swap medioids c m
+                        // find closest medioids
+                        let clustering' = findClosestMedioids medioids' cells d
+                        // if the cost decreases, keep the new clustering
+                        let oldcost = cost clustering d
+                        let newcost = cost clustering' d
+                        if newcost < oldcost then
+                            clustering <- clustering'
+                            cost_decreased <- true
 
+            // convert into standard format
+            medioidClustering2Clustering clustering
 
-            failwith "gettin there"
+        let getClustering(input: Input)(k: int) : Clustering =
+            assert ((analysisBase input.config input.dag).Length <> 0)
 
+            // initialize selector cache
+            let selcache = Scope.SelectorCache()
 
-        let runClusterModel(input: Input)(k: int) : AnalysisOutcome =
-            try
-                if (analysisBase input.config input.dag).Length <> 0 then
-                    // initialize selector cache
-                    let selcache = Scope.SelectorCache()
+            // determine the set of cells to be analyzed
+            let cells = analysisBase input.config input.dag
 
-                    // determine the set of cells to be analyzed
-                    let cells = analysisBase input.config input.dag
+            // get all NLFRs for every formula cell
+            let _runf = fun () -> runEnabledFeatures cells input.dag input.config input.progress
+            let (ns: ScoreTable,score_time: int64) = PerfUtils.runMillis _runf ()
 
-                    // get all NLFRs for every formula cell
-                    let _runf = fun () -> runEnabledFeatures cells input.dag input.config input.progress
-                    let (ns: ScoreTable,score_time: int64) = PerfUtils.runMillis _runf ()
+            // scale
+            let nlfrs: ScoreTable = ScaleBySheet ns
 
-                    // scale
-                    let nlfrs: ScoreTable = ScaleBySheet ns
+            // make HistoBin lookup by address
+            let hb_inv = invertedHistogram nlfrs selcache input.dag input.config
 
-                    // make HistoBin lookup by address
-                    let hb_inv = invertedHistogram nlfrs selcache input.dag input.config
+            // DEFINE DISTANCE
+            let DISTANCE =
+                match input.config.DistanceMetric with
+                | DistanceMetric.NearestNeighbor -> min_dist hb_inv
+                | DistanceMetric.EarthMover -> earth_movers_dist hb_inv
+                | DistanceMetric.MeanCentroid -> cent_dist hb_inv
 
-                    // DEFINE DISTANCE
-                    let DISTANCE =
-                        match input.config.DistanceMetric with
-                        | DistanceMetric.NearestNeighbor -> min_dist hb_inv
-                        | DistanceMetric.EarthMover -> earth_movers_dist hb_inv
-                        | DistanceMetric.MeanCentroid -> cent_dist hb_inv
+            // init RNG
+            let r = new Random()
 
-                    // init RNG
-                    let r = new Random()
-
-                    // get clustering
-                    let c = kmedioids k cells nlfrs hb_inv DISTANCE r
-
-                    Success(Cluster
-                        {
-                            scores = m.Scores;
-                            ranking = m.Ranking;
-                            score_time = m.ScoreTimeMs;
-                            ranking_time = m.RankingTimeMs;
-                            sig_threshold_idx = 0;
-                            cutoff_idx = m.Cutoff;
-                            weights = new Dictionary<AST.Address,double>();
-                        }
-                    )
-                else
-                    CantRun "Cannot perform analysis. This worksheet contains no formulas."
-            with
-            | AnalysisCancelled -> Cancellation
+            // run k-medioids
+            kmedioids k cells nlfrs hb_inv DISTANCE r
