@@ -43,6 +43,7 @@
                     dist d point medioid
                 ) 0.0 points
             ) 0.0 c
+            / double c.Count
 
         let medioidClustering2Clustering(c: MedioidClustering) : Clustering =
             new HashSet<HashSet<AST.Address>>(c.Values)
