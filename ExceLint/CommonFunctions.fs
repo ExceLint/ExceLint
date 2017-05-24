@@ -479,3 +479,11 @@
                 Array.fold (fun acc (cluster1,cluster2) ->
                     acc + JaccardDistance cluster1 cluster2
                 ) 0.0 correspondence
+
+            let CopyClustering(clustering: Clustering) : Clustering =
+                let clustering' =
+                    Seq.map (fun cl ->
+                        new HashSet<AST.Address>(Seq.toArray cl)
+                    ) clustering
+
+                new HashSet<HashSet<AST.Address>>(clustering')

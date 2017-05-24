@@ -8,6 +8,8 @@
 
     module ClusterModelBuilder =
         type ClusterModel(input: Input) =
+            let mutable clusteringAtKnee = None
+
             // initialize selector cache
             let selcache = Scope.SelectorCache()
 
@@ -92,6 +94,7 @@
                 let target = nn_next.ToCluster
 
                 if self.IsKnee source target then
+                    clusteringAtKnee <- Some (CopyClustering hs.Clusters)
                     probable_knee <- true
 
                 // record merge in log
@@ -179,7 +182,10 @@
                 // close file
                 csvw.Dispose()
 
-            member self.Clustering = hs.Clusters
+            member self.Clustering = 
+                match clusteringAtKnee with
+                | Some clustering -> clustering
+                | None -> failwith "No clustering available. Did you actually run the model?"
 
             member self.Ranking =
                 let numfrm = cells.Length

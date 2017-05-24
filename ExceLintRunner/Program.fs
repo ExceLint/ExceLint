@@ -250,9 +250,11 @@ open ExceLintFileFormats
             | Some model ->
                 try
                     let k = model.Clustering.Count
+                    let ex_clusters = model.Clustering
+
                     let input = CommonTypes.SimpleInput (app.XLApplication()) config.FeatureConf graph
                     let km_clusters = KMedioidsClusterModelBuilder.getClustering input k
-                    let ex_clusters = model.Clustering
+                    
                     CommonFunctions.JaccardClusteringDistance km_clusters ex_clusters
                 with
                 | _ -> 0.0
