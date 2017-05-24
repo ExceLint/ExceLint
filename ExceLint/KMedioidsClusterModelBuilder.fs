@@ -48,6 +48,15 @@
         let medioidClustering2Clustering(c: MedioidClustering) : Clustering =
             new HashSet<HashSet<AST.Address>>(c.Values)
 
+        /// <summary>
+        /// This is the partitioning around medioids (PAM) algorithm.
+        /// </summary>
+        /// <param name="k"></param>
+        /// <param name="cells"></param>
+        /// <param name="s"></param>
+        /// <param name="hb_inv"></param>
+        /// <param name="d"></param>
+        /// <param name="r"></param>
         let private kmedioids(k: int)(cells: AST.Address[])(s: ScoreTable)(hb_inv: InvertedHistogram)(d: DistanceF)(r: Random) : Clustering =
             // choose k random indices using rejection sampling
             let seeds = Array.fold (fun xs i ->

@@ -91,5 +91,6 @@ namespace ExceLintFileFormats
         public bool OptAddrModeInference { get; set; }
         public bool OptWeightIntrinsicAnom { get; set; }
         public bool OptWeightConditionSetSz { get; set; }
+        public double ExceLintKMedoidJaccardDistance { get; set; }
     }
 }

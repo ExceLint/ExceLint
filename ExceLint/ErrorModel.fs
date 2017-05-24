@@ -146,6 +146,11 @@
             | Histogram h -> ErrorModel.toDistribution h.causes
             | _ -> failwith "Not valid for non-histogram analysis."
 
+        member self.Clustering: Clustering =
+            match analysis with
+            | Cluster a -> a.clustering
+            | _ -> failwith "Not valid for non-cluster analysis."
+
         member self.inspectSelectorFor(addr: AST.Address, sel: Scope.Selector, dag: Depends.DAG) : KeyValuePair<AST.Address,(string*Countable)[]>[] =
             let selcache = Scope.SelectorCache()
             let sID = sel.id addr dag selcache

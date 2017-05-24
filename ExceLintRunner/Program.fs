@@ -25,6 +25,7 @@ open ExceLintFileFormats
         excelint_excel_intersect: HashSet<AST.Address>;
         custodes_excel_intersect: HashSet<AST.Address>;
         custodes_time: int64;
+        excelint_kmed_jaccard: double;
     }
 
     let hs_difference<'a>(hs1: HashSet<'a>)(hs2: HashSet<'a>) : HashSet<'a> =
@@ -227,6 +228,7 @@ open ExceLintFileFormats
         row.OptAddrModeInference <- config.FeatureConf.IsEnabledOptAddrmodeInference
         row.OptWeightIntrinsicAnom <- config.FeatureConf.IsEnabledOptWeightIntrinsicAnomalousness
         row.OptWeightConditionSetSz <- config.FeatureConf.IsEnabledOptWeightConditioningSetSize
+        row.ExceLintKMedoidJaccardDistance <- stats.excelint_kmed_jaccard
 
         csv.WriteRow row
 
@@ -241,6 +243,20 @@ open ExceLintFileFormats
 
         printfn "Running ExceLint analysis: %A" shortf
         let model_opt = ExceLint.ModelBuilder.analyze (app.XLApplication()) config.FeatureConf graph (config.alpha) (Depends.Progress.NOPProgress())
+
+        printfn "Running ExceLint k-medioids analysis: %A" shortf
+        let jdist =
+            match model_opt with
+            | Some model ->
+                try
+                    let k = model.Clustering.Count
+                    let input = CommonTypes.SimpleInput (app.XLApplication()) config.FeatureConf graph
+                    let km_clusters = KMedioidsClusterModelBuilder.getClustering input k
+                    let ex_clusters = model.Clustering
+                    CommonFunctions.JaccardClusteringDistance km_clusters ex_clusters
+                with
+                | _ -> 0.0
+            | None -> 0.0
 
         printfn "Running CUSTODES analysis: %A" shortf
         let custodes = CUSTODES.getOutput(file, config.CustodesPath, config.JavaPath)
@@ -305,6 +321,7 @@ open ExceLintFileFormats
                     excelint_excel_intersect = excelint_excel_intersect;
                     custodes_excel_intersect = custodes_excel_intersect;
                     custodes_time = custodes_time;
+                    excelint_kmed_jaccard = jdist;
                 }
 
                 // write to per-workbook CSV

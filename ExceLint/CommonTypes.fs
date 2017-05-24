@@ -5,6 +5,8 @@
         open System
         open Utils
 
+        let private nop = Depends.Progress.NOPProgress()
+
         type Weight = double
         type Feature = string
         type Count = int
@@ -88,6 +90,9 @@
             progress: Depends.Progress;
         }
 
+        let SimpleInput(app: Microsoft.Office.Interop.Excel.Application)(config: FeatureConf)(dag: Depends.DAG) : Input =
+            { app = app; config = config; dag = dag; alpha = 0.05; progress = nop; }
+
         type HistoAnalysis = {
             scores: ScoreTable;
             ftable: FreqTable;
@@ -125,6 +130,7 @@
             sig_threshold_idx: int;
             cutoff_idx: int;
             weights: Weights;
+            clustering: Clustering;
         }
 
         type Analysis =

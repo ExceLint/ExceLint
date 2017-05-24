@@ -248,6 +248,7 @@
                             sig_threshold_idx = 0;
                             cutoff_idx = m.Cutoff;
                             weights = new Dictionary<AST.Address,double>();
+                            clustering = m.Clustering;
                         }
                     )
                 else
