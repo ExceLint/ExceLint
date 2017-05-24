@@ -9,6 +9,8 @@
     type MedioidClustering = Dict<AST.Address,HashSet<AST.Address>>
 
     module KMedioidsClusterModelBuilder =
+        let NRUNS = 100
+
         let private dist(d: DistanceF)(addr1: AST.Address)(addr2: AST.Address) : double =
             let addr1hs = new HashSet<AST.Address>([addr1])
             let addr2hs = new HashSet<AST.Address>([addr2])
@@ -57,7 +59,7 @@
         /// <param name="hb_inv"></param>
         /// <param name="d"></param>
         /// <param name="r"></param>
-        let private kmedioids(k: int)(cells: AST.Address[])(s: ScoreTable)(hb_inv: InvertedHistogram)(d: DistanceF)(r: Random) : Clustering =
+        let private kmedioids(k: int)(cells: AST.Address[])(s: ScoreTable)(hb_inv: InvertedHistogram)(d: DistanceF)(r: Random) : MedioidClustering =
             // choose k random indices using rejection sampling
             let seeds = Array.fold (fun xs i ->
                             let mutable ri = r.Next(cells.Length)
@@ -95,8 +97,7 @@
                             clustering <- clustering'
                             cost_decreased <- true
 
-            // convert into standard format
-            medioidClustering2Clustering clustering
+            clustering
 
         let getClustering(input: Input)(k: int) : Clustering =
             assert ((analysisBase input.config input.dag).Length <> 0)
@@ -128,4 +129,10 @@
             let r = new Random()
 
             // run k-medioids
-            kmedioids k cells nlfrs hb_inv DISTANCE r
+            let clusterings = Array.Parallel.map (fun _ -> kmedioids k cells nlfrs hb_inv DISTANCE r) [| 0 .. NRUNS - 1 |]
+            
+            // return the lowest sum-of-distances cost
+            let lowest_cost_clustering = argmin (fun clustering -> cost clustering DISTANCE) clusterings
+
+            // convert into standard format
+            medioidClustering2Clustering lowest_cost_clustering

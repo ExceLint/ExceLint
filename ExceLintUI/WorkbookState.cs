@@ -542,7 +542,7 @@ namespace ExceLintUI
                 }
 
                 // get initial clustering
-                var clusters = _m.Clustering;
+                var clusters = _m.CurrentClustering;
 
                 // create cluster color map
                 _cluster_colors = new Dictionary<HashSet<AST.Address>, System.Drawing.Color>();
@@ -577,7 +577,7 @@ namespace ExceLintUI
                 _m = ExceLint.ModelBuilder.initStepClusterModel(app, conf, _dag, 0.05, p);
 
                 // get initial clustering
-                var clusters = _m.Clustering;
+                var clusters = _m.CurrentClustering;
 
                 // create cluster color map
                 _cluster_colors = new Dictionary<HashSet<AST.Address>, System.Drawing.Color>();
@@ -601,7 +601,7 @@ namespace ExceLintUI
                 _m.Step();
 
                 // get clusters
-                var clusters = _m.Clustering;
+                var clusters = _m.CurrentClustering;
 
                 // paint cells
                 foreach (var cluster in clusters)

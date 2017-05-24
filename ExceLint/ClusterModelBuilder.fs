@@ -187,7 +187,9 @@
                 // close file
                 csvw.Dispose()
 
-            member self.Clustering = 
+            member self.CurrentClustering = hs.Clusters
+
+            member self.ClusteringAtKnee =
                 match clusteringAtKnee with
                 | Some clustering -> clustering
                 | None -> failwith "No clustering available. Did you actually run the model?"
@@ -259,7 +261,7 @@
                             sig_threshold_idx = 0;
                             cutoff_idx = m.Cutoff;
                             weights = new Dictionary<AST.Address,double>();
-                            clustering = m.Clustering;
+                            clustering = m.ClusteringAtKnee;
                         }
                     )
                 else

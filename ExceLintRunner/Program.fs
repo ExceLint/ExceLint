@@ -255,7 +255,7 @@ open ExceLintFileFormats
                     let input = CommonTypes.SimpleInput (app.XLApplication()) config.FeatureConf graph
                     let km_clusters = KMedioidsClusterModelBuilder.getClustering input k
                     
-                    CommonFunctions.JaccardClusteringDistance km_clusters ex_clusters
+                    CommonFunctions.ClusteringJaccardIndex km_clusters ex_clusters
                 with
                 | _ -> 0.0
             | None -> 0.0
