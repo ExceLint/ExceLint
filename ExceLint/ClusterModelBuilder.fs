@@ -94,7 +94,12 @@
                 let target = nn_next.ToCluster
 
                 if self.IsKnee source target then
-                    clusteringAtKnee <- Some (CopyClustering hs.Clusters)
+                    // only update ONCE
+                    clusteringAtKnee <-
+                        match clusteringAtKnee with
+                        | Some cak -> Some cak
+                        | None -> Some (CopyClustering hs.Clusters)
+
                     probable_knee <- true
 
                 // record merge in log
