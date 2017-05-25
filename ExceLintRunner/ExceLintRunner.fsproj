@@ -61,7 +61,6 @@
     <Compile Include="Args.fs" />
     <Compile Include="CUSTODESGrammar.fs" />
     <Compile Include="CUSTODES.fs" />
-    <Compile Include="Utils.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <Content Include="packages.config" />

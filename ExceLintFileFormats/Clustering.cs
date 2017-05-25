@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
+using System.Collections.Generic;
 using CsvHelper;
 
 namespace ExceLintFileFormats
@@ -50,6 +52,41 @@ namespace ExceLintFileFormats
             Dispose(true);
         }
         #endregion
+
+        public static ClusteringRow[] clusteringToRows(HashSet<HashSet<AST.Address>> clustering, Dictionary<HashSet<AST.Address>, int> ids)
+        {
+            var rows = new LinkedList<ClusteringRow>();
+
+            foreach (HashSet<AST.Address> cluster in clustering)
+            {
+                foreach (AST.Address addr in cluster)
+                {
+                    var row = new ClusteringRow();
+                    row.Path = addr.A1Path();
+                    row.Workbook = addr.A1Workbook();
+                    row.Worksheet = addr.A1Worksheet();
+                    row.Address = addr.A1Local();
+                    row.Cluster = ids[cluster];
+                    rows.AddLast(row);
+                }
+            }
+
+            var sorted_rows = rows.OrderBy(row => new Tuple<string, string, string, string>(row.Path, row.Workbook, row.Worksheet, row.Address));
+            return sorted_rows.ToArray();
+        }
+
+        public static void writeClustering(HashSet<HashSet<AST.Address>> clustering, Dictionary<HashSet<AST.Address>, int> ids, string filename)
+        {
+            var rows = clusteringToRows(clustering, ids);
+
+            using(var csv = new Clustering(filename))
+            {
+                foreach (var row in rows)
+                {
+                    csv.WriteRow(row);
+                }
+            }
+        }
     }
 
     public class ClusteringRow

@@ -257,18 +257,12 @@ open ExceLintFileFormats
 
                     // assign IDs to clusters
                     let correspondence = CommonFunctions.JaccardCorrespondence km_clusters ex_clusters
-                    let ex_ids: Utils.ClusterIDs = Utils.getClusterIDs ex_clusters
-                    let km_ids: Utils.ClusterIDs = km_clusters |> Seq.map (fun cl -> cl, ex_ids.[correspondence.[cl]]) |> adict
+                    let ex_ids: CommonTypes.ClusterIDs = CommonFunctions.numberClusters ex_clusters
+                    let km_ids: CommonTypes.ClusterIDs = km_clusters |> Seq.map (fun cl -> cl, ex_ids.[correspondence.[cl]]) |> adict
 
                     // write clustering logs
-                    using (new Clustering(config.clustering_csv shortf "clustering_excelint")) (fun cl_csv ->
-                        let ex_rows = Utils.clusteringToCSVRows ex_clusters ex_ids
-                        Array.iter (fun row -> cl_csv.WriteRow row) ex_rows
-                    )
-                    using (new Clustering(config.clustering_csv shortf "clustering_kmedioids")) (fun cl_csv ->
-                        let km_rows = Utils.clusteringToCSVRows km_clusters km_ids
-                        Array.iter (fun row -> cl_csv.WriteRow row) km_rows
-                    )
+                    Clustering.writeClustering(ex_clusters, ex_ids, config.clustering_csv shortf "clustering_excelint")
+                    Clustering.writeClustering(km_clusters, km_ids, config.clustering_csv shortf "clustering_kmedioids")
                     
                     CommonFunctions.ClusteringJaccardIndex km_clusters ex_clusters correspondence
                 with

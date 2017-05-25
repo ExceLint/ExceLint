@@ -20,7 +20,9 @@
             let clustering =
                 points |>
                 Array.fold (fun (acc: MedioidClustering)(point: AST.Address) ->
-                    let closest = medioids |> argmin (fun m -> dist d point m)
+                    let distances = Array.map (fun m -> dist d point m) medioids
+                    let smallest_idx = [| 0 .. medioids.Length - 1|] |> argmin (fun i -> distances.[i])
+                    let closest = medioids.[smallest_idx]
                     if acc.ContainsKey closest then
                         acc.[closest].Add point |> ignore
                     else
@@ -31,7 +33,7 @@
                 ) (new Dict<AST.Address,HashSet<AST.Address>>())
             clustering
 
-        let swap(arr: 'a[])(e: 'a)(idx: int) : 'a[] =
+        let replace(arr: 'a[])(e: 'a)(idx: int) : 'a[] =
             let arr' = Array.copy arr
             arr'.[idx] <- e
             arr'
@@ -45,10 +47,35 @@
                     dist d point medioid
                 ) 0.0 points
             ) 0.0 c
-            / double c.Count
 
         let medioidClustering2Clustering(c: MedioidClustering) : Clustering =
             new HashSet<HashSet<AST.Address>>(c.Values)
+
+        let private debugClusterings(clusterings: MedioidClustering[]) : unit =
+            // DEBUG: export all of the clusterings
+            // convert to correct format
+            let cls = Array.map (fun cluster -> medioidClustering2Clustering cluster) clusterings
+            // init idmap array
+            let maps = Array.init clusterings.Length (fun i -> new Dict<HashSet<AST.Address>, int>())
+            Array.iteri (fun i clustering ->
+                if i = 0 then
+                    // first map
+                    maps.[0] <- numberClusters clustering
+                else
+                    // use the first clustering's map to find the cluster numbers for the second clustering
+                    let correspondence = JaccardCorrespondence clustering cls.[0]
+                    let m = clustering |>
+                        Seq.map (fun cluster ->
+                            let cl_orig = correspondence.[cluster]
+                            let num = maps.[0].[cl_orig]
+                            cluster, num
+                        ) |> adict
+                    maps.[i] <- m
+            ) cls
+
+            for i in 0 .. cls.Length - 1 do
+                let cl = cls.[i]
+                ExceLintFileFormats.Clustering.writeClustering(cl, maps.[i], sprintf "C:\Users\dbarowy\Desktop\debug\%A.csv" i)
 
         /// <summary>
         /// This is the partitioning around medioids (PAM) algorithm.
@@ -82,12 +109,12 @@
                 cost_decreased <- false
 
                 // for each medioid
-                for m in [| 0 .. medioids.Length - 1 |] do
+                for i in [| 0 .. medioids.Length - 1 |] do
 
                     // swap medioid with every other point
                     for c in cells do
                         // new set of medioids
-                        let medioids' = swap medioids c m
+                        let medioids' = replace medioids c i
                         // find closest medioids
                         let clustering' = findClosestMedioids medioids' cells d
                         // if the cost decreases, keep the new clustering
@@ -131,8 +158,14 @@
             // run k-medioids
             let clusterings = Array.Parallel.map (fun _ -> kmedioids k cells nlfrs hb_inv DISTANCE r) [| 0 .. NRUNS - 1 |]
             
+            // costs
+            let costs = Array.map (fun clustering -> cost clustering DISTANCE) clusterings
+
+            // debug
+            debugClusterings clusterings
+
             // return the lowest sum-of-distances cost
-            let lowest_cost_clustering = argmin (fun clustering -> cost clustering DISTANCE) clusterings
+            let lowest_cost_clustering = argmin (fun i -> costs.[i]) [| 0 .. NRUNS - 1 |]
 
             // convert into standard format
-            medioidClustering2Clustering lowest_cost_clustering
+            medioidClustering2Clustering clusterings.[lowest_cost_clustering]

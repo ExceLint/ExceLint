@@ -80,6 +80,8 @@
                     else
                         1
 
+        type ClusterIDs = Dict<HashSet<AST.Address>,int>
+
         exception AnalysisCancelled
 
         type Input = {

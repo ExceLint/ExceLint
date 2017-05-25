@@ -464,7 +464,7 @@
                 let denominator = (union c1 c2).Count
                 (double numerator) / (double denominator)
 
-            // for each cluster in c1, find the cluster with the largest Jaccard index
+            // for each cluster in c1, pair with the cluster in c2 with the largest Jaccard index
             let JaccardCorrespondence(c1: Clustering)(c2: Clustering) : Dict<HashSet<AST.Address>,HashSet<AST.Address>> =
                 assert(c1.Count = c2.Count)
 
@@ -519,3 +519,13 @@
                     ) clustering
 
                 new HashSet<HashSet<AST.Address>>(clustering')
+
+            let numberClusters(clustering: Clustering) : ClusterIDs =
+                let d = new Dict<HashSet<AST.Address>,int>()
+                let mutable i = 0
+                Seq.iter (fun c ->
+                    if not (d.ContainsKey c) then
+                        d.Add(c, i)
+                        i <- i + 1
+                ) clustering
+                d
