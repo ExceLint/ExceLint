@@ -87,7 +87,7 @@
         /// <param name="d"></param>
         /// <param name="r"></param>
         let private kmedioids(k: int)(cells: AST.Address[])(s: ScoreTable)(hb_inv: InvertedHistogram)(d: DistanceF)(r: Random) : MedioidClustering =
-            // choose k random indices using rejection sampling
+            // choose k distinct random indices using rejection sampling
             let seeds = Array.fold (fun xs i ->
                             let mutable ri = r.Next(cells.Length)
                             while Set.contains ri xs do
@@ -107,10 +107,8 @@
             // while the cost decreases, find new medoids
             while cost_decreased do
                 cost_decreased <- false
-
                 // for each medioid
                 for i in [| 0 .. medioids.Length - 1 |] do
-
                     // swap medioid with every other point
                     for c in cells do
                         // new set of medioids
