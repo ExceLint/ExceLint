@@ -464,23 +464,47 @@
                 let denominator = (union c1 c2).Count
                 (double numerator) / (double denominator)
 
-            let ClusteringJaccardIndex(c1: Clustering)(c2: Clustering) : double =
-                // for each cluster in c1, find the cluster with the largest Jaccard index
-                let correspondence =
-                    c1 |>
-                    Seq.map (fun cluster1 ->
-                        let others = c2 |> Seq.toArray
-                        let ds = Seq.map (fun cluster2 -> JaccardIndex cluster1 cluster2) c2 |> Seq.toArray
+            // for each cluster in c1, find the cluster with the largest Jaccard index
+            let JaccardCorrespondence(c1: Clustering)(c2: Clustering) : Dict<HashSet<AST.Address>,HashSet<AST.Address>> =
+                assert(c1.Count = c2.Count)
 
-                        let closest =
-                            c2 |>
-                            argmax (fun cluster2 -> JaccardIndex cluster1 cluster2)
-                        cluster1, closest
-                    ) |> Seq.toArray
+                let d = new Dict<HashSet<AST.Address>,HashSet<AST.Address>>()
 
+                // greedily take the highest-scoring (Jaccard index) correspondence
+                // and then recompute best correspondence;
+                // this ensures a 1:1 correspondence between clusters in c1 and c2
+                while d.Count <> c1.Count do
+                    let (_, (cluster1, cluster2)) =
+                        let pairings =
+                            c1 |>
+                            Seq.filter (fun cluster1 -> not (d.ContainsKey cluster1)) |>
+                            Seq.map (fun cluster1 ->
+                                let others = c2 |> Seq.filter (fun cluster2 -> not (d.ContainsValue cluster2)) |> Seq.toArray
+                                let scores =
+                                    others |>
+                                    Seq.map (fun cluster2 -> cluster2, JaccardIndex cluster1 cluster2)
+                                let (cluster2, best_score) =
+                                    scores |>
+                                    Seq.maxBy (fun (cluster2, score) -> score)
+
+                                best_score, (cluster1, cluster2)
+                            )
+
+                        let sorted_pairings =
+                            pairings |>
+                            Seq.sortBy (fun (score, _) -> -score)
+
+                        Seq.head sorted_pairings
+                    d.Add(cluster1, cluster2)
+
+                d
+
+            let ClusteringJaccardIndex(c1: Clustering)(c2: Clustering)(correspondence: Dict<HashSet<AST.Address>,HashSet<AST.Address>>) : double =
                 // compute overall Jaccard index
                 let totalIntersect =
-                    Array.fold (fun acc (cluster1,cluster2) ->
+                    Seq.fold (fun acc (kvp: KeyValuePair<HashSet<AST.Address>, HashSet<AST.Address>>) ->
+                        let cluster1 = kvp.Key
+                        let cluster2 = kvp.Value
                         acc + (intersection cluster1 cluster2).Count
                     ) 0 correspondence
                 let totalCells =

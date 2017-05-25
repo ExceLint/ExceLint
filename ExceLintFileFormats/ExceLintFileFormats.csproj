@@ -46,6 +46,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BugKind.cs" />
+    <Compile Include="Clustering.cs" />
     <Compile Include="ClusterSteps.cs" />
     <Compile Include="CorpusStats.cs" />
     <Compile Include="CUSTODESGroundTruth.cs" />

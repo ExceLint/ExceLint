@@ -26,6 +26,7 @@ open System.Text.RegularExpressions
         member self.csv: string = csv
         member self.isVerbose : bool = verbose
         member self.verbose_csv(wbname: string) = Path.Combine(opath, Regex.Replace(wbname,"[^A-Za-z0-9_-]","") + ".csv")
+        member self.clustering_csv(wbname: string)(clustername: string) = Path.Combine(opath, Regex.Replace(wbname,"[^A-Za-z0-9_-]","") + "_" + clustername + ".csv")
         member self.FeatureConf = fc
         member self.CustodesPath = cpath
         member self.JavaPath = jpath
