@@ -544,20 +544,26 @@ namespace ExceLintUI
                 // get initial clustering
                 var clusters = _m.CurrentClustering;
 
-                // create cluster color map
-                _cluster_colors = new Dictionary<HashSet<AST.Address>, System.Drawing.Color>();
+                // draw
+                DrawClusters(clusters);
+            }
+        }
 
-                // init rng
-                var r = new Random();
+        public void DrawClusters(HashSet<HashSet<AST.Address>> clusters)
+        {
+            // create cluster color map
+            _cluster_colors = new Dictionary<HashSet<AST.Address>, System.Drawing.Color>();
 
-                foreach (var cluster in clusters)
+            // init rng
+            var r = new Random();
+
+            foreach (var cluster in clusters)
+            {
+                var c = System.Drawing.Color.FromArgb(r.Next(256), r.Next(256), r.Next(256));
+                _cluster_colors.Add(cluster, c);
+                foreach (AST.Address addr in cluster)
                 {
-                    var c = System.Drawing.Color.FromArgb(r.Next(256), r.Next(256), r.Next(256));
-                    _cluster_colors.Add(cluster, c);
-                    foreach (AST.Address addr in cluster)
-                    {
-                        paintColor(addr, c);
-                    }
+                    paintColor(addr, c);
                 }
             }
         }

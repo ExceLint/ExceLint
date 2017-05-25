@@ -87,6 +87,18 @@ namespace ExceLintFileFormats
                 }
             }
         }
+
+        public static ClusteringRow[] readClustering(string filename)
+        {
+            ClusteringRow[] records;
+            using (TextReader tw = File.OpenText(filename))
+            {
+                var csv = new CsvReader(tw);
+                records = csv.GetRecords<ClusteringRow>().ToArray();
+            }
+            
+            return records;
+        }
     }
 
     public class ClusteringRow

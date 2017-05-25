@@ -53,7 +53,6 @@
         let _features : ConfUtils.RunnerMap = Map.map (fun (fname: string)(cap: Capability) -> cap.runner) _config
 
         new() = FeatureConf(Map.empty, None)
-//        new(userConf: Map<string,Capability>) = FeatureConf(userConf, None)
 
         // fluent constructors
         member self.enableInDegree(on: bool) : FeatureConf =

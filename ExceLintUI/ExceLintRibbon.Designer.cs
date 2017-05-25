@@ -44,6 +44,8 @@
             this.StartOverButton = this.Factory.CreateRibbonButton();
             this.showHeatmap = this.Factory.CreateRibbonButton();
             this.stepModel = this.Factory.CreateRibbonButton();
+            this.LSHTest = this.Factory.CreateRibbonButton();
+            this.getLSH = this.Factory.CreateRibbonButton();
             this.ClusterBox = this.Factory.CreateRibbonCheckBox();
             this.useResultant = this.Factory.CreateRibbonCheckBox();
             this.normSSCheckBox = this.Factory.CreateRibbonCheckBox();
@@ -67,12 +69,13 @@
             this.separator4 = this.Factory.CreateRibbonSeparator();
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
-            this.LSHTest = this.Factory.CreateRibbonButton();
-            this.getLSH = this.Factory.CreateRibbonButton();
+            this.box2 = this.Factory.CreateRibbonBox();
+            this.readClusterDump = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
             this.box1.SuspendLayout();
+            this.box2.SuspendLayout();
             this.SuspendLayout();
             // 
             // tab1
@@ -121,9 +124,7 @@
             this.box1.Items.Add(this.MarkAsOKButton);
             this.box1.Items.Add(this.StartOverButton);
             this.box1.Items.Add(this.showHeatmap);
-            this.box1.Items.Add(this.stepModel);
-            this.box1.Items.Add(this.LSHTest);
-            this.box1.Items.Add(this.getLSH);
+            this.box1.Items.Add(this.box2);
             this.box1.Name = "box1";
             // 
             // AnalyzeButton
@@ -167,6 +168,18 @@
             this.stepModel.Label = "Step Cluster Model";
             this.stepModel.Name = "stepModel";
             this.stepModel.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.stepModel_Click);
+            // 
+            // LSHTest
+            // 
+            this.LSHTest.Label = "LSH Test";
+            this.LSHTest.Name = "LSHTest";
+            this.LSHTest.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.LSHTest_Click);
+            // 
+            // getLSH
+            // 
+            this.getLSH.Label = "LSH for Cell";
+            this.getLSH.Name = "getLSH";
+            this.getLSH.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.getLSH_Click);
             // 
             // ClusterBox
             // 
@@ -311,17 +324,20 @@
             this.annotateThisCell.ShowImage = true;
             this.annotateThisCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotateThisCell_Click);
             // 
-            // LSHTest
+            // box2
             // 
-            this.LSHTest.Label = "LSH Test";
-            this.LSHTest.Name = "LSHTest";
-            this.LSHTest.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.LSHTest_Click);
+            this.box2.BoxStyle = Microsoft.Office.Tools.Ribbon.RibbonBoxStyle.Vertical;
+            this.box2.Items.Add(this.stepModel);
+            this.box2.Items.Add(this.LSHTest);
+            this.box2.Items.Add(this.getLSH);
+            this.box2.Items.Add(this.readClusterDump);
+            this.box2.Name = "box2";
             // 
-            // getLSH
+            // readClusterDump
             // 
-            this.getLSH.Label = "LSH for Cell";
-            this.getLSH.Name = "getLSH";
-            this.getLSH.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.getLSH_Click);
+            this.readClusterDump.Label = "Read Cluster Dump";
+            this.readClusterDump.Name = "readClusterDump";
+            this.readClusterDump.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.readClusterDump_Click);
             // 
             // ExceLintRibbon
             // 
@@ -338,6 +354,8 @@
             this.CheckCellGroup.PerformLayout();
             this.box1.ResumeLayout(false);
             this.box1.PerformLayout();
+            this.box2.ResumeLayout(false);
+            this.box2.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -378,6 +396,8 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton stepModel;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton LSHTest;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton getLSH;
+        internal Microsoft.Office.Tools.Ribbon.RibbonBox box2;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton readClusterDump;
     }
 
     partial class ThisRibbonCollection

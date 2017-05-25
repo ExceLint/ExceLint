@@ -686,6 +686,39 @@ namespace ExceLintUI
             System.Windows.Forms.MessageBox.Show("Exported to clipboard.");
         }
 
+        private void readClusterDump_Click(object sender, RibbonControlEventArgs e)
+        {
+            var ofd = new System.Windows.Forms.OpenFileDialog();
+            ofd.ShowDialog();
+            var rows = Clustering.readClustering(ofd.FileName);
+
+            // convert to HashSet<HashSet<AST.Address>>
+            var clustering = new HashSet<HashSet<AST.Address>>();
+            var ids = new Dictionary<int, HashSet<AST.Address>>();
+            foreach (var row in rows)
+            {
+                if (!ids.ContainsKey(row.Cluster))
+                {
+                    var hs = new HashSet<AST.Address>();
+                    ids.Add(row.Cluster, hs);
+                    clustering.Add(hs);
+                }
+
+                var addr = AST.Address.FromA1StringForceMode(
+                            row.Address,
+                            AST.AddressMode.Absolute,
+                            AST.AddressMode.Absolute,
+                            row.Worksheet,
+                            row.Workbook,
+                            row.Path
+                           );
+                ids[row.Cluster].Add(addr);
+            }
+
+            // display
+            currentWorkbook.DrawClusters(clustering);
+        }
+
         #endregion BUTTON_HANDLERS
 
         #region EVENTS
