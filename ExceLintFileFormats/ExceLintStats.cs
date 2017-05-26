@@ -11,6 +11,9 @@ namespace ExceLintFileFormats
 
         public ExceLintStats(string path)
         {
+            // create directory unless it already exists
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+
             _sw = new StreamWriter(path);
             _sw.AutoFlush = true;
             _cw = new CsvWriter(_sw);
