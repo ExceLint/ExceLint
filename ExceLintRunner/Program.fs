@@ -232,6 +232,80 @@ open ExceLintFileFormats
 
         csv.WriteRow row
 
+    let kmedioidsJaccardIndex(shortf: string)(model: ErrorModel)(config: Args.Config)(graph: Depends.DAG)(app: Application) : double =
+        try
+            printfn "Running ExceLint k-medioids analysis: %A" shortf
+            let k = model.Clustering.Count
+            let ex_clusters = model.Clustering
+
+            let input = CommonTypes.SimpleInput (app.XLApplication()) config.FeatureConf graph
+            let km_clusters = KMedioidsClusterModelBuilder.getClustering input k
+
+            // assign IDs to clusters
+            let correspondence = CommonFunctions.JaccardCorrespondence km_clusters ex_clusters
+            let ex_ids: CommonTypes.ClusterIDs = CommonFunctions.numberClusters ex_clusters
+            let mutable maxId = ex_ids.Values |> Seq.max
+            let km_ids: CommonTypes.ClusterIDs =
+                km_clusters
+                |> Seq.map (fun cl ->
+                    let ex_cluster_opt = correspondence.[Some cl]
+                    match ex_cluster_opt with
+                    | Some ex_cluster ->
+                        cl, ex_ids.[ex_cluster]
+                    | None ->
+                        maxId <- maxId + 1
+                        cl, maxId
+                    ) |> adict
+
+            // write clustering logs
+            Clustering.writeClustering(ex_clusters, ex_ids, config.clustering_csv shortf "clustering_excelint")
+            Clustering.writeClustering(km_clusters, km_ids, config.clustering_csv shortf "clustering_kmedioids")
+
+            CommonFunctions.ClusteringJaccardIndex km_clusters ex_clusters correspondence
+        with
+        | _ -> 0.0
+
+    let oldClusterAlgoJaccardIndex(shortf: string)(model: ErrorModel)(config: Args.Config)(graph: Depends.DAG)(app: Application) : double*int =
+        try
+            printfn "Running old ExceLint cluster analysis: %A" shortf
+            let fc' = config.FeatureConf.enableOldClusteringAlgorithm true
+
+            let model_opt' = ExceLint.ModelBuilder.analyze (app.XLApplication()) fc' graph (config.alpha) (Depends.Progress.NOPProgress())
+            match model_opt' with
+            | Some model' ->
+                let ex_k = model.Clustering.Count
+                let ex_clusters = model.Clustering
+                let old_k = model.Clustering.Count
+                let oldex_clusters = model'.Clustering
+
+                // how many more clusters old model has than new one
+                let delta_k = old_k - ex_k
+
+                // assign IDs to clusters
+                let correspondence = CommonFunctions.JaccardCorrespondence oldex_clusters ex_clusters
+                let ex_ids: CommonTypes.ClusterIDs = CommonFunctions.numberClusters ex_clusters
+                let mutable maxId = ex_ids.Values |> Seq.max
+                let old_ids: CommonTypes.ClusterIDs =
+                    oldex_clusters
+                    |> Seq.map (fun cl ->
+                        let ex_cluster_opt = correspondence.[Some cl]
+                        match ex_cluster_opt with
+                        | Some ex_cluster ->
+                            cl, ex_ids.[ex_cluster]
+                        | None ->
+                            maxId <- maxId + 1
+                            cl, maxId
+                       ) |> adict
+
+                // write clustering logs
+                Clustering.writeClustering(ex_clusters, ex_ids, config.clustering_csv shortf "clustering_excelint")
+                Clustering.writeClustering(oldex_clusters, old_ids, config.clustering_csv shortf "clustering_OLDexcelint")
+                    
+                CommonFunctions.ClusteringJaccardIndex oldex_clusters ex_clusters correspondence, delta_k
+            | None -> 0.0,0
+        with
+        | _ -> 0.0,0
+
     let analyze (file: String)(app: Application)(config: Args.Config)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(csv: ExceLintStats)(debug_csv: DebugInfo) =
         let shortf = (System.IO.Path.GetFileName file)
 
@@ -244,29 +318,10 @@ open ExceLintFileFormats
         printfn "Running ExceLint analysis: %A" shortf
         let model_opt = ExceLint.ModelBuilder.analyze (app.XLApplication()) config.FeatureConf graph (config.alpha) (Depends.Progress.NOPProgress())
 
-        printfn "Running ExceLint k-medioids analysis: %A" shortf
+        
         let jdist =
             match model_opt with
-            | Some model ->
-                try
-                    let k = model.Clustering.Count
-                    let ex_clusters = model.Clustering
-
-                    let input = CommonTypes.SimpleInput (app.XLApplication()) config.FeatureConf graph
-                    let km_clusters = KMedioidsClusterModelBuilder.getClustering input k
-
-                    // assign IDs to clusters
-                    let correspondence = CommonFunctions.JaccardCorrespondence km_clusters ex_clusters
-                    let ex_ids: CommonTypes.ClusterIDs = CommonFunctions.numberClusters ex_clusters
-                    let km_ids: CommonTypes.ClusterIDs = km_clusters |> Seq.map (fun cl -> cl, ex_ids.[correspondence.[cl]]) |> adict
-
-                    // write clustering logs
-                    Clustering.writeClustering(ex_clusters, ex_ids, config.clustering_csv shortf "clustering_excelint")
-                    Clustering.writeClustering(km_clusters, km_ids, config.clustering_csv shortf "clustering_kmedioids")
-                    
-                    CommonFunctions.ClusteringJaccardIndex km_clusters ex_clusters correspondence
-                with
-                | _ -> 0.0
+            | Some model -> kmedioidsJaccardIndex shortf model config graph app
             | None -> 0.0
 
         printfn "Running CUSTODES analysis: %A" shortf

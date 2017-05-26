@@ -64,12 +64,18 @@
                 else
                     // use the first clustering's map to find the cluster numbers for the second clustering
                     let correspondence = JaccardCorrespondence clustering cls.[0]
+                    let mutable maxId = maps.[0].Values |> Seq.max
                     let m = clustering |>
-                        Seq.map (fun cluster ->
-                            let cl_orig = correspondence.[cluster]
-                            let num = maps.[0].[cl_orig]
-                            cluster, num
-                        ) |> adict
+                            Seq.map (fun cluster ->
+                                let cl_orig_opt = correspondence.[Some cluster]
+                                match cl_orig_opt with
+                                | Some cl_orig ->
+                                    let num = maps.[0].[cl_orig]
+                                    cluster, num
+                                | None ->
+                                    maxId <- maxId + 1
+                                    cluster, maxId
+                            ) |> adict
                     maps.[i] <- m
             ) cls
 

@@ -464,22 +464,22 @@
                 let denominator = (union c1 c2).Count
                 (double numerator) / (double denominator)
 
-            // for each cluster in c1, pair with the cluster in c2 with the largest Jaccard index
-            let JaccardCorrespondence(c1: Clustering)(c2: Clustering) : Dict<HashSet<AST.Address>,HashSet<AST.Address>> =
-                assert(c1.Count = c2.Count)
-
-                let d = new Dict<HashSet<AST.Address>,HashSet<AST.Address>>()
+            // for each cluster in c1, pair with the cluster in c2 with the largest Jaccard index;
+            // if |c1| > |c2| then some of c1 will be paired with None
+            // if |c1| < |c2| then some of c2 will be paired with None
+            let JaccardCorrespondence(c1: Clustering)(c2: Clustering) : Dict<HashSet<AST.Address> option,HashSet<AST.Address> option> =
+                let d = new Dict<HashSet<AST.Address> option,HashSet<AST.Address> option>()
 
                 // greedily take the highest-scoring (Jaccard index) correspondence
                 // and then recompute best correspondence;
                 // this ensures a 1:1 correspondence between clusters in c1 and c2
                 while d.Count <> c1.Count do
-                    let (_, (cluster1, cluster2)) =
+                    let (cluster1_opt, cluster2_opt) =
                         let pairings =
                             c1 |>
-                            Seq.filter (fun cluster1 -> not (d.ContainsKey cluster1)) |>
+                            Seq.filter (fun cluster1 -> not (d.ContainsKey (Some cluster1))) |>
                             Seq.map (fun cluster1 ->
-                                let others = c2 |> Seq.filter (fun cluster2 -> not (d.ContainsValue cluster2)) |> Seq.toArray
+                                let others = c2 |> Seq.filter (fun cluster2 -> not (d.ContainsValue (Some cluster2))) |> Seq.toArray
                                 let scores =
                                     others |>
                                     Seq.map (fun cluster2 -> cluster2, JaccardIndex cluster1 cluster2)
@@ -490,22 +490,35 @@
                                 best_score, (cluster1, cluster2)
                             )
 
-                        let sorted_pairings =
-                            pairings |>
-                            Seq.sortBy (fun (score, _) -> -score)
+                        if Seq.length pairings = 0 then
+                            let cluster1 = c1 |> Seq.filter (fun cluster1 -> not (d.ContainsKey (Some cluster1))) |> Seq.head
+                            (Some cluster1, None)
+                        else
+                            let sorted_pairings =
+                                pairings |>
+                                Seq.sortBy (fun (score, _) -> -score)
 
-                        Seq.head sorted_pairings
-                    d.Add(cluster1, cluster2)
+                            let (_, (cluster1, cluster2)) = Seq.head sorted_pairings
+                            Some cluster1, Some cluster2
+                    d.Add(cluster1_opt, cluster2_opt)
+
+                // if any c2 remain
+                let remaining_c2 = c2 |> Seq.filter (fun cluster2 -> not (d.ContainsValue (Some cluster2)))
+                remaining_c2 |> Seq.iter (fun cluster2 -> d.Add(None, Some cluster2))
 
                 d
 
-            let ClusteringJaccardIndex(c1: Clustering)(c2: Clustering)(correspondence: Dict<HashSet<AST.Address>,HashSet<AST.Address>>) : double =
+            let ClusteringJaccardIndex(c1: Clustering)(c2: Clustering)(correspondence: Dict<HashSet<AST.Address> option,HashSet<AST.Address> option>) : double =
                 // compute overall Jaccard index
                 let totalIntersect =
-                    Seq.fold (fun acc (kvp: KeyValuePair<HashSet<AST.Address>, HashSet<AST.Address>>) ->
-                        let cluster1 = kvp.Key
-                        let cluster2 = kvp.Value
-                        acc + (intersection cluster1 cluster2).Count
+                    Seq.fold (fun acc (kvp: KeyValuePair<HashSet<AST.Address> option, HashSet<AST.Address> option>) ->
+                        let cluster1_opt = kvp.Key
+                        let cluster2_opt = kvp.Value
+
+                        match cluster1_opt,cluster2_opt with
+                        | Some cluster1, Some cluster2 ->
+                            acc + (intersection cluster1 cluster2).Count
+                        | _ -> 0
                     ) 0 correspondence
                 let totalCells =
                     c1 |>
