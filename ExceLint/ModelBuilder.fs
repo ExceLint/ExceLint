@@ -28,45 +28,40 @@
 
                 if dag.IsCancelled() then
                     None
-                elif input.config.IsCOF then
-                    let pipeline = runCOFModel              // produce initial (unsorted) ranking
-                                    +> weights              // compute weights
-                                    +> reweightRanking      // modify ranking scores
-                                    +> canonicalSort        // sort
-                                    +> cutoffIndex          // compute initial cutoff index
-                                    +> kneeIndexOpt         // optionally compute knee index
-                                    +> inferAddressModes    // remove anomaly candidates
-                                    +> canonicalSort
-                                    +> kneeIndexOpt
-
-                    match pipeline input with
-                    | Success(analysis) -> Some (ErrorModel(input, analysis, config'))
-                    | Cancellation -> None
-                elif input.config.Cluster then
-                    let pipeline = runClusterModel
-
-                    match pipeline input with
-                    | Success(analysis) -> Some (ErrorModel(input, analysis, config'))
-                    | Cancellation -> None
-                    | CantRun msg -> raise (NoFormulasException msg)
-                elif input.config.OldCluster then
-                    let pipeline = runClusterModel
-
-                    match pipeline input with
-                    | Success(analysis) -> Some (ErrorModel(input, analysis, config'))
-                    | Cancellation -> None
-                    | CantRun msg -> raise (NoFormulasException msg)
                 else
-                    let pipeline = runSpectralModel                 // produce initial (unsorted) ranking
-                                    +> weights              // compute weights
-                                    +> reweightRanking      // modify ranking scores
-                                    +> canonicalSort        // sort
-                                    +> cutoffIndex          // compute initial cutoff index
-                                    +> kneeIndexOpt         // optionally compute knee index
-                                    +> inferAddressModes    // remove anomaly candidates
-                                    +> canonicalSort
-                                    +> kneeIndexOpt
-
-                    match pipeline input with
+                    let pipe =
+                        // COF clustering
+                        if input.config.IsCOF then
+                            let pipeline = runCOFModel              // produce initial (unsorted) ranking
+                                            +> weights              // compute weights
+                                            +> reweightRanking      // modify ranking scores
+                                            +> canonicalSort        // sort
+                                            +> cutoffIndex          // compute initial cutoff index
+                                            +> kneeIndexOpt         // optionally compute knee index
+                                            +> inferAddressModes    // remove anomaly candidates
+                                            +> canonicalSort
+                                            +> kneeIndexOpt
+                            pipeline input 
+                        // LSH-NN clustering
+                        elif input.config.Cluster then
+                            runClusterModel input
+                        // NN clustering
+                        elif input.config.OldCluster then
+                            OldClusterModel.runClusterModel input
+                        else
+                        // spectral clustering
+                            let pipeline = runSpectralModel         // produce initial (unsorted) ranking
+                                            +> weights              // compute weights
+                                            +> reweightRanking      // modify ranking scores
+                                            +> canonicalSort        // sort
+                                            +> cutoffIndex          // compute initial cutoff index
+                                            +> kneeIndexOpt         // optionally compute knee index
+                                            +> inferAddressModes    // remove anomaly candidates
+                                            +> canonicalSort
+                                            +> kneeIndexOpt
+                            pipeline input 
+                    // handle errors
+                    match pipe with
                     | Success(analysis) -> Some (ErrorModel(input, analysis, config'))
                     | Cancellation -> None
+                    | CantRun msg -> raise (NoFormulasException msg)
