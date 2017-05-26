@@ -88,7 +88,7 @@ namespace ExceLintFileFormats
             }
         }
 
-        public static ClusteringRow[] readClustering(string filename)
+        public static ClusteringRow[] readClusteringAsRows(string filename)
         {
             ClusteringRow[] records;
             using (TextReader tw = File.OpenText(filename))
@@ -98,6 +98,35 @@ namespace ExceLintFileFormats
             }
             
             return records;
+        }
+
+        public static HashSet<HashSet<AST.Address>> readClustering(string filename)
+        {
+            var rows = readClusteringAsRows(filename);
+
+            var clustering = new HashSet<HashSet<AST.Address>>();
+            var ids = new Dictionary<int, HashSet<AST.Address>>();
+            foreach (var row in rows)
+            {
+                if (!ids.ContainsKey(row.Cluster))
+                {
+                    var hs = new HashSet<AST.Address>();
+                    ids.Add(row.Cluster, hs);
+                    clustering.Add(hs);
+                }
+
+                var addr = AST.Address.FromA1StringForceMode(
+                            row.Address,
+                            AST.AddressMode.Absolute,
+                            AST.AddressMode.Absolute,
+                            row.Worksheet,
+                            row.Workbook,
+                            row.Path
+                           );
+                ids[row.Cluster].Add(addr);
+            }
+
+            return clustering;
         }
     }
 
