@@ -13,7 +13,26 @@
 
     // a C#-friendly configuration object that is also pure/fluent
     type FeatureConf private (userConf: Map<string,Capability>, limitToSheet: string option) =
-        
+        let nop(cell: AST.Address)(dag: Depends.DAG) : Countable = Countable.Num 0.0
+
+        // this function adds a feature and its capabilities to the configuration map,
+        // and returns a new FeatureConf
+        let capabilityConstructorHelper(paramz: string*Capability)(self: FeatureConf)(on: bool)(config: Map<string,Capability>) : FeatureConf =
+            let (name,cap) = paramz
+            if on then
+                FeatureConf(
+                    config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
+                    limitToSheet
+                )
+            else
+                if config.ContainsKey(name) then
+                    FeatureConf(
+                        config.Remove(name),
+                        limitToSheet
+                    )
+                else
+                    self
+
         let _base = BaseFeature.run
 
         let _capabilities : Map<string,Capability> =
@@ -33,13 +52,13 @@
                 Vector.ShallowInputVectorMixedL2NormSum.capability;
                 Vector.ShallowOutputVectorMixedL2NormSum.capability;
                 Vector.ShallowInputVectorMixedCOFNoAspect.capability;
+                Vector.ShallowInputVectorMixedResultant.capability;
+                Vector.ShallowInputVectorMixedFullCVectorResultantNotOSI.capability;
                 Proximity.Above.capability;
                 Proximity.Below.capability;
                 Proximity.Left.capability;
                 Proximity.Right.capability
             ] |> Map.ofList
-
-        let nop(cell: AST.Address)(dag: Depends.DAG) : Countable = Countable.Num 0.0
 
         let _config = Map.fold (fun (acc: Map<string,Capability>)(fname: string)(cap: Capability) ->
                         let cap' : Capability =
@@ -56,526 +75,106 @@
 
         // fluent constructors
         member self.enableInDegree(on: bool) : FeatureConf =
-            let (name,cap) = Degree.InDegree.capability
-            if on then
-                FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper Degree.InDegree.capability self on _config
         member self.enableOutDegree(on: bool) : FeatureConf =
-            let (name,cap) = Degree.OutDegree.capability
-            if on then
-                FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper Degree.OutDegree.capability self on _config
         member self.enableCombinedDegree(on: bool) : FeatureConf =
-            let (name,cap) = Degree.CombinedDegree.capability
-            if on then
-                FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper Degree.CombinedDegree.capability self on _config
         member self.enableDeepInputVectorRelativeL2NormSum(on: bool) : FeatureConf =
-            let (name,cap) = Vector.DeepInputVectorRelativeL2NormSum.capability
-            if on then
-                FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper Vector.DeepInputVectorRelativeL2NormSum.capability self on _config
         member self.enableDeepOutputVectorRelativeL2NormSum(on: bool) : FeatureConf =
-            let (name,cap) = Vector.DeepOutputVectorRelativeL2NormSum.capability
-            if on then
-                FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper Vector.DeepOutputVectorRelativeL2NormSum.capability self on _config
         member self.enableDeepInputVectorAbsoluteL2NormSum(on: bool) : FeatureConf =
-            let (name,cap) = Vector.DeepInputVectorAbsoluteL2NormSum.capability
-            FeatureConf(
-                _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
-                limitToSheet
-            )
+            capabilityConstructorHelper Vector.DeepInputVectorAbsoluteL2NormSum.capability self on _config
         member self.enableDeepOutputVectorAbsoluteL2NormSum(on: bool) : FeatureConf =
-            let (name,cap) = Vector.DeepOutputVectorAbsoluteL2NormSum.capability
-            if on then
-                FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper Vector.DeepOutputVectorAbsoluteL2NormSum.capability self on _config
         member self.enableDeepInputVectorMixedL2NormSum(on: bool) : FeatureConf =
-            let (name,cap) = Vector.DeepInputVectorMixedL2NormSum.capability
-            if on then
-                FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper Vector.DeepInputVectorMixedL2NormSum.capability self on _config
         member self.enableDeepOutputVectorMixedL2NormSum(on: bool) : FeatureConf =
-            let (name,cap) = Vector.DeepOutputVectorMixedL2NormSum.capability
-            if on then
-                FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper Vector.DeepOutputVectorMixedL2NormSum.capability self on _config
         member self.enableShallowInputVectorRelativeL2NormSum(on: bool) : FeatureConf =
-            let (name,cap) = Vector.ShallowInputVectorRelativeL2NormSum.capability
-            FeatureConf(
-                _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
-                limitToSheet
-            )
+            capabilityConstructorHelper Vector.ShallowInputVectorRelativeL2NormSum.capability self on _config
         member self.enableShallowOutputVectorRelativeL2NormSum(on: bool) : FeatureConf =
-            let (name,cap) = Vector.ShallowOutputVectorRelativeL2NormSum.capability
-            if on then
-                FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper Vector.ShallowOutputVectorRelativeL2NormSum.capability self on _config
         member self.enableShallowInputVectorAbsoluteL2NormSum(on: bool) : FeatureConf =
-            let (name,cap) = Vector.ShallowInputVectorAbsoluteL2NormSum.capability
-            if on then
-                FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper Vector.ShallowInputVectorAbsoluteL2NormSum.capability self on _config
         member self.enableShallowOutputVectorAbsoluteL2NormSum(on: bool) : FeatureConf =
-            let (name,cap) = Vector.ShallowOutputVectorAbsoluteL2NormSum.capability
-            if on then
-                FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper Vector.ShallowOutputVectorAbsoluteL2NormSum.capability self on _config
         member self.enableShallowInputVectorMixedL2NormSum(on: bool) : FeatureConf =
-            let (name,cap) = Vector.ShallowInputVectorMixedL2NormSum.capability
-            if on then
-                FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper Vector.ShallowInputVectorMixedL2NormSum.capability self on _config
         member self.enableShallowOutputVectorMixedL2NormSum(on: bool) : FeatureConf =
-            let (name,cap) = Vector.ShallowOutputVectorMixedL2NormSum.capability
-            if on then
-                FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper Vector.ShallowOutputVectorMixedL2NormSum.capability self on _config
         member self.enableShallowInputVectorMixedCOFRefUnnormSSNorm(on: bool) : FeatureConf =
-            let (name,cap) = Vector.ShallowInputVectorMixedCOFNoAspect.capability
-            if on then
-                FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper Vector.ShallowInputVectorMixedCOFNoAspect.capability self on _config
         member self.enableShallowInputVectorMixedResultant(on: bool) : FeatureConf =
-            let (name,cap) = Vector.ShallowInputVectorMixedResultant.capability
-            if on then
-                FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper Vector.ShallowInputVectorMixedResultant.capability self on _config
         member self.enableShallowInputVectorMixedFullCVectorResultantNotOSI(on: bool) : FeatureConf =
-            let (name,cap) = Vector.ShallowInputVectorMixedFullCVectorResultantNotOSI.capability
-            if on then
-                FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
-
+            capabilityConstructorHelper Vector.ShallowInputVectorMixedFullCVectorResultantNotOSI.capability self on _config
         member self.enableProximityAbove(on: bool) : FeatureConf =
-            let (name,cap) = Proximity.Above.capability
-            if on then
-                FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper Proximity.Above.capability self on _config
         member self.enableProximityBelow(on: bool) : FeatureConf =
-            let (name,cap) = Proximity.Below.capability
-            if on then
-                FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper Proximity.Below.capability self on _config
         member self.enableProximityLeft(on: bool) : FeatureConf =
-            let (name,cap) = Proximity.Left.capability
-            if on then
-                FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper Proximity.Left.capability self on _config
         member self.enableProximityRight(on: bool) : FeatureConf =
-            let (name,cap) = Proximity.Right.capability
-            if on then
-                FeatureConf(
-                    _config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper Proximity.Right.capability self on _config
         member self.analyzeRelativeToAllCells(on: bool) : FeatureConf =
             let name = "ScopeAllCells"
             let cap : Capability = { enabled = true; kind = ConfigKind.Scope; runner = nop}
-            if on then
-                FeatureConf(
-                    _config.Add(name, cap),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper (name,cap) self on _config
         member self.analyzeRelativeToColumns(on: bool) : FeatureConf =
             let name = "ScopeColumns"
             let cap : Capability = { enabled = true; kind = ConfigKind.Scope; runner = nop}
-            if on then
-                FeatureConf(
-                    _config.Add(name, cap),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper (name,cap) self on _config
+
         member self.analyzeRelativeToRows(on: bool) : FeatureConf =
             let name = "ScopeRows"
             let cap : Capability = { enabled = true; kind = ConfigKind.Scope; runner = nop}
-            if on then
-                FeatureConf(
-                    _config.Add(name, cap),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper (name,cap) self on _config
         member self.analyzeRelativeToLevels(on: bool) : FeatureConf =
             let name = "ScopeLevels"
             let cap : Capability = { enabled = true; kind = ConfigKind.Scope; runner = nop}
-            if on then
-                FeatureConf(
-                    _config.Add(name, cap),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper (name,cap) self on _config
         member self.analyzeRelativeToSheet(on: bool) : FeatureConf =
             let name = "ScopeSheets"
             let cap : Capability = { enabled = true; kind = ConfigKind.Scope; runner = nop}
-            if on then
-                FeatureConf(
-                    _config.Add(name, cap),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper (name,cap) self on _config
         member self.inferAddressModes(on: bool) : FeatureConf =
             let name = "InferAddressModes"
             let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
-            if on then
-                FeatureConf(
-                    _config.Add(name, cap),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper (name,cap) self on _config
         member self.analyzeOnlyFormulas(on: bool) : FeatureConf =
             let name = "AnalyzeOnlyFormulas"
             let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
-            if on then
-                FeatureConf(
-                    _config.Add(name, cap),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper (name,cap) self on _config
         member self.weightByIntrinsicAnomalousness(on: bool) : FeatureConf =
             let name = "WeightByIntrinsicAnomalousness"
             let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
-            if on then
-                FeatureConf(
-                    _config.Add(name, cap),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper (name,cap) self on _config
         member self.weightByConditioningSetSize(on: bool) : FeatureConf =
             let name = "WeightByConditioningSetSize"
             let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
-            if on then
-                FeatureConf(
-                    _config.Add(name, cap),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper (name,cap) self on _config
         member self.spectralRanking(on: bool) : FeatureConf =
             let name = "SpectralRanking"
             let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
-            if on then
-                FeatureConf(
-                    _config.Add(name, cap),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper (name,cap) self on _config
         member self.enableDistanceNearestNeighbor(on: bool) : FeatureConf =
             let name = "NearestNeighborDistance"
             let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
-            if on then
-                FeatureConf(
-                    _config.Add(name, cap),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper (name,cap) self on _config
         member self.enableDistanceMeanCentroid(on: bool) : FeatureConf =
             let name = "MeanCentroidDistance"
             let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
-            if on then
-                FeatureConf(
-                    _config.Add(name, cap),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper (name,cap) self on _config
         member self.enableDistanceEarthMover(on: bool) : FeatureConf =
             let name = "EarthMoverDistance"
             let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
-            if on then
-                FeatureConf(
-                    _config.Add(name, cap),
-                    limitToSheet
-                )
-            else
-                if _config.ContainsKey(name) then
-                    FeatureConf(
-                        _config.Remove(name),
-                        limitToSheet
-                    )
-                else
-                    self
+            capabilityConstructorHelper (name,cap) self on _config
+        member self.enableOldClusteringAlgorithm(on: bool) : FeatureConf =
+            let name = "oldclusteralgo"
+            let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
+            capabilityConstructorHelper (name,cap) self on _config
         member self.limitAnalysisToSheet(wsname: string) : FeatureConf =
             let name = "limitToCurrentSheet"
             let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
@@ -630,6 +229,12 @@
             let (name2,_) = Vector.ShallowInputVectorMixedCVectorResultantNotOSI.capability
             (_config.ContainsKey name1 && _config.[name1].enabled) ||
             (_config.ContainsKey name2 && _config.[name2].enabled)
+        member self.OldCluster : bool =
+            let (name1,_) = Vector.ShallowInputVectorMixedFullCVectorResultantNotOSI.capability
+            let (name2,_) = Vector.ShallowInputVectorMixedCVectorResultantNotOSI.capability
+            ((_config.ContainsKey name1 && _config.[name1].enabled) ||
+            (_config.ContainsKey name2 && _config.[name2].enabled)) &&
+            (_config.ContainsKey "oldclusteralgo" && _config.["oldclusteralgo"].enabled)
         member self.IsCOF : bool =
             let (name,_) = Vector.ShallowInputVectorMixedCOFNoAspect.capability
             _config.ContainsKey name && _config.[name].enabled

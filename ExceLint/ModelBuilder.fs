@@ -49,6 +49,13 @@
                     | Success(analysis) -> Some (ErrorModel(input, analysis, config'))
                     | Cancellation -> None
                     | CantRun msg -> raise (NoFormulasException msg)
+                elif input.config.OldCluster then
+                    let pipeline = runClusterModel
+
+                    match pipeline input with
+                    | Success(analysis) -> Some (ErrorModel(input, analysis, config'))
+                    | Cancellation -> None
+                    | CantRun msg -> raise (NoFormulasException msg)
                 else
                     let pipeline = runSpectralModel                 // produce initial (unsorted) ranking
                                     +> weights              // compute weights
