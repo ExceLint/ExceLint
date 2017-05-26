@@ -9,6 +9,11 @@
     module ClusterModelBuilder =
         type ClusterModel(input: Input) =
             let mutable clusteringAtKnee = None
+            let mutable inCriticalRegion = false
+
+            // track merge targets so that we
+            // can tell when they become merge sources
+            let merge_targets = new HashSet<HashSet<AST.Address>>()
 
             // initialize selector cache
             let selcache = Scope.SelectorCache()
@@ -76,6 +81,11 @@
                 // different resultants, we've probably hit the knee
                 not (refvect_same s t)
 
+            member private self.IsFoot(s: HashSet<AST.Address>) : bool =
+                // the first time a former merge target becomes
+                // a merge source, we're probably done
+                merge_targets.Contains s
+
             // determine whether the next step will be the knee
             // without actually doing anohter agglomeration step
             member self.NextStepIsKnee : bool =
@@ -100,12 +110,14 @@
                         | Some cak -> Some cak
                         | None -> Some (CopyClustering hs.Clusters)
 
-                    probable_knee <- true
+                    inCriticalRegion <- true
+
+                if self.IsFoot source then
+                    inCriticalRegion <- false
 
                 // record merge in log
                 let clusters = hs.Clusters
                 log <- {
-                            beyond_knee = probable_knee;
                             source = Set.ofSeq source;
                             target = Set.ofSeq target;
                             distance = DISTANCE source target;
@@ -114,6 +126,7 @@
                             between_cluster_sum_squares = BCSS clusters hb_inv;
                             total_sum_squares = TSS clusters hb_inv;
                             num_clusters = clusters.Count;
+                            in_critical_region = inCriticalRegion;
                         } :: log
 
                 // dump clusters to log
@@ -142,6 +155,7 @@
 
                 // merge them
                 hs.Merge source target
+                merge_targets.Add target |> ignore
 
                 sw.Stop()
                 steps_ms <- sw.ElapsedMilliseconds :: steps_ms
@@ -172,7 +186,7 @@
                 List.rev log
                 |> List.iter (fun step ->
                         let row = new ExceLintFileFormats.ClusterStepsRow()
-                        row.Show <- step.beyond_knee
+                        row.Show <- step.in_critical_region
                         row.Merge <- (pp step.source) + " with " + (pp step.target)
                         row.Distance <- step.distance
                         row.FScore <- step.f
@@ -206,7 +220,7 @@
                     log
                     |> List.rev
                     |> List.map (fun (step : ClusterStep) ->
-                            if step.beyond_knee then
+                        if step.in_critical_region then
                             Some(
                                 Seq.map (fun addr -> 
                                     if not (rptd.Contains addr) then
@@ -219,9 +233,9 @@
                                 |> Seq.choose id
                                 |> Seq.toList
                             )
-                            else
+                        else
                             None
-                        )
+                       )
                     |> List.choose id
                     |> List.concat
                     |> List.toArray

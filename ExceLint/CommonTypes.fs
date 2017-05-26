@@ -47,7 +47,6 @@
         type DistanceF = HashSet<AST.Address> -> HashSet<AST.Address> -> double
         type Distances = Dict<Edge,double>
         type ClusterStep = {
-                beyond_knee: bool;
                 source: Set<AST.Address>;
                 target: Set<AST.Address>;
                 distance: double;
@@ -56,7 +55,8 @@
                 between_cluster_sum_squares: double;
                 total_sum_squares: double;
                 num_clusters: int;
-                }
+                in_critical_region: bool;
+             }
         type MinDistComparer(d: DistanceF) =
             interface IComparer<Edge> with
                 member self.Compare(x: Edge, y: Edge) =
