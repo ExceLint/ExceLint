@@ -125,6 +125,7 @@
 
             // initially assign every cell to its own cluster
             let clusters = initialClustering nlfrs input.dag input.config
+            let mutable clusteringAtKnee = None
 
             // create cluster ID map
             let (_,ids: Dict<HashSet<AST.Address>,int>) =
@@ -202,6 +203,12 @@
                 let (source,target) = e.tupled
 
                 if self.IsKnee source target then
+                    // only update ONCE
+                    clusteringAtKnee <-
+                        match clusteringAtKnee with
+                        | Some cak -> Some cak
+                        | None -> Some (CopyClustering hs.Clusters)
+
                     probable_knee <- true
 
                 // record merge in log
@@ -290,6 +297,11 @@
 
             member self.Clustering = clusters
 
+            member self.ClusteringAtKnee =
+                match clusteringAtKnee with
+                | Some c -> c
+                | None -> failwith "No clustering available. Did you actually run the model?"
+
             member self.Ranking =
                 let numfrm = input.dag.getAllFormulaAddrs().Length
 
@@ -334,3 +346,28 @@
             member self.Scores = nlfrs
             member self.Cutoff = self.Ranking.Length - 1
 
+        let runClusterModel(input: Input) : AnalysisOutcome =
+            try
+                if (analysisBase input.config input.dag).Length <> 0 then
+                    let m = OldClusterModel input
+
+                    let mutable notdone = true
+                    while notdone do
+                        notdone <- m.Step()
+
+                    Success(Cluster
+                        {
+                            scores = m.Scores;
+                            ranking = m.Ranking;
+                            score_time = m.ScoreTimeMs;
+                            ranking_time = m.RankingTimeMs;
+                            sig_threshold_idx = 0;
+                            cutoff_idx = m.Cutoff;
+                            weights = new Dictionary<AST.Address,double>();
+                            clustering = m.ClusteringAtKnee;
+                        }
+                    )
+                else
+                    CantRun "Cannot perform analysis. This worksheet contains no formulas."
+            with
+            | AnalysisCancelled -> Cancellation
