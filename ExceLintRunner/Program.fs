@@ -25,7 +25,8 @@ open ExceLintFileFormats
         excelint_excel_intersect: HashSet<AST.Address>;
         custodes_excel_intersect: HashSet<AST.Address>;
         custodes_time: int64;
-        excelint_kmed_jaccard: double;
+        excelint_jaccard: double;
+        excelint_delta_k: int;
     }
 
     let hs_difference<'a>(hs1: HashSet<'a>)(hs2: HashSet<'a>) : HashSet<'a> =
@@ -228,7 +229,8 @@ open ExceLintFileFormats
         row.OptAddrModeInference <- config.FeatureConf.IsEnabledOptAddrmodeInference
         row.OptWeightIntrinsicAnom <- config.FeatureConf.IsEnabledOptWeightIntrinsicAnomalousness
         row.OptWeightConditionSetSz <- config.FeatureConf.IsEnabledOptWeightConditioningSetSize
-        row.ExceLintKMedoidJaccardDistance <- stats.excelint_kmed_jaccard
+        row.ExceLintJaccardDistance <- stats.excelint_jaccard
+        row.ExceLintDeltaK <- stats.excelint_delta_k
 
         csv.WriteRow row
 
@@ -318,11 +320,16 @@ open ExceLintFileFormats
         printfn "Running ExceLint analysis: %A" shortf
         let model_opt = ExceLint.ModelBuilder.analyze (app.XLApplication()) config.FeatureConf graph (config.alpha) (Depends.Progress.NOPProgress())
 
-        
-        let jdist =
+        let (jdist,delta_k) =
             match model_opt with
-            | Some model -> kmedioidsJaccardIndex shortf model config graph app
-            | None -> 0.0
+            | Some model ->
+                if config.CompareAgainstOldNN then
+                    oldClusterAlgoJaccardIndex shortf model config graph app
+                elif config.CompareAgainstKMedioid then
+                    kmedioidsJaccardIndex shortf model config graph app, 0
+                else
+                    0.0, 0
+            | None -> 0.0, 0
 
         printfn "Running CUSTODES analysis: %A" shortf
         let custodes = CUSTODES.getOutput(file, config.CustodesPath, config.JavaPath)
@@ -387,7 +394,8 @@ open ExceLintFileFormats
                     excelint_excel_intersect = excelint_excel_intersect;
                     custodes_excel_intersect = custodes_excel_intersect;
                     custodes_time = custodes_time;
-                    excelint_kmed_jaccard = jdist;
+                    excelint_jaccard = jdist;
+                    excelint_delta_k = delta_k;
                 }
 
                 // write to per-workbook CSV

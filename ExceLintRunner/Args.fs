@@ -2,8 +2,9 @@
 
 open System.IO
 open System.Text.RegularExpressions
+    type Knobs = { verbose: bool; dont_exit: bool; alpha: double; oldNNjaccard: bool; kmedioidjaccard: bool; }
 
-    type Config(dpath: string, opath: string, jpath: string, cpath: string, egpath: string, gpath: string, verbose: bool, noexit: bool, alpha: double, csv: string, fc: ExceLint.FeatureConf) =
+    type Config(dpath: string, opath: string, jpath: string, cpath: string, egpath: string, gpath: string, knobs: Knobs, csv: string, fc: ExceLint.FeatureConf) =
         do
             printfn "\n------------------------------------"
             printfn "Running with the following options: "
@@ -15,16 +16,18 @@ open System.Text.RegularExpressions
             printfn "CUSTODES ground truth CSV: %s" gpath
             printfn "Java path: %s" jpath
             printfn "CUSTODES JAR path: %s" cpath
-            printfn "Verbose mode: %b" verbose
-            printfn "No-exit mode: %b" noexit
-            printfn "Threshold: %f" alpha
+            printfn "Verbose mode: %b" knobs.verbose
+            printfn "No-exit mode: %b" knobs.dont_exit
+            printfn "Compare against old nearest-neighbor algorithm: %b" knobs.oldNNjaccard
+            printfn "Compare against k-medioid algorithm: %b" knobs.kmedioidjaccard
+            printfn "Threshold: %f" knobs.alpha
             Array.iter (fun (opt,enabled) -> printfn "%s: %b" opt enabled) (ExceLint.FeatureConf.simpleConf(fc.rawConf) |> Map.toArray)
             printfn "------------------------------------\n"
 
         member self.files: string[] =
             Directory.EnumerateFiles(dpath, "*.xls?", SearchOption.AllDirectories) |> Seq.toArray
         member self.csv: string = csv
-        member self.isVerbose : bool = verbose
+        member self.isVerbose : bool = knobs.verbose
         member self.verbose_csv(wbname: string) = Path.Combine(opath, Regex.Replace(wbname,"[^A-Za-z0-9_-]","") + ".csv")
         member self.clustering_csv(wbname: string)(clustername: string) = Path.Combine(opath, Regex.Replace(wbname,"[^A-Za-z0-9_-]","") + "_" + clustername + ".csv")
         member self.FeatureConf = fc
@@ -32,12 +35,12 @@ open System.Text.RegularExpressions
         member self.JavaPath = jpath
         member self.InputDirectory = dpath
         member self.DebugPath = Path.Combine(opath, "debug.csv")
-        member self.DontExitWithoutKeystroke = noexit
+        member self.DontExitWithoutKeystroke = knobs.dont_exit
         member self.CustodesGroundTruthCSV = gpath
         member self.ExceLintGroundTruthCSV = egpath
-        member self.alpha = alpha
-
-    type Knobs = { verbose: bool; dont_exit: bool; alpha: double }
+        member self.alpha = knobs.alpha
+        member self.CompareAgainstOldNN = knobs.oldNNjaccard
+        member self.CompareAgainstKMedioid = knobs.kmedioidjaccard
 
     let usage() : unit =
         printfn "ExceLintRunner.exe <input directory> <output directory> <ExceLint ground truth CSV> <CUSTODES ground truth CSV> <java path> <CUSTODES JAR> [flags]"
@@ -66,7 +69,7 @@ open System.Text.RegularExpressions
         printfn "-cluster    find outliers by agglomerative, location-aware clustering over"
         printfn "            Euclidean distance; forces the use of -sheets and disables"
         printfn "            -allcells, -columns, -rows, and -levels"
-        printfn "-oldcluster same as -cluster but uses old, slow algorithm."
+        printfn "-oldcluster compares LSH-NN clustering against slow NN."
         printfn "-allcells   condition by all cells"
         printfn "-columns    condition by columns"
         printfn "-rows       condition by rows"
@@ -106,13 +109,16 @@ open System.Text.RegularExpressions
 
         let rec optParse = (fun (args: string list)(knobs: Knobs)(conf: ExceLint.FeatureConf) ->
                                match args with
-                               | [] -> knobs.verbose, knobs.dont_exit, knobs.alpha, conf
+                               | [] -> knobs, conf
+                               // KNOBS
                                | "-verbose"    :: rest -> optParse rest { knobs with verbose = true } conf
                                | "-noexit"     :: rest -> optParse rest { knobs with dont_exit = true } conf
+                               | "-oldcluster" :: rest -> optParse rest { knobs with oldNNjaccard = true } conf
+                               | "-kmedioid"   :: rest -> optParse rest { knobs with kmedioidjaccard = true } conf
+                               // FEATURECONF
                                | "-resultant"  :: rest -> optParse rest knobs (conf.enableShallowInputVectorMixedResultant true)
                                | "-spectral"   :: rest -> optParse rest knobs (conf.spectralRanking true)
                                | "-cluster"    :: rest -> optParse rest knobs (conf.enableShallowInputVectorMixedFullCVectorResultantNotOSI true)
-                               | "-oldcluster" :: rest -> optParse rest knobs ((conf.enableShallowInputVectorMixedFullCVectorResultantNotOSI true).enableOldClusteringAlgorithm(true))
                                | "-allcells"   :: rest -> optParse rest knobs (conf.analyzeRelativeToAllCells true)
                                | "-columns"    :: rest -> optParse rest knobs (conf.analyzeRelativeToColumns true)
                                | "-rows"       :: rest -> optParse rest knobs (conf.analyzeRelativeToRows true)
@@ -136,7 +142,7 @@ open System.Text.RegularExpressions
                                | s :: rest -> failwith ("Unrecognized option: " + s)
                            )
 
-        let (isVerb,noExit,alpha,fConf) = optParse flags { verbose = false; dont_exit = false; alpha = 0.05 } (new ExceLint.FeatureConf())
+        let (knobs,fConf) = optParse flags { verbose = false; dont_exit = false; alpha = 0.05; oldNNjaccard = false; kmedioidjaccard = false } (new ExceLint.FeatureConf())
 
         let fConf' = fConf.validate
 
@@ -161,5 +167,5 @@ open System.Text.RegularExpressions
                     printfn "'%s' enabled." k
                 ) changed
 
-        Config(dpath, opath, jpath, cpath, egpath, gpath, isVerb, noExit, alpha, csv, fConf')
+        Config(dpath, opath, jpath, cpath, egpath, gpath, knobs, csv, fConf')
 
