@@ -66,6 +66,7 @@ open System.Text.RegularExpressions
         printfn "-cluster    find outliers by agglomerative, location-aware clustering over"
         printfn "            Euclidean distance; forces the use of -sheets and disables"
         printfn "            -allcells, -columns, -rows, and -levels"
+        printfn "-oldcluster same as -cluster but uses old, slow algorithm."
         printfn "-allcells   condition by all cells"
         printfn "-columns    condition by columns"
         printfn "-rows       condition by rows"
@@ -106,21 +107,22 @@ open System.Text.RegularExpressions
         let rec optParse = (fun (args: string list)(knobs: Knobs)(conf: ExceLint.FeatureConf) ->
                                match args with
                                | [] -> knobs.verbose, knobs.dont_exit, knobs.alpha, conf
-                               | "-verbose"   :: rest -> optParse rest { knobs with verbose = true } conf
-                               | "-noexit"    :: rest -> optParse rest { knobs with dont_exit = true } conf
-                               | "-resultant" :: rest -> optParse rest knobs (conf.enableShallowInputVectorMixedResultant true)
-                               | "-spectral"  :: rest -> optParse rest knobs (conf.spectralRanking true)
-                               | "-cluster"   :: rest -> optParse rest knobs (conf.enableShallowInputVectorMixedFullCVectorResultantNotOSI true)
-                               | "-allcells"  :: rest -> optParse rest knobs (conf.analyzeRelativeToAllCells true)
-                               | "-columns"   :: rest -> optParse rest knobs (conf.analyzeRelativeToColumns true)
-                               | "-rows"      :: rest -> optParse rest knobs (conf.analyzeRelativeToRows true)
-                               | "-levels"    :: rest -> optParse rest knobs (conf.analyzeRelativeToLevels true)
-                               | "-sheets"    :: rest -> optParse rest knobs (conf.analyzeRelativeToSheet true)
-                               | "-addrmode"  :: rest -> optParse rest knobs (conf.inferAddressModes true)
-                               | "-intrinsic" :: rest -> optParse rest knobs (conf.weightByIntrinsicAnomalousness true)
-                               | "-css"       :: rest -> optParse rest knobs (conf.weightByConditioningSetSize true)
-                               | "-inputstoo" :: rest -> optParse rest knobs (conf.analyzeOnlyFormulas false)
-                               | "-thresh"    :: d :: rest ->
+                               | "-verbose"    :: rest -> optParse rest { knobs with verbose = true } conf
+                               | "-noexit"     :: rest -> optParse rest { knobs with dont_exit = true } conf
+                               | "-resultant"  :: rest -> optParse rest knobs (conf.enableShallowInputVectorMixedResultant true)
+                               | "-spectral"   :: rest -> optParse rest knobs (conf.spectralRanking true)
+                               | "-cluster"    :: rest -> optParse rest knobs (conf.enableShallowInputVectorMixedFullCVectorResultantNotOSI true)
+                               | "-oldcluster" :: rest -> optParse rest knobs ((conf.enableShallowInputVectorMixedFullCVectorResultantNotOSI true).enableOldClusteringAlgorithm(true))
+                               | "-allcells"   :: rest -> optParse rest knobs (conf.analyzeRelativeToAllCells true)
+                               | "-columns"    :: rest -> optParse rest knobs (conf.analyzeRelativeToColumns true)
+                               | "-rows"       :: rest -> optParse rest knobs (conf.analyzeRelativeToRows true)
+                               | "-levels"     :: rest -> optParse rest knobs (conf.analyzeRelativeToLevels true)
+                               | "-sheets"     :: rest -> optParse rest knobs (conf.analyzeRelativeToSheet true)
+                               | "-addrmode"   :: rest -> optParse rest knobs (conf.inferAddressModes true)
+                               | "-intrinsic"  :: rest -> optParse rest knobs (conf.weightByIntrinsicAnomalousness true)
+                               | "-css"        :: rest -> optParse rest knobs (conf.weightByConditioningSetSize true)
+                               | "-inputstoo"  :: rest -> optParse rest knobs (conf.analyzeOnlyFormulas false)
+                               | "-thresh"     :: d :: rest ->
                                    let alpha = System.Convert.ToDouble d / 100.0
                                    if alpha < 0.0 || alpha > 1.0 then
                                        failwith "Threshold must be between 0 and 100."
