@@ -213,7 +213,7 @@
 
                 // record merge in log
                 log <- {
-                            beyond_knee = probable_knee;
+                            in_critical_region = probable_knee;
                             source = Set.ofSeq source;
                             target = Set.ofSeq target;
                             distance = DISTANCE source target;
@@ -280,7 +280,7 @@
                 List.rev log
                 |> List.iter (fun step ->
                         let row = new ExceLintFileFormats.ClusterStepsRow()
-                        row.Show <- step.beyond_knee
+                        row.Show <- step.in_critical_region
                         row.Merge <- (pp step.source) + " with " + (pp step.target)
                         row.Distance <- step.distance
                         row.FScore <- step.f
@@ -314,7 +314,7 @@
                     log
                     |> List.rev
                     |> List.map (fun (step : ClusterStep) ->
-                            if step.beyond_knee then
+                            if step.in_critical_region then
                             Some(
                                 Seq.map (fun addr -> 
                                     if not (rptd.Contains addr) then
