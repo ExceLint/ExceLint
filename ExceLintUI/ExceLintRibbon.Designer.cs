@@ -43,9 +43,11 @@
             this.MarkAsOKButton = this.Factory.CreateRibbonButton();
             this.StartOverButton = this.Factory.CreateRibbonButton();
             this.showHeatmap = this.Factory.CreateRibbonButton();
+            this.box2 = this.Factory.CreateRibbonBox();
             this.stepModel = this.Factory.CreateRibbonButton();
             this.LSHTest = this.Factory.CreateRibbonButton();
             this.getLSH = this.Factory.CreateRibbonButton();
+            this.readClusterDump = this.Factory.CreateRibbonButton();
             this.ClusterBox = this.Factory.CreateRibbonCheckBox();
             this.useResultant = this.Factory.CreateRibbonCheckBox();
             this.normSSCheckBox = this.Factory.CreateRibbonCheckBox();
@@ -53,13 +55,11 @@
             this.significanceTextBox = this.Factory.CreateRibbonEditBox();
             this.spectralRanking = this.Factory.CreateRibbonCheckBox();
             this.showFixes = this.Factory.CreateRibbonCheckBox();
-            this.separator2 = this.Factory.CreateRibbonSeparator();
             this.allCellsFreq = this.Factory.CreateRibbonCheckBox();
             this.columnCellsFreq = this.Factory.CreateRibbonCheckBox();
             this.rowCellsFreq = this.Factory.CreateRibbonCheckBox();
             this.levelsFreq = this.Factory.CreateRibbonCheckBox();
             this.sheetFreq = this.Factory.CreateRibbonCheckBox();
-            this.separator3 = this.Factory.CreateRibbonSeparator();
             this.DebugOutput = this.Factory.CreateRibbonCheckBox();
             this.forceBuildDAG = this.Factory.CreateRibbonCheckBox();
             this.inferAddrModes = this.Factory.CreateRibbonCheckBox();
@@ -69,8 +69,6 @@
             this.separator4 = this.Factory.CreateRibbonSeparator();
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
-            this.box2 = this.Factory.CreateRibbonBox();
-            this.readClusterDump = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -100,13 +98,11 @@
             this.CheckCellGroup.Items.Add(this.significanceTextBox);
             this.CheckCellGroup.Items.Add(this.spectralRanking);
             this.CheckCellGroup.Items.Add(this.showFixes);
-            this.CheckCellGroup.Items.Add(this.separator2);
             this.CheckCellGroup.Items.Add(this.allCellsFreq);
             this.CheckCellGroup.Items.Add(this.columnCellsFreq);
             this.CheckCellGroup.Items.Add(this.rowCellsFreq);
             this.CheckCellGroup.Items.Add(this.levelsFreq);
             this.CheckCellGroup.Items.Add(this.sheetFreq);
-            this.CheckCellGroup.Items.Add(this.separator3);
             this.CheckCellGroup.Items.Add(this.DebugOutput);
             this.CheckCellGroup.Items.Add(this.forceBuildDAG);
             this.CheckCellGroup.Items.Add(this.inferAddrModes);
@@ -134,6 +130,7 @@
             this.AnalyzeButton.Label = "Audit";
             this.AnalyzeButton.Name = "AnalyzeButton";
             this.AnalyzeButton.ShowImage = true;
+            this.AnalyzeButton.Visible = false;
             this.AnalyzeButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.AnalyzeButton_Click);
             // 
             // MarkAsOKButton
@@ -143,6 +140,7 @@
             this.MarkAsOKButton.Label = "Next Cell";
             this.MarkAsOKButton.Name = "MarkAsOKButton";
             this.MarkAsOKButton.ShowImage = true;
+            this.MarkAsOKButton.Visible = false;
             this.MarkAsOKButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.MarkAsOKButton_Click);
             // 
             // StartOverButton
@@ -152,44 +150,68 @@
             this.StartOverButton.Label = "Start Over";
             this.StartOverButton.Name = "StartOverButton";
             this.StartOverButton.ShowImage = true;
+            this.StartOverButton.Visible = false;
             this.StartOverButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.StartOverButton_Click);
             // 
             // showHeatmap
             // 
             this.showHeatmap.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
             this.showHeatmap.Image = ((System.Drawing.Image)(resources.GetObject("showHeatmap.Image")));
-            this.showHeatmap.Label = "Heat Map";
+            this.showHeatmap.Label = "Show Formula Similarity";
             this.showHeatmap.Name = "showHeatmap";
             this.showHeatmap.ShowImage = true;
             this.showHeatmap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.showHeatmap_Click);
+            // 
+            // box2
+            // 
+            this.box2.BoxStyle = Microsoft.Office.Tools.Ribbon.RibbonBoxStyle.Vertical;
+            this.box2.Items.Add(this.stepModel);
+            this.box2.Items.Add(this.LSHTest);
+            this.box2.Items.Add(this.getLSH);
+            this.box2.Items.Add(this.readClusterDump);
+            this.box2.Name = "box2";
+            this.box2.Visible = false;
             // 
             // stepModel
             // 
             this.stepModel.Label = "Step Cluster Model";
             this.stepModel.Name = "stepModel";
+            this.stepModel.Visible = false;
             this.stepModel.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.stepModel_Click);
             // 
             // LSHTest
             // 
             this.LSHTest.Label = "LSH Test";
             this.LSHTest.Name = "LSHTest";
+            this.LSHTest.Visible = false;
             this.LSHTest.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.LSHTest_Click);
             // 
             // getLSH
             // 
             this.getLSH.Label = "LSH for Cell";
             this.getLSH.Name = "getLSH";
+            this.getLSH.Visible = false;
             this.getLSH.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.getLSH_Click);
+            // 
+            // readClusterDump
+            // 
+            this.readClusterDump.Label = "Read Cluster Dump";
+            this.readClusterDump.Name = "readClusterDump";
+            this.readClusterDump.Visible = false;
+            this.readClusterDump.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.readClusterDump_Click);
             // 
             // ClusterBox
             // 
+            this.ClusterBox.Checked = true;
             this.ClusterBox.Label = "Cluster";
             this.ClusterBox.Name = "ClusterBox";
+            this.ClusterBox.Visible = false;
             // 
             // useResultant
             // 
             this.useResultant.Label = "Use Resultant";
             this.useResultant.Name = "useResultant";
+            this.useResultant.Visible = false;
             // 
             // normSSCheckBox
             // 
@@ -209,12 +231,14 @@
             this.significanceTextBox.Name = "significanceTextBox";
             this.significanceTextBox.SizeString = "100.0";
             this.significanceTextBox.Text = "5";
+            this.significanceTextBox.Visible = false;
             this.significanceTextBox.TextChanged += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.significanceTextBox_TextChanged);
             // 
             // spectralRanking
             // 
             this.spectralRanking.Label = "Use Spectral Rank";
             this.spectralRanking.Name = "spectralRanking";
+            this.spectralRanking.Visible = false;
             this.spectralRanking.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.spectralRanking_Click);
             // 
             // showFixes
@@ -222,16 +246,14 @@
             this.showFixes.Enabled = false;
             this.showFixes.Label = "Show Fixes";
             this.showFixes.Name = "showFixes";
-            // 
-            // separator2
-            // 
-            this.separator2.Name = "separator2";
+            this.showFixes.Visible = false;
             // 
             // allCellsFreq
             // 
             this.allCellsFreq.Checked = true;
             this.allCellsFreq.Label = "All Cells Freq";
             this.allCellsFreq.Name = "allCellsFreq";
+            this.allCellsFreq.Visible = false;
             this.allCellsFreq.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.allCellsFreq_Click);
             // 
             // columnCellsFreq
@@ -239,6 +261,7 @@
             this.columnCellsFreq.Checked = true;
             this.columnCellsFreq.Label = "Column Cells Freq";
             this.columnCellsFreq.Name = "columnCellsFreq";
+            this.columnCellsFreq.Visible = false;
             this.columnCellsFreq.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.columnCellsFreq_Click);
             // 
             // rowCellsFreq
@@ -246,6 +269,7 @@
             this.rowCellsFreq.Checked = true;
             this.rowCellsFreq.Label = "Row Cells Freq";
             this.rowCellsFreq.Name = "rowCellsFreq";
+            this.rowCellsFreq.Visible = false;
             this.rowCellsFreq.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.rowCellsFreq_Click);
             // 
             // levelsFreq
@@ -253,6 +277,7 @@
             this.levelsFreq.Checked = true;
             this.levelsFreq.Label = "Levels Freq";
             this.levelsFreq.Name = "levelsFreq";
+            this.levelsFreq.Visible = false;
             this.levelsFreq.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.levelsFreq_Click);
             // 
             // sheetFreq
@@ -260,39 +285,41 @@
             this.sheetFreq.Checked = true;
             this.sheetFreq.Label = "Sheet Freq";
             this.sheetFreq.Name = "sheetFreq";
-            // 
-            // separator3
-            // 
-            this.separator3.Name = "separator3";
+            this.sheetFreq.Visible = false;
             // 
             // DebugOutput
             // 
             this.DebugOutput.Label = "Show Debug Output";
             this.DebugOutput.Name = "DebugOutput";
+            this.DebugOutput.Visible = false;
             this.DebugOutput.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.DebugOutput_Click);
             // 
             // forceBuildDAG
             // 
             this.forceBuildDAG.Label = "Force DAG Rebuild";
             this.forceBuildDAG.Name = "forceBuildDAG";
+            this.forceBuildDAG.Visible = false;
             this.forceBuildDAG.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.forceBuildDAG_Click);
             // 
             // inferAddrModes
             // 
             this.inferAddrModes.Label = "Infer Address Modes";
             this.inferAddrModes.Name = "inferAddrModes";
+            this.inferAddrModes.Visible = false;
             this.inferAddrModes.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.inferAddrModes_Click);
             // 
             // allCells
             // 
             this.allCells.Label = "Analyze All Cells";
             this.allCells.Name = "allCells";
+            this.allCells.Visible = false;
             this.allCells.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.allCells_Click);
             // 
             // weightByIntrinsicAnomalousness
             // 
             this.weightByIntrinsicAnomalousness.Label = "Reweight by Intrinsic Anomalousness";
             this.weightByIntrinsicAnomalousness.Name = "weightByIntrinsicAnomalousness";
+            this.weightByIntrinsicAnomalousness.Visible = false;
             this.weightByIntrinsicAnomalousness.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.weightByIntrinsicAnomalousness_Click);
             // 
             // conditioningSetSize
@@ -300,6 +327,7 @@
             this.conditioningSetSize.Checked = true;
             this.conditioningSetSize.Label = "Weigh by Conditioning Set Size";
             this.conditioningSetSize.Name = "conditioningSetSize";
+            this.conditioningSetSize.Visible = false;
             this.conditioningSetSize.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.conditioningSetSize_Click);
             // 
             // separator4
@@ -323,21 +351,6 @@
             this.annotateThisCell.Name = "annotateThisCell";
             this.annotateThisCell.ShowImage = true;
             this.annotateThisCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotateThisCell_Click);
-            // 
-            // box2
-            // 
-            this.box2.BoxStyle = Microsoft.Office.Tools.Ribbon.RibbonBoxStyle.Vertical;
-            this.box2.Items.Add(this.stepModel);
-            this.box2.Items.Add(this.LSHTest);
-            this.box2.Items.Add(this.getLSH);
-            this.box2.Items.Add(this.readClusterDump);
-            this.box2.Name = "box2";
-            // 
-            // readClusterDump
-            // 
-            this.readClusterDump.Label = "Read Cluster Dump";
-            this.readClusterDump.Name = "readClusterDump";
-            this.readClusterDump.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.readClusterDump_Click);
             // 
             // ExceLintRibbon
             // 
@@ -369,12 +382,10 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton AnalyzeButton;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton MarkAsOKButton;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton StartOverButton;
-        internal Microsoft.Office.Tools.Ribbon.RibbonSeparator separator2;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox allCellsFreq;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox columnCellsFreq;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox rowCellsFreq;
         internal Microsoft.Office.Tools.Ribbon.RibbonEditBox significanceTextBox;
-        internal Microsoft.Office.Tools.Ribbon.RibbonSeparator separator3;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox DebugOutput;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton showHeatmap;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox forceBuildDAG;

@@ -265,26 +265,42 @@ namespace ExceLintUI
 
         private void showHeatmap_Click(object sender, RibbonControlEventArgs e)
         {
-            // check for debug checkbox
-            currentWorkbook.DebugMode = this.DebugOutput.Checked;
-
-            // get significance threshold
-            var sig = getPercent(this.significanceTextBox.Text, this.significanceTextBox.Label);
-
-            // workbook- and UI-update callback
-            Action<WorkbookState> updateWorkbook = (WorkbookState wbs) =>
+            if (currentWorkbook.HeatMap_Hidden)
             {
-                this.currentWorkbook = wbs;
-                setUIState(currentWorkbook);
-            };
+                // show a cluster visualization
+                currentWorkbook.StepClusterModel(getConfig(), this.forceBuildDAG.Checked);
+            } else
+            {
+                // erase the cluster visualization
+                currentWorkbook.resetTool();
+            }
 
-            // create progbar in main thread;
-            // worker thread will call Dispose
-            var pb = new ProgBar();
+            // toggle button
+            currentWorkbook.toggleHeatMapSetting();
 
-            // call task in new thread and do not wait
-            //Task t = Task.Run(() => DoHeatmap(sig, currentWorkbook, getConfig(), this.forceBuildDAG.Checked, updateWorkbook, pb));
-            DoHeatmap(sig, currentWorkbook, getConfig(), this.forceBuildDAG.Checked, updateWorkbook, pb);
+            // set UI state
+            setUIState(currentWorkbook);
+
+            //// check for debug checkbox
+            //currentWorkbook.DebugMode = this.DebugOutput.Checked;
+
+            //// get significance threshold
+            //var sig = getPercent(this.significanceTextBox.Text, this.significanceTextBox.Label);
+
+            //// workbook- and UI-update callback
+            //Action<WorkbookState> updateWorkbook = (WorkbookState wbs) =>
+            //{
+            //    this.currentWorkbook = wbs;
+            //    setUIState(currentWorkbook);
+            //};
+
+            //// create progbar in main thread;
+            //// worker thread will call Dispose
+            //var pb = new ProgBar();
+
+            //// call task in new thread and do not wait
+            ////Task t = Task.Run(() => DoHeatmap(sig, currentWorkbook, getConfig(), this.forceBuildDAG.Checked, updateWorkbook, pb));
+            //DoHeatmap(sig, currentWorkbook, getConfig(), this.forceBuildDAG.Checked, updateWorkbook, pb);
         }
 
         private static void DoHeatmap(FSharpOption<double> sigThresh, WorkbookState wbs, ExceLint.FeatureConf conf, bool forceBuildDAG, Action<WorkbookState> updateState, ProgBar pb)
@@ -975,11 +991,11 @@ namespace ExceLintUI
                 // toggle the heatmap label depending on the heatmap shown/hidden state
                 if (wbs.HeatMap_Hidden)
                 {
-                    this.showHeatmap.Label = "Show Heat Map";
+                    this.showHeatmap.Label = "Show Formula Similarity";
                 }
                 else
                 {
-                    this.showHeatmap.Label = "Hide Heat Map";
+                    this.showHeatmap.Label = "Hide Formula Similarity";
                 }
 
                 // toggle the annotation button depending on whether we have

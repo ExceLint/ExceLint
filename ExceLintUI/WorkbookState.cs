@@ -540,13 +540,10 @@ namespace ExceLintUI
                 {
                     _m.Step();
                 }
-
-                // get initial clustering
-                var clusters = _m.CurrentClustering;
-
-                // draw
-                DrawClusters(clusters);
             }
+
+            // draw
+            DrawClusters(_m.CurrentClustering);
         }
 
         public void DrawClusters(HashSet<HashSet<AST.Address>> clusters)
@@ -988,7 +985,7 @@ namespace ExceLintUI
             _button_clearColoringButton_enabled = true;
         }
 
-        private void toggleHeatMapSetting()
+        public void toggleHeatMapSetting()
         {
             _button_showHeatMap_on = !_button_showHeatMap_on;
         }
