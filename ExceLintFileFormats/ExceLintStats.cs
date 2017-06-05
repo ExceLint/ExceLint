@@ -69,6 +69,8 @@ namespace ExceLintFileFormats
         public int ExceLintFlags { get; set; }
         public double ExceLintPrecisionVsCustodesGT { get; set; }
         public double ExceLintRecallVsCustodesGT { get; set; }
+        public double CUSTODESPrecisionVsCustodesGT { get; set; }
+        public double CUSTODESRecallVsCustodesGT { get; set; }
         public double MinAnomScore { get; set; }
         public long CUSTODESTimeMs { get; set; }
         public bool CUSTODESFailed { get; set; }

@@ -204,6 +204,8 @@ open ExceLintFileFormats
         row.ExceLintFlags <- model.Cutoff + 1
         row.ExceLintPrecisionVsCustodesGT <- precision (stats.excelint_true_smells.Count) (row.ExceLintFlags - stats.excelint_true_smells.Count)
         row.ExceLintRecallVsCustodesGT <- recall (stats.excelint_true_smells.Count) (stats.true_smells_this_wb.Count - stats.excelint_true_smells.Count)
+        row.CUSTODESPrecisionVsCustodesGT <- precision (stats.custodes_true_smells.Count) (stats.custodes_flagged.Count - stats.custodes_true_smells.Count)
+        row.CUSTODESRecallVsCustodesGT <- recall (stats.custodes_true_smells.Count) (stats.true_smells_this_wb.Count - stats.custodes_true_smells.Count)
         row.MinAnomScore <- min_excelint_score
         row.CUSTODESTimeMs <- stats.custodes_time
         row.CUSTODESFailed <- (match custodes with | CUSTODES.BadOutput _ -> true | _ -> false)
