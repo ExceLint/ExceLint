@@ -181,6 +181,7 @@
     can be found.
   -->
   <ItemGroup>
+    <Compile Include="ColorCalc.cs" />
     <Compile Include="ColorDict.cs" />
     <Compile Include="ExceLintRibbon.cs">
       <SubType>Component</SubType>
