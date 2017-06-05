@@ -37,6 +37,7 @@ namespace ExceLintUI
     {
         public static HSL RGBtoHSL(RGB rgb)
         {
+            // derived from: http://www.niwa.nu/2013/05/math-behind-colorspace-conversions-rgb-hsl/
             double r_rel = rgb.Red / 255.0,
                    g_rel = rgb.Green / 255.0,
                    b_rel = rgb.Blue / 255.0;
