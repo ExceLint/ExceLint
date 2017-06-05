@@ -33,7 +33,7 @@ namespace ExceLintUI
         }
     }
 
-    class ColorCalc
+    static class ColorCalc
     {
         public static HSL RGBtoHSL(RGB rgb)
         {
