@@ -61,6 +61,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "StatsGatherer", "StatsGathe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "COMWrapperTests", "Depends\COMWrapperTests\COMWrapperTests.csproj", "{9AF83A9B-926D-4657-A908-925268E9F705}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExceLintUITests", "ExceLintUITests\ExceLintUITests.csproj", "{EA99E29D-6E19-4F69-95E6-FEC1791BD298}"
+EndProject
 Global
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true
@@ -531,6 +533,30 @@ Global
 		{9AF83A9B-926D-4657-A908-925268E9F705}.SingleImage|x64.Build.0 = Release|Any CPU
 		{9AF83A9B-926D-4657-A908-925268E9F705}.SingleImage|x86.ActiveCfg = Release|Any CPU
 		{9AF83A9B-926D-4657-A908-925268E9F705}.SingleImage|x86.Build.0 = Release|Any CPU
+		{EA99E29D-6E19-4F69-95E6-FEC1791BD298}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EA99E29D-6E19-4F69-95E6-FEC1791BD298}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EA99E29D-6E19-4F69-95E6-FEC1791BD298}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{EA99E29D-6E19-4F69-95E6-FEC1791BD298}.Debug|ARM.Build.0 = Debug|Any CPU
+		{EA99E29D-6E19-4F69-95E6-FEC1791BD298}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EA99E29D-6E19-4F69-95E6-FEC1791BD298}.Debug|x64.Build.0 = Debug|Any CPU
+		{EA99E29D-6E19-4F69-95E6-FEC1791BD298}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EA99E29D-6E19-4F69-95E6-FEC1791BD298}.Debug|x86.Build.0 = Debug|Any CPU
+		{EA99E29D-6E19-4F69-95E6-FEC1791BD298}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EA99E29D-6E19-4F69-95E6-FEC1791BD298}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EA99E29D-6E19-4F69-95E6-FEC1791BD298}.Release|ARM.ActiveCfg = Release|Any CPU
+		{EA99E29D-6E19-4F69-95E6-FEC1791BD298}.Release|ARM.Build.0 = Release|Any CPU
+		{EA99E29D-6E19-4F69-95E6-FEC1791BD298}.Release|x64.ActiveCfg = Release|Any CPU
+		{EA99E29D-6E19-4F69-95E6-FEC1791BD298}.Release|x64.Build.0 = Release|Any CPU
+		{EA99E29D-6E19-4F69-95E6-FEC1791BD298}.Release|x86.ActiveCfg = Release|Any CPU
+		{EA99E29D-6E19-4F69-95E6-FEC1791BD298}.Release|x86.Build.0 = Release|Any CPU
+		{EA99E29D-6E19-4F69-95E6-FEC1791BD298}.SingleImage|Any CPU.ActiveCfg = Release|Any CPU
+		{EA99E29D-6E19-4F69-95E6-FEC1791BD298}.SingleImage|Any CPU.Build.0 = Release|Any CPU
+		{EA99E29D-6E19-4F69-95E6-FEC1791BD298}.SingleImage|ARM.ActiveCfg = Release|Any CPU
+		{EA99E29D-6E19-4F69-95E6-FEC1791BD298}.SingleImage|ARM.Build.0 = Release|Any CPU
+		{EA99E29D-6E19-4F69-95E6-FEC1791BD298}.SingleImage|x64.ActiveCfg = Release|Any CPU
+		{EA99E29D-6E19-4F69-95E6-FEC1791BD298}.SingleImage|x64.Build.0 = Release|Any CPU
+		{EA99E29D-6E19-4F69-95E6-FEC1791BD298}.SingleImage|x86.ActiveCfg = Release|Any CPU
+		{EA99E29D-6E19-4F69-95E6-FEC1791BD298}.SingleImage|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

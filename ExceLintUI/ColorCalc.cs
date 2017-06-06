@@ -5,7 +5,7 @@ using static ExceLintUI.RibbonHelper;
 
 namespace ExceLintUI
 {
-    struct HSL
+    public struct HSL
     {
         // real number; degrees from 0 to <360
         public double Hue;
@@ -20,7 +20,7 @@ namespace ExceLintUI
         }
     }
 
-    struct RGB
+    public struct RGB
     {
         // int from 0 to 255
         public byte Red, Green, Blue;
@@ -33,8 +33,35 @@ namespace ExceLintUI
         }
     }
 
-    static class ColorCalc
+    public static class ColorCalc
     {
+        // C#'s % operator is remainder, not modulus
+        // https://stackoverflow.com/questions/1082917/mod-of-negative-number-is-melting-my-brain/6400477#6400477
+        private static double mod(double a, double b)
+        {
+            return a - b * Math.Floor(a / b);
+        }
+
+        public static RGB ColorToRGB(Color c)
+        {
+            int argbi = c.ToArgb();
+            byte[] argb_bs = BitConverter.GetBytes(argbi);
+            byte red = BitConverter.IsLittleEndian ? argb_bs[2] : argb_bs[1];
+            byte green = BitConverter.IsLittleEndian ? argb_bs[1] : argb_bs[2];
+            byte blue = BitConverter.IsLittleEndian ? argb_bs[0] : argb_bs[3];
+            return new RGB(red, green, blue);
+        }
+
+        public static Color RGBtoColor(RGB rgb)
+        {
+            return Color.FromArgb(255, rgb.Red, rgb.Green, rgb.Blue);
+        }
+
+        public static HSL ColorToHSL(Color c)
+        {
+            return RGBtoHSL(ColorToRGB(c));
+        }
+
         public static HSL RGBtoHSL(RGB rgb)
         {
             // derived from: http://www.niwa.nu/2013/05/math-behind-colorspace-conversions-rgb-hsl/
@@ -74,72 +101,52 @@ namespace ExceLintUI
                 }
 
                 // multiply by 60 to make this a proper angle in degrees
-                hue = (hue * 60) % 360;
+                hue = mod((hue * 60), 360);
             }
 
             return new HSL(hue, saturation, luminance);
         }
 
-        public static RGB HSLtoRGB(HSL hsl)
+        private static double ConvertChannel(double C, double temp1, double temp2)
         {
-            // derived from: https://en.wikipedia.org/wiki/HSL_and_HSV#From_HSV
-            double chroma = hsl.Saturation * hsl.Luminosity;
-            double huePrime = hsl.Hue / 60;
-            double X = chroma * (1 - Math.Abs(huePrime % 2 - 1));
-            double R1 = 0, G1 = 0, B1 = 0;
-
-            if (huePrime >= 0 && huePrime < 1)
+            if (6 * C < 1.0)
             {
-                R1 = chroma;
-                G1 = X;
-                B1 = 0;
+                return temp2 + (temp1 - temp2) * 6 * C;
             }
-            else if (huePrime >= 1 && huePrime < 2)
+            else if (2 * C < 1.0)
             {
-                R1 = X;
-                G1 = chroma;
-                B1 = 0;
+                return temp1;
             }
-            else if (huePrime >= 2 && huePrime < 3)
+            else if (3 * C < 2.0)
             {
-                R1 = 0;
-                G1 = chroma;
-                B1 = X;
-            }
-            else if (huePrime >= 3 && huePrime < 4)
-            {
-                R1 = 0;
-                G1 = X;
-                B1 = chroma;
-            }
-            else if (huePrime >= 4 && huePrime < 5)
-            {
-                R1 = X;
-                G1 = 0;
-                B1 = chroma;
+                return temp2 + (temp1 - temp2) * (0.666 - C) * 6.0;
             }
             else
             {
-                R1 = chroma;
-                G1 = 0;
-                B1 = X;
+                return temp2;
             }
+        }
 
-            double m = hsl.Luminosity - chroma;
+        public static RGB HSLtoRGB(HSL hsl)
+        {
+            var temp1 = hsl.Luminosity < 0.5 ?
+                        hsl.Luminosity * (1.0 + hsl.Saturation) :
+                        hsl.Luminosity + hsl.Saturation - hsl.Luminosity * hsl.Saturation;
+            var temp2 = 2.0 * hsl.Luminosity - temp1;
+            var hue_rel = hsl.Hue / 360;
 
-            double R = R1 + m,
-                   G = G1 + m,
-                   B = B1 + m;
+            var R = mod((hue_rel + 0.333), 1.0);
+            var G = hue_rel;
+            var B = mod((hue_rel - 0.333), 1.0);
 
-            System.Diagnostics.Debug.Assert(R >= 0 && R <= 1);
-            System.Diagnostics.Debug.Assert(G >= 0 && G <= 1);
-            System.Diagnostics.Debug.Assert(B >= 0 && B <= 1);
+            R = ConvertChannel(R, temp1, temp2);
+            G = ConvertChannel(G, temp1, temp2);
+            B = ConvertChannel(B, temp1, temp2);
 
-            byte r = Convert.ToByte(R * 255),
-                 g = Convert.ToByte(G * 255),
-                 b = Convert.ToByte(B * 255);
-
-            return new RGB(r, g, b);
+            return new RGB(
+                Convert.ToByte(R * 255),
+                Convert.ToByte(G * 255),
+                Convert.ToByte(B * 255));
         }
 
         public static RGB GetComplementaryColor(RGB rgb)
@@ -148,27 +155,22 @@ namespace ExceLintUI
             HSL hsl = RGBtoHSL(rgb);
 
             // find complementary color
-            HSL hslc = new HSL(hsl.Hue, (hsl.Saturation - 180.0) % 360.0, hsl.Luminosity);
+            HSL hslc = new HSL(mod((hsl.Hue - 180.0), 360.0), hsl.Saturation, hsl.Luminosity);
 
             // convert back to RGB and return
-            return HSLtoRGB(hsl);
+            return HSLtoRGB(hslc);
         }
 
         public static Color GetComplementaryColor(Color c)
         {
             // convert to RGB
-            int argbi = c.ToArgb();
-            byte[] argb_bs = BitConverter.GetBytes(argbi);
-            byte red = BitConverter.IsLittleEndian ? argb_bs[2] : argb_bs[1];
-            byte green = BitConverter.IsLittleEndian ? argb_bs[1] : argb_bs[2];
-            byte blue = BitConverter.IsLittleEndian ? argb_bs[0] : argb_bs[3];
-            RGB rgb = new RGB(red, green, blue);
+            RGB rgb = ColorToRGB(c);
 
             // find complementary color
             RGB rgbc = GetComplementaryColor(rgb);
 
-            // convert back to Color
-            return Color.FromArgb(255, rgb.Red, rgb.Green, rgb.Blue);
+            // convert complement back to Color
+            return RGBtoColor(rgbc);
         }
     }
 }
