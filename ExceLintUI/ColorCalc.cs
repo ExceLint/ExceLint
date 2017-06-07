@@ -57,9 +57,23 @@ namespace ExceLintUI
             return Color.FromArgb(255, rgb.Red, rgb.Green, rgb.Blue);
         }
 
+        public static Color HSLtoColor(HSL hsl)
+        {
+            return RGBtoColor(HSLtoRGB(hsl));
+        }
+
         public static HSL ColorToHSL(Color c)
         {
             return RGBtoHSL(ColorToRGB(c));
+        }
+
+        public static bool ColorComparer(Color c1, Color c2)
+        {
+            return
+                c1.A == c2.A &&
+                c1.R == c2.R &&
+                c1.G == c2.G &&
+                c1.B == c2.B;
         }
 
         public static HSL RGBtoHSL(RGB rgb)

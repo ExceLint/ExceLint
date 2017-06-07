@@ -1,13 +1,19 @@
 ﻿using System.Drawing;
 using System.Linq;
 using System.Collections.Generic;
+using static ExceLintUI.ColorCalc;
 using Cluster = System.Collections.Generic.HashSet<AST.Address>;
 using Clustering = System.Collections.Generic.HashSet<System.Collections.Generic.HashSet<AST.Address>>;
+using System;
 
 namespace ExceLintUI
 {
     public class ClusterColorer
     {
+        // fixed color attributes
+        private static readonly double SATURATION = 1.0;
+        private static readonly double LUMINOSITY = 0.5;
+
         // cluster neighbors
         Dictionary<Cluster, HashSet<Cluster>> cNeighbors;
 
@@ -17,7 +23,7 @@ namespace ExceLintUI
         // color map
         Dictionary<Cluster, Color> assignedColors;
 
-        public ClusterColorer(Clustering cs)
+        public ClusterColorer(Clustering cs, double degreeStart, double degreeEnd)
         {
             // init address-to-cluster lookup
             foreach(Cluster c in cs)
@@ -29,7 +35,7 @@ namespace ExceLintUI
             }
 
             // init cluster neighbor map
-            var cNeighbors = new Dictionary<HashSet<AST.Address>, HashSet<HashSet<AST.Address>>>();
+            cNeighbors = new Dictionary<HashSet<AST.Address>, HashSet<HashSet<AST.Address>>>();
             foreach (Cluster c in cs)
             {
                 cNeighbors.Add(c, new HashSet<Cluster>());
@@ -46,12 +52,38 @@ namespace ExceLintUI
 
             // rank clusters by their degree
             Cluster[] csSorted = cs.OrderByDescending(c => cNeighbors[c].Count).ToArray();
-            
+
             // greedily assign colors by degree, largest first;
-            // this is the Welsh-Powell heuristic
+            // aka Welsh-Powell heuristic
             foreach (Cluster c in csSorted)
             {
-                // TODO
+                // get neighbor colors
+                var ns = cNeighbors[c];
+                var nscs = new HashSet<Color>();
+                foreach (Cluster n in ns)
+                {
+                    if (assignedColors.ContainsKey(n))
+                    {
+                        nscs.Add(assignedColors[n]);
+                    }
+                }
+
+                // init angle generator
+                var angles = new AngleGenerator(degreeStart, degreeEnd);
+
+                // color getter
+                Func<Color> colorf = () => HSLtoColor(new HSL(angles.NextAngle(), SATURATION, LUMINOSITY));
+
+                // get initial color
+                var color = colorf();
+                while(nscs.Contains(color))
+                {
+                    // get next color
+                    color = colorf();
+                }
+
+                // save color
+                assignedColors[c] = color;
             }
         }
 
@@ -145,9 +177,9 @@ namespace ExceLintUI
                 addr.Path);
         }
 
-        //public Color GetColor(Cluster c)
-        //{
-
-        //}
+        public Color GetColor(Cluster c)
+        {
+            return assignedColors[c];
+        }
     }
 }
