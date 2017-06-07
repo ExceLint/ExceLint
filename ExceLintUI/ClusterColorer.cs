@@ -14,19 +14,15 @@ namespace ExceLintUI
         private static readonly double SATURATION = 1.0;
         private static readonly double LUMINOSITY = 0.5;
 
-        // cluster neighbors
-        Dictionary<Cluster, HashSet<Cluster>> cNeighbors;
-
-        // address-to-cluster lookup
-        Dictionary<AST.Address, Cluster> cdict;
-
         // color map
-        Dictionary<Cluster, Color> assignedColors;
+        Dictionary<Cluster, Color> assignedColors = new Dictionary<Cluster, Color>();
 
         public ClusterColorer(Clustering cs, double degreeStart, double degreeEnd)
         {
             // init address-to-cluster lookup
-            foreach(Cluster c in cs)
+            // address-to-cluster lookup
+            var cdict = new Dictionary<AST.Address, HashSet<AST.Address>>();
+            foreach (Cluster c in cs)
             {
                 foreach (AST.Address addr in c)
                 {
@@ -35,7 +31,7 @@ namespace ExceLintUI
             }
 
             // init cluster neighbor map
-            cNeighbors = new Dictionary<HashSet<AST.Address>, HashSet<HashSet<AST.Address>>>();
+            var cNeighbors = new Dictionary<HashSet<AST.Address>, HashSet<HashSet<AST.Address>>>();
             foreach (Cluster c in cs)
             {
                 cNeighbors.Add(c, new HashSet<Cluster>());
