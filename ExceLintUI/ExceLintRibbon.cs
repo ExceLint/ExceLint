@@ -6,6 +6,7 @@ using Excel = Microsoft.Office.Interop.Excel;
 using System.Linq;
 using System.Threading;
 using ExceLintFileFormats;
+using Worksheet = Microsoft.Office.Interop.Excel.Worksheet;
 
 namespace ExceLintUI
 {
@@ -22,7 +23,8 @@ namespace ExceLintUI
         #region BUTTON_HANDLERS
         private void stepModel_Click(object sender, RibbonControlEventArgs e)
         {
-            currentWorkbook.StepClusterModel(getConfig(), this.forceBuildDAG.Checked);
+            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+            currentWorkbook.GetClusteringForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked);
         }
 
         private void LSHTest_Click(object sender, RibbonControlEventArgs e)
@@ -268,7 +270,8 @@ namespace ExceLintUI
             if (currentWorkbook.HeatMap_Hidden)
             {
                 // show a cluster visualization
-                currentWorkbook.StepClusterModel(getConfig(), this.forceBuildDAG.Checked);
+                Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+                currentWorkbook.GetClusteringForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked);
             } else
             {
                 // erase the cluster visualization

@@ -9,7 +9,7 @@ using HypothesizedFixes = System.Collections.Generic.Dictionary<AST.Address, Sys
 using Microsoft.FSharp.Core;
 using System.Runtime.InteropServices;
 using System.Text;
-using ExceLintFileFormats;
+using Worksheet = Microsoft.Office.Interop.Excel.Worksheet;
 
 namespace ExceLintUI
 {
@@ -59,7 +59,7 @@ namespace ExceLintUI
         private Depends.DAG _dag;
         private bool _debug_mode = false;
         private bool _dag_changed = false;
-        private ExceLint.ClusterModelBuilder.ClusterModel _m;
+        private Dictionary<Worksheet, ExceLint.ClusterModelBuilder.ClusterModel> _m = new Dictionary<Worksheet, ExceLint.ClusterModelBuilder.ClusterModel>();
 
         #endregion DATASTRUCTURES
 
@@ -520,29 +520,31 @@ namespace ExceLintUI
             System.Windows.Forms.MessageBox.Show(lsh.MaskedBitsAsString(ExceLint.UInt128.MaxValue));
         }
 
-        public void StepClusterModel(ExceLint.FeatureConf conf, Boolean forceDAGBuild)
+        public void GetClusteringForWorksheet(Worksheet w, ExceLint.FeatureConf conf, Boolean forceDAGBuild)
         {
             var p = Depends.Progress.NOPProgress();
 
             // update if necessary
             RefreshDAG(forceDAGBuild, p);
 
-            if (_m == null)
+            if (!_m.ContainsKey(w))
             {
                 Excel.Application app = Globals.ThisAddIn.Application;
 
                 // create
-                _m = ExceLint.ModelBuilder.initStepClusterModel(app, conf, _dag, 0.05, p);
+                var m = ExceLint.ModelBuilder.initStepClusterModel(app, conf, _dag, 0.05, p);
 
                 // run agglomerative clustering until we reach inflection point
-                while(!_m.NextStepIsKnee)
+                while(!m.NextStepIsKnee)
                 {
-                    _m.Step();
+                    m.Step();
                 }
+
+                _m.Add(w, m);
             }
 
             // draw
-            DrawClusters(_m.CurrentClustering);
+            DrawClusters(_m[w].CurrentClustering);
         }
 
         public void DrawClusters(HashSet<HashSet<AST.Address>> clusters)
