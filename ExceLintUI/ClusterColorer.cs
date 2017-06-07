@@ -13,6 +13,8 @@ namespace ExceLintUI
         // fixed color attributes
         private static readonly double SATURATION = 1.0;
         private static readonly double LUMINOSITY = 0.5;
+        private static readonly double HUE_EPSILON = 90;
+
 
         // color map
         Dictionary<Cluster, Color> assignedColors = new Dictionary<Cluster, Color>();
