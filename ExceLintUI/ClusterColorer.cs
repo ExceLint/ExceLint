@@ -55,25 +55,6 @@ namespace ExceLintUI
             }
         }
 
-        public static IEnumerable<double> Angles(double start, double end)
-        {
-            var midpoint = (end - start) / 2 + start;
-            yield return midpoint;
-
-            // split this region into two regions, and recursively enumerate
-            var top = Angles(start, midpoint);
-            var bottom = Angles(midpoint, end);
-
-            while (true)
-            {
-                yield return top.Take(1).First();
-                top = top.Skip(1);
-
-                yield return bottom.Take(1).First();
-                bottom = bottom.Skip(1);
-            }
-        }
-
         /// <summary>
         /// Returns the set of cells in a bounding box around the given
         /// cluster.

@@ -181,6 +181,7 @@
     can be found.
   -->
   <ItemGroup>
+    <Compile Include="AngleGenerator.cs" />
     <Compile Include="ClusterColorer.cs" />
     <Compile Include="ColorCalc.cs" />
     <Compile Include="ColorDict.cs" />

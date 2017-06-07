@@ -11,55 +11,27 @@ namespace ExceLintUITests
         [TestMethod]
         public void TestAngleGenerator()
         {
-            Assert.AreEqual(180, ClusterColorer.Angles(0, 360).Take(1).First());
+            var angles = new AngleGenerator(0, 360);
+            Assert.AreEqual(180, angles.NextAngle());
         }
 
         [TestMethod]
-        public void TestAngleGeneratorMultipleTimes()
+        public void TestAngleGeneratorSequence()
         {
-            var angles = ClusterColorer.Angles(0, 360);
+            var angles = new AngleGenerator(0, 360);
 
-            Assert.AreEqual(180, angles.Take(1).First());
-
-            angles = angles.Skip(1);
-
-            Assert.AreEqual(90, angles.Take(1).First());
-
-            angles = angles.Skip(1);
-
-            Assert.AreEqual(270, angles.Take(1).First());
-
-            angles = angles.Skip(1);
-
-            Assert.AreEqual(45, angles.Take(1).First());
-
-            angles = angles.Skip(1);
-
-            Assert.AreEqual(225, angles.Take(1).First());
-
-            angles = angles.Skip(1);
-
-            Assert.AreEqual(135, angles.Take(1).First());
-
-            angles = angles.Skip(1);
-
-            Assert.AreEqual(315, angles.Take(1).First());
-
-            angles = angles.Skip(1);
-
-            Assert.AreEqual(22.5, angles.Take(1).First());
-
-            angles = angles.Skip(1);
-
-            Assert.AreEqual(202.5, angles.Take(1).First());
-
-            angles = angles.Skip(1);
-
-            Assert.AreEqual(112.5, angles.Take(1).First());
-
-            angles = angles.Skip(1);
-
-            Assert.AreEqual(292.5, angles.Take(1).First());
+            Assert.AreEqual(180, angles.NextAngle());
+            Assert.AreEqual(90, angles.NextAngle());
+            Assert.AreEqual(270, angles.NextAngle());
+            Assert.AreEqual(45, angles.NextAngle());
+            Assert.AreEqual(225, angles.NextAngle());
+            Assert.AreEqual(135, angles.NextAngle());
+            Assert.AreEqual(315, angles.NextAngle());
+            Assert.AreEqual(22.5, angles.NextAngle());
+            Assert.AreEqual(202.5, angles.NextAngle());
+            Assert.AreEqual(112.5, angles.NextAngle());
+            Assert.AreEqual(292.5, angles.NextAngle());
+            Assert.AreEqual(67.5, angles.NextAngle());
         }
     }
 }
