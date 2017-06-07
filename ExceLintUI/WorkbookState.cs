@@ -548,7 +548,7 @@ namespace ExceLintUI
         public void DrawClusters(HashSet<HashSet<AST.Address>> clusters)
         {
             // init cluster color map
-            ClusterColorer clusterColors = new ClusterColorer(clusters, 0, 360);
+            ClusterColorer clusterColors = new ClusterColorer(clusters, 0, 360, 180);
 
             // paint
             foreach (var cluster in clusters)

@@ -13,13 +13,20 @@ namespace ExceLintUI
         // fixed color attributes
         private static readonly double SATURATION = 1.0;
         private static readonly double LUMINOSITY = 0.5;
-        private static readonly double HUE_EPSILON = 90;
-
 
         // color map
         Dictionary<Cluster, Color> assignedColors = new Dictionary<Cluster, Color>();
 
-        public ClusterColorer(Clustering cs, double degreeStart, double degreeEnd)
+        /// <summary>
+        /// A class that generates colors for clusters.
+        /// </summary>
+        /// <param name="cs">A clustering.</param>
+        /// <param name="degreeStart">The lowest allowable hue, in degrees.</param>
+        /// <param name="degreeEnd">The highest allowable hue, in degrees.</param>
+        /// <param name="offset">Shift, in degrees.  E.g., if degreeStart = 0 and
+        /// degreeEnd = 360 and offset = 45, the effective degreeStart is 45 mod 360 and
+        /// the effective degreeEnd is 405 mod 360.</param>
+        public ClusterColorer(Clustering cs, double degreeStart, double degreeEnd, double offset)
         {
             // init address-to-cluster lookup
             // address-to-cluster lookup
@@ -70,7 +77,17 @@ namespace ExceLintUI
                 var angles = new AngleGenerator(degreeStart, degreeEnd);
 
                 // color getter
-                Func<Color> colorf = () => HSLtoColor(new HSL(angles.NextAngle(), SATURATION, LUMINOSITY));
+                Func<Color> colorf = () =>
+                    HSLtoColor(
+                        new HSL(
+                            mod(
+                                angles.NextAngle() + offset,
+                                degreeEnd - degreeStart
+                            ),
+                            SATURATION,
+                            LUMINOSITY
+                        )
+                    );
 
                 // get initial color
                 var color = colorf();

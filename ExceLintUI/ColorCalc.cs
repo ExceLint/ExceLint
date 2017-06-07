@@ -37,7 +37,7 @@ namespace ExceLintUI
     {
         // C#'s % operator is remainder, not modulus
         // https://stackoverflow.com/questions/1082917/mod-of-negative-number-is-melting-my-brain/6400477#6400477
-        private static double mod(double a, double b)
+        public static double mod(double a, double b)
         {
             return a - b * Math.Floor(a / b);
         }
