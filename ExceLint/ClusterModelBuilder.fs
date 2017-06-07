@@ -87,12 +87,18 @@
                 merge_targets.Contains s
 
             // determine whether the next step will be the knee
-            // without actually doing anohter agglomeration step
+            // without actually doing another agglomeration step
             member self.NextStepIsKnee : bool =
-                let nn_next = hs.NextNearestNeighbor
-                let source = nn_next.FromCluster
-                let target = nn_next.ToCluster
-                self.IsKnee source target
+                if hs.NearestNeighborTable.Length <> 0 then
+                    let nn_next = hs.NextNearestNeighbor
+                    let source = nn_next.FromCluster
+                    let target = nn_next.ToCluster
+                    self.IsKnee source target
+                else
+                    // if there are no nearest neighbors, it's becase
+                    // all the formulas are exactly the same, and thus
+                    // there is no knee
+                    true
 
             member self.Step() : bool =
                 let sw = new System.Diagnostics.Stopwatch()
