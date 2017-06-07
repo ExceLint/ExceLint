@@ -60,6 +60,10 @@ namespace ExceLintUI
 
             // greedily assign colors by degree, largest first;
             // aka Welsh-Powell heuristic
+
+            // init angle generator
+            var angles = new AngleGenerator(degreeStart, degreeEnd);
+
             foreach (Cluster c in csSorted)
             {
                 // get neighbor colors
@@ -72,9 +76,6 @@ namespace ExceLintUI
                         nscs.Add(assignedColors[n]);
                     }
                 }
-
-                // init angle generator
-                var angles = new AngleGenerator(degreeStart, degreeEnd);
 
                 // color getter
                 Func<Color> colorf = () =>
