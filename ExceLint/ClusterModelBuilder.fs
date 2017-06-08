@@ -75,7 +75,7 @@
             let mutable probable_knee = false
 
             member self.CanStep : bool =
-                hs.NearestNeighborTable.Length > 1
+                Seq.length (hs.NearestNeighborTable) > 1
             member private self.IsKnee(s: HashSet<AST.Address>)(t: HashSet<AST.Address>) : bool =
                 // the first time we merge two clusters that have
                 // different resultants, we've probably hit the knee
@@ -89,7 +89,7 @@
             // determine whether the next step will be the knee
             // without actually doing another agglomeration step
             member self.NextStepIsKnee : bool =
-                if hs.NearestNeighborTable.Length <> 0 then
+                if not (Seq.isEmpty hs.NearestNeighborTable) then
                     let nn_next = hs.NextNearestNeighbor
                     let source = nn_next.FromCluster
                     let target = nn_next.ToCluster
