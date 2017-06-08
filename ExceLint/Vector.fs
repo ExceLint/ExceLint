@@ -154,6 +154,7 @@
             | MixedFQVectorWithConstant(tail,head) ->
                 let (x1,y1,p1) = tail
                 let (x2,y2,p2,c) = head
+
                 let x' = match x2 with
                             | Rel(x) -> x - x1
                             | Abs(x) -> x
@@ -822,6 +823,22 @@
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorMixedFullCVectorResultantNotOSI>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedFullCVectorResultantNotOSI.run } )
+
+        type ShallowInputVectorMixedFullCVectorResultantOSI() =
+            inherit BaseFeature()
+            static member run(cell: AST.Address)(dag: DAG) : Countable =
+                let isMixed = true
+                let isTransitive = false
+                let isFormula = true
+                let isOffSheetInsensitive = true
+                let includeConstant = true
+                let includeLoc = true
+                let rebase_f = relativeToTail
+                let constant_f = (makeConstantVectorsFromConstants KeepConstantValue.No)
+                ResultantMaker cell dag isMixed includeConstant includeLoc isTransitive isFormula isOffSheetInsensitive constant_f rebase_f 
+            static member capability : string*Capability =
+                (typeof<ShallowInputVectorMixedFullCVectorResultantOSI>.Name,
+                    { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedFullCVectorResultantOSI.run } )
 
         type ShallowOutputVectorMixedL2NormSum() =
             inherit BaseFeature()

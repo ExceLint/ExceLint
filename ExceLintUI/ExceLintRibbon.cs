@@ -1046,7 +1046,7 @@ namespace ExceLintUI
             // spatiostructual vectors
             if (this.ClusterBox.Checked)
             {
-                c = c.enableShallowInputVectorMixedFullCVectorResultantNotOSI(true);
+                c = c.enableShallowInputVectorMixedFullCVectorResultantOSI(true);
             } else if (this.useResultant.Checked) {
                 c = c.enableShallowInputVectorMixedResultant(true);
             } else {

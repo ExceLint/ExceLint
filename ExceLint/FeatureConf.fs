@@ -54,6 +54,7 @@
                 Vector.ShallowInputVectorMixedCOFNoAspect.capability;
                 Vector.ShallowInputVectorMixedResultant.capability;
                 Vector.ShallowInputVectorMixedFullCVectorResultantNotOSI.capability;
+                Vector.ShallowInputVectorMixedFullCVectorResultantOSI.capability;
                 Proximity.Above.capability;
                 Proximity.Below.capability;
                 Proximity.Left.capability;
@@ -110,6 +111,8 @@
             capabilityConstructorHelper Vector.ShallowInputVectorMixedResultant.capability self on _config
         member self.enableShallowInputVectorMixedFullCVectorResultantNotOSI(on: bool) : FeatureConf =
             capabilityConstructorHelper Vector.ShallowInputVectorMixedFullCVectorResultantNotOSI.capability self on _config
+        member self.enableShallowInputVectorMixedFullCVectorResultantOSI(on: bool) : FeatureConf =
+            capabilityConstructorHelper Vector.ShallowInputVectorMixedFullCVectorResultantOSI.capability self on _config
         member self.enableProximityAbove(on: bool) : FeatureConf =
             capabilityConstructorHelper Proximity.Above.capability self on _config
         member self.enableProximityBelow(on: bool) : FeatureConf =
@@ -225,8 +228,10 @@
         member self.IsEnabledAnalyzeOnlyFormulas : bool = _config.ContainsKey "AnalyzeOnlyFormulas" && _config.["AnalyzeOnlyFormulas"].enabled
         member self.IsEnabledAnalyzeAllCells : bool = _config.ContainsKey "AnalyzeOnlyFormulas" && not (_config.["AnalyzeOnlyFormulas"].enabled)
         member self.Cluster : bool =
+            let (name0,_) = Vector.ShallowInputVectorMixedFullCVectorResultantOSI.capability
             let (name1,_) = Vector.ShallowInputVectorMixedFullCVectorResultantNotOSI.capability
             let (name2,_) = Vector.ShallowInputVectorMixedCVectorResultantNotOSI.capability
+            (_config.ContainsKey name0 && _config.[name0].enabled) ||
             (_config.ContainsKey name1 && _config.[name1].enabled) ||
             (_config.ContainsKey name2 && _config.[name2].enabled)
         member self.OldCluster : bool =
