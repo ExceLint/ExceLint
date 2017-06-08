@@ -350,6 +350,7 @@
             this.annotateThisCell.Label = "Annotate Current Cell";
             this.annotateThisCell.Name = "annotateThisCell";
             this.annotateThisCell.ShowImage = true;
+            this.annotateThisCell.Visible = false;
             this.annotateThisCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotateThisCell_Click);
             // 
             // ExceLintRibbon

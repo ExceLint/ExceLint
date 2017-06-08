@@ -862,6 +862,36 @@ namespace ExceLintUI
             return ProtectionLevel.None;
         }
 
+        public bool Protected
+        {
+            get
+            {
+                // check workbook protection
+                return _workbook.HasPassword;
+            }
+        }
+
+        public bool WorksheetProtected(Worksheet w)
+        {
+            // check workbook protection
+            if (Protected)
+            {
+                return true;
+            } else
+            {
+                // try to unprotect worksheet
+                try
+                {
+                    w.Unprotect(string.Empty);
+                    return false;
+                }
+                catch
+                {
+                    return true;
+                }
+            }
+        }
+
         private void paintColor(AST.Address cell, System.Drawing.Color c)
         {
             // get cell COM object

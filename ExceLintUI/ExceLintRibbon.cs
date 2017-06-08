@@ -762,7 +762,6 @@ namespace ExceLintUI
 
         private void WorksheetActivate(object Sh)
         {
-            var w = (Worksheet)Sh;
             setUIState(currentWorkbook);
         }
 
@@ -937,10 +936,20 @@ namespace ExceLintUI
 
         private void setUIState(WorkbookState wbs)
         {
-            var w = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-            var sheetProtected = !w.Protection.AllowFormattingCells;
+            var isAChart = false;
+            var sheetProtected = false;
+            Worksheet w = null;
 
-            if (wbs == null || Globals.ThisAddIn.Application.ActiveProtectedViewWindow != null || sheetProtected)
+            try
+            {
+                w = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+                sheetProtected = wbs.WorksheetProtected(w);
+            } catch
+            {
+                isAChart = true;
+            }
+
+            if (wbs == null || Globals.ThisAddIn.Application.ActiveProtectedViewWindow != null || sheetProtected || isAChart)
             {
                 // disable all controls
                 var disabled = false;
@@ -1003,6 +1012,7 @@ namespace ExceLintUI
                 this.spectralRanking.Enabled = enable_config;
                 this.useResultant.Enabled = enable_config;
                 this.showFixes.Enabled = enable_config && this.spectralRanking.Checked;
+                this.annotate.Enabled = enable_config;
                 this.ClusterBox.Enabled = enable_config;
 
                 // toggle the heatmap label depending on the heatmap shown/hidden state
