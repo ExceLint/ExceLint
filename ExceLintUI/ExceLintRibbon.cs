@@ -938,8 +938,9 @@ namespace ExceLintUI
         private void setUIState(WorkbookState wbs)
         {
             var w = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+            var sheetProtected = !w.Protection.AllowFormattingCells;
 
-            if (wbs == null || Globals.ThisAddIn.Application.ActiveProtectedViewWindow != null)
+            if (wbs == null || Globals.ThisAddIn.Application.ActiveProtectedViewWindow != null || sheetProtected)
             {
                 // disable all controls
                 var disabled = false;
