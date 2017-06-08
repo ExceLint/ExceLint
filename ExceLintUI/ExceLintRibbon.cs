@@ -267,7 +267,9 @@ namespace ExceLintUI
 
         private void showHeatmap_Click(object sender, RibbonControlEventArgs e)
         {
-            if (currentWorkbook.HeatMap_Hidden)
+            var w = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+
+            if (currentWorkbook.Visualization_Hidden(w))
             {
                 // show a cluster visualization
                 Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
@@ -279,7 +281,7 @@ namespace ExceLintUI
             }
 
             // toggle button
-            currentWorkbook.toggleHeatMapSetting();
+            currentWorkbook.toggleHeatMapSetting(w);
 
             // set UI state
             setUIState(currentWorkbook);
@@ -308,6 +310,8 @@ namespace ExceLintUI
 
         private static void DoHeatmap(FSharpOption<double> sigThresh, WorkbookState wbs, ExceLint.FeatureConf conf, bool forceBuildDAG, Action<WorkbookState> updateState, ProgBar pb)
         {
+            var w = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+
             if (sigThresh == FSharpOption<double>.None)
             {
                 return;
@@ -320,9 +324,9 @@ namespace ExceLintUI
                     // if, BEFORE the analysis, the user requests debug info
                     // AND the heatmap is PRESENTLY HIDDEN, show the debug info
                     // whether there ends up being a heatmap to show or not.
-                    var debug_display = wbs.DebugMode && wbs.HeatMap_Hidden;
+                    var debug_display = wbs.DebugMode && wbs.Visualization_Hidden(w);
 
-                    wbs.toggleHeatMap(WorkbookState.MAX_DURATION_IN_MS, conf, forceBuildDAG, pb);
+                    wbs.toggleHeatMap(w, WorkbookState.MAX_DURATION_IN_MS, conf, forceBuildDAG, pb);
                     updateState(wbs);
 
                     // debug output
@@ -739,6 +743,7 @@ namespace ExceLintUI
             Globals.ThisAddIn.Application.SheetChange += SheetChange;
             Globals.ThisAddIn.Application.WorkbookAfterSave += WorkbookAfterSave;
             Globals.ThisAddIn.Application.ProtectedViewWindowOpen += ProtectedViewWindowOpen;
+            Globals.ThisAddIn.Application.SheetActivate += WorksheetActivate;
 
             // sometimes the default blank workbook opens *before* the ExceLint
             // add-in is loaded so we have to handle sheet state specially.
@@ -753,6 +758,12 @@ namespace ExceLintUI
                 WorkbookOpen(wb);
                 WorkbookActivated(wb);
             }
+        }
+
+        private void WorksheetActivate(object Sh)
+        {
+            var w = (Worksheet)Sh;
+            setUIState(currentWorkbook);
         }
 
         private void ProtectedViewWindowOpen(Excel.ProtectedViewWindow Pvw)
@@ -926,6 +937,8 @@ namespace ExceLintUI
 
         private void setUIState(WorkbookState wbs)
         {
+            var w = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+
             if (wbs == null || Globals.ThisAddIn.Application.ActiveProtectedViewWindow != null)
             {
                 // disable all controls
@@ -964,7 +977,7 @@ namespace ExceLintUI
                 // enable auditing buttons if an audit has started
                 this.MarkAsOKButton.Enabled = wbs.MarkAsOK_Enabled;
                 this.StartOverButton.Enabled = wbs.ClearColoringButton_Enabled;
-                this.AnalyzeButton.Enabled = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
+                this.AnalyzeButton.Enabled = wbs.Analyze_Enabled && wbs.Visualization_Hidden(w);
 
                 // only enable viewing heatmap if we are not in the middle of an analysis
                 this.showHeatmap.Enabled = wbs.Analyze_Enabled;
@@ -973,7 +986,7 @@ namespace ExceLintUI
                 // 1. in the middle of an audit, or
                 // 2. we are viewing the heatmap, or
                 // 3. if spectral ranking is checked, disable scopes
-                var enable_config = wbs.Analyze_Enabled && wbs.HeatMap_Hidden;
+                var enable_config = wbs.Analyze_Enabled && wbs.Visualization_Hidden(w);
                 this.allCellsFreq.Enabled = enable_config && !this.spectralRanking.Checked;
                 this.columnCellsFreq.Enabled = enable_config && !this.spectralRanking.Checked;
                 this.rowCellsFreq.Enabled = enable_config && !this.spectralRanking.Checked;
@@ -992,7 +1005,7 @@ namespace ExceLintUI
                 this.ClusterBox.Enabled = enable_config;
 
                 // toggle the heatmap label depending on the heatmap shown/hidden state
-                if (wbs.HeatMap_Hidden)
+                if (wbs.Visualization_Hidden(w))
                 {
                     this.showHeatmap.Label = "Show Formula Similarity";
                 }

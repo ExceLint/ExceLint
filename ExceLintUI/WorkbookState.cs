@@ -68,7 +68,7 @@ namespace ExceLintUI
         private bool _button_MarkAsOK_enabled = false;
         private bool _button_FixError_enabled = false;
         private bool _button_clearColoringButton_enabled = false;
-        private bool _button_showHeatMap_on = true;
+        private Dictionary<Worksheet, bool> _visualization_shown = new Dictionary<Worksheet, bool>();
         #endregion BUTTON_STATE
 
         public WorkbookState(Excel.Application app, Excel.Workbook workbook)
@@ -162,10 +162,9 @@ namespace ExceLintUI
             set { _button_clearColoringButton_enabled = value; }
         }
 
-        public bool HeatMap_Hidden
+        public bool Visualization_Hidden(Worksheet w)
         {
-            get { return _button_showHeatMap_on; }
-            set { _button_showHeatMap_on = value; }
+            return !(_visualization_shown.ContainsKey(w) && _visualization_shown[w]);
         }
 
         public bool DebugMode
@@ -368,9 +367,9 @@ namespace ExceLintUI
             }
         }
 
-        public void toggleHeatMap(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean forceDAGBuild, ProgBar pb)
+        public void toggleHeatMap(Worksheet w, long max_duration_in_ms, ExceLint.FeatureConf config, Boolean forceDAGBuild, ProgBar pb)
         {
-            if (HeatMap_Hidden)
+            if (Visualization_Hidden(w))
             {
                 if (!_analysis.hasRun)
                 {
@@ -414,7 +413,7 @@ namespace ExceLintUI
             {
                 restoreOutputColors();
             }
-            toggleHeatMapSetting();
+            toggleHeatMapSetting(w);
         }
 
         public void showSpectralPlot(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean forceDAGBuild, ProgBar pb)
@@ -931,9 +930,17 @@ namespace ExceLintUI
             _button_clearColoringButton_enabled = true;
         }
 
-        public void toggleHeatMapSetting()
+        public void toggleHeatMapSetting(Worksheet w)
         {
-            _button_showHeatMap_on = !_button_showHeatMap_on;
+            if (!_visualization_shown.ContainsKey(w))
+            {
+                // if the worksheet is not in the dictionary,
+                // it's because the visualization has never been on
+                _visualization_shown.Add(w, true);
+            } else
+            {
+                _visualization_shown[w] = !_visualization_shown[w];
+            }
         }
 
         internal void markAsOK(bool showFixes)
