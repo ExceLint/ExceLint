@@ -196,9 +196,15 @@
                         row.Merge <- (pp step.source) + " with " + (pp step.target)
                         row.Distance <- step.distance
                         row.FScore <- step.f
-                        row.WCSS <- step.within_cluster_sum_squares
-                        row.BCSS <- step.between_cluster_sum_squares
-                        row.TSS <- step.total_sum_squares
+                        // NOTE: Stats commented out because they are
+                        //       expensive to compute and not obviously
+                        //       useful.
+//                        row.WCSS <- step.within_cluster_sum_squares
+//                        row.BCSS <- step.between_cluster_sum_squares
+//                        row.TSS <- step.total_sum_squares
+                        row.WCSS <- 0.0
+                        row.BCSS <- 0.0
+                        row.TSS <- 0.0
                         row.k <- step.num_clusters
 
                         csvw.WriteRow row      
