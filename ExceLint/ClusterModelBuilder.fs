@@ -127,10 +127,17 @@
                             source = Set.ofSeq source;
                             target = Set.ofSeq target;
                             distance = DISTANCE source target;
-                            f = F clusters hb_inv;
-                            within_cluster_sum_squares = WCSS clusters hb_inv;
-                            between_cluster_sum_squares = BCSS clusters hb_inv;
-                            total_sum_squares = TSS clusters hb_inv;
+                            // NOTE: Stats commented out because they are
+                            //       expensive to compute and not obviously
+                            //       useful.
+//                            f = F clusters hb_inv;
+//                            within_cluster_sum_squares = WCSS clusters hb_inv;
+//                            between_cluster_sum_squares = BCSS clusters hb_inv;
+//                            total_sum_squares = TSS clusters hb_inv;
+                            f = 0.0;
+                            within_cluster_sum_squares = 0.0;
+                            between_cluster_sum_squares = 0.0;
+                            total_sum_squares = 0.0;
                             num_clusters = clusters.Count;
                             in_critical_region = inCriticalRegion;
                         } :: log
@@ -196,12 +203,9 @@
                         row.Merge <- (pp step.source) + " with " + (pp step.target)
                         row.Distance <- step.distance
                         row.FScore <- step.f
-                        // NOTE: Stats commented out because they are
-                        //       expensive to compute and not obviously
-                        //       useful.
-//                        row.WCSS <- step.within_cluster_sum_squares
-//                        row.BCSS <- step.between_cluster_sum_squares
-//                        row.TSS <- step.total_sum_squares
+                        row.WCSS <- step.within_cluster_sum_squares
+                        row.BCSS <- step.between_cluster_sum_squares
+                        row.TSS <- step.total_sum_squares
                         row.WCSS <- 0.0
                         row.BCSS <- 0.0
                         row.TSS <- 0.0
