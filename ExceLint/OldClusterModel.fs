@@ -213,14 +213,20 @@
 
                 // record merge in log
                 log <- {
+                            // NOTE: Stats commented out because they are
+                            //       expensive to compute and not obviously
+                            //       useful.
                             in_critical_region = probable_knee;
                             source = Set.ofSeq source;
                             target = Set.ofSeq target;
                             distance = DISTANCE source target;
                             f = F clusters hb_inv;
-                            within_cluster_sum_squares = WCSS clusters hb_inv;
-                            between_cluster_sum_squares = BCSS clusters hb_inv;
-                            total_sum_squares = TSS clusters hb_inv;
+//                            within_cluster_sum_squares = WCSS clusters hb_inv;
+                            within_cluster_sum_squares = 0.0;
+//                            between_cluster_sum_squares = BCSS clusters hb_inv;
+                            between_cluster_sum_squares = 0.0;
+//                            total_sum_squares = TSS clusters hb_inv;
+                            total_sum_squares = 0.0;
                             num_clusters = clusters.Count;
                         } :: log
 
