@@ -21,10 +21,16 @@ namespace ExceLintFileFormats
                     return ReferenceBug;
                 case "refi":
                     return ReferenceBugInverse;
+                case "calc":
+                    return CalculationError;
                 case "cwfe":
                     return ConstantWhereFormulaExpected;
+                case "fwce":
+                    return FormulaWhereConstantExpected;
                 case "pmi":
                     return PotentialMaintenanceIssue;
+                case "iuf":
+                    return InconsistentUseOfFormula;
                 default:
                     throw new UnknownBugType(kindstr);
             }
@@ -38,8 +44,11 @@ namespace ExceLintFileFormats
                     NotABug,
                     ReferenceBug,
                     ReferenceBugInverse,
+                    CalculationError,
                     ConstantWhereFormulaExpected,
-                    PotentialMaintenanceIssue
+                    FormulaWhereConstantExpected,
+                    PotentialMaintenanceIssue,
+                    InconsistentUseOfFormula
                 };
             }
         }
@@ -59,14 +68,29 @@ namespace ExceLintFileFormats
             get { return ReferenceBugInverse.Instance; }
         }
 
+        public static CalculationError CalculationError
+        {
+            get { return CalculationError.Instance; }
+        }
+
         public static ConstantWhereFormulaExpected ConstantWhereFormulaExpected
         {
             get { return ConstantWhereFormulaExpected.Instance; }
         }
 
+        public static FormulaWhereConstantExpected FormulaWhereConstantExpected
+        {
+            get { return FormulaWhereConstantExpected.Instance; }
+        }
+
         public static PotentialMaintenanceIssue PotentialMaintenanceIssue
         {
             get { return PotentialMaintenanceIssue.Instance; }
+        }
+
+        public static InconsistentUseOfFormula InconsistentUseOfFormula
+        {
+            get { return InconsistentUseOfFormula.Instance; }
         }
 
         public static BugKind DefaultKind
@@ -162,6 +186,35 @@ namespace ExceLintFileFormats
         }
     }
 
+    public class CalculationError : BugKind
+    {
+        private static CalculationError instance;
+
+        private CalculationError() { }
+
+        public static CalculationError Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    instance = new CalculationError();
+                }
+                return instance;
+            }
+        }
+
+        public override string ToLog()
+        {
+            return "calc";
+        }
+
+        public override string ToString()
+        {
+            return "Calculation error";
+        }
+    }
+
     public class ConstantWhereFormulaExpected : BugKind
     {
         private static ConstantWhereFormulaExpected instance;
@@ -191,6 +244,35 @@ namespace ExceLintFileFormats
         }
     }
 
+    public class FormulaWhereConstantExpected : BugKind
+    {
+        private static FormulaWhereConstantExpected instance;
+
+        private FormulaWhereConstantExpected() { }
+
+        public static FormulaWhereConstantExpected Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    instance = new FormulaWhereConstantExpected();
+                }
+                return instance;
+            }
+        }
+
+        public override string ToLog()
+        {
+            return "fwce";
+        }
+
+        public override string ToString()
+        {
+            return "Formula where constant expected";
+        }
+    }
+
     public class PotentialMaintenanceIssue : BugKind
     {
         private static PotentialMaintenanceIssue instance;
@@ -217,6 +299,35 @@ namespace ExceLintFileFormats
         public override string ToString()
         {
             return "Potential maintenance issue";
+        }
+    }
+
+    public class InconsistentUseOfFormula : BugKind
+    {
+        private static InconsistentUseOfFormula instance;
+
+        private InconsistentUseOfFormula() { }
+
+        public static InconsistentUseOfFormula Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    instance = new InconsistentUseOfFormula();
+                }
+                return instance;
+            }
+        }
+
+        public override string ToLog()
+        {
+            return "iuf";
+        }
+
+        public override string ToString()
+        {
+            return "Inconsistent use of formula";
         }
     }
 }
