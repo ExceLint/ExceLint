@@ -368,6 +368,7 @@
             this.distanceCombo.Items.Add(ribbonDropDownItemImpl3);
             this.distanceCombo.Label = "Distance:";
             this.distanceCombo.Name = "distanceCombo";
+            this.distanceCombo.Text = "Nearest Neighbor";
             // 
             // ExceLintRibbon
             // 
