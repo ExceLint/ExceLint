@@ -35,6 +35,9 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ExceLintRibbon));
+            Microsoft.Office.Tools.Ribbon.RibbonDropDownItem ribbonDropDownItemImpl1 = this.Factory.CreateRibbonDropDownItem();
+            Microsoft.Office.Tools.Ribbon.RibbonDropDownItem ribbonDropDownItemImpl2 = this.Factory.CreateRibbonDropDownItem();
+            Microsoft.Office.Tools.Ribbon.RibbonDropDownItem ribbonDropDownItemImpl3 = this.Factory.CreateRibbonDropDownItem();
             this.tab1 = this.Factory.CreateRibbonTab();
             this.tab2 = this.Factory.CreateRibbonTab();
             this.CheckCellGroup = this.Factory.CreateRibbonGroup();
@@ -69,6 +72,7 @@
             this.separator4 = this.Factory.CreateRibbonSeparator();
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
+            this.distanceCombo = this.Factory.CreateRibbonComboBox();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -121,6 +125,7 @@
             this.box1.Items.Add(this.StartOverButton);
             this.box1.Items.Add(this.showHeatmap);
             this.box1.Items.Add(this.box2);
+            this.box1.Items.Add(this.distanceCombo);
             this.box1.Name = "box1";
             // 
             // AnalyzeButton
@@ -353,6 +358,17 @@
             this.annotateThisCell.Visible = false;
             this.annotateThisCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotateThisCell_Click);
             // 
+            // distanceCombo
+            // 
+            ribbonDropDownItemImpl1.Label = "Earth Mover";
+            ribbonDropDownItemImpl2.Label = "Nearest Neighbor";
+            ribbonDropDownItemImpl3.Label = "Mean Centroid";
+            this.distanceCombo.Items.Add(ribbonDropDownItemImpl1);
+            this.distanceCombo.Items.Add(ribbonDropDownItemImpl2);
+            this.distanceCombo.Items.Add(ribbonDropDownItemImpl3);
+            this.distanceCombo.Label = "Distance:";
+            this.distanceCombo.Name = "distanceCombo";
+            // 
             // ExceLintRibbon
             // 
             this.Name = "ExceLintRibbon";
@@ -410,6 +426,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton getLSH;
         internal Microsoft.Office.Tools.Ribbon.RibbonBox box2;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton readClusterDump;
+        internal Microsoft.Office.Tools.Ribbon.RibbonComboBox distanceCombo;
     }
 
     partial class ThisRibbonCollection

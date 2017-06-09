@@ -1069,6 +1069,20 @@ namespace ExceLintUI
             // ranking type
             if (this.spectralRanking.Checked) { c = c.spectralRanking(true).analyzeRelativeToSheet(true); }
 
+            // distance metric
+            switch(distanceCombo.Text)
+            {
+                case "Earth Mover":
+                    c = c.enableDistanceEarthMover(true);
+                    break;
+                case "Nearest Neighbor":
+                    c = c.enableDistanceNearestNeighbor(true);
+                    break;
+                case "Mean Centroid":
+                    c = c.enableDistanceMeanCentroid(true);
+                    break;
+            }   
+            
             // COF?
             c = c.enableShallowInputVectorMixedCOFRefUnnormSSNorm(false);
 
