@@ -6,6 +6,7 @@ using Excel = Microsoft.Office.Interop.Excel;
 using System.Linq;
 using System.Threading;
 using ExceLintFileFormats;
+using Application = Microsoft.Office.Interop.Excel.Application;
 using Worksheet = Microsoft.Office.Interop.Excel.Worksheet;
 
 namespace ExceLintUI
@@ -702,32 +703,49 @@ namespace ExceLintUI
 
         private void annotateThisCell_Click(object sender, RibbonControlEventArgs e)
         {
-            // get cursor location
-            var cursor = (Excel.Range)Globals.ThisAddIn.Application.Selection;
-            AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, Globals.ThisAddIn.Application.ActiveWorkbook);
+            var app = Globals.ThisAddIn.Application;
 
+            // get cursor location
+            var cursor = (Excel.Range)app.Selection;
+
+            // get range object
+            var rng = ParcelCOMShim.Range.RangeFromCOMObject(cursor, app.ActiveWorkbook);
+
+            // prompt user for annotations and save results
+            annotateCells(rng.Addresses(), app);
+        }
+
+        private void annotateCells(AST.Address[] addrs, Application app)
+        {
             // get bug annotation from database
-            var annot = Annotations.AnnotationFor(cursorAddr);
+            var annotations = addrs.Select(addr => Annotations.AnnotationFor(addr)).ToArray();
 
             // populate form and ask user for new data
-            var mabf = new MarkAsBugForm(annot);
+            var mabf = new MarkAsBugForm(annotations, addrs);
 
             // show form
             var result = mabf.ShowDialog();
 
+            // pull response from form, update database and workbook
             if (result == System.Windows.Forms.DialogResult.OK)
             {
-                // update database
-                annot.BugKind = mabf.BugKind;
-                annot.Note = mabf.Notes;
-                Annotations.SetAnnotationFor(cursorAddr, annot);
-
-                // stick note into workbook
-                if (cursor.Comment != null)
+                for (int i = 0; i < addrs.Length; i++)
                 {
-                    cursor.Comment.Delete();
+                    // update annotations
+                    annotations[i].BugKind = mabf.BugKind;
+                    annotations[i].Note = mabf.Notes;
+                    Annotations.SetAnnotationFor(addrs[i], annotations[i]);
+
+                    // get "cursor"
+                    var cursor = ParcelCOMShim.Address.GetCOMObject(addrs[i], app);
+
+                    // stick note into workbook
+                    if (cursor.Comment != null)
+                    {
+                        cursor.Comment.Delete();
+                    }
+                    cursor.AddComment(annotations[i].Comment);
                 }
-                cursor.AddComment(annot.Comment);
             }
         }
 
@@ -773,6 +791,7 @@ namespace ExceLintUI
             Globals.ThisAddIn.Application.WorkbookAfterSave += WorkbookAfterSave;
             Globals.ThisAddIn.Application.ProtectedViewWindowOpen += ProtectedViewWindowOpen;
             Globals.ThisAddIn.Application.SheetActivate += WorksheetActivate;
+            Globals.ThisAddIn.Application.SheetSelectionChange += SheetSelectionChange;
 
             // sometimes the default blank workbook opens *before* the ExceLint
             // add-in is loaded so we have to handle sheet state specially.
@@ -786,6 +805,33 @@ namespace ExceLintUI
                 }
                 WorkbookOpen(wb);
                 WorkbookActivated(wb);
+            }
+        }
+
+        private void SheetSelectionChange(object Sh, Excel.Range Target)
+        {
+            var app = Globals.ThisAddIn.Application;
+
+            // get cursor location
+            var cursor = (Excel.Range)app.Selection;
+
+            // get range object
+            var rng = ParcelCOMShim.Range.RangeFromCOMObject(cursor, app.ActiveWorkbook);
+
+            if (rng.Addresses().Length == 1)
+            {
+                // user selected a single cell
+                annotateThisCell.Enabled = true;
+                annotateThisCell.Label = "Annotate This Cell";
+            } else if (rng.Addresses().Length > 1)
+            {
+                // user selected a single cell
+                annotateThisCell.Enabled = true;
+                annotateThisCell.Label = "Annotate These Cells";
+            } else
+            {
+                annotateThisCell.Label = "Annotate This Cell";
+                annotateThisCell.Enabled = false;
             }
         }
 

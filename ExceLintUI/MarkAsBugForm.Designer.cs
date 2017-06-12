@@ -34,20 +34,23 @@
             this.bugNotesTextField = new System.Windows.Forms.TextBox();
             this.markButton = new System.Windows.Forms.Button();
             this.label2 = new System.Windows.Forms.Label();
+            this.editNotes = new System.Windows.Forms.CheckBox();
+            this.editBugKind = new System.Windows.Forms.CheckBox();
+            this.label1 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // BugKindsCombo
             // 
             this.BugKindsCombo.FormattingEnabled = true;
-            this.BugKindsCombo.Location = new System.Drawing.Point(110, 6);
+            this.BugKindsCombo.Location = new System.Drawing.Point(15, 32);
             this.BugKindsCombo.Name = "BugKindsCombo";
-            this.BugKindsCombo.Size = new System.Drawing.Size(265, 21);
+            this.BugKindsCombo.Size = new System.Drawing.Size(360, 21);
             this.BugKindsCombo.TabIndex = 0;
             // 
             // markCellLabel
             // 
             this.markCellLabel.AutoSize = true;
-            this.markCellLabel.Location = new System.Drawing.Point(12, 9);
+            this.markCellLabel.Location = new System.Drawing.Point(12, 16);
             this.markCellLabel.Name = "markCellLabel";
             this.markCellLabel.Size = new System.Drawing.Size(92, 13);
             this.markCellLabel.TabIndex = 1;
@@ -56,7 +59,7 @@
             // cancelButton
             // 
             this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.cancelButton.Location = new System.Drawing.Point(219, 112);
+            this.cancelButton.Location = new System.Drawing.Point(219, 146);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.Size = new System.Drawing.Size(75, 23);
             this.cancelButton.TabIndex = 2;
@@ -66,7 +69,7 @@
             // 
             // bugNotesTextField
             // 
-            this.bugNotesTextField.Location = new System.Drawing.Point(15, 49);
+            this.bugNotesTextField.Location = new System.Drawing.Point(15, 83);
             this.bugNotesTextField.Multiline = true;
             this.bugNotesTextField.Name = "bugNotesTextField";
             this.bugNotesTextField.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
@@ -75,7 +78,7 @@
             // 
             // markButton
             // 
-            this.markButton.Location = new System.Drawing.Point(300, 112);
+            this.markButton.Location = new System.Drawing.Point(300, 146);
             this.markButton.Name = "markButton";
             this.markButton.Size = new System.Drawing.Size(75, 23);
             this.markButton.TabIndex = 4;
@@ -86,11 +89,38 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(12, 33);
+            this.label2.Location = new System.Drawing.Point(12, 67);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(38, 13);
             this.label2.TabIndex = 5;
             this.label2.Text = "Notes:";
+            // 
+            // editNotes
+            // 
+            this.editNotes.AutoSize = true;
+            this.editNotes.Location = new System.Drawing.Point(396, 83);
+            this.editNotes.Name = "editNotes";
+            this.editNotes.Size = new System.Drawing.Size(15, 14);
+            this.editNotes.TabIndex = 8;
+            this.editNotes.UseVisualStyleBackColor = true;
+            // 
+            // editBugKind
+            // 
+            this.editBugKind.AutoSize = true;
+            this.editBugKind.Location = new System.Drawing.Point(396, 35);
+            this.editBugKind.Name = "editBugKind";
+            this.editBugKind.Size = new System.Drawing.Size(15, 14);
+            this.editBugKind.TabIndex = 6;
+            this.editBugKind.UseVisualStyleBackColor = true;
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(383, 9);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(39, 13);
+            this.label1.TabIndex = 9;
+            this.label1.Text = "Edit All";
             // 
             // MarkAsBugForm
             // 
@@ -98,7 +128,10 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.cancelButton;
-            this.ClientSize = new System.Drawing.Size(387, 147);
+            this.ClientSize = new System.Drawing.Size(438, 181);
+            this.Controls.Add(this.label1);
+            this.Controls.Add(this.editNotes);
+            this.Controls.Add(this.editBugKind);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.markButton);
             this.Controls.Add(this.bugNotesTextField);
@@ -121,5 +154,8 @@
         private System.Windows.Forms.TextBox bugNotesTextField;
         private System.Windows.Forms.Button markButton;
         private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.CheckBox editNotes;
+        private System.Windows.Forms.CheckBox editBugKind;
+        private System.Windows.Forms.Label label1;
     }
 }
