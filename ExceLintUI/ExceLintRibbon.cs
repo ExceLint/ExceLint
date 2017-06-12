@@ -37,10 +37,17 @@ namespace ExceLintUI
                 custodesPath = InstallScript.InstallCUSTODES(rootPath);
             }
 
+            // make sure that Excel does not think that
+            // long-running analyses are deadlocks
+            Globals.ThisAddIn.Application.DisplayAlerts = false;
+
             // run analysis and display on screen
             currentWorkbook.toggleCUSTODES(rootPath, custodesPath, JAVA_PATH, Globals.ThisAddIn.Application.ActiveWorkbook);
 
             setUIState(currentWorkbook);
+
+            // reset alerts
+            Globals.ThisAddIn.Application.DisplayAlerts = true;
         }
 
         private void stepModel_Click(object sender, RibbonControlEventArgs e)

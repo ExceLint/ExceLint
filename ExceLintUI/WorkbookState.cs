@@ -397,6 +397,10 @@ namespace ExceLintUI
                     var ok = (CUSTODES.OutputResult.OKOutput)output;
                     var ok_output = ok.Item1;
 
+                    // Inform user what is about to happen
+                    System.Windows.Forms.MessageBox.Show("CUSTODES analysis complete.  Highlighting " + ok_output.Smells.Length + " cells.");
+
+
                     // Disable screen updating 
                     _app.ScreenUpdating = false;
 
