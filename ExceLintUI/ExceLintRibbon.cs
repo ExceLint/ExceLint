@@ -1072,7 +1072,7 @@ namespace ExceLintUI
                 // 1. in the middle of an audit, or
                 // 2. we are viewing the heatmap, or
                 // 3. if spectral ranking is checked, disable scopes
-                var enable_config = wbs.Analyze_Enabled && wbs.Visualization_Hidden(w);
+                var enable_config = wbs.Analyze_Enabled && wbs.Visualization_Hidden(w) && wbs.CUSTODES_Hidden(w);
                 this.allCellsFreq.Enabled = enable_config && !this.spectralRanking.Checked;
                 this.columnCellsFreq.Enabled = enable_config && !this.spectralRanking.Checked;
                 this.rowCellsFreq.Enabled = enable_config && !this.spectralRanking.Checked;
@@ -1088,7 +1088,7 @@ namespace ExceLintUI
                 this.spectralRanking.Enabled = enable_config;
                 this.useResultant.Enabled = enable_config;
                 this.showFixes.Enabled = enable_config && this.spectralRanking.Checked;
-                this.annotate.Enabled = enable_config;
+                this.annotate.Enabled = true;   // user can annotate at any time
                 this.ClusterBox.Enabled = enable_config;
                 this.RunCUSTODES.Enabled = enable_config;
 
