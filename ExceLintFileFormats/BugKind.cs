@@ -31,6 +31,8 @@ namespace ExceLintFileFormats
                     return PotentialMaintenanceIssue;
                 case "iuf":
                     return InconsistentUseOfFormula;
+                case "susp":
+                    return SuspiciousCell;
                 default:
                     throw new UnknownBugType(kindstr);
             }
@@ -48,7 +50,8 @@ namespace ExceLintFileFormats
                     ConstantWhereFormulaExpected,
                     FormulaWhereConstantExpected,
                     PotentialMaintenanceIssue,
-                    InconsistentUseOfFormula
+                    InconsistentUseOfFormula,
+                    SuspiciousCell
                 };
             }
         }
@@ -91,6 +94,11 @@ namespace ExceLintFileFormats
         public static InconsistentUseOfFormula InconsistentUseOfFormula
         {
             get { return InconsistentUseOfFormula.Instance; }
+        }
+
+        public static SuspiciousCell SuspiciousCell
+        {
+            get { return SuspiciousCell.Instance; }
         }
 
         public static BugKind DefaultKind
@@ -328,6 +336,35 @@ namespace ExceLintFileFormats
         public override string ToString()
         {
             return "Inconsistent use of formula";
+        }
+    }
+
+    public class SuspiciousCell : BugKind
+    {
+        private static SuspiciousCell instance;
+
+        private SuspiciousCell() { }
+
+        public static SuspiciousCell Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    instance = new SuspiciousCell();
+                }
+                return instance;
+            }
+        }
+
+        public override string ToLog()
+        {
+            return "susp";
+        }
+
+        public override string ToString()
+        {
+            return "Suspicious cell";
         }
     }
 }
