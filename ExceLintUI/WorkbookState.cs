@@ -10,6 +10,8 @@ using Microsoft.FSharp.Core;
 using System.Runtime.InteropServices;
 using System.Text;
 using Worksheet = Microsoft.Office.Interop.Excel.Worksheet;
+using Workbook = Microsoft.Office.Interop.Excel.Workbook;
+
 
 namespace ExceLintUI
 {
@@ -69,6 +71,7 @@ namespace ExceLintUI
         private bool _button_FixError_enabled = false;
         private bool _button_clearColoringButton_enabled = false;
         private Dictionary<Worksheet, bool> _visualization_shown = new Dictionary<Worksheet, bool>();
+        private Dictionary<Worksheet, bool> _custodes_shown = new Dictionary<Worksheet, bool>();
         #endregion BUTTON_STATE
 
         public WorkbookState(Excel.Application app, Excel.Workbook workbook)
@@ -165,6 +168,11 @@ namespace ExceLintUI
         public bool Visualization_Hidden(Worksheet w)
         {
             return !(_visualization_shown.ContainsKey(w) && _visualization_shown[w]);
+        }
+
+        public bool CUSTODES_Hidden(Worksheet w)
+        {
+            return !(_custodes_shown.ContainsKey(w) && _custodes_shown[w]);
         }
 
         public bool DebugMode
@@ -365,6 +373,63 @@ namespace ExceLintUI
                 _dag_changed = false;
                 resetTool();
             }
+        }
+
+        public void toggleCUSTODES(string rootPath, string custodesPath, string javaPath, Workbook w)
+        {
+            // get current sheet
+            var ws = (Worksheet)w.ActiveSheet;
+
+            if (CUSTODES_Hidden(ws))
+            {
+                // get path to current spreadsheet
+                var ssPath = System.IO.Path.Combine(w.Path, w.Name);
+                var ssTempPath = System.IO.Path.Combine(
+                    InstallScript.TempSpreadsheetDir(rootPath),
+                    Globals.ThisAddIn.Application.ActiveWorkbook.Name);
+                System.IO.File.Copy(ssPath, ssTempPath, overwrite: true);
+
+                // run it
+                var output = CUSTODES.getOutput(ssTempPath, custodesPath, javaPath);
+
+                if (output.IsOKOutput)
+                {
+                    var ok = (CUSTODES.OutputResult.OKOutput)output;
+                    var ok_output = ok.Item1;
+
+                    // Disable screen updating 
+                    _app.ScreenUpdating = false;
+
+                    // paint cells
+                    for (int i = 0; i < ok_output.Smells.Length; i++)
+                    {
+                        var smell = ok_output.Smells[i];
+
+                        // ensure that cell is unprotected or fail
+                        if (unProtect(smell) != ProtectionLevel.None)
+                        {
+                            System.Windows.Forms.MessageBox.Show("Cannot highlight cell " + _flagged_cell.A1Local() + ". Cell is protected.");
+                            return;
+                        }
+
+                        // make it bright red
+                        paintRed(smell, 1.0);
+                    }
+
+                    // Enable screen updating
+                    _app.ScreenUpdating = true;
+
+                }
+                else
+                {
+                    System.Windows.Forms.MessageBox.Show("Could not run CUSTODES.");
+                    return;
+                }
+            } else
+            {
+                restoreOutputColors();
+            }
+            toggleCUSTODESSetting(ws);
         }
 
         public void toggleHeatMap(Worksheet w, long max_duration_in_ms, ExceLint.FeatureConf config, Boolean forceDAGBuild, ProgBar pb)
@@ -970,6 +1035,20 @@ namespace ExceLintUI
             } else
             {
                 _visualization_shown[w] = !_visualization_shown[w];
+            }
+        }
+
+        public void toggleCUSTODESSetting(Worksheet w)
+        {
+            if (!_custodes_shown.ContainsKey(w))
+            {
+                // if the worksheet is not in the dictionary,
+                // it's because the visualization has never been on
+                _custodes_shown.Add(w, true);
+            }
+            else
+            {
+                _custodes_shown[w] = !_custodes_shown[w];
             }
         }
 

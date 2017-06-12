@@ -14,13 +14,35 @@ namespace ExceLintUI
     {
         private static bool USE_MULTITHREADED_UI = false;
         private static string DEFAULT_GROUND_TRUTH_FILENAME = "ground_truth";
+        private static string JAVA_PATH = @"C:\ProgramData\Oracle\Java\javapath\java.exe";
 
         Dictionary<Excel.Workbook, WorkbookState> wbstates = new Dictionary<Excel.Workbook, WorkbookState>();
         System.Collections.Concurrent.ConcurrentDictionary<Excel.Workbook,Boolean> wbShutdown = new System.Collections.Concurrent.ConcurrentDictionary<Excel.Workbook,Boolean>();
         WorkbookState currentWorkbook;
         private ExceLintGroundTruth annotations;
+        private string custodesPath = null;
 
         #region BUTTON_HANDLERS
+        private void RunCUSTODES_Click(object sender, RibbonControlEventArgs e)
+        {
+            string rootPath = null;
+
+            // install CUSTODES if not already installed
+            if (rootPath == null)
+            {
+                rootPath = InstallScript.InitDirs();
+            }
+            if (custodesPath == null)
+            {
+                custodesPath = InstallScript.InstallCUSTODES(rootPath);
+            }
+
+            // run analysis and display on screen
+            currentWorkbook.toggleCUSTODES(rootPath, custodesPath, JAVA_PATH, Globals.ThisAddIn.Application.ActiveWorkbook);
+
+            setUIState(currentWorkbook);
+        }
+
         private void stepModel_Click(object sender, RibbonControlEventArgs e)
         {
             Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
@@ -1023,6 +1045,16 @@ namespace ExceLintUI
                 else
                 {
                     this.showHeatmap.Label = "Hide Formula Similarity";
+                }
+
+                // toggle the CUSTODES label depending on the analysis shown/hidden state
+                if (wbs.CUSTODES_Hidden(w))
+                {
+                    this.RunCUSTODES.Label = "Run CUSTODES";
+                }
+                else
+                {
+                    this.RunCUSTODES.Label = "Hide CUSTODES";
                 }
 
                 // toggle the annotation button depending on whether we have

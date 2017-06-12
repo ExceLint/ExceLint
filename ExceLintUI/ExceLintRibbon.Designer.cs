@@ -51,6 +51,7 @@
             this.LSHTest = this.Factory.CreateRibbonButton();
             this.getLSH = this.Factory.CreateRibbonButton();
             this.readClusterDump = this.Factory.CreateRibbonButton();
+            this.distanceCombo = this.Factory.CreateRibbonComboBox();
             this.ClusterBox = this.Factory.CreateRibbonCheckBox();
             this.useResultant = this.Factory.CreateRibbonCheckBox();
             this.normSSCheckBox = this.Factory.CreateRibbonCheckBox();
@@ -72,7 +73,7 @@
             this.separator4 = this.Factory.CreateRibbonSeparator();
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
-            this.distanceCombo = this.Factory.CreateRibbonComboBox();
+            this.RunCUSTODES = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -124,6 +125,7 @@
             this.box1.Items.Add(this.MarkAsOKButton);
             this.box1.Items.Add(this.StartOverButton);
             this.box1.Items.Add(this.showHeatmap);
+            this.box1.Items.Add(this.RunCUSTODES);
             this.box1.Items.Add(this.box2);
             this.box1.Items.Add(this.distanceCombo);
             this.box1.Name = "box1";
@@ -204,6 +206,18 @@
             this.readClusterDump.Name = "readClusterDump";
             this.readClusterDump.Visible = false;
             this.readClusterDump.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.readClusterDump_Click);
+            // 
+            // distanceCombo
+            // 
+            ribbonDropDownItemImpl1.Label = "Earth Mover";
+            ribbonDropDownItemImpl2.Label = "Nearest Neighbor";
+            ribbonDropDownItemImpl3.Label = "Mean Centroid";
+            this.distanceCombo.Items.Add(ribbonDropDownItemImpl1);
+            this.distanceCombo.Items.Add(ribbonDropDownItemImpl2);
+            this.distanceCombo.Items.Add(ribbonDropDownItemImpl3);
+            this.distanceCombo.Label = "Distance:";
+            this.distanceCombo.Name = "distanceCombo";
+            this.distanceCombo.Text = "Nearest Neighbor";
             // 
             // ClusterBox
             // 
@@ -358,17 +372,14 @@
             this.annotateThisCell.Visible = false;
             this.annotateThisCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotateThisCell_Click);
             // 
-            // distanceCombo
+            // RunCUSTODES
             // 
-            ribbonDropDownItemImpl1.Label = "Earth Mover";
-            ribbonDropDownItemImpl2.Label = "Nearest Neighbor";
-            ribbonDropDownItemImpl3.Label = "Mean Centroid";
-            this.distanceCombo.Items.Add(ribbonDropDownItemImpl1);
-            this.distanceCombo.Items.Add(ribbonDropDownItemImpl2);
-            this.distanceCombo.Items.Add(ribbonDropDownItemImpl3);
-            this.distanceCombo.Label = "Distance:";
-            this.distanceCombo.Name = "distanceCombo";
-            this.distanceCombo.Text = "Nearest Neighbor";
+            this.RunCUSTODES.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.RunCUSTODES.Image = global::ExceLintUI.Properties.Resources.analyze_small;
+            this.RunCUSTODES.Label = "Run CUSTODES";
+            this.RunCUSTODES.Name = "RunCUSTODES";
+            this.RunCUSTODES.ShowImage = true;
+            this.RunCUSTODES.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.RunCUSTODES_Click);
             // 
             // ExceLintRibbon
             // 
@@ -428,6 +439,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonBox box2;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton readClusterDump;
         internal Microsoft.Office.Tools.Ribbon.RibbonComboBox distanceCombo;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton RunCUSTODES;
     }
 
     partial class ThisRibbonCollection

@@ -285,6 +285,10 @@
     <None Include="Resources\mark_as_ok_small1.png" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\CUSTODESParser\CUSTODESParser.fsproj">
+      <Project>{8ed0e074-a6e6-4ec4-8a53-e62d53295186}</Project>
+      <Name>CUSTODESParser</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Depends\Depends\Depends.csproj">
       <Project>{34fa1bc2-cfd6-44ec-ac0c-dfc62313e4bf}</Project>
       <Name>Depends</Name>
