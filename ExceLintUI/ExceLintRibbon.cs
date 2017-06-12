@@ -1005,6 +1005,7 @@ namespace ExceLintUI
                 this.annotate.Enabled = disabled;
                 this.useResultant.Enabled = disabled;
                 this.ClusterBox.Enabled = disabled;
+                this.RunCUSTODES.Enabled = disabled;
 
                 // tell the user ExceLint doesn't work
                 SetTooltips(disabled_text);
@@ -1043,6 +1044,7 @@ namespace ExceLintUI
                 this.showFixes.Enabled = enable_config && this.spectralRanking.Checked;
                 this.annotate.Enabled = enable_config;
                 this.ClusterBox.Enabled = enable_config;
+                this.RunCUSTODES.Enabled = enable_config;
 
                 // toggle the heatmap label depending on the heatmap shown/hidden state
                 if (wbs.Visualization_Hidden(w))
