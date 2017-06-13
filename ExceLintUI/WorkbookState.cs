@@ -9,6 +9,7 @@ using HypothesizedFixes = System.Collections.Generic.Dictionary<AST.Address, Sys
 using Microsoft.FSharp.Core;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using Worksheet = Microsoft.Office.Interop.Excel.Worksheet;
 using Workbook = Microsoft.Office.Interop.Excel.Workbook;
 
@@ -337,12 +338,67 @@ namespace ExceLintUI
             System.Windows.Forms.MessageBox.Show(cursorStr + " = " + l2ns);
         }
 
+        private int EstimateNumberOfFormulas()
+        {
+            // simplistic formula validator
+            var fn_filter = new Regex("^=", RegexOptions.Compiled);
+
+            // count
+            int i = 0;
+            foreach (Worksheet w in _workbook.Worksheets)
+            {
+                // get used range
+                var urng = w.UsedRange;
+
+                // get dimensions
+                var left = urng.Column;                      // 1-based left-hand y coordinate
+                var right = urng.Columns.Count + left - 1;   // 1-based right-hand y coordinate
+                var top = urng.Row;                          // 1-based top x coordinate
+                var bottom = urng.Rows.Count + top - 1;      // 1-based bottom x coordinate
+
+                // init
+                int width = right - left + 1;
+                int height = bottom - top + 1;
+
+                if (left == right && top == bottom)
+                {
+                    var f = (string)urng.Formula;
+
+                    if (fn_filter.IsMatch(f))
+                    {
+                        i++;
+                    }
+                }
+                else
+                {
+                    // array read of formula cells
+                    // note that this is a 1-based 2D multiarray
+                    object[,] formulas = (object[,])urng.Formula;
+
+                    // for every cell that is actually a formula, increment
+                    for (int c = 1; c <= width; c++)
+                    {
+                        for (int r = 1; r <= height; r++)
+                        {
+                            var f = (string)formulas[r, c];
+                            if (fn_filter.IsMatch(f))
+                            {
+                                i++;
+                            }
+                        }
+                    }
+                }
+            }
+            return i;
+        }
+
         private T buildDAGAndDoStuff<T>(Boolean forceDAGBuild, Func<Depends.Progress, T> doStuff, long workMultiplier, ProgBar pb)
         {
             // create progress delegates
             Depends.ProgressBarIncrementer incr = () => pb.IncrementProgress();
             Depends.ProgressBarReset reset = () => pb.Reset();
             var p = new Depends.Progress(incr, reset, workMultiplier);
+            p.TotalWorkUnits = EstimateNumberOfFormulas();
             pb.registerCancelCallback(() => p.Cancel());
 
             RefreshDAG(forceDAGBuild, p);
@@ -372,6 +428,13 @@ namespace ExceLintUI
                 _dag = new Depends.DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, p);
                 _dag_changed = false;
                 resetTool();
+            } else
+            {
+                // manually bump progress bar so it looks to the user like we did something
+                for (int i = 0; i < _dag.getAllFormulaAddrs().Length; i++)
+                {
+                    p.IncrementCounter();
+                }
             }
         }
 
@@ -588,28 +651,30 @@ namespace ExceLintUI
             System.Windows.Forms.MessageBox.Show(lsh.MaskedBitsAsString(ExceLint.UInt128.MaxValue));
         }
 
-        public void GetClusteringForWorksheet(Worksheet w, ExceLint.FeatureConf conf, Boolean forceDAGBuild)
+        public void GetClusteringForWorksheet(Worksheet w, ExceLint.FeatureConf conf, Boolean forceDAGBuild, ProgBar pb)
         {
-            var p = Depends.Progress.NOPProgress();
-
-            // update if necessary
-            RefreshDAG(forceDAGBuild, p);
-
-            if (!_m.ContainsKey(w))
+            Func<Depends.Progress, Unit> f = (p) =>
             {
-                Excel.Application app = Globals.ThisAddIn.Application;
-
-                // create
-                var m = ExceLint.ModelBuilder.initStepClusterModel(app, conf, _dag, 0.05, p);
-
-                // run agglomerative clustering until we reach inflection point
-                while(!m.NextStepIsKnee)
+                if (!_m.ContainsKey(w))
                 {
-                    m.Step();
-                }
+                    Excel.Application app = Globals.ThisAddIn.Application;
 
-                _m.Add(w, m);
-            }
+                    // create
+                    var m = ExceLint.ModelBuilder.initStepClusterModel(app, conf, _dag, 0.05, p);
+
+                    // run agglomerative clustering until we reach inflection point
+                    while (!m.NextStepIsKnee)
+                    {
+                        m.Step();
+                    }
+
+                    _m.Add(w, m);
+                }
+                return null;
+            };
+
+            // update DAG if necessary
+            buildDAGAndDoStuff(forceDAGBuild, f, 3, pb);
 
             // draw
             DrawClusters(_m[w].CurrentClustering);

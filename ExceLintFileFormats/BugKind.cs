@@ -33,6 +33,8 @@ namespace ExceLintFileFormats
                     return InconsistentUseOfFormula;
                 case "susp":
                     return SuspiciousCell;
+                case "xlfp":
+                    return ExcelFalsePositive;
                 default:
                     throw new UnknownBugType(kindstr);
             }
@@ -51,7 +53,8 @@ namespace ExceLintFileFormats
                     FormulaWhereConstantExpected,
                     PotentialMaintenanceIssue,
                     InconsistentUseOfFormula,
-                    SuspiciousCell
+                    SuspiciousCell,
+                    ExcelFalsePositive
                 };
             }
         }
@@ -99,6 +102,11 @@ namespace ExceLintFileFormats
         public static SuspiciousCell SuspiciousCell
         {
             get { return SuspiciousCell.Instance; }
+        }
+
+        public static ExcelFalsePositive ExcelFalsePositive
+        {
+            get { return ExcelFalsePositive.Instance; }
         }
 
         public static BugKind DefaultKind
@@ -365,6 +373,35 @@ namespace ExceLintFileFormats
         public override string ToString()
         {
             return "Suspicious cell";
+        }
+    }
+
+    public class ExcelFalsePositive : BugKind
+    {
+        private static ExcelFalsePositive instance;
+
+        private ExcelFalsePositive() { }
+
+        public static ExcelFalsePositive Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    instance = new ExcelFalsePositive();
+                }
+                return instance;
+            }
+        }
+
+        public override string ToLog()
+        {
+            return "xlfp";
+        }
+
+        public override string ToString()
+        {
+            return "Excel False Positive";
         }
     }
 }

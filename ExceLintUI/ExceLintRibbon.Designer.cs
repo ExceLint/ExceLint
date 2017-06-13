@@ -46,8 +46,8 @@
             this.MarkAsOKButton = this.Factory.CreateRibbonButton();
             this.StartOverButton = this.Factory.CreateRibbonButton();
             this.showHeatmap = this.Factory.CreateRibbonButton();
+            this.RunCUSTODES = this.Factory.CreateRibbonButton();
             this.box2 = this.Factory.CreateRibbonBox();
-            this.stepModel = this.Factory.CreateRibbonButton();
             this.LSHTest = this.Factory.CreateRibbonButton();
             this.getLSH = this.Factory.CreateRibbonButton();
             this.readClusterDump = this.Factory.CreateRibbonButton();
@@ -73,7 +73,6 @@
             this.separator4 = this.Factory.CreateRibbonSeparator();
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
-            this.RunCUSTODES = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -169,22 +168,23 @@
             this.showHeatmap.ShowImage = true;
             this.showHeatmap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.showHeatmap_Click);
             // 
+            // RunCUSTODES
+            // 
+            this.RunCUSTODES.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.RunCUSTODES.Image = global::ExceLintUI.Properties.Resources.analyze_small;
+            this.RunCUSTODES.Label = "Run CUSTODES";
+            this.RunCUSTODES.Name = "RunCUSTODES";
+            this.RunCUSTODES.ShowImage = true;
+            this.RunCUSTODES.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.RunCUSTODES_Click);
+            // 
             // box2
             // 
             this.box2.BoxStyle = Microsoft.Office.Tools.Ribbon.RibbonBoxStyle.Vertical;
-            this.box2.Items.Add(this.stepModel);
             this.box2.Items.Add(this.LSHTest);
             this.box2.Items.Add(this.getLSH);
             this.box2.Items.Add(this.readClusterDump);
             this.box2.Name = "box2";
             this.box2.Visible = false;
-            // 
-            // stepModel
-            // 
-            this.stepModel.Label = "Step Cluster Model";
-            this.stepModel.Name = "stepModel";
-            this.stepModel.Visible = false;
-            this.stepModel.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.stepModel_Click);
             // 
             // LSHTest
             // 
@@ -372,15 +372,6 @@
             this.annotateThisCell.Visible = false;
             this.annotateThisCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotateThisCell_Click);
             // 
-            // RunCUSTODES
-            // 
-            this.RunCUSTODES.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.RunCUSTODES.Image = global::ExceLintUI.Properties.Resources.analyze_small;
-            this.RunCUSTODES.Label = "Run CUSTODES";
-            this.RunCUSTODES.Name = "RunCUSTODES";
-            this.RunCUSTODES.ShowImage = true;
-            this.RunCUSTODES.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.RunCUSTODES_Click);
-            // 
             // ExceLintRibbon
             // 
             this.Name = "ExceLintRibbon";
@@ -433,7 +424,6 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox useResultant;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox sheetFreq;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox ClusterBox;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton stepModel;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton LSHTest;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton getLSH;
         internal Microsoft.Office.Tools.Ribbon.RibbonBox box2;

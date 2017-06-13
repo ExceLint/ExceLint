@@ -15,12 +15,19 @@ namespace ExceLintUI
         {
             InitializeComponent();
 
+            this.CenterToParent();
+
             workProgress.Minimum = 0;
             workProgress.Maximum = 100;
             this.Visible = true;
         }
 
         public void IncrementProgress()
+        {
+            IncrementProgressN(1);
+        }
+
+        public void IncrementProgressN(int n)
         {
             // if this method is called from any thread other than
             // the GUI thread, call the method on the correct thread
@@ -47,7 +54,7 @@ namespace ExceLintUI
 
             workProgress.Value = pbval;
 
-            _count++;
+            _count += n;
         }
 
         public void Reset()

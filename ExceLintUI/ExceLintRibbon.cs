@@ -51,12 +51,6 @@ namespace ExceLintUI
             Globals.ThisAddIn.Application.DisplayAlerts = true;
         }
 
-        private void stepModel_Click(object sender, RibbonControlEventArgs e)
-        {
-            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-            currentWorkbook.GetClusteringForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked);
-        }
-
         private void LSHTest_Click(object sender, RibbonControlEventArgs e)
         {
             currentWorkbook.LSHTest(getConfig(), this.forceBuildDAG.Checked);
@@ -301,10 +295,18 @@ namespace ExceLintUI
 
             if (currentWorkbook.Visualization_Hidden(w))
             {
+                // create progbar in main thread;
+                // worker thread will call Dispose
+                var pb = new ProgBar();
+
                 // show a cluster visualization
                 Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-                currentWorkbook.GetClusteringForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked);
-            } else
+                currentWorkbook.GetClusteringForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
+
+                // remove progress bar
+                pb.Close();
+            }
+            else
             {
                 // erase the cluster visualization
                 currentWorkbook.resetTool();
@@ -315,27 +317,6 @@ namespace ExceLintUI
 
             // set UI state
             setUIState(currentWorkbook);
-
-            //// check for debug checkbox
-            //currentWorkbook.DebugMode = this.DebugOutput.Checked;
-
-            //// get significance threshold
-            //var sig = getPercent(this.significanceTextBox.Text, this.significanceTextBox.Label);
-
-            //// workbook- and UI-update callback
-            //Action<WorkbookState> updateWorkbook = (WorkbookState wbs) =>
-            //{
-            //    this.currentWorkbook = wbs;
-            //    setUIState(currentWorkbook);
-            //};
-
-            //// create progbar in main thread;
-            //// worker thread will call Dispose
-            //var pb = new ProgBar();
-
-            //// call task in new thread and do not wait
-            ////Task t = Task.Run(() => DoHeatmap(sig, currentWorkbook, getConfig(), this.forceBuildDAG.Checked, updateWorkbook, pb));
-            //DoHeatmap(sig, currentWorkbook, getConfig(), this.forceBuildDAG.Checked, updateWorkbook, pb);
         }
 
         private static void DoHeatmap(FSharpOption<double> sigThresh, WorkbookState wbs, ExceLint.FeatureConf conf, bool forceBuildDAG, Action<WorkbookState> updateState, ProgBar pb)

@@ -101,6 +101,9 @@
                     true
 
             member self.Step() : bool =
+                // update progress
+                input.progress.IncrementCounter()
+
                 let sw = new System.Diagnostics.Stopwatch()
                 sw.Start()
 
