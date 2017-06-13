@@ -654,7 +654,17 @@ namespace ExceLintUI
                     {
                         rng.Comment.Delete();
                     }
-                    rng.AddComment(annot.Item2.Comment);
+                    var comment = annot.Item2.Comment;
+                    try
+                    {
+                        rng.AddComment(comment);
+                    } catch (Exception e)
+                    {
+                        // for reasons unbeknownst to me, adding a comment
+                        // after previously having stopped and restarted
+                        // annotations sometimes throws an AccessViolationException.
+                    }
+                    
                 }
             }
         }
