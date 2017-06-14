@@ -185,6 +185,10 @@
                 _config.Add(name, cap),
                 Some wsname
             )
+        member self.enableDebugMode(on: bool) : FeatureConf =
+            let name = "DebugMode"
+            let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
+            capabilityConstructorHelper (name,cap) self on _config
 
         // getters
         member self.FeatureByName
@@ -282,6 +286,7 @@
             else
                 DistanceMetric.EarthMover // default if nothing is specified
         member self.IsLimitedToSheet : string option = limitToSheet
+        member self.DebugMode : bool = _config.ContainsKey "DebugMode" && _config.["DebugMode"].enabled
 
         // make sure that config option combinations make sense;
         // returns a 'corrected' config

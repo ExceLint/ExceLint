@@ -142,29 +142,30 @@
                             in_critical_region = inCriticalRegion;
                         } :: log
 
-                // dump clusters to log
-                let mutable clusterlog = []
-                hs.Clusters
-                |> Seq.iter (fun cl ->
-                    cl
-                    |> Seq.iter (fun addr ->
-                        let v = ToCountable addr hb_inv
-                        match v with
-                        | FullCVectorResultant(x,y,z,dx,dy,dz,dc) ->
-                            let row = new ExceLintFileFormats.VectorDumpRow()
-                            row.clusterID <- hs.ClusterID cl
-                            row.x <- x
-                            row.y <- y
-                            row.z <- z
-                            row.dx <- dx
-                            row.dy <- dy
-                            row.dz <- dz
-                            row.dc <- dc
-                            clusterlog <- row :: clusterlog
-                        | _ -> () // we don't care about other vector types
+                // dump clusters to log if debugging
+                if input.config.DebugMode then
+                    let mutable clusterlog = []
+                    hs.Clusters
+                    |> Seq.iter (fun cl ->
+                        cl
+                        |> Seq.iter (fun addr ->
+                            let v = ToCountable addr hb_inv
+                            match v with
+                            | FullCVectorResultant(x,y,z,dx,dy,dz,dc) ->
+                                let row = new ExceLintFileFormats.VectorDumpRow()
+                                row.clusterID <- hs.ClusterID cl
+                                row.x <- x
+                                row.y <- y
+                                row.z <- z
+                                row.dx <- dx
+                                row.dy <- dy
+                                row.dz <- dz
+                                row.dc <- dc
+                                clusterlog <- row :: clusterlog
+                            | _ -> () // we don't care about other vector types
+                        )
                     )
-                )
-                per_log <- (List.rev clusterlog) :: per_log
+                    per_log <- (List.rev clusterlog) :: per_log
 
                 // merge them
                 hs.Merge source target
@@ -177,6 +178,9 @@
                 self.CanStep
 
             member self.WritePerLogs() =
+                if not (input.config.DebugMode) then
+                    failwith "debugging disabled!"
+
                 (List.rev per_log)
                 |> List.iteri (fun i per_log ->
                     // open file
