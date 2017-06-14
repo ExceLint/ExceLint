@@ -46,7 +46,7 @@
             this.Controls.Add(this.workProgress);
             this.Name = "ProgBar";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "ProgBar";
+            this.Text = "Analyzing Spreadsheet...";
             this.Load += new System.EventHandler(this.ProgBar_Load);
             this.ResumeLayout(false);
 
