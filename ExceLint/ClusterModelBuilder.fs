@@ -15,9 +15,6 @@
             // can tell when they become merge sources
             let merge_targets = new HashSet<HashSet<AST.Address>>()
 
-            // initialize selector cache
-            let selcache = Scope.SelectorCache()
-
             // determine the set of cells to be analyzed
             let cells = analysisBase input.config input.dag
 
@@ -29,7 +26,7 @@
             let nlfrs: ScoreTable = ScaleBySheet ns
 
             // make HistoBin lookup by address
-            let hb_inv = invertedHistogram nlfrs selcache input.dag input.config
+            let hb_inv = invertedHistogram nlfrs input.dag input.config
 
             let refvect_same(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : bool =
                 // check that all of the location-free vectors in the source and target are the same

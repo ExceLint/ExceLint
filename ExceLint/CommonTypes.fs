@@ -27,8 +27,6 @@
             mutants: KeyValuePair<AST.Address,string>[];
             scores: ScoreTable;
             freqtable: FreqTable;
-            selcache: Scope.SelectorCache;
-            sidcache: Scope.SelectIDCache;
         }
 
         type NoFormulasException(msg: string) =

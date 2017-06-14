@@ -37,7 +37,7 @@
                     fname, fvals
                 ) |> adict
 
-            let invertedHistogram(scoretable: ScoreTable)(selcache: Scope.SelectorCache)(dag: Depends.DAG)(config: FeatureConf) : InvertedHistogram =
+            let invertedHistogram(scoretable: ScoreTable)(dag: Depends.DAG)(config: FeatureConf) : InvertedHistogram =
                 assert (config.EnabledScopes.Length = 1 && config.EnabledFeatures.Length = 1)
 
                 let d = new Dict<AST.Address,HistoBin>()
@@ -46,7 +46,7 @@
                     Array.iter (fun (sel: Scope.Selector) ->
                         Array.iter (fun (addr: AST.Address, score: Countable) ->
                             // fetch SelectID for this selector and address
-                            let sID = sel.id addr dag selcache
+                            let sID = sel.id addr dag
 
                             // get binname
                             let binname = fname,sID,score

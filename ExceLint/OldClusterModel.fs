@@ -86,9 +86,6 @@
                 failwith "marcia marcia marcia!!!"
 
         type OldClusterModel(input: Input) =
-            // initialize selector cache
-            let selcache = Scope.SelectorCache()
-
             // determine the set of cells to be analyzed
             let cells = analysisBase input.config input.dag
 
@@ -121,7 +118,7 @@
                 |> toDict
 
             // make HistoBin lookup by address
-            let hb_inv = invertedHistogram nlfrs selcache input.dag input.config
+            let hb_inv = invertedHistogram nlfrs input.dag input.config
 
             // initially assign every cell to its own cluster
             let clusters = initialClustering nlfrs input.dag input.config

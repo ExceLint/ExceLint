@@ -133,9 +133,6 @@
         let getClustering(input: Input)(k: int) : Clustering =
             assert ((analysisBase input.config input.dag).Length <> 0)
 
-            // initialize selector cache
-            let selcache = Scope.SelectorCache()
-
             // determine the set of cells to be analyzed
             let cells = analysisBase input.config input.dag
 
@@ -147,7 +144,7 @@
             let nlfrs: ScoreTable = ScaleBySheet ns
 
             // make HistoBin lookup by address
-            let hb_inv = invertedHistogram nlfrs selcache input.dag input.config
+            let hb_inv = invertedHistogram nlfrs input.dag input.config
 
             // DEFINE DISTANCE
             let DISTANCE =

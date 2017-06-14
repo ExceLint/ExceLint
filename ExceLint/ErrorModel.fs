@@ -152,8 +152,7 @@
             | _ -> failwith "Not valid for non-cluster analysis."
 
         member self.inspectSelectorFor(addr: AST.Address, sel: Scope.Selector, dag: Depends.DAG) : KeyValuePair<AST.Address,(string*Countable)[]>[] =
-            let selcache = Scope.SelectorCache()
-            let sID = sel.id addr dag selcache
+            let sID = sel.id addr dag
 
             let d = new Dict<AST.Address,(string*Countable) list>()
 
@@ -168,7 +167,7 @@
 
                 let valid_scores =
                     Array.choose (fun (addr2,score) ->
-                        if sel.id addr2 dag selcache = sID then
+                        if sel.id addr2 dag = sID then
                             Some (addr2,score)
                         else
                             None
