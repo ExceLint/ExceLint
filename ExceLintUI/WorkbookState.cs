@@ -685,6 +685,9 @@ namespace ExceLintUI
             // init cluster color map
             ClusterColorer clusterColors = new ClusterColorer(clusters, 0, 360, 0);
 
+            // Disable screen updating
+            _app.ScreenUpdating = false;
+
             // paint
             foreach (var cluster in clusters)
             {
@@ -694,6 +697,9 @@ namespace ExceLintUI
                     paintColor(addr, c);
                 }
             }
+
+            // Enable screen updating
+            _app.ScreenUpdating = true;
         }
 
         public Analysis rawAnalysis(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean forceDAGBuild, ProgBar pb)
