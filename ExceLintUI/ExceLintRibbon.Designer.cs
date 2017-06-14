@@ -218,6 +218,7 @@
             this.distanceCombo.Label = "Distance:";
             this.distanceCombo.Name = "distanceCombo";
             this.distanceCombo.Text = "Nearest Neighbor";
+            this.distanceCombo.Visible = false;
             // 
             // ClusterBox
             // 
