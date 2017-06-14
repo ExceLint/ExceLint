@@ -33,7 +33,7 @@ namespace ExceLintUI
             // the GUI thread, call the method on the correct thread
             if (this.InvokeRequired)
             {
-                this.BeginInvoke(new Action(this.IncrementProgress));
+                BeginInvoke(new Action<int>(IncrementProgressN), n);
                 return;
             }
 
