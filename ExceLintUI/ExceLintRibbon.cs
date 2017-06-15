@@ -782,6 +782,7 @@ namespace ExceLintUI
             Globals.ThisAddIn.Application.WorkbookAfterSave += WorkbookAfterSave;
             Globals.ThisAddIn.Application.ProtectedViewWindowOpen += ProtectedViewWindowOpen;
             Globals.ThisAddIn.Application.SheetActivate += WorksheetActivate;
+            Globals.ThisAddIn.Application.SheetDeactivate += WorksheetDeactivate;
             Globals.ThisAddIn.Application.SheetSelectionChange += SheetSelectionChange;
 
             // sometimes the default blank workbook opens *before* the ExceLint
@@ -796,6 +797,14 @@ namespace ExceLintUI
                 }
                 WorkbookOpen(wb);
                 WorkbookActivated(wb);
+            }
+        }
+
+        private void WorksheetDeactivate(object Sh)
+        {
+            if (annotations != null)
+            {
+                annotations.Write();
             }
         }
 
@@ -899,6 +908,11 @@ namespace ExceLintUI
         // to the background
         private void WorkbookDeactivated(Excel.Workbook workbook)
         {
+            if (annotations != null)
+            {
+                annotations.Write();
+            }
+
             // if we recorded a workbook close for this workbook,
             // remove all workbook state
             if (wbShutdown[workbook])
