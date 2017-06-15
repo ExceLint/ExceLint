@@ -395,7 +395,7 @@ namespace ExceLintUI
         private T buildDAGAndDoStuff<T>(Boolean forceDAGBuild, Func<Depends.Progress, T> doStuff, long workMultiplier, ProgBar pb)
         {
             // create progress delegates
-            Depends.ProgressBarIncrementer incr = () => pb.IncrementProgress();
+            Depends.ProgressBarIncrementer incr = n => pb.IncrementProgressN(n);
             Depends.ProgressBarReset reset = () => pb.Reset();
             var p = new Depends.Progress(incr, reset, workMultiplier);
             p.TotalWorkUnits = EstimateNumberOfFormulas();
