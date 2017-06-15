@@ -1056,8 +1056,9 @@ namespace ExceLintUI
                 this.StartOverButton.Enabled = wbs.ClearColoringButton_Enabled;
                 this.AnalyzeButton.Enabled = wbs.Analyze_Enabled && wbs.Visualization_Hidden(w);
 
-                // only enable viewing heatmap if we are not in the middle of an analysis
+                // only enable viewing heatmaps if we are not in the middle of an analysis
                 this.showHeatmap.Enabled = wbs.Analyze_Enabled;
+                this.RunCUSTODES.Enabled = wbs.Analyze_Enabled;
 
                 // disable config buttons if we are:
                 // 1. in the middle of an audit, or
@@ -1081,7 +1082,6 @@ namespace ExceLintUI
                 this.showFixes.Enabled = enable_config && this.spectralRanking.Checked;
                 this.annotate.Enabled = true;   // user can annotate at any time
                 this.ClusterBox.Enabled = enable_config;
-                this.RunCUSTODES.Enabled = enable_config;
 
                 // toggle the heatmap label depending on the heatmap shown/hidden state
                 if (wbs.Visualization_Hidden(w))
