@@ -25,12 +25,17 @@
                     // get feature lambda
                     let feature = config.FeatureByName fname
 
+                    // choose the appropriate mapper
+                    let mapif = if cells.Length > 100 then Array.Parallel.mapi else Array.mapi
+//                    let mapif = Array.mapi
+
                     let fvals =
-                        Array.map (fun cell ->
+                        mapif (fun i cell ->
                             if progress.IsCancelled() then
                                 raise AnalysisCancelled
 
-                            progress.IncrementCounter()
+                            if i % 10 = 0 then
+                                progress.IncrementCounterN(10)
                             cell, feature cell dag
                         ) cells
                     
