@@ -2,7 +2,7 @@
 
 open System.IO
 open System.Text.RegularExpressions
-    type Knobs = { verbose: bool; dont_exit: bool; alpha: double; oldNNjaccard: bool; kmedioidjaccard: bool; }
+    type Knobs = { verbose: bool; dont_exit: bool; alpha: double; oldNNjaccard: bool; kmedioidjaccard: bool; nocustodes: bool; }
 
     type Config(dpath: string, opath: string, jpath: string, cpath: string, egpath: string, gpath: string, knobs: Knobs, csv: string, fc: ExceLint.FeatureConf) =
         do
@@ -13,13 +13,18 @@ open System.Text.RegularExpressions
             printfn "Output directory: %s" opath
             printfn "Output stats CSV: %s" csv
             printfn "ExceLint ground truth CSV: %s" egpath
-            printfn "CUSTODES ground truth CSV: %s" gpath
-            printfn "Java path: %s" jpath
-            printfn "CUSTODES JAR path: %s" cpath
+            if knobs.nocustodes then
+                printfn "NOT RUNNING CUSTODES."
+            else
+                printfn "CUSTODES ground truth CSV: %s" gpath
+                printfn "Java path: %s" jpath
+                printfn "CUSTODES JAR path: %s" cpath
             printfn "Verbose mode: %b" knobs.verbose
             printfn "No-exit mode: %b" knobs.dont_exit
-            printfn "Compare against old nearest-neighbor algorithm: %b" knobs.oldNNjaccard
-            printfn "Compare against k-medioid algorithm: %b" knobs.kmedioidjaccard
+            if knobs.oldNNjaccard then
+                printfn "Comparing against old nearest-neighbor algorithm."
+            if knobs.kmedioidjaccard then
+                printfn "Comparing against k-medioid algorithm."
             printfn "Threshold: %f" knobs.alpha
             Array.iter (fun (opt,enabled) -> printfn "%s: %b" opt enabled) (ExceLint.FeatureConf.simpleConf(fc.rawConf) |> Map.toArray)
             printfn "------------------------------------\n"
@@ -41,6 +46,7 @@ open System.Text.RegularExpressions
         member self.alpha = knobs.alpha
         member self.CompareAgainstOldNN = knobs.oldNNjaccard
         member self.CompareAgainstKMedioid = knobs.kmedioidjaccard
+        member self.DontRunCUSTODES = knobs.nocustodes
 
     let usage() : unit =
         printfn "ExceLintRunner.exe <input directory> <output directory> <ExceLint ground truth CSV> <CUSTODES ground truth CSV> <java path> <CUSTODES JAR> [flags]"
@@ -62,6 +68,7 @@ open System.Text.RegularExpressions
         printfn "\n"
         printfn "-verbose    log per-spreadsheet flagged cells as separate CSVs"
         printfn "-noexit     prompt user to press a key before exiting"
+        printfn "-nocustodes don't do a comparison against CUSTODES"
         printfn "-resultant  bin by resultant vector, otherwise bin by L2 norm sum"
         printfn "-spectral   find outliers by earth mover's distance, otherwise use raw frequency;"
         printfn "            forces the use of -sheets below and disables -allcells,"
@@ -115,6 +122,7 @@ open System.Text.RegularExpressions
                                | "-noexit"     :: rest -> optParse rest { knobs with dont_exit = true } conf
                                | "-oldcluster" :: rest -> optParse rest { knobs with oldNNjaccard = true } conf
                                | "-kmedioid"   :: rest -> optParse rest { knobs with kmedioidjaccard = true } conf
+                               | "-nocustodes" :: rest -> optParse rest { knobs with nocustodes = true } conf
                                // FEATURECONF
                                | "-resultant"  :: rest -> optParse rest knobs (conf.enableShallowInputVectorMixedResultant true)
                                | "-spectral"   :: rest -> optParse rest knobs (conf.spectralRanking true)
@@ -142,7 +150,7 @@ open System.Text.RegularExpressions
                                | s :: rest -> failwith ("Unrecognized option: " + s)
                            )
 
-        let (knobs,fConf) = optParse flags { verbose = false; dont_exit = false; alpha = 0.05; oldNNjaccard = false; kmedioidjaccard = false } (new ExceLint.FeatureConf())
+        let (knobs,fConf) = optParse flags { verbose = false; dont_exit = false; alpha = 0.05; oldNNjaccard = false; kmedioidjaccard = false; nocustodes = false; } (new ExceLint.FeatureConf())
 
         let fConf' = fConf.validate
 

@@ -50,10 +50,14 @@ open ExceLintFileFormats
         |> Array.map (fun (i,e) -> e)
         |> (fun arr -> new HashSet<AST.Address>(arr))
 
-    let per_append_excelint(csv: WorkbookStats)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: CommonTypes.Ranking)(dag: Depends.DAG) : unit =
-        let output = match custodes with
+    let per_append_excelint(csv: WorkbookStats)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes_o: CUSTODES.OutputResult option)(model: ErrorModel)(ranking: CommonTypes.Ranking)(dag: Depends.DAG) : unit =
+        let output =
+            match custodes_o with
+            | Some custodes ->
+                match custodes with
                      | CUSTODES.OKOutput(c,_) -> c.Smells
                      | _ -> [||]
+            | None -> [||]
 
         let coutputd = new Dictionary<AST.Address,int>()
         for i in [0..output.Length - 1] do
@@ -83,10 +87,14 @@ open ExceLintFileFormats
             csv.WriteRow per_row
         ) ranking |> ignore
 
-    let per_append_custodes(csv: WorkbookStats)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: CommonTypes.Ranking)(custodes_not_excelint: HashSet<AST.Address>)(dag: Depends.DAG) : unit =
-        let output = match custodes with
+    let per_append_custodes(csv: WorkbookStats)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes_o: CUSTODES.OutputResult option)(model: ErrorModel)(ranking: CommonTypes.Ranking)(custodes_not_excelint: HashSet<AST.Address>)(dag: Depends.DAG) : unit =
+        let output =
+            match custodes_o with
+            | Some custodes ->
+                match custodes with
                      | CUSTODES.OKOutput(c,_) -> c.Smells
                      | _ -> [||]
+            | None -> [||]
 
         let smells = new HashSet<AST.Address>(output)
 
@@ -110,10 +118,14 @@ open ExceLintFileFormats
             csv.WriteRow per_row
         ) (custodes_not_excelint |> Seq.toArray)
 
-    let per_append_true_smells(csv: WorkbookStats)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes: CUSTODES.OutputResult)(model: ErrorModel)(ranking: CommonTypes.Ranking)(true_smells_not_found: HashSet<AST.Address>)(dag: Depends.DAG) : unit =
-        let output = match custodes with
+    let per_append_true_smells(csv: WorkbookStats)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes_o: CUSTODES.OutputResult option)(model: ErrorModel)(ranking: CommonTypes.Ranking)(true_smells_not_found: HashSet<AST.Address>)(dag: Depends.DAG) : unit =
+        let output =
+            match custodes_o with
+            | Some custodes ->
+                match custodes with
                      | CUSTODES.OKOutput(c,_) -> c.Smells
                      | _ -> [||]
+            | None -> [||]
 
         let smells = new HashSet<AST.Address>(output)
 
@@ -181,7 +193,7 @@ open ExceLintFileFormats
             let fn' = double fn
             tp' / (tp' + fn')
 
-    let append_stats(stats: Stats)(csv: ExceLintStats)(model: ErrorModel)(custodes: CUSTODES.OutputResult)(config: Args.Config) : unit =
+    let append_stats(stats: Stats)(csv: ExceLintStats)(model: ErrorModel)(custodes_o: CUSTODES.OutputResult option)(config: Args.Config) : unit =
         
         let min_excelint_score =
             if model.ranking().Length = 0 then
@@ -208,8 +220,8 @@ open ExceLintFileFormats
         row.CUSTODESRecallVsCustodesGT <- recall (stats.custodes_true_smells.Count) (stats.true_smells_this_wb.Count - stats.custodes_true_smells.Count)
         row.MinAnomScore <- min_excelint_score
         row.CUSTODESTimeMs <- stats.custodes_time
-        row.CUSTODESFailed <- (match custodes with | CUSTODES.BadOutput _ -> true | _ -> false)
-        row.CUSTODESFailureMsg <- (match custodes with | CUSTODES.BadOutput(msg,_) -> msg | _ -> "")
+        row.CUSTODESFailed <- match custodes_o with | Some custodes -> (match custodes with | CUSTODES.BadOutput _ -> true | _ -> false) | None -> true
+        row.CUSTODESFailureMsg <- match custodes_o with | Some custodes -> (match custodes with | CUSTODES.BadOutput(msg,_) -> msg | _ -> "") | None -> "did not run CUSTODES"
         row.NumExceLintTrueRefBugsFound <- stats.excelint_true_ref_bugs.Count
         row.NumCUSTODESTrueRefBugsFound <- stats.custodes_true_ref_bugs.Count
         row.NumCUSTODESSmells <- stats.custodes_flagged.Count
@@ -333,8 +345,12 @@ open ExceLintFileFormats
                     0.0, 0
             | None -> 0.0, 0
 
-        printfn "Running CUSTODES analysis: %A" shortf
-        let custodes = CUSTODES.getOutput(file, config.CustodesPath, config.JavaPath)
+        let custodes_o =
+            if not config.DontRunCUSTODES then
+                printfn "Running CUSTODES analysis: %A" shortf
+                Some (CUSTODES.getOutput(file, config.CustodesPath, config.JavaPath))
+            else
+                None
 
         match model_opt with
         | Some(model) ->
@@ -351,9 +367,13 @@ open ExceLintFileFormats
                 let this_wb = wb.WorkbookName
 
                 // get the set of cells flagged by CUSTODES
-                let (custodes_total_order,custodes_time) = match custodes with
-                                                           | CUSTODES.OKOutput(c,t) -> c.Smells, t
-                                                           | CUSTODES.BadOutput(_,t) -> [||], t
+                let (custodes_total_order,custodes_time) =
+                    match custodes_o with
+                    | Some custodes ->
+                        match custodes with
+                        | CUSTODES.OKOutput(c,t) -> c.Smells, t
+                        | CUSTODES.BadOutput(_,t) -> [||], t
+                    | None -> [||], 0L
 
                 let custodes_flags = new HashSet<AST.Address>(custodes_total_order)
 
@@ -401,14 +421,14 @@ open ExceLintFileFormats
                 }
 
                 // write to per-workbook CSV
-                per_append_excelint wbstats etruth ctruth custodes model ranking graph
+                per_append_excelint wbstats etruth ctruth custodes_o model ranking graph
                 let custodes_not_in_ranking = hs_difference (stats.excelint_not_custodes) excelint_analyzed
-                per_append_custodes wbstats etruth ctruth custodes model ranking custodes_not_in_ranking graph
+                per_append_custodes wbstats etruth ctruth custodes_o model ranking custodes_not_in_ranking graph
                 let true_smells_not_in_ranking = hs_difference (hs_difference true_smells_not_found excelint_analyzed) custodes_not_in_ranking
-                per_append_true_smells wbstats etruth ctruth custodes model ranking true_smells_not_in_ranking graph
+                per_append_true_smells wbstats etruth ctruth custodes_o model ranking true_smells_not_in_ranking graph
 
                 // write overall stats to CSV
-                append_stats stats csv model custodes config
+                append_stats stats csv model custodes_o config
 
                 // sanity checks
                 assert ((hs_intersection excelint_analyzed custodes_not_in_ranking).Count = 0)
