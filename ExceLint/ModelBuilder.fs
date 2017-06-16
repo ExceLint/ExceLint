@@ -26,7 +26,7 @@
 
                 let input : Input = { app = app; config = config'; dag = dag; alpha = alpha; progress = progress; }
 
-                if dag.IsCancelled() then
+                if dag = null then
                     None
                 else
                     let pipe =

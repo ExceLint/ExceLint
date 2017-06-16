@@ -10,9 +10,9 @@ using Microsoft.FSharp.Core;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Worksheet = Microsoft.Office.Interop.Excel.Worksheet;
 using Workbook = Microsoft.Office.Interop.Excel.Workbook;
-
 
 namespace ExceLintUI
 {
@@ -38,7 +38,7 @@ namespace ExceLintUI
 
     [ComVisible(true)]
     [ClassInterface(ClassInterfaceType.None)]
-    public class WorkbookState : StandardOleMarshalObject, IWorkbookState
+    public class WorkbookState : StandardOleMarshalObject, IWorkbookState, IDisposable
     {
         #region CONSTANTS
         // e * 1000
@@ -63,6 +63,13 @@ namespace ExceLintUI
         private bool _debug_mode = false;
         private bool _dag_changed = false;
         private Dictionary<Worksheet, ExceLint.ClusterModelBuilder.ClusterModel> _m = new Dictionary<Worksheet, ExceLint.ClusterModelBuilder.ClusterModel>();
+        // we deserialize cached dependence graphs in the background;
+        // this lets us cancel deserialization in case the user quits
+        // or if they explicitly request a new graph (like when they
+        // request an analysis).
+        private Object _dagLock = new Object();
+        private DateTime _dagBuilt = DateTime.MinValue;
+        private CancellationTokenSource _cts = new CancellationTokenSource();
 
         #endregion DATASTRUCTURES
 
@@ -84,14 +91,49 @@ namespace ExceLintUI
             // if a cached DAG exists, load it eagerly
             if (Depends.DAG.CachedDAGExists(CACHEDIRPATH, _workbook.Name))
             {
-                var p = Depends.Progress.NOPProgress();
-                _dag = Depends.DAG.DAGFromCache(false, _app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, CACHEDIRPATH, p);
-
-                // if the the cached DAG does not look like the
-                // spreadsheet we have open, update it
-                if (DAGChanged())
+                try
                 {
-                    SerializeDAG(forceDAGBuild: true);
+                    Depends.DAG dag = null;
+
+                    // grab a cancellation token
+                    var token = _cts.Token;
+
+                    // build the DAG in a background thread
+                    var t = new Thread(() => {
+                        var p = Depends.Progress.NOPProgress();
+                        dag = Depends.DAG.DAGFromCache(false, _app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, CACHEDIRPATH, p, token);
+                    });
+                    t.Start();
+
+                    // check for cancellation
+                    if (token.IsCancellationRequested)
+                    {
+                        return;
+                    }
+
+                    // write it
+                    WriteDAG(dag);
+
+                    // if the the cached DAG does not look like the
+                    // spreadsheet we have open, update it
+                    if (DAGChanged())
+                    {
+                        SerializeDAG(forceDAGBuild: true);
+                    }
+                } catch (Exception)
+                {
+                    // it's fine, do nothing
+                }
+            }
+        }
+
+        private void WriteDAG(Depends.DAG dag)
+        {
+            lock (_dagLock)
+            {
+                if (_dagBuilt < dag.Built)
+                {
+                    _dag = dag;
                 }
             }
         }
@@ -419,13 +461,18 @@ namespace ExceLintUI
 
         private void RefreshDAG(Boolean forceDAGBuild, Depends.Progress p)
         {
+            // cancel any currently-running DAG builds
+            _cts.Cancel();
+
             if (_dag == null)
             {
-                _dag = Depends.DAG.DAGFromCache(forceDAGBuild, _app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, CACHEDIRPATH, p);
+                var dag = Depends.DAG.DAGFromCache(forceDAGBuild, _app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, CACHEDIRPATH, p, _cts.Token);
+                WriteDAG(dag);
             }
             else if (_dag_changed || forceDAGBuild)
             {
-                _dag = new Depends.DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, p);
+                var dag = new Depends.DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, p, DateTime.Now);
+                WriteDAG(dag);
                 _dag_changed = false;
                 resetTool();
             } else
@@ -1145,7 +1192,7 @@ namespace ExceLintUI
 
         public string ToDOT()
         {
-            var dag = new Depends.DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS);
+            var dag = new Depends.DAG(_app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, DateTime.Now);
             return dag.ToDOT();
         }
 
@@ -1182,6 +1229,11 @@ namespace ExceLintUI
             //_app.ScreenUpdating = true;
 
             //return csv;
+        }
+
+        public void Dispose()
+        {
+            _cts.Cancel();
         }
     }
 }
