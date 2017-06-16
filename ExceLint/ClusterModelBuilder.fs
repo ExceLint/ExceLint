@@ -71,6 +71,7 @@
 
             let mutable probable_knee = false
 
+            member self.NumCells : int = cells.Length
             member self.CanStep : bool =
                 Seq.length (hs.NearestNeighborTable) > 1
             member private self.IsKnee(s: HashSet<AST.Address>)(t: HashSet<AST.Address>) : bool =

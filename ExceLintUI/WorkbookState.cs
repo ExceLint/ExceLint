@@ -129,6 +129,8 @@ namespace ExceLintUI
 
         private void WriteDAG(Depends.DAG dag)
         {
+            if (dag == null) return;
+
             lock (_dagLock)
             {
                 if (_dagBuilt < dag.Built)
@@ -464,6 +466,9 @@ namespace ExceLintUI
             // cancel any currently-running DAG builds
             _cts.Cancel();
 
+            // create new cancellation token source
+            _cts = new CancellationTokenSource();
+
             if (_dag == null)
             {
                 var dag = Depends.DAG.DAGFromCache(forceDAGBuild, _app.ActiveWorkbook, _app, IGNORE_PARSE_ERRORS, CACHEDIRPATH, p, _cts.Token);
@@ -716,6 +721,14 @@ namespace ExceLintUI
                     }
 
                     _m.Add(w, m);
+                }
+                else
+                {
+                    // fake progress bar if we've already done the work
+                    for (int i = 0; i < _m[w].NumCells; i++)
+                    {
+                        pb.IncrementProgress();
+                    }
                 }
                 return null;
             };
