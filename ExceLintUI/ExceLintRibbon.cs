@@ -1071,8 +1071,8 @@ namespace ExceLintUI
                 this.AnalyzeButton.Enabled = wbs.Analyze_Enabled && wbs.Visualization_Hidden(w);
 
                 // only enable viewing heatmaps if we are not in the middle of an analysis
-                this.showHeatmap.Enabled = wbs.Analyze_Enabled;
-                this.RunCUSTODES.Enabled = wbs.Analyze_Enabled;
+                this.showHeatmap.Enabled = wbs.Analyze_Enabled && wbs.CUSTODES_Hidden(w);
+                this.RunCUSTODES.Enabled = wbs.Analyze_Enabled && wbs.Visualization_Hidden(w);
 
                 // disable config buttons if we are:
                 // 1. in the middle of an audit, or
