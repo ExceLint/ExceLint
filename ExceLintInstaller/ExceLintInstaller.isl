@@ -340,6 +340,7 @@
 		<col def="S0">ISDotNetInstallerArgsUninstall</col>
 		<col def="S0">ISDotNetInstallerArgsRollback</col>
 		<row><td>COMWrapper.Primary_output</td><td>{95640401-1A0F-41A1-9772-BDBB2A0F5119}</td><td>INSTALLDIR</td><td>2</td><td/><td>comwrapper.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>CUSTODESParser.Primary_Output</td><td>{6506EDD2-C954-4D13-83B4-B114593FE6D5}</td><td>INSTALLDIR</td><td>2</td><td/><td>custodesparser.primary_outpu</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>Depends.Primary_output</td><td>{369C356D-424E-4AC3-88F0-D8B0A8482DB8}</td><td>INSTALLDIR</td><td>2</td><td/><td>depends.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ExceLint.Primary_Output</td><td>{83B6A89F-7000-4FE7-9A33-999ED1B02884}</td><td>INSTALLDIR</td><td>2</td><td/><td>excelint.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ExceLintCLIGenerator.Primary_output</td><td>{88985231-5E94-4F48-ADD5-E05762122494}</td><td>INSTALLDIR</td><td>2</td><td/><td>excelintcligenerator.primary</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
@@ -1061,6 +1062,7 @@
 		<col key="yes" def="s72">Directory_</col>
 		<col key="yes" def="s72">Component_</col>
 		<row><td>INSTALLDIR</td><td>COMWrapper.Primary_output</td></row>
+		<row><td>INSTALLDIR</td><td>CUSTODESParser.Primary_Output</td></row>
 		<row><td>INSTALLDIR</td><td>Depends.Primary_output</td></row>
 		<row><td>INSTALLDIR</td><td>ExceLint.Primary_Output</td></row>
 		<row><td>INSTALLDIR</td><td>ExceLintCLIGenerator.Primary_output</td></row>
@@ -1889,6 +1891,7 @@
 		<col key="yes" def="s38">Feature_</col>
 		<col key="yes" def="s72">Component_</col>
 		<row><td>AlwaysInstall</td><td>COMWrapper.Primary_output</td></row>
+		<row><td>AlwaysInstall</td><td>CUSTODESParser.Primary_Output</td></row>
 		<row><td>AlwaysInstall</td><td>Depends.Primary_output</td></row>
 		<row><td>AlwaysInstall</td><td>ExceLint.Primary_Output</td></row>
 		<row><td>AlwaysInstall</td><td>ExceLintCLIGenerator.Primary_output</td></row>
@@ -1916,6 +1919,7 @@
 		<col def="I4">ISAttributes</col>
 		<col def="S72">ISComponentSubFolder_</col>
 		<row><td>comwrapper.primary_output</td><td>COMWrapper.Primary_output</td><td>COMWrapper.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;COMWrapper&gt;|Built</td><td>3</td><td/></row>
+		<row><td>custodesparser.primary_outpu</td><td>CUSTODESParser.Primary_Output</td><td>CUSTODESParser.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;CUSTODESParser&gt;|Built</td><td>3</td><td/></row>
 		<row><td>depends.primary_output</td><td>Depends.Primary_output</td><td>Depends.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;Depends&gt;|Built</td><td>3</td><td/></row>
 		<row><td>excelint.primary_output</td><td>ExceLint.Primary_Output</td><td>ExceLint.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLint&gt;|Built</td><td>3</td><td/></row>
 		<row><td>excelintcligenerator.primary</td><td>ExceLintCLIGenerator.Primary_output</td><td>ExceLintCLIGenerator.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLintCLIGenerator&gt;|Built</td><td>3</td><td/></row>
@@ -2073,6 +2077,7 @@
 		<col def="S0">HTTPLocation</col>
 		<col def="S0">Miscellaneous</col>
 		<row><td>COMWrapper.Primary_output</td><td/><td/><td>_42663356_B917_47C3_8D1E_19E427C926AF_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>CUSTODESParser.Primary_Output</td><td/><td/><td>_03147AC1_95FA_468F_85A9_D747BD3AA374_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>Depends.Primary_output</td><td/><td/><td>_087AC475_391E_410F_9A8C_D3026EF5A685_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ExceLint.Primary_Output</td><td/><td/><td>_7EA62BF1_D9E9_494B_97A1_885DF3C759CA_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ExceLintCLIGenerator.Primary_output</td><td/><td/><td>_C71BA997_66C9_4E78_9B1C_9D31921F32CA_FILTER</td><td/><td/><td/><td/></row>
@@ -2363,6 +2368,7 @@
 		<col def="S255">TestValue</col>
 		<col def="i4">Type</col>
 		<row><td>COMWrapper</td><td>Depends\COMWrapper\COMWrapper.csproj</td><td/><td>2</td></row>
+		<row><td>CUSTODESParser</td><td>CUSTODESParser\CUSTODESParser.fsproj</td><td/><td>2</td></row>
 		<row><td>CommonFilesFolder</td><td/><td/><td>1</td></row>
 		<row><td>Depends</td><td>Depends\Depends\Depends.csproj</td><td/><td>2</td></row>
 		<row><td>ExceLint</td><td>ExceLint\ExceLint.fsproj</td><td/><td>2</td></row>
@@ -4413,7 +4419,7 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS</td><td>##IDS_PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS##</td><td/></row>
 		<row><td>ProductCode</td><td>{B8BEBB5F-5B76-4914-BF50-B723E4F21F38}</td><td/></row>
 		<row><td>ProductName</td><td>ExceLint</td><td/></row>
-		<row><td>ProductVersion</td><td>1.00.0022</td><td/></row>
+		<row><td>ProductVersion</td><td>1.00.0023</td><td/></row>
 		<row><td>ProgressType0</td><td>install</td><td/></row>
 		<row><td>ProgressType1</td><td>Installing</td><td/></row>
 		<row><td>ProgressType2</td><td>installed</td><td/></row>
