@@ -172,11 +172,13 @@
                 hs.Merge source target
                 merge_targets.Add target |> ignore
 
+                // tell the user whether more steps remain
+                let canstep = self.CanStep
+
                 sw.Stop()
                 steps_ms <- sw.ElapsedMilliseconds :: steps_ms
 
-                // tell the user whether more steps remain
-                self.CanStep
+                canstep
 
             member self.WritePerLogs() =
                 if not (input.config.DebugMode) then
