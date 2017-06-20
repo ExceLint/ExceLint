@@ -227,7 +227,10 @@
             member self.ClusteringAtKnee =
                 match clusteringAtKnee with
                 | Some clustering -> clustering
-                | None -> failwith "No clustering available. Did you actually run the model?"
+                    // if there was no knee, then
+                    // the knee and the foot are the same
+                    // and it's the latest clustering
+                | None -> self.CurrentClustering
 
             member self.Ranking =
                 let numfrm = cells.Length
