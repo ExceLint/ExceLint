@@ -35,6 +35,8 @@ namespace ExceLintFileFormats
                     return SuspiciousCell;
                 case "xlfp":
                     return ExcelFalsePositive;
+                case "ubc":
+                    return UnexpectedlyBlankCell;
                 default:
                     throw new UnknownBugType(kindstr);
             }
@@ -54,7 +56,8 @@ namespace ExceLintFileFormats
                     PotentialMaintenanceIssue,
                     InconsistentUseOfFormula,
                     SuspiciousCell,
-                    ExcelFalsePositive
+                    ExcelFalsePositive,
+                    UnexpectedlyBlankCell
                 };
             }
         }
@@ -107,6 +110,11 @@ namespace ExceLintFileFormats
         public static ExcelFalsePositive ExcelFalsePositive
         {
             get { return ExcelFalsePositive.Instance; }
+        }
+
+        public static UnexpectedlyBlankCell UnexpectedlyBlankCell
+        {
+            get { return UnexpectedlyBlankCell.Instance; }
         }
 
         public static BugKind DefaultKind
@@ -402,6 +410,35 @@ namespace ExceLintFileFormats
         public override string ToString()
         {
             return "Excel False Positive";
+        }
+    }
+
+    public class UnexpectedlyBlankCell : BugKind
+    {
+        private static UnexpectedlyBlankCell instance;
+
+        private UnexpectedlyBlankCell() { }
+
+        public static UnexpectedlyBlankCell Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    instance = new UnexpectedlyBlankCell();
+                }
+                return instance;
+            }
+        }
+
+        public override string ToLog()
+        {
+            return "ubc";
+        }
+
+        public override string ToString()
+        {
+            return "Unexpectedly Blank Cell";
         }
     }
 }
