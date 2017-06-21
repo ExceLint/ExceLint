@@ -60,7 +60,9 @@ namespace ExceLintFileFormats
         public int NumCells { get; set; }
         public int NumFormulas { get; set; }
         public double SigThresh { get; set; }
-        public long DepTimeMs { get; set; }
+        public long TimeMarshalingMs { get; set; }
+        public long TimeParsingMs { get; set; }
+        public long TimeGraphConstruct { get; set; }
         public long ScoreTimeMs { get; set; }
         public long FreqTimeMs { get; set; }
         public long RankingTimeMs { get; set; }

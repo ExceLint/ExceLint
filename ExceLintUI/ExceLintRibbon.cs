@@ -213,7 +213,9 @@ namespace ExceLintUI
             var analysis = a.Value;
 
             // time and space information
-            var time_str = "DAG construction ms: " + analysis.dag.AnalysisMilliseconds + "\n" +
+            var time_str = "Marshaling ms: " + analysis.dag.TimeMarshalingMilliseconds + "\n" +
+                           "Parsing ms: " + analysis.dag.TimeParsingMilliseconds + "\n" +
+                           "Graph construction ms: " + analysis.dag.TimeGraphConstructionMilliseconds + "\n" +
                            "Feature scoring ms: " + analysis.model.ScoreTimeInMilliseconds + "\n" +
                            "Num score entries: " + analysis.model.NumScoreEntries + "\n" +
                            "Frequency counting ms: " + analysis.model.FrequencyTableTimeInMilliseconds + "\n" +

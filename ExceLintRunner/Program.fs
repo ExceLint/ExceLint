@@ -207,7 +207,9 @@ open ExceLintFileFormats
         row.NumCells <- model.DependenceGraph.allCells().Length
         row.NumFormulas <- model.DependenceGraph.getAllFormulaAddrs().Length
         row.SigThresh <- stats.threshold
-        row.DepTimeMs <- model.DependenceGraph.AnalysisMilliseconds
+        row.TimeMarshalingMs <- model.DependenceGraph.TimeMarshalingMilliseconds
+        row.TimeParsingMs <- model.DependenceGraph.TimeParsingMilliseconds
+        row.TimeGraphConstruct <- model.DependenceGraph.TimeGraphConstructionMilliseconds
         row.ScoreTimeMs <- model.ScoreTimeInMilliseconds
         row.FreqTimeMs <- model.FrequencyTableTimeInMilliseconds
         row.RankingTimeMs <- model.RankingTimeInMilliseconds
