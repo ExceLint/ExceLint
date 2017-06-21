@@ -37,6 +37,8 @@ namespace ExceLintFileFormats
                     return ExcelFalsePositive;
                 case "ubc":
                     return UnexpectedlyBlankCell;
+                case "bfe":
+                    return BenignFormulaError;
                 default:
                     throw new UnknownBugType(kindstr);
             }
@@ -57,7 +59,8 @@ namespace ExceLintFileFormats
                     InconsistentUseOfFormula,
                     SuspiciousCell,
                     ExcelFalsePositive,
-                    UnexpectedlyBlankCell
+                    UnexpectedlyBlankCell,
+                    BenignFormulaError
                 };
             }
         }
@@ -115,6 +118,11 @@ namespace ExceLintFileFormats
         public static UnexpectedlyBlankCell UnexpectedlyBlankCell
         {
             get { return UnexpectedlyBlankCell.Instance; }
+        }
+
+        public static BenignFormulaError BenignFormulaError
+        {
+            get { return BenignFormulaError.Instance; }
         }
 
         public static BugKind DefaultKind
@@ -439,6 +447,35 @@ namespace ExceLintFileFormats
         public override string ToString()
         {
             return "Unexpectedly Blank Cell";
+        }
+    }
+
+    public class BenignFormulaError : BugKind
+    {
+        private static BenignFormulaError instance;
+
+        private BenignFormulaError() { }
+
+        public static BenignFormulaError Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    instance = new BenignFormulaError();
+                }
+                return instance;
+            }
+        }
+
+        public override string ToLog()
+        {
+            return "bfe";
+        }
+
+        public override string ToString()
+        {
+            return "Benign Formula Error";
         }
     }
 }
