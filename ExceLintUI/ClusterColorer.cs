@@ -111,86 +111,12 @@ namespace ExceLintUI
         /// <returns>The set of adjacent cells</returns>
         private static HashSet<AST.Address> AdjacentCells(Cluster c)
         {
-            var hs = c.SelectMany(addr => AdjacentCells(addr))
+            var hs = c.SelectMany(addr => ExceLint.Utils.AdjacentCells(addr))
                       .Aggregate(new HashSet<AST.Address>(), (acc, addr) => {
                           acc.Add(addr);
                           return acc;
                        });
             return hs;
-        }
-
-        /// <summary>
-        /// Returns the set of cells adjacent to the given address.
-        /// </summary>
-        /// <param name="addr">An address</param>
-        /// <returns>The set of adjacent cells</returns>
-        private static HashSet<AST.Address> AdjacentCells(AST.Address addr)
-        {
-            var n  = Above(addr);
-            var ne = Above(Right(addr));
-            var e  = Right(addr);
-            var se = Below(Right(addr));
-            var s  = Below(addr);
-            var sw = Below(Left(addr));
-            var w  = Left(addr);
-            var nw = Above(Left(addr));
-
-            AST.Address[] addrs = { n, ne, e, se, s, sw, w, nw };
-
-            return new HashSet<AST.Address>(addrs.Where(a => isSane(a)));
-        }
-
-        private static bool isSane(AST.Address addr)
-        {
-            return addr.Col > 0 && addr.Row > 0;
-        }
-
-        private static AST.Address Above(AST.Address addr)
-        {
-            return AST.Address.fromR1C1withMode(
-                addr.Row - 1,
-                addr.Col,
-                addr.RowMode,
-                addr.ColMode,
-                addr.WorksheetName,
-                addr.WorkbookName,
-                addr.Path);
-        }
-
-        private static AST.Address Below(AST.Address addr)
-        {
-            return AST.Address.fromR1C1withMode(
-                addr.Row + 1,
-                addr.Col,
-                addr.RowMode,
-                addr.ColMode,
-                addr.WorksheetName,
-                addr.WorkbookName,
-                addr.Path);
-        }
-
-        private static AST.Address Left(AST.Address addr)
-        {
-            return AST.Address.fromR1C1withMode(
-                addr.Row,
-                addr.Col - 1,
-                addr.RowMode,
-                addr.ColMode,
-                addr.WorksheetName,
-                addr.WorkbookName,
-                addr.Path);
-        }
-
-        private static AST.Address Right(AST.Address addr)
-        {
-            return AST.Address.fromR1C1withMode(
-                addr.Row,
-                addr.Col + 1,
-                addr.RowMode,
-                addr.ColMode,
-                addr.WorksheetName,
-                addr.WorkbookName,
-                addr.Path);
         }
 
         public Color GetColor(Cluster c)

@@ -273,6 +273,9 @@
 
                 rnk
 
+            member self.LISARanking =
+                failwith "nope"
+
             member self.RankingTimeMs = List.sum steps_ms
             member self.ScoreTimeMs = score_time
             member self.Scores = nlfrs

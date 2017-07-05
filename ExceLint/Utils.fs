@@ -28,3 +28,60 @@ open System.Collections.Generic
             let h3 = new HashSet<'a>(h1)
             h3.UnionWith h2
             h3
+
+        let isSane(addr: AST.Address) : bool =
+            addr.Col > 0 && addr.Row > 0
+
+        let Above(addr: AST.Address) : AST.Address =
+            AST.Address.fromR1C1withMode(
+                addr.Row - 1,
+                addr.Col,
+                addr.RowMode,
+                addr.ColMode,
+                addr.WorksheetName,
+                addr.WorkbookName,
+                addr.Path)
+
+        let Below(addr: AST.Address) : AST.Address =
+            AST.Address.fromR1C1withMode(
+                addr.Row + 1,
+                addr.Col,
+                addr.RowMode,
+                addr.ColMode,
+                addr.WorksheetName,
+                addr.WorkbookName,
+                addr.Path);
+
+        let Left(addr: AST.Address) : AST.Address =
+            AST.Address.fromR1C1withMode(
+                addr.Row,
+                addr.Col - 1,
+                addr.RowMode,
+                addr.ColMode,
+                addr.WorksheetName,
+                addr.WorkbookName,
+                addr.Path);
+
+        let Right(addr: AST.Address) : AST.Address =
+            AST.Address.fromR1C1withMode(
+                addr.Row,
+                addr.Col + 1,
+                addr.RowMode,
+                addr.ColMode,
+                addr.WorksheetName,
+                addr.WorkbookName,
+                addr.Path);
+
+        let AdjacentCells(addr: AST.Address) : HashSet<AST.Address> =
+            let n  = Above(addr);
+            let ne = Above(Right(addr));
+            let e  = Right(addr);
+            let se = Below(Right(addr));
+            let s  = Below(addr);
+            let sw = Below(Left(addr));
+            let w  = Left(addr);
+            let nw = Above(Left(addr));
+
+            let addrs = [| n; ne; e; se; s; sw; w; nw |]
+
+            new HashSet<AST.Address>(addrs |> Array.filter isSane)
