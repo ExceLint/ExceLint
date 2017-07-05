@@ -85,3 +85,30 @@ open System.Collections.Generic
             let addrs = [| n; ne; e; se; s; sw; w; nw |]
 
             new HashSet<AST.Address>(addrs |> Array.filter isSane)
+
+        let isAdjacent(addr1: AST.Address)(addr2: AST.Address) : bool =
+            Seq.contains addr2 (AdjacentCells addr1)
+
+        let Adjust(epsilon: int)(i: int) : int =
+            if (i + epsilon) > 0 then i + epsilon else i
+
+        /// <summary>returns the set of cells in the bounding box around the given set of
+        /// cells, with an additional (positive-valued) epsilon</summary>
+        let BoundingBox(cells: HashSet<AST.Address>)(epsilon: int) : HashSet<AST.Address> =
+            assert (Seq.length cells > 0)
+            assert (epsilon >= 0)
+            
+            let fcell = Seq.head cells
+            let wsname = fcell.WorksheetName
+            let wbname = fcell.WorkbookName
+            let path = fcell.Path
+
+            let xmin = cells |> Seq.map (fun addr -> addr.X) |> Seq.min |> Adjust -epsilon
+            let xmax = cells |> Seq.map (fun addr -> addr.X) |> Seq.max |> Adjust epsilon
+            let ymin = cells |> Seq.map (fun addr -> addr.Y) |> Seq.min |> Adjust -epsilon
+            let ymax = cells |> Seq.map (fun addr -> addr.Y) |> Seq.max |> Adjust epsilon
+
+            let lefttop = AST.Address.fromR1C1withMode(ymin, xmin, AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path)
+            let rightbottom = AST.Address.fromR1C1withMode(ymax, xmax, AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path)
+
+            new HashSet<AST.Address>((new AST.Range(lefttop, rightbottom)).Addresses())

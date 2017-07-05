@@ -7,6 +7,20 @@
     open Distances
 
     module ClusterModelBuilder =
+        /// <summary>
+        /// Compute Anselin's local Moran for the given point and neighbors (Anselin 1995).
+        /// </summary>
+        /// <param name="point">An address.</param>
+        /// <param name="neighbors">A set of addresses.</param>
+        /// <param name="z">Value function for point at given address.</param>
+        /// <param name="w">Neighborhood weight for points at given addresses.</param>
+        let LISA(point: AST.Address)(neighbors: HashSet<AST.Address>)(z: AST.Address -> double)(w: AST.Address -> AST.Address -> double) : double =
+            assert (not (Seq.contains point neighbors))
+
+            let allcells = Seq.append [| point |] neighbors
+            let zmean = BasicStats.mean (allcells |> Seq.map z |> Seq.toArray)
+            (z point - zmean) * (neighbors |> Seq.sumBy (fun neigh -> (w point neigh) * (z neigh - zmean)))
+
         type ClusterModel(input: Input) =
             let mutable clusteringAtKnee = None
             let mutable inCriticalRegion = false
@@ -20,13 +34,17 @@
 
             // get all NLFRs for every formula cell
             let _runf = fun () -> runEnabledFeatures cells input.dag input.config input.progress
-            let (ns: ScoreTable,score_time: int64) = PerfUtils.runMillis _runf ()
+            let (ns: ScoreTable,feat_time: int64) = PerfUtils.runMillis _runf ()
 
             // scale
-            let nlfrs: ScoreTable = ScaleBySheet ns
+            let _runscale = fun () -> ScaleBySheet ns
+            let (nlfrs: ScoreTable,scale_time: int64) = PerfUtils.runMillis _runscale () 
 
             // make HistoBin lookup by address
-            let hb_inv = invertedHistogram nlfrs input.dag input.config
+            let _runhisto = fun () -> invertedHistogram nlfrs input.dag input.config
+            let (hb_inv: InvertedHistogram,invert_time: int64) = PerfUtils.runMillis _runhisto ()
+
+            let score_time = feat_time + scale_time + invert_time
 
             let refvect_same(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : bool =
                 // check that all of the location-free vectors in the source and target are the same
@@ -234,7 +252,7 @@
                     // and it's the latest clustering
                 | None -> self.CurrentClustering
 
-            member self.Ranking =
+            member self.OldRanking : Ranking =
                 let numfrm = cells.Length
 
                 // keep a record of reported cells
@@ -273,8 +291,40 @@
 
                 rnk
 
-            member self.LISARanking =
-                failwith "nope"
+            member self.Ranking : Ranking =
+                // enabled features (in principle, ExceLint can have many enabled simultaneously)
+                let fs = input.config.EnabledFeatures
+
+                assert (fs.Length = 1)
+
+                // lambda for the one enabled feature
+                let feature = input.config.FeatureByName fs.[0]
+
+                // define "neighbor" relation
+                let w = fun a1 a2 -> if isAdjacent a1 a2 then 1.0 else 0.0
+
+                // define value function (L2 norm of resultant)
+                let z = fun a -> (feature a input.dag).L2Norm
+
+                // dictionary of I_i values
+                let d = new Dict<AST.Address, double>()
+
+                // compute I_i for all i not in a cluster
+                for cluster in self.ClusteringAtKnee do
+                    let box = Utils.BoundingBox cluster 0
+                    let potential_outliers = box |> Seq.filter (fun a -> not (Seq.contains a cluster))
+                    for cell in potential_outliers do
+                        let I_i = LISA cell box z w
+                        // if i is in more than one bounding box,
+                        // favor the I_i that suggests greater
+                        // autocorrelation, i.e., greater values of I_i
+                        if not (d.ContainsKey cell) then
+                            d.Add(cell, I_i)
+                        else if I_i > d.[cell] then
+                            d.[cell] <- I_i
+
+                // rank
+                d |> Seq.sortByDescending (fun kvp -> kvp.Value) |> Seq.toArray
 
             member self.RankingTimeMs = List.sum steps_ms
             member self.ScoreTimeMs = score_time

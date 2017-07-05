@@ -173,6 +173,17 @@ namespace ExceLint
                     op dc1 dc2
                 )
             | _ -> failwith "Cannot do operation on vectors of different lengths."
+        member self.toArray : double[] =
+            match self with
+            | Num n -> [| n |]
+            | Vector(x1, x2, x3) -> [| x1; x2; x3 |]
+            | SquareVector(x1, x2, x3, x4, x5, x6) -> [| x1; x2; x3; x4; x5; x6 |]
+            | CVectorResultant(x1, x2, x3, x4) -> [| x1; x2; x3; x4 |]
+            | FullCVectorResultant(x1, x2, x3, x4, x5, x6, x7) -> [| x1; x2; x3; x4; x5; x6; x7 |]
+        member self.L2Norm : double =
+            Math.Sqrt(
+                Array.sumBy (fun x -> Math.Pow(x, 2.0)) (self.toArray)
+            )
         member self.EuclideanDistance(co: Countable) : double =
             let diff = self.Sub co
             (diff.ElementwiseMultiply diff).ToVector

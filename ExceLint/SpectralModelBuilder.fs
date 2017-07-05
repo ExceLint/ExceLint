@@ -6,24 +6,6 @@
     open CommonFunctions
 
     module SpectralModelBuilder =
-        let private makeFlatScoreTable(scores: ScoreTable) : FlatScoreTable =
-            let mutable max = 0
-            for arr in scores do
-                if arr.Value.Length > max then
-                    max <- arr.Value.Length
-
-            let d = new Dict<string*AST.Address,Countable>(max * scores.Count)
-                
-            Seq.iter (fun (kvp: KeyValuePair<string,(AST.Address*Countable)[]>) ->
-                let fname = kvp.Key
-                let arr = kvp.Value
-                Array.iter (fun (addr,score) ->
-                    d.Add((fname,addr), score)
-                ) arr
-            ) scores
-
-            d
-             
         let private conditioningSetWeight(addr: AST.Address)(sel: Scope.Selector)(csstable: ConditioningSetSizeTable)(config: FeatureConf) : double =
             if config.IsEnabled "WeightByConditioningSetSize" then
                 1.0 / double (csstable.[sel].[addr])
