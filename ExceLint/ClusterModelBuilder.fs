@@ -301,8 +301,15 @@
                 // define "neighbor" relation
                 let w = fun a1 a2 -> if isAdjacent a1 a2 then 1.0 else 0.0
 
-                // define value function (L2 norm of resultant)
-                let z = fun a -> (feature a input.dag).L2Norm
+                // define value function
+                let z = fun a -> if input.dag.isFormula a then
+                                    // value is L2 norm of resultant if
+                                    // address is a formula
+                                    (feature a input.dag).L2Norm
+                                 else
+                                    // otherwise, for data, value
+                                    // is defined as zero
+                                    0.0
 
                 // dictionary of I_i values
                 let d = new Dict<AST.Address, double>()
