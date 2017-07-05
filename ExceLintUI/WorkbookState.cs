@@ -564,8 +564,8 @@ namespace ExceLintUI
                 if (_analysis.cutoff > 0)
                 {
                     // calculate min/max heat map intensity
-                    var min_score = _analysis.scores[0].Value;
-                    var max_score = _analysis.scores[_analysis.cutoff].Value;
+                    var max_score = _analysis.scores[0].Value;
+                    var min_score = _analysis.scores[_analysis.cutoff].Value;
 
                     // Disable screen updating 
                     _app.ScreenUpdating = false;

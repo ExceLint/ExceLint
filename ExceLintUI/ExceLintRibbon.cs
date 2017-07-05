@@ -24,6 +24,24 @@ namespace ExceLintUI
         private string custodesPath = null;
 
         #region BUTTON_HANDLERS
+        private void LISAHeatmap_Click(object sender, RibbonControlEventArgs e)
+        {
+            // workbook- and UI-update callback
+            Action<WorkbookState> updateWorkbook = (WorkbookState wbs) =>
+            {
+                this.currentWorkbook = wbs;
+                setUIState(currentWorkbook);
+            };
+
+            // get significance threshold
+            var sig = getPercent(this.significanceTextBox.Text, this.significanceTextBox.Label);
+
+            using (var pb = new ProgBar())
+            {
+                DoHeatmap(sig, currentWorkbook, getConfig(), this.forceBuildDAG.Checked, updateWorkbook, pb);
+            }
+        }
+
         private void RunCUSTODES_Click(object sender, RibbonControlEventArgs e)
         {
             string rootPath = null;
