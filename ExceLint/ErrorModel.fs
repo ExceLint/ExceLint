@@ -129,7 +129,7 @@
             | Cluster c -> c.weights.[addr]
 
         member self.ranking() : Ranking =
-            if ErrorModel.rankingIsSane r input.dag (input.config.IsEnabled "AnalyzeOnlyFormulas") then
+            if ErrorModel.rankingIsSane r input.dag (input.config.IsEnabled "AnalyzeOnlyFormulas") (input.config.Cluster) then
                 r
             else
                 failwith "ERROR: Formula-only analysis returns non-formulas."
@@ -216,8 +216,8 @@
 
             d
 
-        static member private rankingIsSane(r: Ranking)(dag: Depends.DAG)(formulasOnly: bool) : bool =
-            if formulasOnly then
+        static member private rankingIsSane(r: Ranking)(dag: Depends.DAG)(formulasOnly: bool)(local_anomalies_ok: bool) : bool =
+            if formulasOnly && not local_anomalies_ok then
                 Array.forall (fun (kvp: KeyValuePair<AST.Address,double>) -> dag.isFormula kvp.Key) r
             else
                 true
