@@ -15,10 +15,8 @@
         /// <param name="z">Value function for point at given address.</param>
         /// <param name="w">Neighborhood weight for points at given addresses.</param>
         let LISA(point: AST.Address)(neighbors: HashSet<AST.Address>)(z: AST.Address -> double)(w: AST.Address -> AST.Address -> double) : double =
-            assert (not (Seq.contains point neighbors))
-
-            let allcells = Seq.append [| point |] neighbors
-            let zmean = BasicStats.mean (allcells |> Seq.map z |> Seq.toArray)
+            let nsWithoutPt = HashSetUtils.differenceElem neighbors point
+            let zmean = BasicStats.mean (nsWithoutPt |> Seq.map z |> Seq.toArray)
             (z point - zmean) * (neighbors |> Seq.sumBy (fun neigh -> (w point neigh) * (z neigh - zmean)))
 
         type ClusterModel(input: Input) =

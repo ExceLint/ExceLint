@@ -8,6 +8,11 @@
             hs3.ExceptWith(hs2)
             hs3
 
+        let differenceElem<'a>(hs: HashSet<'a>)(elem: 'a) : HashSet<'a> =
+            let hs2 = new HashSet<'a>(hs)
+            hs2.Remove(elem) |> ignore
+            hs2
+
         let intersection<'a>(hs1: HashSet<'a>)(hs2: HashSet<'a>) : HashSet<'a> =
             let hs3 = new HashSet<'a>(hs1)
             hs3.IntersectWith(hs2)
