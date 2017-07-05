@@ -38,11 +38,15 @@
             let _runscale = fun () -> ScaleBySheet ns
             let (nlfrs: ScoreTable,scale_time: int64) = PerfUtils.runMillis _runscale () 
 
+            // flatten
+            let _runflatten = fun () -> makeFlatScoreTable nlfrs
+            let (fnlfrs: FlatScoreTable,flatten_time: int64) = PerfUtils.runMillis _runflatten ()
+
             // make HistoBin lookup by address
             let _runhisto = fun () -> invertedHistogram nlfrs input.dag input.config
             let (hb_inv: InvertedHistogram,invert_time: int64) = PerfUtils.runMillis _runhisto ()
 
-            let score_time = feat_time + scale_time + invert_time
+            let score_time = feat_time + scale_time + invert_time + flatten_time
 
             let refvect_same(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : bool =
                 // check that all of the location-free vectors in the source and target are the same
@@ -295,8 +299,8 @@
 
                 assert (fs.Length = 1)
 
-                // lambda for the one enabled feature
-                let feature = input.config.FeatureByName fs.[0]
+                // the one enabled feature
+                let feat = fs.[0]
 
                 // define "neighbor" relation
                 let w = fun a1 a2 -> if isAdjacent a1 a2 then 1.0 else 0.0
@@ -305,7 +309,7 @@
                 let z = fun a -> if input.dag.isFormula a then
                                     // value is L2 norm of resultant if
                                     // address is a formula
-                                    (feature a input.dag).L2Norm
+                                    fnlfrs.[feat,a].L2Norm
                                  else
                                     // otherwise, for data, value
                                     // is defined as zero
@@ -328,8 +332,8 @@
                         else if I_i > d.[cell] then
                             d.[cell] <- I_i
 
-                // rank
-                d |> Seq.sortByDescending (fun kvp -> kvp.Value) |> Seq.toArray
+                // filter out negative scores and rank
+                d |> Seq.filter (fun kvp -> kvp.Value > 0.0) |> Seq.sortByDescending (fun kvp -> kvp.Value) |> Seq.toArray
 
             member self.RankingTimeMs = List.sum steps_ms
             member self.ScoreTimeMs = score_time
