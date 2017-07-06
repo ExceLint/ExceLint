@@ -46,6 +46,7 @@
             this.MarkAsOKButton = this.Factory.CreateRibbonButton();
             this.StartOverButton = this.Factory.CreateRibbonButton();
             this.showHeatmap = this.Factory.CreateRibbonButton();
+            this.LISAHeatmap = this.Factory.CreateRibbonButton();
             this.RunCUSTODES = this.Factory.CreateRibbonButton();
             this.box2 = this.Factory.CreateRibbonBox();
             this.LSHTest = this.Factory.CreateRibbonButton();
@@ -73,7 +74,7 @@
             this.separator4 = this.Factory.CreateRibbonSeparator();
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
-            this.LISAHeatmap = this.Factory.CreateRibbonButton();
+            this.MoranForSelectedCells = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -127,6 +128,7 @@
             this.box1.Items.Add(this.showHeatmap);
             this.box1.Items.Add(this.LISAHeatmap);
             this.box1.Items.Add(this.RunCUSTODES);
+            this.box1.Items.Add(this.MoranForSelectedCells);
             this.box1.Items.Add(this.box2);
             this.box1.Items.Add(this.distanceCombo);
             this.box1.Name = "box1";
@@ -169,6 +171,15 @@
             this.showHeatmap.Name = "showHeatmap";
             this.showHeatmap.ShowImage = true;
             this.showHeatmap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.showHeatmap_Click);
+            // 
+            // LISAHeatmap
+            // 
+            this.LISAHeatmap.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.LISAHeatmap.Image = ((System.Drawing.Image)(resources.GetObject("LISAHeatmap.Image")));
+            this.LISAHeatmap.Label = "LISA";
+            this.LISAHeatmap.Name = "LISAHeatmap";
+            this.LISAHeatmap.ShowImage = true;
+            this.LISAHeatmap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.LISAHeatmap_Click);
             // 
             // RunCUSTODES
             // 
@@ -375,14 +386,14 @@
             this.annotateThisCell.Visible = false;
             this.annotateThisCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotateThisCell_Click);
             // 
-            // LISAHeatmap
+            // MoranForSelectedCells
             // 
-            this.LISAHeatmap.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.LISAHeatmap.Image = ((System.Drawing.Image)(resources.GetObject("LISAHeatmap.Image")));
-            this.LISAHeatmap.Label = "LISA";
-            this.LISAHeatmap.Name = "LISAHeatmap";
-            this.LISAHeatmap.ShowImage = true;
-            this.LISAHeatmap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.LISAHeatmap_Click);
+            this.MoranForSelectedCells.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.MoranForSelectedCells.Image = global::ExceLintUI.Properties.Resources.analyze_small;
+            this.MoranForSelectedCells.Label = "Moran for Selection";
+            this.MoranForSelectedCells.Name = "MoranForSelectedCells";
+            this.MoranForSelectedCells.ShowImage = true;
+            this.MoranForSelectedCells.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.moranForSelectedCells_Click);
             // 
             // ExceLintRibbon
             // 
@@ -443,6 +454,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonComboBox distanceCombo;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton RunCUSTODES;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton LISAHeatmap;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton MoranForSelectedCells;
     }
 
     partial class ThisRibbonCollection

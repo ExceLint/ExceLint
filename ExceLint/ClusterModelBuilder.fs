@@ -19,6 +19,91 @@
             let zmean = BasicStats.mean (nsWithoutPt |> Seq.map z |> Seq.toArray)
             (z point - zmean) * (neighbors |> Seq.sumBy (fun neigh -> (w point neigh) * (z neigh - zmean)))
 
+        // define "neighbor" relation
+        let W(a1: AST.Address)(a2: AST.Address) : double =
+            if a1.SameAs a2 then
+                0.0
+            else if isAdjacent a1 a2 then
+                1.0
+            else
+                0.0
+
+        // define value function
+        let X(a: AST.Address)(dag: Depends.DAG)(conf: FeatureConf)(s: FlatScoreTable) : double =
+            // enabled features (in principle, ExceLint can have many enabled simultaneously)
+            assert (conf.EnabledFeatures.Length = 1)
+
+            // the one enabled feature
+            let feat = conf.EnabledFeatures.[0]
+
+            if dag.isFormula a then
+                // value is L2 norm of non-location resultant if
+                // address is a formula
+                s.[feat,a].ToCVectorResultant.L2Norm
+//                s.[feat,a].L2Norm
+            else
+                // is it a number?
+
+                // read value
+                let value = dag.readCOMValueAtAddress a
+                let mutable num = 0.0
+
+                if Double.TryParse(value, &num) then
+                    // numbers
+                    num
+                else if String.IsNullOrWhiteSpace value then
+                    // blanks
+                    0.0
+                else
+                    // text strings
+                    0.0
+
+        /// <summary>
+        /// Compute Moran's I for the given set of points.
+        /// </summary>
+        /// <param name="points">A set of addresses.</param>
+        /// <param name="x">Value function for point at given address.</param>
+        /// <param name="w">Weight function for two points.</param>
+        let Moran(points: HashSet<AST.Address>)(x: AST.Address -> double)(w: AST.Address -> AST.Address -> double) : double =
+            let xmean = BasicStats.mean (points |> Seq.map x |> Seq.toArray)
+
+            let N = double (Seq.length points)
+            let pairs = CommonFunctions.cartesianProduct points points
+            let W = pairs
+                    |> Seq.map (fun (i,j) -> w i j)
+                    |> Seq.sum
+            let scale = N / W
+
+            let debug_xs = Seq.map x points
+            let debug_ws = Seq.map (fun (i,j) -> w i j) pairs
+
+            let numerator = pairs
+                            |> Seq.sumBy (fun (i, j) -> (w i j) * (x i - xmean) * (x j - xmean))
+            let denominator = points
+                              |> Seq.sumBy (fun i -> (x i - xmean) * (x i - xmean))
+
+            if N = 1.0 then
+                // singleton clusters might as well be random
+                0.0
+            else if denominator = 0.0 then
+                // any time the denominator is 0, we either have a
+                // singleton cluster (handled above) or all of
+                // the values are exactly the same-- a perfect cluster
+                1.0
+            else
+                scale * numerator / denominator
+
+        /// <summary>
+        /// Compute Moran's I for the given set of points. C#-friendly.
+        /// </summary>
+        /// <param name="points">A set of addresses.</param>
+        /// <param name="x">Value function for point at given address.</param>
+        /// <param name="w">Weight function for two points.</param>
+        let MoranCS(points: HashSet<AST.Address>, x: Func<AST.Address,double>, w: Func<AST.Address, AST.Address, double>) : double =
+            let x' = fun a -> x.Invoke a
+            let w' = fun a1 a2 -> w.Invoke(a1, a2)
+            Moran points x' w'
+
         type ClusterModel(input: Input) =
             let mutable clusteringAtKnee = None
             let mutable inCriticalRegion = false
@@ -302,28 +387,18 @@
                 // the one enabled feature
                 let feat = fs.[0]
 
-                // define "neighbor" relation
-                let w = fun a1 a2 -> if isAdjacent a1 a2 then 1.0 else 0.0
-
-                // define value function
-                let z = fun a -> if input.dag.isFormula a then
-                                    // value is L2 norm of resultant if
-                                    // address is a formula
-                                    fnlfrs.[feat,a].L2Norm
-                                 else
-                                    // otherwise, for data, value
-                                    // is defined as zero
-                                    0.0
-
                 // dictionary of I_i values
                 let d = new Dict<AST.Address, double>()
+
+                // bind parameters of value function
+                let x = (fun a -> X a input.dag input.config fnlfrs)
 
                 // compute I_i for all i not in a cluster
                 for cluster in self.ClusteringAtKnee do
                     let box = Utils.BoundingBox cluster 0
                     let potential_outliers = box |> Seq.filter (fun a -> not (Seq.contains a cluster))
                     for cell in potential_outliers do
-                        let I_i = LISA cell box z w
+                        let I_i = LISA cell box x W
                         // if i is in more than one bounding box,
                         // favor the I_i that suggests greater
                         // autocorrelation, i.e., greater values of I_i

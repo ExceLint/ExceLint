@@ -1216,5 +1216,20 @@ namespace ExceLintUI
         }
 
         #endregion UTILITY_FUNCTIONS
+
+        private void moranForSelectedCells_Click(object sender, RibbonControlEventArgs e)
+        {
+            // get workbook
+            var w = (Excel.Workbook)((Worksheet)Globals.ThisAddIn.Application.ActiveSheet).Parent;
+
+            // get cursor location
+            var cursor = (Excel.Range)Globals.ThisAddIn.Application.Selection;
+
+            // compute I
+            var I = currentWorkbook.MoranForSelection(cursor, w, getConfig(), this.forceBuildDAG.Checked);
+
+            // display
+            System.Windows.Forms.MessageBox.Show(I.ToString());
+        }
     }
 }

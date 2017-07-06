@@ -703,6 +703,29 @@ namespace ExceLintUI
             System.Windows.Forms.MessageBox.Show(lsh.MaskedBitsAsString(ExceLint.UInt128.MaxValue));
         }
 
+        public double MoranForSelection(Excel.Range sel, Workbook wb, ExceLint.FeatureConf conf, Boolean forceDAGBuild)
+        {
+            // update if necessary
+            var p = Depends.Progress.NOPProgress();
+            RefreshDAG(forceDAGBuild, p);
+
+            // convert range to set of points
+            var rng = ParcelCOMShim.Range.RangeFromCOMObject(sel, wb);
+            var addrs = rng.Addresses();
+
+            // filter addresses by formulas
+            var faddrs = addrs.Where(a => _dag.isFormula(a)).ToArray();
+
+            // run feature on worksheet
+            var scores = ExceLint.CommonFunctions.runEnabledFeatures(faddrs, _dag, conf, p);
+            var flatScores = ExceLint.CommonFunctions.makeFlatScoreTable(scores);
+
+            Func<AST.Address,double> x = addr => ExceLint.ClusterModelBuilder.X(addr, _dag, conf, flatScores);
+            Func<AST.Address, AST.Address, double> w = (addr1, addr2) => ExceLint.ClusterModelBuilder.W(addr1, addr2);
+
+            return ExceLint.ClusterModelBuilder.MoranCS(new HashSet<AST.Address>(addrs), x, w);
+        }
+
         public void GetClusteringForWorksheet(Worksheet w, ExceLint.FeatureConf conf, Boolean forceDAGBuild, ProgBar pb)
         {
             Func<Depends.Progress, Unit> f = (p) =>
