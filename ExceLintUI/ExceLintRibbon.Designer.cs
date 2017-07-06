@@ -48,6 +48,7 @@
             this.showHeatmap = this.Factory.CreateRibbonButton();
             this.LISAHeatmap = this.Factory.CreateRibbonButton();
             this.RunCUSTODES = this.Factory.CreateRibbonButton();
+            this.MoranForSelectedCells = this.Factory.CreateRibbonButton();
             this.box2 = this.Factory.CreateRibbonBox();
             this.LSHTest = this.Factory.CreateRibbonButton();
             this.getLSH = this.Factory.CreateRibbonButton();
@@ -74,7 +75,7 @@
             this.separator4 = this.Factory.CreateRibbonSeparator();
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
-            this.MoranForSelectedCells = this.Factory.CreateRibbonButton();
+            this.VectorForCell = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -190,12 +191,22 @@
             this.RunCUSTODES.ShowImage = true;
             this.RunCUSTODES.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.RunCUSTODES_Click);
             // 
+            // MoranForSelectedCells
+            // 
+            this.MoranForSelectedCells.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.MoranForSelectedCells.Image = global::ExceLintUI.Properties.Resources.analyze_small;
+            this.MoranForSelectedCells.Label = "Moran for Selection";
+            this.MoranForSelectedCells.Name = "MoranForSelectedCells";
+            this.MoranForSelectedCells.ShowImage = true;
+            this.MoranForSelectedCells.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.moranForSelectedCells_Click);
+            // 
             // box2
             // 
             this.box2.BoxStyle = Microsoft.Office.Tools.Ribbon.RibbonBoxStyle.Vertical;
             this.box2.Items.Add(this.LSHTest);
             this.box2.Items.Add(this.getLSH);
             this.box2.Items.Add(this.readClusterDump);
+            this.box2.Items.Add(this.VectorForCell);
             this.box2.Name = "box2";
             this.box2.Visible = false;
             // 
@@ -386,14 +397,11 @@
             this.annotateThisCell.Visible = false;
             this.annotateThisCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotateThisCell_Click);
             // 
-            // MoranForSelectedCells
+            // VectorForCell
             // 
-            this.MoranForSelectedCells.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.MoranForSelectedCells.Image = global::ExceLintUI.Properties.Resources.analyze_small;
-            this.MoranForSelectedCells.Label = "Moran for Selection";
-            this.MoranForSelectedCells.Name = "MoranForSelectedCells";
-            this.MoranForSelectedCells.ShowImage = true;
-            this.MoranForSelectedCells.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.moranForSelectedCells_Click);
+            this.VectorForCell.Label = "Vector for Cell";
+            this.VectorForCell.Name = "VectorForCell";
+            this.VectorForCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.VectorForCell_Click);
             // 
             // ExceLintRibbon
             // 
@@ -455,6 +463,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton RunCUSTODES;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton LISAHeatmap;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton MoranForSelectedCells;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton VectorForCell;
     }
 
     partial class ThisRibbonCollection

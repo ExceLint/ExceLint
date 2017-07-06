@@ -691,6 +691,15 @@ namespace ExceLintUI
             System.Windows.Forms.MessageBox.Show(m.ToGraphViz);
         }
 
+        public Depends.DAG getDependenceGraph(Boolean forceDAGBuild)
+        {
+            // update if necessary
+            var p = Depends.Progress.NOPProgress();
+            RefreshDAG(forceDAGBuild, p);
+
+            return _dag;
+        }
+
         public void getLSHforAddr(AST.Address cursorAddr, Boolean forceDAGBuild)
         {
             // update if necessary

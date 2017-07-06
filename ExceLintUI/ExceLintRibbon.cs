@@ -8,6 +8,7 @@ using System.Threading;
 using ExceLintFileFormats;
 using Application = Microsoft.Office.Interop.Excel.Application;
 using Worksheet = Microsoft.Office.Interop.Excel.Worksheet;
+using System.Text;
 
 namespace ExceLintUI
 {
@@ -81,6 +82,35 @@ namespace ExceLintUI
             AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, Globals.ThisAddIn.Application.ActiveWorkbook);
 
             currentWorkbook.getLSHforAddr(cursorAddr, false);
+        }
+
+        private void VectorForCell_Click(object sender, RibbonControlEventArgs e)
+        {
+            // get cursor location
+            var cursor = (Excel.Range)Globals.ThisAddIn.Application.Selection;
+            AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, Globals.ThisAddIn.Application.ActiveWorkbook);
+
+            // get config
+            var conf = getConfig();
+
+            // get dependence graph
+            var dag = currentWorkbook.getDependenceGraph(this.forceBuildDAG.Checked);
+
+            var sb = new StringBuilder();
+
+            // get vector for each enabled feature
+            var feats = conf.EnabledFeatures;
+            for (int i = 0; i < feats.Length; i++)
+            {
+                // run feature
+                sb.Append(feats[i]);
+                sb.Append(" = ");
+                sb.Append(conf.get_FeatureByName(feats[i]).Invoke(cursorAddr).Invoke(dag).ToString());
+                sb.Append("\n");
+            }
+
+            // display
+            System.Windows.Forms.MessageBox.Show(sb.ToString());
         }
 
         public WorkbookState CurrentWorkbook { 
@@ -779,6 +809,21 @@ namespace ExceLintUI
             currentWorkbook.DrawClusters(clustering);
         }
 
+        private void moranForSelectedCells_Click(object sender, RibbonControlEventArgs e)
+        {
+            // get workbook
+            var w = (Excel.Workbook)((Worksheet)Globals.ThisAddIn.Application.ActiveSheet).Parent;
+
+            // get cursor location
+            var cursor = (Excel.Range)Globals.ThisAddIn.Application.Selection;
+
+            // compute I
+            var I = currentWorkbook.MoranForSelection(cursor, w, getConfig(), this.forceBuildDAG.Checked);
+
+            // display
+            System.Windows.Forms.MessageBox.Show(I.ToString());
+        }
+
         #endregion BUTTON_HANDLERS
 
         #region EVENTS
@@ -1216,20 +1261,5 @@ namespace ExceLintUI
         }
 
         #endregion UTILITY_FUNCTIONS
-
-        private void moranForSelectedCells_Click(object sender, RibbonControlEventArgs e)
-        {
-            // get workbook
-            var w = (Excel.Workbook)((Worksheet)Globals.ThisAddIn.Application.ActiveSheet).Parent;
-
-            // get cursor location
-            var cursor = (Excel.Range)Globals.ThisAddIn.Application.Selection;
-
-            // compute I
-            var I = currentWorkbook.MoranForSelection(cursor, w, getConfig(), this.forceBuildDAG.Checked);
-
-            // display
-            System.Windows.Forms.MessageBox.Show(I.ToString());
-        }
     }
 }
