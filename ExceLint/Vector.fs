@@ -340,7 +340,19 @@
                     // recursively call this function
                     vlist @ cvects @ (List.map (fun head -> tfVect (Some tail) head nextDepth) heads |> List.concat)
                 else
-                    vlist
+                    let value = dag.readCOMValueAtAddress(tail)
+                    let mutable num = 0.0
+                    num <- if Double.TryParse(value, &num) then
+                               // single constant vector
+                               1.0
+                           else
+                               // zero-length vector
+                               0.0
+                    let env = AST.Env(tail.Path, tail.WorkbookName, tail.WorksheetName)
+                    let expr = AST.ReferenceConstant(env, num)
+                    let dv = vector_f tail tail
+                    dv :: vlist
+
     
             tfVect None fCell depth |> List.toArray
 
@@ -645,17 +657,20 @@
             |> L2NormRVSum
             |> Num
 
-        let ResultantMaker(cell: AST.Address)(dag: DAG)(isMixed: bool)(includeConstant: bool)(includeLoc: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(constant_f: ConstantVectorMaker)(rebase_f: Rebaser) =
-            getVectors cell dag (makeVector isMixed includeConstant) constant_f isTransitive isFormula
-            |> Array.map (fun v -> rebase_f v dag isOffSheetInsensitive includeLoc)
-            |> Resultant
-            |> (fun rv ->
-                    match rv with
-                    | Constant(x,y,z,c) -> CVectorResultant(double x, double y, double z, double c)
-                    | NoConstant(x,y,z) -> Vector(double x, double y, double z)
-                    | ConstantWithLoc(x,y,z,dx,dy,dz,dc) -> FullCVectorResultant(double x, double y, double z, double dx, double dy, double dz, double dc)
-                    | NoConstantWithLoc(x,y,z,dx,dy,dz) -> Countable.SquareVector(double dx, double dy, double dz, double x, double y, double z)
-               )
+        let ResultantMaker(cell: AST.Address)(dag: DAG)(isMixed: bool)(includeConstant: bool)(includeLoc: bool)(isTransitive: bool)(isFormula: bool)(isOffSheetInsensitive: bool)(constant_f: ConstantVectorMaker)(rebase_f: Rebaser) : Countable =
+            let vs = getVectors cell dag (makeVector isMixed includeConstant) constant_f isTransitive isFormula
+            let rebased_vs = vs |> Array.map (fun v -> rebase_f v dag isOffSheetInsensitive includeLoc)
+            let resultant = rebased_vs |> Resultant
+            let countable =
+                resultant
+                |> (fun rv ->
+                        match rv with
+                        | Constant(x,y,z,c) -> CVectorResultant(double x, double y, double z, double c)
+                        | NoConstant(x,y,z) -> Vector(double x, double y, double z)
+                        | ConstantWithLoc(x,y,z,dx,dy,dz,dc) -> FullCVectorResultant(double x, double y, double z, double dx, double dy, double dz, double dc)
+                        | NoConstantWithLoc(x,y,z,dx,dy,dz) -> Countable.SquareVector(double dx, double dy, double dz, double x, double y, double z)
+                   )
+            countable
 
         type DeepInputVectorRelativeL2NormSum() = 
             inherit BaseFeature()
@@ -834,7 +849,7 @@
                 let includeConstant = true
                 let includeLoc = true
                 let rebase_f = relativeToTail
-                let constant_f = (makeConstantVectorsFromConstants KeepConstantValue.No)
+                let constant_f = makeConstantVectorsFromConstants KeepConstantValue.No
                 ResultantMaker cell dag isMixed includeConstant includeLoc isTransitive isFormula isOffSheetInsensitive constant_f rebase_f 
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorMixedFullCVectorResultantOSI>.Name,
