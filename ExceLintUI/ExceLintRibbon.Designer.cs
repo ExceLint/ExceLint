@@ -354,6 +354,7 @@
             // 
             // allCells
             // 
+            this.allCells.Checked = true;
             this.allCells.Label = "Analyze All Cells";
             this.allCells.Name = "allCells";
             this.allCells.Visible = false;
