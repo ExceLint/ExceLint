@@ -349,9 +349,9 @@
                                // zero-length vector
                                0.0
                     let env = AST.Env(tail.Path, tail.WorkbookName, tail.WorksheetName)
-                    let expr = AST.ReferenceConstant(env, num)
-                    let dv = vector_f tail tail
-                    dv :: vlist
+                    let expr = AST.ReferenceExpr (AST.ReferenceConstant(env, num))
+                    let dv = cvector_f tail expr
+                    dv @ vlist
 
     
             tfVect None fCell depth |> List.toArray
