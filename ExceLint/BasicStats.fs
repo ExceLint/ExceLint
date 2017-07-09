@@ -48,3 +48,30 @@
                 mean([|X'.[X'.Length / 2]; X'.[X'.Length / 2 - 1]|])
             else
                 X'.[X'.Length / 2]
+
+        // find the multinomial probability vector for a sample;
+        // probabilties are in value-sorted order
+        let multinomialProbabilties<'a when 'a : comparison>(X: 'a[]) : double[] =
+            let d = new Utils.Dict<'a, int>()
+            // count values of X
+            for x in X do
+                if d.ContainsKey(x) then
+                    d.[x] <- d.[x] + 1
+                else
+                    d.Add(x, 1)
+
+            // compute probabilities
+            let n = double X.Length
+            let bins = d.Keys.Count
+            (d.Values)
+            |> Seq.toArray
+            |> Array.sort
+            |> Array.map (fun count -> double count / n)
+
+        /// <summary>
+        /// Returns the entropy for the given multinomial probability vector.
+        /// </summary>
+        /// <param name="P">Vector of probabilities, one for each outcome of the random variable X.</param>
+        let entropy(P: double[]) : double =
+            assert (Array.sum P <= 1.0)
+            -1.0 * (P |> Array.sumBy (fun p -> p * System.Math.Log(p, 2.0)))

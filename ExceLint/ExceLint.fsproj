@@ -75,6 +75,7 @@
     <Compile Include="Distances.fs" />
     <Compile Include="PerfUtils.fs" />
     <Compile Include="ASTMutator.fs" />
+    <Compile Include="BinaryMinEntropyTree.fs" />
     <Compile Include="ErrorModel.fs" />
     <Compile Include="ClusterModelBuilder.fs" />
     <Compile Include="OldClusterModel.fs" />

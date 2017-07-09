@@ -395,7 +395,7 @@
 
                 // compute I_i for all i not in a cluster
                 for cluster in self.ClusteringAtKnee do
-                    let box = Utils.BoundingBox cluster 0
+                    let box = Utils.BoundingBoxHS cluster 0
                     let potential_outliers = box |> Seq.filter (fun a -> not (Seq.contains a cluster))
                     for cell in potential_outliers do
                         let I_i = LISA cell box x W
