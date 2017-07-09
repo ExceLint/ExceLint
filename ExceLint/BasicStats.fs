@@ -49,10 +49,9 @@
             else
                 X'.[X'.Length / 2]
 
-        // find the multinomial probability vector for a sample;
-        // probabilties are in value-sorted order
-        let multinomialProbabilties<'a when 'a : comparison>(X: 'a[]) : double[] =
+        let counts<'a when 'a : comparison>(X: 'a[]) : int[] =
             let d = new Utils.Dict<'a, int>()
+
             // count values of X
             for x in X do
                 if d.ContainsKey(x) then
@@ -60,13 +59,17 @@
                 else
                     d.Add(x, 1)
 
+            d.Values |> Seq.toArray
+
+        // find the multinomial probability vector for a sample;
+        // probabilties are in value-sorted order
+        let empiricalProbabilities(Y: int[])(n: int) : double[] =
             // compute probabilities
-            let n = double X.Length
-            let bins = d.Keys.Count
-            (d.Values)
+            let n' = double n
+            Y
             |> Seq.toArray
             |> Array.sort
-            |> Array.map (fun count -> double count / n)
+            |> Array.map (fun count -> double count / n')
 
         /// <summary>
         /// Returns the entropy for the given multinomial probability vector.

@@ -17,13 +17,21 @@
                 0.0
             else
                 // get values
-                let vs = addrs |> Array.map (fun a -> rmap.[a])
+                let vs = addrs |> Array.map (fun a -> rmap.[a].ToCVectorResultant)
+
+                // count
+                let cs = BasicStats.counts vs
 
                 // compute probability vector
-                let ps = BasicStats.multinomialProbabilties vs
+                let ps = BasicStats.empiricalProbabilities cs vs.Length
+
+                // debug string
+                let debug = "x = c(" + System.String.Join(", ", cs) + ")"
 
                 // compute entropy
-                BasicStats.entropy ps
+                let entropy = BasicStats.entropy ps
+
+                entropy
 
         static member private MinEntropyPartition(rmap: Cells)(vert: bool) : AST.Address[]*AST.Address[] =
             // which axis we use depends on whether we are
@@ -43,6 +51,17 @@
                                left, right
                            ) [| indexer lt .. indexer rb + 1 |]
 
+            let debug_es =
+                parts
+                |> Array.map (fun (l,r) ->
+                    // compute entropy
+                    let entropy_left = BinaryMinEntropyTree.AddressEntropy l rmap
+                    let entropy_right = BinaryMinEntropyTree.AddressEntropy r rmap
+
+                    // total for left and right
+                    (entropy_left + entropy_right),entropy_left,entropy_right
+                )
+
             parts
             |> Utils.argmin (fun (l,r) ->
                 // compute entropy
@@ -52,6 +71,7 @@
                 // total for left and right
                 entropy_left + entropy_right
             )
+
 
         static member Infer(addrs: AST.Address[])(hb_inv: InvertedHistogram) : BinaryMinEntropyTree =
             let d = new Dict<AST.Address, Countable>()
