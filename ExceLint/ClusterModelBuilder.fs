@@ -174,6 +174,9 @@
                             )
             let hs = HashSpace<AST.Address>(cells, keymaker, keyexists, LSHCalc.h7unmasker, DISTANCE)
 
+            // do region inference
+            let rTree = BinaryMinEntropyTree.Infer cells hb_inv
+
             let mutable probable_knee = false
 
             member self.NumCells : int = cells.Length

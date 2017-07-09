@@ -1,6 +1,7 @@
 ﻿namespace ExceLint
 
     open System.Collections.Generic
+    open CommonTypes
     open Utils
 
     type Cells = Dict<AST.Address,Countable>
@@ -11,7 +12,7 @@
 
     [<AbstractClass>]
     type BinaryMinEntropyTree() =
-        static member AddressEntropy(addrs: AST.Address[])(rmap: Dict<AST.Address,Countable>) : double =
+        static member private AddressEntropy(addrs: AST.Address[])(rmap: Dict<AST.Address,Countable>) : double =
             if addrs.Length = 0 then
                 0.0
             else
@@ -24,7 +25,7 @@
                 // compute entropy
                 BasicStats.entropy ps
 
-        static member MinEntropyPartition(rmap: Cells)(vert: bool) : AST.Address[]*AST.Address[] =
+        static member private MinEntropyPartition(rmap: Cells)(vert: bool) : AST.Address[]*AST.Address[] =
             // which axis we use depends on whether we are
             // decomposing verticalls or horizontally
             let indexer = (fun (a: AST.Address) -> if vert then a.X else a.Y)
@@ -52,7 +53,14 @@
                 entropy_left + entropy_right
             )
 
-        static member Decompose(rmap: Cells)(parent_opt: Inner option) : BinaryMinEntropyTree =
+        static member Infer(addrs: AST.Address[])(hb_inv: InvertedHistogram) : BinaryMinEntropyTree =
+            let d = new Dict<AST.Address, Countable>()
+            for addr in addrs do
+                let (_,_,c) = hb_inv.[addr]
+                d.Add(addr, c)
+            BinaryMinEntropyTree.Decompose d None
+
+        static member private Decompose(rmap: Cells)(parent_opt: Inner option) : BinaryMinEntropyTree =
             // find the minimum entropy decompositions
             let (left,right) = BinaryMinEntropyTree.MinEntropyPartition rmap true
             let (top,bottom) = BinaryMinEntropyTree.MinEntropyPartition rmap false
