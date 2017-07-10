@@ -11,7 +11,10 @@
     type Region = LeftTop * RightBottom
 
     [<AbstractClass>]
-    type BinaryMinEntropyTree() =
+    type BinaryMinEntropyTree(lefttop: AST.Address, rightbottom: AST.Address) =
+        abstract member Region: string
+        default self.Region : string = lefttop.A1Local() + ":" + rightbottom.A1Local()
+
         static member private AddressEntropy(addrs: AST.Address[])(rmap: Dict<AST.Address,Countable>) : double =
             if addrs.Length = 0 then
                 // the decomposition where one side is the empty set
@@ -84,48 +87,55 @@
             BinaryMinEntropyTree.Decompose d None
 
         static member private Decompose(rmap: Cells)(parent_opt: Inner option) : BinaryMinEntropyTree =
-            // find the minimum entropy decompositions
-            let (left,right) = BinaryMinEntropyTree.MinEntropyPartition rmap true
-            let (top,bottom) = BinaryMinEntropyTree.MinEntropyPartition rmap false
+            // get bounding region
+            let (lefttop,rightbottom) = Utils.BoundingRegion rmap.Keys 0
 
-            // compute entropies again
-            let e_vert_l = BinaryMinEntropyTree.AddressEntropy left rmap
-            let e_vert_r = BinaryMinEntropyTree.AddressEntropy right rmap
-            let e_horz_t = BinaryMinEntropyTree.AddressEntropy top rmap
-            let e_horz_b = BinaryMinEntropyTree.AddressEntropy bottom rmap
-
-            let e_vert = e_vert_l + e_vert_r
-            let e_horz = e_horz_t + e_horz_b
-
-            // split vertically or horizontally (favor vert for ties)
-            if e_vert <= e_horz then
-                // do we have a perfect decomposition?
-                if e_vert = 0.0 then
-                    Leaf(parent_opt, rmap) :> BinaryMinEntropyTree
-                else
-                    let l_rmap = left   |> Array.map (fun a -> a,rmap.[a]) |> adict
-                    let r_rmap = right  |> Array.map (fun a -> a,rmap.[a]) |> adict
-
-                    let node = Inner()
-                    let lnode = BinaryMinEntropyTree.Decompose l_rmap (Some node)
-                    let rnode = BinaryMinEntropyTree.Decompose r_rmap (Some node)
-                    node.AddLeft lnode
-                    node.AddRight rnode
-                    node :> BinaryMinEntropyTree
+            // base case 1: there's only 1 cell
+            if lefttop = rightbottom then
+                Leaf(lefttop, rightbottom, parent_opt, rmap) :> BinaryMinEntropyTree
             else
-                // do we have a perfect decomposition?
-                if e_horz = 0.0 then
-                    Leaf(parent_opt, rmap) :> BinaryMinEntropyTree
-                else
-                    let t_rmap = top    |> Array.map (fun a -> a,rmap.[a]) |> adict
-                    let b_rmap = bottom |> Array.map (fun a -> a,rmap.[a]) |> adict
+                // find the minimum entropy decompositions
+                let (left,right) = BinaryMinEntropyTree.MinEntropyPartition rmap true
+                let (top,bottom) = BinaryMinEntropyTree.MinEntropyPartition rmap false
 
-                    let node = Inner()
-                    let tnode = BinaryMinEntropyTree.Decompose t_rmap (Some node)
-                    let bnode = BinaryMinEntropyTree.Decompose b_rmap (Some node)
-                    node.AddLeft tnode
-                    node.AddRight bnode
-                    node :> BinaryMinEntropyTree
+                // compute entropies again
+                let e_vert_l = BinaryMinEntropyTree.AddressEntropy left rmap
+                let e_vert_r = BinaryMinEntropyTree.AddressEntropy right rmap
+                let e_horz_t = BinaryMinEntropyTree.AddressEntropy top rmap
+                let e_horz_b = BinaryMinEntropyTree.AddressEntropy bottom rmap
+
+                let e_vert = e_vert_l + e_vert_r
+                let e_horz = e_horz_t + e_horz_b
+
+                // split vertically or horizontally (favor vert for ties)
+                if e_vert <= e_horz then
+                    // base case 2: (perfect decomposition & right values same as left values)
+                    if e_vert = 0.0 && rmap.[left.[0]].ToCVectorResultant = rmap.[right.[0]].ToCVectorResultant then
+                        Leaf(lefttop, rightbottom, parent_opt, rmap) :> BinaryMinEntropyTree
+                    else
+                        let l_rmap = left   |> Array.map (fun a -> a,rmap.[a]) |> adict
+                        let r_rmap = right  |> Array.map (fun a -> a,rmap.[a]) |> adict
+
+                        let node = Inner(lefttop, rightbottom)
+                        let lnode = BinaryMinEntropyTree.Decompose l_rmap (Some node)
+                        let rnode = BinaryMinEntropyTree.Decompose r_rmap (Some node)
+                        node.AddLeft lnode
+                        node.AddRight rnode
+                        node :> BinaryMinEntropyTree
+                else
+                    // base case 2: (perfect decomposition & top values same as bottom values)
+                    if e_horz = 0.0 && rmap.[top.[0]].ToCVectorResultant = rmap.[bottom.[0]].ToCVectorResultant then
+                        Leaf(lefttop, rightbottom, parent_opt, rmap) :> BinaryMinEntropyTree
+                    else
+                        let t_rmap = top    |> Array.map (fun a -> a,rmap.[a]) |> adict
+                        let b_rmap = bottom |> Array.map (fun a -> a,rmap.[a]) |> adict
+
+                        let node = Inner(lefttop, rightbottom)
+                        let tnode = BinaryMinEntropyTree.Decompose t_rmap (Some node)
+                        let bnode = BinaryMinEntropyTree.Decompose b_rmap (Some node)
+                        node.AddLeft tnode
+                        node.AddRight bnode
+                        node :> BinaryMinEntropyTree
 
         /// <summary>return the leaves of the tree, in order of smallest to largest region</summary>
         static member Regions(tree: BinaryMinEntropyTree) : Leaf[] =
@@ -134,8 +144,8 @@
             | :? Leaf as l -> [| l |]
             | _ -> failwith "Unknown tree node type."
 
-    and Inner() =
-        inherit BinaryMinEntropyTree()
+    and Inner(lefttop: AST.Address, rightbottom: AST.Address) =
+        inherit BinaryMinEntropyTree(lefttop, rightbottom)
         let mutable left = None
         let mutable right = None
         let mutable parent = None
@@ -154,5 +164,5 @@
             | Some r -> r
             | None -> failwith "Cannot traverse tree until it is constructed!"
 
-    and Leaf(parent: Inner option, cells: Cells) =
-        inherit BinaryMinEntropyTree()
+    and Leaf(lefttop: AST.Address, rightbottom: AST.Address, parent: Inner option, cells: Cells) =
+        inherit BinaryMinEntropyTree(lefttop, rightbottom)
