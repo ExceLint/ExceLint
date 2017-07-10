@@ -772,6 +772,49 @@ namespace ExceLintUI
             DrawClusters(_m[w].CurrentClustering);
         }
 
+        public void GetRegionsForWorksheet(Worksheet w, ExceLint.FeatureConf conf, Boolean forceDAGBuild, ProgBar pb)
+        {
+            Func<Depends.Progress, Unit> f = (p) =>
+            {
+                if (!_m.ContainsKey(w))
+                {
+                    Excel.Application app = Globals.ThisAddIn.Application;
+
+                    // create
+                    var m = ExceLint.ModelBuilder.initStepClusterModel(app, conf, _dag, 0.05, p);
+
+                    // run agglomerative clustering until we reach inflection point
+                    while (!m.NextStepIsKnee)
+                    {
+                        m.Step();
+                    }
+
+                    _m.Add(w, m);
+                }
+                else
+                {
+                    // fake progress bar if we've already done the work
+                    for (int i = 0; i < _m[w].NumCells; i++)
+                    {
+                        pb.IncrementProgress();
+                    }
+                }
+                return null;
+            };
+
+            // update DAG if necessary
+            buildDAGAndDoStuff(forceDAGBuild, f, 3, pb);
+
+            // extract regions
+            var regions = _m[w].Regions;
+
+            // convert to clustering
+            var clustering = new HashSet<HashSet<AST.Address>>(regions.Select(leaf => leaf.Cells));
+
+            // draw
+            DrawClusters(clustering);
+        }
+
         public void DrawClusters(HashSet<HashSet<AST.Address>> clusters)
         {
             // init cluster color map

@@ -166,3 +166,4 @@
 
     and Leaf(lefttop: AST.Address, rightbottom: AST.Address, parent: Inner option, cells: Cells) =
         inherit BinaryMinEntropyTree(lefttop, rightbottom)
+        member self.Cells : HashSet<AST.Address> = new HashSet<AST.Address>(cells.Keys)

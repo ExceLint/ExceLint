@@ -182,6 +182,8 @@
             member self.NumCells : int = cells.Length
             member self.CanStep : bool =
                 Seq.length (hs.NearestNeighborTable) > 1
+            member self.Regions : Leaf[] = BinaryMinEntropyTree.Regions rTree
+
             member private self.IsKnee(s: HashSet<AST.Address>)(t: HashSet<AST.Address>) : bool =
                 // the first time we merge two clusters that have
                 // different resultants, we've probably hit the knee

@@ -25,6 +25,37 @@ namespace ExceLintUI
         private string custodesPath = null;
 
         #region BUTTON_HANDLERS
+
+        private void inferRegions_Click(object sender, RibbonControlEventArgs e)
+        {
+            var w = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+
+            if (currentWorkbook.Visualization_Hidden(w))
+            {
+                // create progbar in main thread;
+                // worker thread will call Dispose
+                var pb = new ProgBar();
+
+                // show a visualization
+                Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+                currentWorkbook.GetRegionsForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
+
+                // remove progress bar
+                pb.Close();
+            }
+            else
+            {
+                // erase the cluster visualization
+                currentWorkbook.resetTool();
+            }
+
+            // toggle button
+            currentWorkbook.toggleHeatMapSetting(w);
+
+            // set UI state
+            setUIState(currentWorkbook);
+        }
+
         private void LISAHeatmap_Click(object sender, RibbonControlEventArgs e)
         {
             // workbook- and UI-update callback
