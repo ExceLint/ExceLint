@@ -144,6 +144,74 @@
             | :? Leaf as l -> [| l |]
             | _ -> failwith "Unknown tree node type."
 
+        static member private MergeIsRectangular(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : bool =
+            let merged = HashSetUtils.union source target
+            let bb_merged = Utils.BoundingBoxHS merged 0
+            (HashSetUtils.difference bb_merged merged).Count = 0
+
+        static member RectangularClustering(tree: BinaryMinEntropyTree)(hb_inv: InvertedHistogram) : Clustering =
+            // coalesce all cells that have the same cvector,
+            // ensuring that all merged clusters remain rectangular
+            let regs = BinaryMinEntropyTree.Regions tree
+            let clusters = regs |> Array.map (fun leaf -> leaf.Cells)
+            let revLookup = new Dict<AST.Address,HashSet<AST.Address>>()
+
+            // reverse lookup
+            for c in clusters do
+                for a in c do
+                    revLookup.Add(a,c)
+
+            // vertically sorted array of all cells
+            let cells_sorted_vert =
+                clusters
+                |> Array.map (fun cluster -> cluster |> Seq.toArray)
+                |> Array.concat 
+                |> Array.sortBy (fun addr -> (addr.X, addr.Y))
+
+            // horizontally sorted array of all cells
+            let cells_sorted_horiz =
+                cells_sorted_vert
+                |> Array.sortBy (fun addr -> (addr.Y, addr.X))
+
+            let coalesce : AST.Address[] -> bool -> unit = (fun (cells: AST.Address[])(vert: bool) ->
+                let adjacent = if vert then
+                                   (fun (c1: AST.Address)(c2: AST.Address) -> c1.X = c2.X && c1.Y < c2.Y)
+                               else
+                                   (fun (c1: AST.Address)(c2: AST.Address) -> c1.Y = c2.Y && c1.X < c2.X)
+
+                for i in 0 .. cells.Length - 2 do
+                    // get cell
+                    let cell = cells.[i]
+                    // get cluster of the cell
+                    let source = revLookup.[cell]
+                    // get adjacent cell, if there is one
+                    let maybeAdj = cells.[i+1]
+                    // cell's countable
+                    let (_,_,co_cell) = hb_inv.[cell]
+                    // maybeAdj's countable
+                    let (_,_,co_maybe) = hb_inv.[maybeAdj]
+                    // is maybeAdj adjacent to cell and has the same cvector?
+                    if (adjacent cell maybeAdj) && co_cell.ToCVectorResultant = co_maybe.ToCVectorResultant then
+                        // get cluster for maybeAdj
+                        let target = revLookup.[maybeAdj]
+                        // if I merge source and target, does the merge remain rectangular?
+                        if BinaryMinEntropyTree.MergeIsRectangular source target then
+                            // add every cell from source to target hashset
+                            HashSetUtils.inPlaceUnion source target
+                            // update all reverse lookups for source cells
+                            for c in source do
+                                revLookup.[c] <- target
+            )
+
+            // coalesce vertically
+            coalesce cells_sorted_vert true
+
+            // coalesce horizontally
+            coalesce cells_sorted_horiz false
+
+            // flatten reverse lookup and return clustering
+            new Clustering(revLookup.Values |> Seq.distinct)
+
     and Inner(lefttop: AST.Address, rightbottom: AST.Address) =
         inherit BinaryMinEntropyTree(lefttop, rightbottom)
         let mutable left = None

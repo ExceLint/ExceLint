@@ -806,10 +806,7 @@ namespace ExceLintUI
             buildDAGAndDoStuff(forceDAGBuild, f, 3, pb);
 
             // extract regions
-            var regions = _m[w].Regions;
-
-            // convert to clustering
-            var clustering = new HashSet<HashSet<AST.Address>>(regions.Select(leaf => leaf.Cells));
+            var clustering = _m[w].Regions;
 
             // draw
             DrawClusters(clustering);

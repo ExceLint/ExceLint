@@ -176,13 +176,14 @@
 
             // do region inference
             let rTree = BinaryMinEntropyTree.Infer cells hb_inv
+            let regions = BinaryMinEntropyTree.RectangularClustering rTree hb_inv
 
             let mutable probable_knee = false
 
             member self.NumCells : int = cells.Length
             member self.CanStep : bool =
                 Seq.length (hs.NearestNeighborTable) > 1
-            member self.Regions : Leaf[] = BinaryMinEntropyTree.Regions rTree
+            member self.Regions : Clustering = regions
 
             member private self.IsKnee(s: HashSet<AST.Address>)(t: HashSet<AST.Address>) : bool =
                 // the first time we merge two clusters that have
@@ -207,6 +208,10 @@
                     // all the formulas are exactly the same, and thus
                     // there is no knee
                     true
+
+            member self.MergeAllRectangles() : unit =
+                
+                failwith "is this really a good idea?"
 
             member self.Step() : bool =
                 // update progress
