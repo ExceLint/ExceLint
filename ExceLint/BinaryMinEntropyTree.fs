@@ -89,15 +89,18 @@
             let (top,bottom) = BinaryMinEntropyTree.MinEntropyPartition rmap false
 
             // compute entropies again
-            let e_vert = (BinaryMinEntropyTree.AddressEntropy left rmap) +
-                         (BinaryMinEntropyTree.AddressEntropy right rmap)
-            let e_horz = (BinaryMinEntropyTree.AddressEntropy top rmap) +
-                         (BinaryMinEntropyTree.AddressEntropy bottom rmap)
+            let e_vert_l = BinaryMinEntropyTree.AddressEntropy left rmap
+            let e_vert_r = BinaryMinEntropyTree.AddressEntropy right rmap
+            let e_horz_t = BinaryMinEntropyTree.AddressEntropy top rmap
+            let e_horz_b = BinaryMinEntropyTree.AddressEntropy bottom rmap
+
+            let e_vert = e_vert_l + e_vert_r
+            let e_horz = e_horz_t + e_horz_b
 
             // split vertically or horizontally (favor vert for ties)
             if e_vert <= e_horz then
-                // but is e_vert smaller because e_horz is a perfect decomposition?
-                if e_horz = System.Double.PositiveInfinity then
+                // do we have a perfect decomposition?
+                if e_vert = 0.0 then
                     Leaf(parent_opt, rmap) :> BinaryMinEntropyTree
                 else
                     let l_rmap = left   |> Array.map (fun a -> a,rmap.[a]) |> adict
@@ -110,8 +113,8 @@
                     node.AddRight rnode
                     node :> BinaryMinEntropyTree
             else
-                // but is e_horz smaller because e_vert is a perfect decomposition?
-                if e_vert = System.Double.PositiveInfinity then
+                // do we have a perfect decomposition?
+                if e_horz = 0.0 then
                     Leaf(parent_opt, rmap) :> BinaryMinEntropyTree
                 else
                     let t_rmap = top    |> Array.map (fun a -> a,rmap.[a]) |> adict
