@@ -343,11 +343,14 @@
                     let value = dag.readCOMValueAtAddress(tail)
                     let mutable num = 0.0
                     num <- if Double.TryParse(value, &num) then
-                               // single constant vector
+                               // a constant, i.e., references one thing
                                1.0
-                           else
-                               // zero-length vector
+                           else if String.IsNullOrWhiteSpace(value) then
+                               // it's blank, i.e., references nothing
                                0.0
+                           else
+                               // it's a string
+                               -1.0  // pretty arbitrary... maybe we should have a "blank" dimension
                     let env = AST.Env(tail.Path, tail.WorkbookName, tail.WorksheetName)
                     let expr = AST.ReferenceExpr (AST.ReferenceConstant(env, num))
                     let dv = cvector_f tail expr
@@ -849,7 +852,7 @@
                 let includeConstant = true
                 let includeLoc = true
                 let rebase_f = relativeToTail
-                let constant_f = makeConstantVectorsFromConstants KeepConstantValue.No
+                let constant_f = makeConstantVectorsFromConstants KeepConstantValue.Yes  // note that we want to set constant values explicitly here
                 ResultantMaker cell dag isMixed includeConstant includeLoc isTransitive isFormula isOffSheetInsensitive constant_f rebase_f 
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorMixedFullCVectorResultantOSI>.Name,

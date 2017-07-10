@@ -14,7 +14,10 @@
     type BinaryMinEntropyTree() =
         static member private AddressEntropy(addrs: AST.Address[])(rmap: Dict<AST.Address,Countable>) : double =
             if addrs.Length = 0 then
-                0.0
+                // the decomposition where one side is the empty set
+                // is the worst decomposition, unless it is the only
+                // decomposition
+                System.Double.PositiveInfinity
             else
                 // get values
                 let vs = addrs |> Array.map (fun a -> rmap.[a].ToCVectorResultant)
@@ -93,7 +96,8 @@
 
             // split vertically or horizontally (favor vert for ties)
             if e_vert <= e_horz then
-                if e_vert = 0.0 then
+                // but is e_vert smaller because e_horz is a perfect decomposition?
+                if e_horz = System.Double.PositiveInfinity then
                     Leaf(parent_opt, rmap) :> BinaryMinEntropyTree
                 else
                     let l_rmap = left   |> Array.map (fun a -> a,rmap.[a]) |> adict
@@ -106,7 +110,8 @@
                     node.AddRight rnode
                     node :> BinaryMinEntropyTree
             else
-                if e_horz = 0.0 then
+                // but is e_horz smaller because e_vert is a perfect decomposition?
+                if e_vert = System.Double.PositiveInfinity then
                     Leaf(parent_opt, rmap) :> BinaryMinEntropyTree
                 else
                     let t_rmap = top    |> Array.map (fun a -> a,rmap.[a]) |> adict

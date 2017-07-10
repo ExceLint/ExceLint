@@ -13,7 +13,8 @@
                 let cs = if config.IsEnabled("AnalyzeOnlyFormulas") then
                             d.getAllFormulaAddrs()
                          else
-                            d.allCells()
+//                            d.allCells()
+                            d.allCellsIncludingBlanks()
                 let cs' = match config.IsLimitedToSheet with
                           | Some(wsname) -> cs |> Array.filter (fun addr -> addr.A1Worksheet() = wsname)
                           | None -> cs 

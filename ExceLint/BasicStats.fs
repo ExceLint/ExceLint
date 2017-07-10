@@ -77,4 +77,9 @@
         /// <param name="P">Vector of probabilities, one for each outcome of the random variable X.</param>
         let entropy(P: double[]) : double =
             assert (Array.sum P <= 1.0)
-            -1.0 * (P |> Array.sumBy (fun p -> p * System.Math.Log(p, 2.0)))
+
+            let logs = P |> Array.map (fun p -> System.Math.Log(p, 2.0))
+            let products =  P |> Array.map (fun p -> p * System.Math.Log(p, 2.0))
+            let sum = Array.sum products
+            let result = -sum
+            result
