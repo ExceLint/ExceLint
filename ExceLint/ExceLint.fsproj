@@ -68,9 +68,9 @@
     <Compile Include="Proximity.fs" />
     <Compile Include="CompressedRadixTree.fs" />
     <Compile Include="LSH.fs" />
-    <Compile Include="HashSpace.fs" />
     <Compile Include="FeatureConf.fs" />
     <Compile Include="CommonTypes.fs" />
+    <Compile Include="HashSpace.fs" />
     <Compile Include="CommonFunctions.fs" />
     <Compile Include="Distances.fs" />
     <Compile Include="PerfUtils.fs" />

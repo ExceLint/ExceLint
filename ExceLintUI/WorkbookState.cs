@@ -750,6 +750,11 @@ namespace ExceLintUI
                     while (!m.NextStepIsKnee)
                     {
                         m.Step();
+
+                        // debug visualize
+                        restoreOutputColors();
+                        DrawClusters(m.CurrentClustering);
+                        System.Windows.Forms.MessageBox.Show("ok");
                     }
 
                     _m.Add(w, m);

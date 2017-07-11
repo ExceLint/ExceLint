@@ -1,5 +1,6 @@
 ﻿namespace ExceLint
     open System.Collections.Generic
+    open CommonTypes
     open Utils
 
     module HashSetUtils =
@@ -54,12 +55,20 @@
             member self.Distance = self.d
         end
 
-    type HashSpace<'p when 'p : equality>(points: seq<'p>, keymaker: 'p -> UInt128, keyexists: 'p -> 'p -> 'p, unmasker: UInt128 -> UInt128, d: DistanceF<'p>) =
+    type HashSpace<'p when 'p : equality>(clustering: GenericClustering<'p>, keymaker: HashSet<'p> -> UInt128, keyexists: 'p -> 'p -> 'p, unmasker: UInt128 -> UInt128, d: DistanceF<'p>) =
+        // extract points
+        let points = clustering |> Seq.concat |> Seq.distinct |> Seq.toArray
+
         // initialize tree
+        // use degenerate cluster (one point per cluster)
+        // to satisfy keymaker
         let t = Seq.fold (fun (t': CRTNode<'p>)(point: 'p) ->
-                    let key = keymaker point
+                    let cluster = new HashSet<'p>([| point |])
+                    let key = keymaker cluster
                     t'.InsertOr key point keyexists
                 ) (CRTRoot<'p>() :> CRTNode<'p>) points
+
+        let tviz = t.ToGraphViz
 
         // initial mask
         let imsk = UInt128.Zero.Sub(UInt128.One)
@@ -81,20 +90,21 @@
 
         // initialize NN table
         let nn =
-            points
-            |> Seq.map (fun (p: 'p) ->
+            clustering
+            |> Seq.map (fun (cluster: HashSet<'p>) ->
                  // get key
-                 let key = keymaker p
+                 let key = keymaker cluster
 
-                 // get the initial 'cluster'
-                 let c1 = pt2Cluster.[p]
+                 // get common mask
+//                 failwith "huh"
 
                  // index NN entry by cluster
-                 c1, HashSpace.NearestCluster t c1 key imsk unmasker pt2Cluster d
+                 cluster, HashSpace.NearestCluster t cluster key imsk unmasker pt2Cluster d
             )
             |> adict
 
-        member self.Key(point: 'p) : UInt128 = keymaker point
+        let foo = "hi"
+
         member self.NearestNeighborTable : seq<NN<'p>> = nn.Values |> Seq.sortBy (fun nn -> nn.Distance)
         member self.HashTree: CRTNode<'p> = t
         member self.ClusterID(c: HashSet<'p>) = ids.[c]
@@ -190,3 +200,8 @@
 
             // return updated entry
             NN(source, closest, key, new_mask, dst)
+
+         static member DegenerateClustering<'p>(cells: 'p[]) : GenericClustering<'p> =
+             cells
+             |> Array.map (fun c -> new HashSet<'p>([|c|]))
+             |> (fun arr -> new HashSet<HashSet<'p>>(arr))

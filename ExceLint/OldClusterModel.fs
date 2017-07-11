@@ -166,14 +166,20 @@
             let edges = pairwiseClusterDistances clusters DISTANCE
 
             // compute initial NN table
-            let keymaker = (fun (addr: AST.Address) ->
+            let keymaker = (fun (cluster: HashSet<AST.Address>) ->
+                                // any of the addresses in the cluster
+                                // are capable of producing a
+                                // 'representative' hash because they
+                                // all share a common prefix
+                                let addr = cluster |> Seq.toArray |> (fun c -> c.[0])
                                 let (_,_,co) = hb_inv.[addr]
                                 LSHCalc.h7 co
                             )
             let keyexists = (fun addr1 addr2 ->
                                 failwith "Duplicate keys should not happen."
                             )
-            let hs = HashSpace<AST.Address>(cells, keymaker, keyexists, LSHCalc.h7unmasker, DISTANCE)
+            let initialClustering = HashSpace.DegenerateClustering cells
+            let hs = HashSpace<AST.Address>(initialClustering, keymaker, keyexists, LSHCalc.h7unmasker, DISTANCE)
 
             let mutable probable_knee = false
 
