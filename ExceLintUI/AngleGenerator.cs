@@ -6,6 +6,27 @@ using System.Threading.Tasks;
 
 namespace ExceLintUI
 {
+    public struct Arc
+    {
+        public double start;
+        public double end;
+
+        public Arc(double start, double end)
+        {
+            this.start = start;
+            this.end = end;
+        }
+
+        public double Start
+        {
+            get { return start; }
+        }
+        public double End
+        {
+            get { return end; }
+        }
+    }
+
     public class AngleGenerator
     {
         IEnumerable<double> angles;
@@ -24,20 +45,22 @@ namespace ExceLintUI
 
         private static IEnumerable<double> Angles(double start, double end)
         {
-            var midpoint = (end - start) / 2 + start;
-            yield return midpoint;
+            Func<double, double, double> midpoint_f = (s, e) => (e - s) / 2 + s;
+            var work = new Queue<Arc>();
 
-            // split this region into two regions, and recursively enumerate
-            var top = Angles(start, midpoint);
-            var bottom = Angles(midpoint, end);
+            // initialize
+            work.Enqueue(new Arc(start, end));
 
             while (true)
             {
-                yield return top.Take(1).First();
-                top = top.Skip(1);
+                // grab job, compute midpoint and yield
+                var job = work.Dequeue();
+                var midpoint = midpoint_f(job.start, job.end);
+                yield return midpoint;
 
-                yield return bottom.Take(1).First();
-                bottom = bottom.Skip(1);
+                // put next two arcs on queue
+                work.Enqueue(new Arc(start, midpoint));
+                work.Enqueue(new Arc(midpoint, end));
             }
         }
     }
