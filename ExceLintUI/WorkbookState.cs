@@ -750,11 +750,6 @@ namespace ExceLintUI
                     while (!m.NextStepIsKnee)
                     {
                         m.Step();
-
-                        // debug visualize
-                        restoreOutputColors();
-                        DrawClusters(m.CurrentClustering);
-                        System.Windows.Forms.MessageBox.Show("ok");
                     }
 
                     _m.Add(w, m);
@@ -819,6 +814,7 @@ namespace ExceLintUI
 
         public void DrawClusters(HashSet<HashSet<AST.Address>> clusters)
         {
+
             // init cluster color map
             ClusterColorer clusterColors = new ClusterColorer(clusters, 0, 360, 0);
 

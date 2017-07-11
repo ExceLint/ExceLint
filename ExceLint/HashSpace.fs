@@ -74,11 +74,22 @@
         let imsk = UInt128.Zero.Sub(UInt128.One)
 
         // dict of clusters
+//        let pt2Cluster =
+//            points
+//            |> Seq.map (fun p ->
+//                 p,new HashSet<'p>([p])
+//               )
+//            |> adict
+
         let pt2Cluster =
-            points
-            |> Seq.map (fun p ->
-                 p,new HashSet<'p>([p])
-               )
+            clustering
+            |> Seq.map (fun c ->
+                c
+                |> Seq.map (fun p ->
+                    p, c
+                )
+            )
+            |> Seq.concat
             |> adict
 
         // create cluster ID map
@@ -102,8 +113,6 @@
                  cluster, HashSpace.NearestCluster t cluster key imsk unmasker pt2Cluster d
             )
             |> adict
-
-        let foo = "hi"
 
         member self.NearestNeighborTable : seq<NN<'p>> = nn.Values |> Seq.sortBy (fun nn -> nn.Distance)
         member self.HashTree: CRTNode<'p> = t
@@ -136,6 +145,7 @@
                                   let initial_mask = nent.CommonMask
                                   nn.[cl_source] <- HashSpace.NearestCluster t cl_source key initial_mask unmasker pt2Cluster d
                           )
+
         member self.NextNearestNeighbor : NN<'p> = self.NearestNeighborTable |> Seq.head
         member self.Clusters : HashSet<HashSet<'p>> =
             let hss =  pt2Cluster.Values
