@@ -104,6 +104,26 @@
             let w' = fun a1 a2 -> w.Invoke(a1, a2)
             Moran points x' w'
 
+        let refvect_same(source: HashSet<AST.Address>)(target: HashSet<AST.Address>)(hb_inv: InvertedHistogram) : bool =
+            // check that all of the location-free vectors in the source and target are the same
+            let slf = source
+                        |> Seq.map (fun addr ->
+                                        let (_,_,ac) = hb_inv.[addr]
+                                        ac.LocationFree
+                                    ) |> Seq.toArray
+            let tlf = target
+                        |> Seq.map (fun addr ->
+                                        let (_,_,ac) = hb_inv.[addr]
+                                        ac.LocationFree
+                                    ) |> Seq.toArray
+            (Array.forall (fun s -> s.Equals(slf.[0])) slf) &&
+            (Array.forall (fun t -> t.Equals(slf.[0])) tlf)
+
+        let pp(c: Set<AST.Address>)(hb_inv: InvertedHistogram) : string =
+            c
+            |> Seq.map (fun a -> a.A1Local())
+            |> (fun addrs -> "[" + String.Join(",", addrs) + "] with centroid " + (centroid c hb_inv).ToString())
+
         type ClusterModel(input: Input) =
             let mutable clusteringAtKnee = None
             let mutable inCriticalRegion = false
@@ -132,26 +152,6 @@
             let (hb_inv: InvertedHistogram,invert_time: int64) = PerfUtils.runMillis _runhisto ()
 
             let score_time = feat_time + scale_time + invert_time + flatten_time
-
-            let refvect_same(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : bool =
-                // check that all of the location-free vectors in the source and target are the same
-                let slf = source
-                            |> Seq.map (fun addr ->
-                                            let (_,_,ac) = hb_inv.[addr]
-                                            ac.LocationFree
-                                        ) |> Seq.toArray
-                let tlf = target
-                            |> Seq.map (fun addr ->
-                                            let (_,_,ac) = hb_inv.[addr]
-                                            ac.LocationFree
-                                        ) |> Seq.toArray
-                (Array.forall (fun s -> s.Equals(slf.[0])) slf) &&
-                (Array.forall (fun t -> t.Equals(slf.[0])) tlf)
-
-            let pp(c: Set<AST.Address>) : string =
-                c
-                |> Seq.map (fun a -> a.A1Local())
-                |> (fun addrs -> "[" + String.Join(",", addrs) + "] with centroid " + (centroid c hb_inv).ToString())
 
             let mutable log: ClusterStep list = []
             let mutable per_log = []
@@ -188,7 +188,7 @@
             member private self.IsKnee(s: HashSet<AST.Address>)(t: HashSet<AST.Address>) : bool =
                 // the first time we merge two clusters that have
                 // different resultants, we've probably hit the knee
-                not (refvect_same s t)
+                not (refvect_same s t hb_inv)
 
             member private self.IsFoot(s: HashSet<AST.Address>) : bool =
                 // the first time a former merge target becomes
@@ -322,7 +322,7 @@
                 |> List.iter (fun step ->
                         let row = new ExceLintFileFormats.ClusterStepsRow()
                         row.Show <- step.in_critical_region
-                        row.Merge <- (pp step.source) + " with " + (pp step.target)
+                        row.Merge <- (pp step.source hb_inv) + " with " + (pp step.target hb_inv)
                         row.Distance <- step.distance
                         row.FScore <- step.f
                         row.WCSS <- step.within_cluster_sum_squares
