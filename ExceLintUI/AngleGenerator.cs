@@ -44,44 +44,24 @@ namespace ExceLintUI
             return a;
         }
 
-        private static IEnumerable<double> OldAngles(double start, double end)
-        {
-            var midpoint = (end - start) / 2 + start;
-            yield return midpoint;
-
-            // split this region into two regions, and recursively enumerate
-            var top = Angles(start, midpoint);
-            var bottom = Angles(midpoint, end);
-
-            while (true)
-            {
-                yield return top.Take(1).First();
-                top = top.Skip(1);
-
-                yield return bottom.Take(1).First();
-                bottom = bottom.Skip(1);
-            }
-        }
-
         private static IEnumerable<double> Angles(double start, double end)
         {
             Func<double, double, double> midpoint_f = (s, e) => (e - s) / 2 + s;
-
-            var work = new Stack<Arc>();
+            var work = new Queue<Arc>();
 
             // initialize
-            work.Push(new Arc(start, end));
+            work.Enqueue(new Arc(start, end));
 
             while (true)
             {
                 // grab job, compute midpoint and yield
-                var job = work.Pop();
+                var job = work.Dequeue();
                 var midpoint = midpoint_f(job.start, job.end);
                 yield return midpoint;
 
-                // put next two arcs on stack
-                work.Push(new Arc(midpoint, end));
-                work.Push(new Arc(start, midpoint));
+                // put next two arcs on queue
+                work.Enqueue(new Arc(start, midpoint));
+                work.Enqueue(new Arc(midpoint, end));
             }
         }
     }
