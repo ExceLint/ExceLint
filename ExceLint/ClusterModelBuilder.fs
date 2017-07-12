@@ -164,7 +164,11 @@
                 | DistanceMetric.EarthMover -> earth_movers_dist hb_inv
                 | DistanceMetric.MeanCentroid -> cent_dist hb_inv
 
-            // compute initial NN table
+            // do region inference
+            let rTree = BinaryMinEntropyTree.Infer cells hb_inv
+            let regions = BinaryMinEntropyTree.RectangularClustering rTree hb_inv
+
+            // compute NN table
             let keymaker = (fun (addr: AST.Address) ->
                                 let (_,_,co) = hb_inv.[addr]
                                 LSHCalc.h7 co
@@ -172,12 +176,7 @@
             let keyexists = (fun addr1 addr2 ->
                                 failwith "Duplicate keys should not happen."
                             )
-            let initialClustering = HashSpace.DegenerateClustering cells
-            let hs = HashSpace<AST.Address>(initialClustering, keymaker, keyexists, LSHCalc.h7unmasker, DISTANCE)
-
-            // do region inference
-//            let rTree = BinaryMinEntropyTree.Infer cells hb_inv
-//            let regions = BinaryMinEntropyTree.RectangularClustering rTree hb_inv
+            let hs = HashSpace<AST.Address>(regions, keymaker, keyexists, LSHCalc.h7unmasker, DISTANCE)
 
             let mutable probable_knee = false
 

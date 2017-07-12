@@ -57,7 +57,7 @@
 
     type HashSpace<'p when 'p : equality>(clustering: GenericClustering<'p>, keymaker: 'p -> UInt128, keyexists: 'p -> 'p -> 'p, unmasker: UInt128 -> UInt128, d: DistanceF<'p>) =
         // extract points
-        let points = clustering |> Seq.concat |> Seq.distinct |> Seq.toArray
+        let points = clustering |> Seq.concat |> Seq.toArray
 
         // initialize tree
         let t = Seq.fold (fun (t': CRTNode<'p>)(point: 'p) ->
@@ -84,7 +84,7 @@
             Seq.fold (fun (idx,m) cl ->
                 m.Add(cl, idx)
                 (idx + 1, m)
-            ) (0,new Dict<HashSet<'p>,int>()) (pt2Cluster.Values)
+            ) (0,new Dict<HashSet<'p>,int>()) clustering
 
         // initialize NN table
         let nn =
