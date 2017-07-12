@@ -110,6 +110,15 @@
             let h = new HashSet<HashSet<'p>>()
             hss |> Seq.iter (fun hs -> h.Add hs |> ignore)
             h
+        member self.NearestNeighbor(source: HashSet<'p>) : HashSet<'p> =
+            // get keys
+            let keys = Seq.map keymaker source |> Seq.toArray
+            // get common mask
+            let cmsk = UInt128.calcMask 0 (UInt128.LongestCommonPrefix keys)
+            // get nearest neighboring cluster
+            let nn = HashSpace.NearestCluster t source keys.[0] cmsk unmasker pt2Cluster d
+            // return target cluster
+            nn.ToCluster
 
         /// <summary>
         /// Finds the set of closest points to a given cluster key,
