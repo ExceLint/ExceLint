@@ -350,7 +350,7 @@
                     // and it's the latest clustering
                 | None -> self.CurrentClustering
 
-            member self.OldRanking : Ranking =
+            member self.Ranking : Ranking =
                 let numfrm = cells.Length
 
                 // keep a record of reported cells
@@ -388,38 +388,6 @@
                 assert (rnk.Length <= numfrm)
 
                 rnk
-
-            member self.Ranking : Ranking =
-                // enabled features (in principle, ExceLint can have many enabled simultaneously)
-                let fs = input.config.EnabledFeatures
-
-                assert (fs.Length = 1)
-
-                // the one enabled feature
-                let feat = fs.[0]
-
-                // dictionary of I_i values
-                let d = new Dict<AST.Address, double>()
-
-                // bind parameters of value function
-                let x = (fun a -> X a input.dag input.config fnlfrs)
-
-                // compute I_i for all i not in a cluster
-                for cluster in self.ClusteringAtKnee do
-                    let box = Utils.BoundingBoxHS cluster 0
-                    let potential_outliers = box |> Seq.filter (fun a -> not (Seq.contains a cluster))
-                    for cell in potential_outliers do
-                        let I_i = LISA cell box x W
-                        // if i is in more than one bounding box,
-                        // favor the I_i that suggests greater
-                        // autocorrelation, i.e., greater values of I_i
-                        if not (d.ContainsKey cell) then
-                            d.Add(cell, I_i)
-                        else if I_i > d.[cell] then
-                            d.[cell] <- I_i
-
-                // filter out negative scores and rank
-                d |> Seq.filter (fun kvp -> kvp.Value > 0.0) |> Seq.sortByDescending (fun kvp -> kvp.Value) |> Seq.toArray
 
             member self.RankingTimeMs = List.sum steps_ms
             member self.ScoreTimeMs = score_time
