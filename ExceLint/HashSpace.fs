@@ -3,39 +3,6 @@
     open CommonTypes
     open Utils
 
-    module HashSetUtils =
-        let difference<'a>(hs1: HashSet<'a>)(hs2: HashSet<'a>) : HashSet<'a> =
-            let hs3 = new HashSet<'a>(hs1)
-            hs3.ExceptWith(hs2)
-            hs3
-
-        let differenceElem<'a>(hs: HashSet<'a>)(elem: 'a) : HashSet<'a> =
-            let hs2 = new HashSet<'a>(hs)
-            hs2.Remove(elem) |> ignore
-            hs2
-
-        let intersection<'a>(hs1: HashSet<'a>)(hs2: HashSet<'a>) : HashSet<'a> =
-            let hs3 = new HashSet<'a>(hs1)
-            hs3.IntersectWith(hs2)
-            hs3
-
-        let union<'a>(hs1: HashSet<'a>)(hs2: HashSet<'a>) : HashSet<'a> =
-            let hs3 = new HashSet<'a>(hs1)
-            hs3.UnionWith(hs2)
-            hs3
-
-        let unionElem<'a>(hs: HashSet<'a>)(elem: 'a) : HashSet<'a> =
-            let hs2 = new HashSet<'a>(hs)
-            hs2.Add elem |> ignore
-            hs2
-
-        let inPlaceUnion<'a>(source: HashSet<'a>)(target: HashSet<'a>) : unit =
-            target.UnionWith(source)
-
-        let equals<'a>(hs1: HashSet<'a>)(hs2: HashSet<'a>) : bool =
-            let hsu = union hs1 hs2
-            hs1.Count = hsu.Count
-
     type DistanceF<'p> = HashSet<'p> -> HashSet<'p> -> double
 
     type NN<'p> =
@@ -56,8 +23,11 @@
         end
 
     type HashSpace<'p when 'p : equality>(clustering: GenericClustering<'p>, keymaker: 'p -> UInt128, keyexists: 'p -> 'p -> 'p, unmasker: UInt128 -> UInt128, d: DistanceF<'p>) =
+        // make a copy of clustering so that it is not mutated
+        let clustering' = CommonFunctions.CopyClustering clustering
+        
         // extract points
-        let points = clustering |> Seq.concat |> Seq.toArray
+        let points = clustering' |> Seq.concat |> Seq.toArray
 
         // initialize tree
         let t = Seq.fold (fun (t': CRTNode<'p>)(point: 'p) ->
@@ -65,11 +35,9 @@
                     t'.InsertOr key point keyexists
                 ) (CRTRoot<'p>() :> CRTNode<'p>) points
 
-        let tviz = t.ToGraphViz
-
-        // lookup cluster by addr
+        // lookup cluster by point
         let pt2Cluster =
-            clustering
+            clustering'
             |> Seq.map (fun c ->
                 c
                 |> Seq.map (fun p ->
@@ -84,11 +52,11 @@
             Seq.fold (fun (idx,m) cl ->
                 m.Add(cl, idx)
                 (idx + 1, m)
-            ) (0,new Dict<HashSet<'p>,int>()) clustering
+            ) (0,new Dict<HashSet<'p>,int>()) clustering'
 
         // initialize NN table
         let nn =
-            clustering
+            clustering'
             |> Seq.map (fun (cluster: HashSet<'p>) ->
                  let keys = cluster |> Seq.map (fun p -> keymaker p) |> Seq.toArray
 
@@ -200,7 +168,7 @@
             // return updated entry
             NN(source, closest, key, new_mask, dst)
 
-         static member DegenerateClustering<'p>(cells: 'p[]) : GenericClustering<'p> =
+        static member DegenerateClustering<'p>(cells: 'p[]) : GenericClustering<'p> =
              cells
              |> Array.map (fun c -> new HashSet<'p>([|c|]))
              |> (fun arr -> new HashSet<HashSet<'p>>(arr))

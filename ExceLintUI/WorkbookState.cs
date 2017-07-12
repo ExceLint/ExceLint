@@ -768,6 +768,50 @@ namespace ExceLintUI
             // update DAG if necessary
             buildDAGAndDoStuff(forceDAGBuild, f, 3, pb);
 
+            // show initial clustering, one cluster at a time
+            if (conf.DebugMode)
+            {
+                var clustering = _m[w].InitialClustering.OrderBy(c => c.Count);
+
+                
+
+                foreach (var cluster in clustering)
+                {
+                    // sanity check again
+                    if (!ExceLint.BinaryMinEntropyTree.ClusterIsRectangular(cluster))
+                    {
+                        System.Windows.Forms.MessageBox.Show(String.Join(", ",
+                            cluster.Select(a => a.A1Local())) + " IS NOT RECTANGULAR");
+                    }
+
+                    HashSet<AST.Address>[] cArr = { cluster };
+                    var cl2 = new HashSet<HashSet<AST.Address>>(cArr);
+
+                    restoreOutputColors();
+                    DrawClusters(cl2);
+                    System.Windows.Forms.MessageBox.Show(String.Join(", ", cluster.Select(a => a.A1Local())));
+                }
+            }
+
+            // draw agglomeration steps in debug mode
+            //if (conf.DebugMode)
+            //{
+            //    var log = _m[w].DebugClusterSteps;
+            //    for (int i = 0; i < log.Length; i++)
+            //    {
+            //        var step = log[i];
+            //        var source = new HashSet<AST.Address>(step.source);
+            //        var target = new HashSet<AST.Address>(step.target);
+            //        HashSet<AST.Address>[] cArr = {source, target};
+            //        var clustering = new HashSet<HashSet<AST.Address>>(cArr);
+
+            //        restoreOutputColors();
+            //        DrawClusters(clustering);
+            //        System.Windows.Forms.MessageBox.Show("step " + i);
+            //    }
+            //}
+
+
             // draw
             DrawClusters(_m[w].CurrentClustering);
         }
@@ -806,7 +850,7 @@ namespace ExceLintUI
             buildDAGAndDoStuff(forceDAGBuild, f, 3, pb);
 
             // extract regions
-            var clustering = _m[w].Regions;
+            var clustering = _m[w].InitialClustering;
 
             // draw
             DrawClusters(clustering);

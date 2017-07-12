@@ -1277,6 +1277,9 @@ namespace ExceLintUI
             // limit analysis to a single sheet
             c = c.limitAnalysisToSheet(((Excel.Worksheet)Globals.ThisAddIn.Application.ActiveWorkbook.ActiveSheet).Name);
 
+            // debug mode
+            if (this.DebugOutput.Checked) { c = c.enableDebugMode(true); }
+
             return c;
         }
 

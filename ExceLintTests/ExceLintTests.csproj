@@ -62,6 +62,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="BasicTests.cs" />
+    <Compile Include="BinaryMinEntropyTreeTests.cs" />
     <Compile Include="COFTests.cs" />
     <Compile Include="CompressedRadixTreeTests.cs" />
     <Compile Include="CVectorTests.cs" />

@@ -167,6 +167,7 @@
             // do region inference
             let rTree = BinaryMinEntropyTree.Infer cells hb_inv
             let regions = BinaryMinEntropyTree.RectangularClustering rTree hb_inv
+            let isRect = BinaryMinEntropyTree.ClusteringContainsOnlyRectangles regions
 
             // compute NN table
             let keymaker = (fun (addr: AST.Address) ->
@@ -176,15 +177,19 @@
             let keyexists = (fun addr1 addr2 ->
                                 failwith "Duplicate keys should not happen."
                             )
+            let regionsCopy = CopyClustering regions
             let hs = HashSpace<AST.Address>(regions, keymaker, keyexists, LSHCalc.h7unmasker, DISTANCE)
+            let sameClustering = SameClustering regionsCopy regions
+            let stillIsRect = BinaryMinEntropyTree.ClusteringContainsOnlyRectangles regions
 
             let mutable probable_knee = false
 
+            member self.InitialClustering : Clustering =
+                let isRect = BinaryMinEntropyTree.ClusteringContainsOnlyRectangles regions
+                regions
             member self.NumCells : int = cells.Length
             member self.CanStep : bool =
                 Seq.length (hs.NearestNeighborTable) > 1
-//            member self.Regions : Clustering = regions
-            member self.Regions : Clustering = failwith "no"
 
             member private self.IsKnee(s: HashSet<AST.Address>)(t: HashSet<AST.Address>) : bool =
                 // the first time we merge two clusters that have
@@ -296,14 +301,11 @@
 
                 canstep
 
-            member self.WritePerLogs() =
-                if not (input.config.DebugMode) then
-                    failwith "debugging disabled!"
-
+            member self.WritePerLogs(path: string) =
                 (List.rev per_log)
                 |> List.iteri (fun i per_log ->
                     // open file
-                    let veccsvw = new ExceLintFileFormats.VectorDump("C:\\Users\\dbarowy\\Desktop\\clusterdump\\vectorstep" + i.ToString() + ".csv")
+                    let veccsvw = new ExceLintFileFormats.VectorDump(path + "\\vectorstep" + i.ToString() + ".csv")
 
                     // write rows
                     List.iter (fun row ->
@@ -314,9 +316,9 @@
                     veccsvw.Dispose()
                 )
                         
-            member self.WriteLog() =
+            member self.WriteLog(path: string) =
                 // init CSV writer
-                let csvw = new ExceLintFileFormats.ClusterSteps("C:\\Users\\dbarowy\\Desktop\\clusterdump\\clustersteps.csv")
+                let csvw = new ExceLintFileFormats.ClusterSteps(path + "\\clustersteps.csv")
 
                 // write rows
                 List.rev log
@@ -349,6 +351,8 @@
                     // the knee and the foot are the same
                     // and it's the latest clustering
                 | None -> self.CurrentClustering
+
+            member self.DebugClusterSteps = log
 
             member self.Ranking : Ranking =
                 let numfrm = cells.Length
@@ -394,6 +398,20 @@
             member self.Scores = nlfrs
             member self.Cutoff = self.Ranking.Length - 1
             member self.LSHTree = hs.HashTree
+            member self.AnalysisBase = cells
+            member self.Analysis =
+                Success(
+                    Cluster {
+                        scores = self.Scores;
+                        ranking = self.Ranking;
+                        score_time = self.ScoreTimeMs;
+                        ranking_time = self.RankingTimeMs;
+                        sig_threshold_idx = 0;
+                        cutoff_idx = self.Cutoff;
+                        weights = self.AnalysisBase |> Array.map (fun a -> a, 0.0) |> adict;
+                        clustering = self.ClusteringAtKnee;
+                    }
+                )
 
         type LSHViz(input: Input) =
             let c = ClusterModel input
@@ -408,18 +426,19 @@
                     while notdone do
                         notdone <- m.Step()
 
-                    Success(Cluster
-                        {
-                            scores = m.Scores;
-                            ranking = m.Ranking;
-                            score_time = m.ScoreTimeMs;
-                            ranking_time = m.RankingTimeMs;
-                            sig_threshold_idx = 0;
-                            cutoff_idx = m.Cutoff;
-                            weights = new Dictionary<AST.Address,double>();
-                            clustering = m.ClusteringAtKnee;
-                        }
-                    )
+                    // write debug logs when in debug mode
+                    if input.config.DebugMode then
+                        // create output dir
+                        let path = IO.Path.Combine(
+                                    Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                                    "ExceLintDebugOutput"
+                                   )
+                        IO.Directory.CreateDirectory(path) |> ignore
+                        // write logs
+                        m.WriteLog path
+                        m.WritePerLogs path
+
+                    m.Analysis
                 else
                     CantRun "Cannot perform analysis. This worksheet contains no formulas."
             with

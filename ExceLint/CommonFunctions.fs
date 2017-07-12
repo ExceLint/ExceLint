@@ -531,13 +531,54 @@
                     Seq.fold (fun acc clustering -> acc + clustering.Count) 0
                 double totalIntersect / double totalCells
 
-            let CopyClustering(clustering: Clustering) : Clustering =
+            let ReverseClusterLookup(clusters: Clustering) : Dict<AST.Address,HashSet<AST.Address>> =
+                let revLookup = new Dict<AST.Address,HashSet<AST.Address>>()
+                for c in clusters do
+                    for a in c do
+                        revLookup.Add(a,c)
+                revLookup
+
+            let CopyClustering<'p>(clustering: GenericClustering<'p>) : GenericClustering<'p> =
                 let clustering' =
                     Seq.map (fun cl ->
-                        new HashSet<AST.Address>(Seq.toArray cl)
+                        new HashSet<'p>(Seq.toArray cl)
                     ) clustering
 
-                new HashSet<HashSet<AST.Address>>(clustering')
+                new HashSet<HashSet<'p>>(clustering')
+
+            let SameCluster(c1: HashSet<AST.Address>)(c2: HashSet<AST.Address>) : bool =
+                (HashSetUtils.difference c1 c2).Count = 0
+
+            let SameClusters(cs: seq<HashSet<AST.Address>>) : bool =
+                let first = Seq.head cs
+                cs |> Seq.fold (fun acc c -> acc && SameCluster first c) true 
+
+            let SameClustering(c1: Clustering)(c2: Clustering) : bool =
+                let c1R = ReverseClusterLookup c1
+                let c2R = ReverseClusterLookup c2
+
+                let mutable ok = true
+
+                // lookup every address in every cluster in c1
+                // and make sure that:
+                // 1. the cluster in c2 is the same cluster
+                // 2. the cluster in c2 and the cluster in c1 are the same cluster
+                for c in c1 do
+                    let c2cs = c |> Seq.map (fun a -> c2R.[a])
+                    if not (SameClusters c2cs) then
+                        ok <- false
+                    if not (SameCluster c (Seq.head c2cs)) then
+                        ok <- false
+
+                // ditto but for c2
+                for c in c2 do
+                    let c1cs = c |> Seq.map (fun a -> c1R.[a])
+                    if not (SameClusters c1cs) then
+                        ok <- false
+                    if not (SameCluster c (Seq.head c1cs)) then
+                        ok <- false
+
+                ok
 
             let numberClusters(clustering: Clustering) : ClusterIDs =
                 let d = new Dict<HashSet<AST.Address>,int>()
