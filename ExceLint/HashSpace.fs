@@ -55,32 +55,19 @@
             member self.Distance = self.d
         end
 
-    type HashSpace<'p when 'p : equality>(clustering: GenericClustering<'p>, keymaker: HashSet<'p> -> UInt128, keyexists: 'p -> 'p -> 'p, unmasker: UInt128 -> UInt128, d: DistanceF<'p>) =
+    type HashSpace<'p when 'p : equality>(clustering: GenericClustering<'p>, keymaker: 'p -> UInt128, keyexists: 'p -> 'p -> 'p, unmasker: UInt128 -> UInt128, d: DistanceF<'p>) =
         // extract points
         let points = clustering |> Seq.concat |> Seq.distinct |> Seq.toArray
 
         // initialize tree
-        // use degenerate cluster (one point per cluster)
-        // to satisfy keymaker
         let t = Seq.fold (fun (t': CRTNode<'p>)(point: 'p) ->
-                    let cluster = new HashSet<'p>([| point |])
-                    let key = keymaker cluster
+                    let key = keymaker point
                     t'.InsertOr key point keyexists
                 ) (CRTRoot<'p>() :> CRTNode<'p>) points
 
         let tviz = t.ToGraphViz
 
-        // initial mask
-        let imsk = UInt128.Zero.Sub(UInt128.One)
-
-        // dict of clusters
-//        let pt2Cluster =
-//            points
-//            |> Seq.map (fun p ->
-//                 p,new HashSet<'p>([p])
-//               )
-//            |> adict
-
+        // lookup cluster by addr
         let pt2Cluster =
             clustering
             |> Seq.map (fun c ->
@@ -103,14 +90,16 @@
         let nn =
             clustering
             |> Seq.map (fun (cluster: HashSet<'p>) ->
-                 // get key
-                 let key = keymaker cluster
+                 let keys = cluster |> Seq.map (fun p -> keymaker p) |> Seq.toArray
 
-                 // get common mask
-//                 failwith "huh"
+                 // get key, any key
+                 let key = keys.[0]
+
+                 // find common mask
+                 let cmsk = UInt128.calcMask 0 (UInt128.LongestCommonPrefix keys)
 
                  // index NN entry by cluster
-                 cluster, HashSpace.NearestCluster t cluster key imsk unmasker pt2Cluster d
+                 cluster, HashSpace.NearestCluster t cluster key cmsk unmasker pt2Cluster d
             )
             |> adict
 
