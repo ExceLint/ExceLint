@@ -77,6 +77,7 @@
             this.separator4 = this.Factory.CreateRibbonSeparator();
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
+            this.nearestNeighborForCluster = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -130,6 +131,7 @@
             this.box1.Items.Add(this.showHeatmap);
             this.box1.Items.Add(this.LISAHeatmap);
             this.box1.Items.Add(this.inferRegions);
+            this.box1.Items.Add(this.nearestNeighborForCluster);
             this.box1.Items.Add(this.RunCUSTODES);
             this.box1.Items.Add(this.MoranForSelectedCells);
             this.box1.Items.Add(this.box2);
@@ -412,6 +414,15 @@
             this.annotateThisCell.Visible = false;
             this.annotateThisCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotateThisCell_Click);
             // 
+            // nearestNeighborForCluster
+            // 
+            this.nearestNeighborForCluster.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.nearestNeighborForCluster.Image = global::ExceLintUI.Properties.Resources.graph;
+            this.nearestNeighborForCluster.Label = "NN for cluster";
+            this.nearestNeighborForCluster.Name = "nearestNeighborForCluster";
+            this.nearestNeighborForCluster.ShowImage = true;
+            this.nearestNeighborForCluster.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.nearestNeighborForCluster_Click);
+            // 
             // ExceLintRibbon
             // 
             this.Name = "ExceLintRibbon";
@@ -474,6 +485,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton MoranForSelectedCells;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton VectorForCell;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton inferRegions;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton nearestNeighborForCluster;
     }
 
     partial class ThisRibbonCollection

@@ -217,10 +217,6 @@
                     // there is no knee
                     true
 
-            member self.MergeAllRectangles() : unit =
-                
-                failwith "is this really a good idea?"
-
             member self.Step() : bool =
                 // update progress
                 input.progress.IncrementCounter()
