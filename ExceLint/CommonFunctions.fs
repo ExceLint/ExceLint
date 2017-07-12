@@ -1,6 +1,7 @@
 ﻿namespace ExceLint
     open System
     open System.Collections.Generic
+    open System.Collections.Immutable
     open Utils
     open CommonTypes
     open HashSetUtils
@@ -537,6 +538,21 @@
                     for a in c do
                         revLookup.Add(a,c)
                 revLookup
+
+            let ReverseImmutableClusterLookup(clusters: ImmutableClustering) : ImmutDict<AST.Address,ImmutableHashSet<AST.Address>> =
+                let revLookup = new Dict<AST.Address,ImmutableHashSet<AST.Address>>()
+                for c in clusters do
+                    for a in c do
+                        revLookup.Add(a,c)
+                revLookup.ToImmutableDictionary()
+
+            let CopyImmutableToMutableClustering<'p>(clustering: ImmutableGenericClustering<'p>) : GenericClustering<'p> =
+                let clustering' =
+                    Seq.map (fun cl ->
+                        new HashSet<'p>(Seq.toArray cl)
+                    ) clustering
+
+                new HashSet<HashSet<'p>>(clustering')
 
             let CopyClustering<'p>(clustering: GenericClustering<'p>) : GenericClustering<'p> =
                 let clustering' =

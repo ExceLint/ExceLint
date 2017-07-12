@@ -173,7 +173,7 @@
             let keyexists = (fun addr1 addr2 ->
                                 failwith "Duplicate keys should not happen."
                             )
-            let initialClustering = HashSpace.DegenerateClustering cells
+            let initialClustering = ToImmutableClustering (HashSpace.DegenerateClustering cells)
             let hs = HashSpace<AST.Address>(initialClustering, keymaker, keyexists, LSHCalc.h7unmasker, DISTANCE)
 
             let mutable probable_knee = false

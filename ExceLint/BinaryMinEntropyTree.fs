@@ -1,6 +1,7 @@
 ﻿namespace ExceLint
 
     open System.Collections.Generic
+    open System.Collections.Immutable
     open CommonTypes
     open CommonFunctions
     open Utils
@@ -145,9 +146,10 @@
             | :? Leaf as l -> [| l |]
             | _ -> failwith "Unknown tree node type."
 
-        static member Clustering(tree: BinaryMinEntropyTree) : Clustering =
+        static member Clustering(tree: BinaryMinEntropyTree) : ImmutableClustering =
             let regions = BinaryMinEntropyTree.Regions tree
-            regions |> Array.map (fun leaf -> leaf.Cells) |> (fun cs -> new Clustering(cs))
+            let cs = regions |> Array.map (fun leaf -> leaf.Cells)
+            makeImmutableGenericClustering cs
 
         static member ClusterIsRectangular(c: HashSet<AST.Address>) : bool =
             let boundingbox = Utils.BoundingBoxHS c 0
@@ -162,7 +164,7 @@
             let merged = HashSetUtils.union source target
             BinaryMinEntropyTree.ClusterIsRectangular merged
 
-        static member CoaleseAdjacentClusters(coal_vert: bool)(clusters: Clustering)(hb_inv: InvertedHistogram) : Clustering =
+        static member CoaleseAdjacentClusters(coal_vert: bool)(clusters: ImmutableClustering)(hb_inv: InvertedHistogram) : ImmutableClustering =
             // sort cells array depending on coalesce direction:
             // 1. coalesce vertically means sort horizontally (small to large x values)
             // 2. coalesce horizontally means sort vertically (small to large y values)
@@ -172,14 +174,8 @@
                 |> Array.concat 
                 |> Array.sortBy (fun addr -> if coal_vert then (addr.X, addr.Y) else (addr.Y, addr.X))
 
-            // sanity check
-            for c in clusters do
-                let isRect = BinaryMinEntropyTree.ClusterIsRectangular c
-                if not isRect then
-                    failwith "wtf"
-
             // algorithm mutates clusters'
-            let clusters' = CopyClustering clusters
+            let clusters' = CopyImmutableToMutableClustering clusters
 
             let revLookup = ReverseClusterLookup clusters'
 
@@ -217,21 +213,15 @@
                             for c in source do
                                 revLookup.[c] <- target
                             // remove source from clusters
-                            clusters'.Remove target |> ignore
+                            clusters'.Remove source |> ignore
 
-            // sanity check
-            for c in clusters' do
-                let isRect = BinaryMinEntropyTree.ClusterIsRectangular c
-                if not isRect then
-                    failwith "wtf"
+            ToImmutableClustering clusters'
 
-            clusters'
-
-        static member RectangularClustering(tree: BinaryMinEntropyTree)(hb_inv: InvertedHistogram) : Clustering =
+        static member RectangularClustering(tree: BinaryMinEntropyTree)(hb_inv: InvertedHistogram) : ImmutableClustering =
             // coalesce all cells that have the same cvector,
             // ensuring that all merged clusters remain rectangular
             let regs = BinaryMinEntropyTree.Regions tree
-            let clusters = regs |> Array.map (fun leaf -> leaf.Cells) |> (fun cs -> new Clustering(cs))
+            let clusters = regs |> Array.map (fun leaf -> leaf.Cells) |> makeImmutableGenericClustering
 
             // coalesce vertical ordering horizontally
             let clusters' = BinaryMinEntropyTree.CoaleseAdjacentClusters false clusters hb_inv
@@ -239,8 +229,8 @@
             // coalesce horizontal ordering vertically
             let clusters'' = BinaryMinEntropyTree.CoaleseAdjacentClusters true clusters' hb_inv
 
-            // flatten reverse lookup and return clustering
-            new Clustering(clusters'')
+            // return clustering
+            clusters''
 
     and Inner(lefttop: AST.Address, rightbottom: AST.Address) =
         inherit BinaryMinEntropyTree(lefttop, rightbottom)
@@ -264,4 +254,4 @@
 
     and Leaf(lefttop: AST.Address, rightbottom: AST.Address, parent: Inner option, cells: Cells) =
         inherit BinaryMinEntropyTree(lefttop, rightbottom)
-        member self.Cells : HashSet<AST.Address> = new HashSet<AST.Address>(cells.Keys)
+        member self.Cells : ImmutableHashSet<AST.Address> = (new HashSet<AST.Address>(cells.Keys)).ToImmutableHashSet()

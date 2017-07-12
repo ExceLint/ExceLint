@@ -167,7 +167,6 @@
             // do region inference
             let rTree = BinaryMinEntropyTree.Infer cells hb_inv
             let regions = BinaryMinEntropyTree.RectangularClustering rTree hb_inv
-            let isRect = BinaryMinEntropyTree.ClusteringContainsOnlyRectangles regions
 
             // compute NN table
             let keymaker = (fun (addr: AST.Address) ->
@@ -177,16 +176,16 @@
             let keyexists = (fun addr1 addr2 ->
                                 failwith "Duplicate keys should not happen."
                             )
-            let regionsCopy = CopyClustering regions
             let hs = HashSpace<AST.Address>(regions, keymaker, keyexists, LSHCalc.h7unmasker, DISTANCE)
-            let sameClustering = SameClustering regionsCopy regions
-            let stillIsRect = BinaryMinEntropyTree.ClusteringContainsOnlyRectangles regions
 
             let mutable probable_knee = false
 
             member self.InitialClustering : Clustering =
-                let isRect = BinaryMinEntropyTree.ClusteringContainsOnlyRectangles regions
-                regions
+                let regions' = CopyImmutableToMutableClustering regions
+                let isRect = BinaryMinEntropyTree.ClusteringContainsOnlyRectangles regions'
+                assert isRect
+                regions'
+
             member self.NumCells : int = cells.Length
             member self.CanStep : bool =
                 Seq.length (hs.NearestNeighborTable) > 1

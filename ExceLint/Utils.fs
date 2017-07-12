@@ -1,9 +1,11 @@
 ﻿namespace ExceLint
 open System.Collections.Generic
+open System.Collections.Immutable
     module Utils =
         // we're using C# Dictionary instead of F# map
         // for debugging (it's inspectable) and speed purposes
         type Dict<'a,'b> = Dictionary<'a,'b>
+        type ImmutDict<'a,'b> = ImmutableDictionary<'a,'b>
 
         let adict(a: seq<('a*'b)>) = new Dict<'a,'b>(a |> dict)
         let argwhatever(f: 'a -> double)(xs: seq<'a>)(whatev: double -> double -> bool) : 'a =

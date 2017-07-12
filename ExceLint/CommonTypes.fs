@@ -1,6 +1,7 @@
 ﻿namespace ExceLint
     module CommonTypes =
         open System.Collections.Generic
+        open System.Collections.Immutable
         open System.Collections
         open System
         open Utils
@@ -23,7 +24,9 @@
         type HypothesizedFixes = Dict<AST.Address,Dict<Feature,Countable>>
         type Causes = Dict<AST.Address,(HistoBin*Count*Weight)[]>
         type GenericClustering<'p> = HashSet<HashSet<'p>>
+        type ImmutableGenericClustering<'p> = ImmutableHashSet<ImmutableHashSet<'p>>
         type Clustering = GenericClustering<AST.Address>
+        type ImmutableClustering = ImmutableGenericClustering<AST.Address>
         type ChangeSet = {
             mutants: KeyValuePair<AST.Address,string>[];
             scores: ScoreTable;
@@ -155,3 +158,10 @@
                 | Cancellation -> Cancellation
 
         let (+>) (fn1: PipeStart)(fn2: Pipe) : PipeStart = comb fn2 fn1
+
+        let ToImmutableClustering(cs: Clustering) : ImmutableClustering =
+            let hs_of_ic = cs |> Seq.map (fun c -> c.ToImmutableHashSet())
+            hs_of_ic.ToImmutableHashSet()
+
+        let makeImmutableGenericClustering<'p>(cs: seq<ImmutableHashSet<'p>>) : ImmutableGenericClustering<'p> =
+            cs.ToImmutableHashSet()
