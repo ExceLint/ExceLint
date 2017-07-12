@@ -195,6 +195,9 @@
                 // different resultants, we've probably hit the knee
                 not (refvect_same s t hb_inv)
 
+            member self.NearestNeighborForCluster(c: HashSet<AST.Address>) : HashSet<AST.Address> =
+                hs.NearestNeighbor c
+
             member private self.IsFoot(s: HashSet<AST.Address>) : bool =
                 // the first time a former merge target becomes
                 // a merge source, we're probably done
