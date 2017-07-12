@@ -47,6 +47,7 @@
             this.StartOverButton = this.Factory.CreateRibbonButton();
             this.showHeatmap = this.Factory.CreateRibbonButton();
             this.LISAHeatmap = this.Factory.CreateRibbonButton();
+            this.inferRegions = this.Factory.CreateRibbonButton();
             this.RunCUSTODES = this.Factory.CreateRibbonButton();
             this.MoranForSelectedCells = this.Factory.CreateRibbonButton();
             this.box2 = this.Factory.CreateRibbonBox();
@@ -76,7 +77,6 @@
             this.separator4 = this.Factory.CreateRibbonSeparator();
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
-            this.inferRegions = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -143,7 +143,6 @@
             this.AnalyzeButton.Label = "Audit";
             this.AnalyzeButton.Name = "AnalyzeButton";
             this.AnalyzeButton.ShowImage = true;
-            this.AnalyzeButton.Visible = false;
             this.AnalyzeButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.AnalyzeButton_Click);
             // 
             // MarkAsOKButton
@@ -153,7 +152,6 @@
             this.MarkAsOKButton.Label = "Next Cell";
             this.MarkAsOKButton.Name = "MarkAsOKButton";
             this.MarkAsOKButton.ShowImage = true;
-            this.MarkAsOKButton.Visible = false;
             this.MarkAsOKButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.MarkAsOKButton_Click);
             // 
             // StartOverButton
@@ -163,7 +161,6 @@
             this.StartOverButton.Label = "Start Over";
             this.StartOverButton.Name = "StartOverButton";
             this.StartOverButton.ShowImage = true;
-            this.StartOverButton.Visible = false;
             this.StartOverButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.StartOverButton_Click);
             // 
             // showHeatmap
@@ -184,6 +181,15 @@
             this.LISAHeatmap.ShowImage = true;
             this.LISAHeatmap.Visible = false;
             this.LISAHeatmap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.LISAHeatmap_Click);
+            // 
+            // inferRegions
+            // 
+            this.inferRegions.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.inferRegions.Image = ((System.Drawing.Image)(resources.GetObject("inferRegions.Image")));
+            this.inferRegions.Label = "Infer Regions";
+            this.inferRegions.Name = "inferRegions";
+            this.inferRegions.ShowImage = true;
+            this.inferRegions.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.inferRegions_Click);
             // 
             // RunCUSTODES
             // 
@@ -344,7 +350,6 @@
             // 
             this.DebugOutput.Label = "Show Debug Output";
             this.DebugOutput.Name = "DebugOutput";
-            this.DebugOutput.Visible = false;
             this.DebugOutput.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.DebugOutput_Click);
             // 
             // forceBuildDAG
@@ -406,15 +411,6 @@
             this.annotateThisCell.ShowImage = true;
             this.annotateThisCell.Visible = false;
             this.annotateThisCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotateThisCell_Click);
-            // 
-            // inferRegions
-            // 
-            this.inferRegions.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.inferRegions.Image = ((System.Drawing.Image)(resources.GetObject("inferRegions.Image")));
-            this.inferRegions.Label = "Infer Regions";
-            this.inferRegions.Name = "inferRegions";
-            this.inferRegions.ShowImage = true;
-            this.inferRegions.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.inferRegions_Click);
             // 
             // ExceLintRibbon
             // 
