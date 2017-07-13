@@ -26,6 +26,39 @@ namespace ExceLintUI
 
         #region BUTTON_HANDLERS
 
+        private void clusterForCell_Click(object sender, RibbonControlEventArgs e)
+        {
+            var w = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+
+            var app = Globals.ThisAddIn.Application;
+
+            // get cursor location
+            var cursor = (Excel.Range)app.Selection;
+
+            // get address for cursor
+            AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, Globals.ThisAddIn.Application.ActiveWorkbook);
+
+            // create progbar in main thread;
+            // worker thread will call Dispose
+            var pb = new ProgBar();
+
+            // build the model
+            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+            var model = currentWorkbook.GetEntropyModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
+
+            // get inverse lookup for clustering
+            var addr2Cl = ExceLint.CommonFunctions.ReverseClusterLookup(model.InitialClustering);
+
+            // get cluster for address
+            var cluster = addr2Cl[cursorAddr];
+
+            // remove progress bar
+            pb.Close();
+
+            // display cluster
+            System.Windows.Forms.MessageBox.Show(String.Join(", ", cluster.Select(a => a.A1Local())));
+        }
+
         private void nearestNeighborForCluster_Click(object sender, RibbonControlEventArgs e)
         {
             var w = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
