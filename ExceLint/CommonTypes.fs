@@ -16,7 +16,8 @@
         type FlatScoreTable = Dict<Feature*AST.Address,Countable>
         type ConditioningSetSizeTable = Dict<Scope.Selector,Dict<AST.Address,Count>>
         type HistoBin = Feature*Scope.SelectID*Countable
-        type InvertedHistogram = System.Collections.ObjectModel.ReadOnlyDictionary<AST.Address,HistoBin>
+        type ROInvertedHistogram = System.Collections.ObjectModel.ReadOnlyDictionary<AST.Address,HistoBin>
+        type InvertedHistogram = System.Collections.Generic.Dictionary<AST.Address,HistoBin>
         type FreqTable = Dict<HistoBin,Count>
         type ClusterTable = Dict<HistoBin,AST.Address list>
         type Weights = IDictionary<AST.Address,Weight>

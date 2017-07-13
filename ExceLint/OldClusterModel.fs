@@ -118,7 +118,7 @@
                 |> toDict
 
             // make HistoBin lookup by address
-            let hb_inv = invertedHistogram nlfrs input.dag input.config
+            let hb_inv = new Dict<AST.Address,HistoBin>(invertedHistogram nlfrs input.dag input.config)
 
             // initially assign every cell to its own cluster
             let clusters = initialClustering nlfrs input.dag input.config

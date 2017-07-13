@@ -149,34 +149,37 @@
 
             // make HistoBin lookup by address
             let _runhisto = fun () -> invertedHistogram nlfrs input.dag input.config
-            let (hb_inv: InvertedHistogram,invert_time: int64) = PerfUtils.runMillis _runhisto ()
+            let (hb_inv_ro: ROInvertedHistogram,invert_time: int64) = PerfUtils.runMillis _runhisto ()
 
             let score_time = feat_time + scale_time + invert_time + flatten_time
 
             let mutable log: ClusterStep list = []
             let mutable per_log = []
             let mutable steps_ms: int64 list = []
+            let mutable mutable_ih = new Dict<AST.Address,HistoBin>(hb_inv_ro)
 
             // DEFINE DISTANCE
             let DISTANCE =
                 match input.config.DistanceMetric with
-                | DistanceMetric.NearestNeighbor -> min_dist hb_inv
-                | DistanceMetric.EarthMover -> earth_movers_dist hb_inv
-                | DistanceMetric.MeanCentroid -> cent_dist hb_inv
+                | DistanceMetric.NearestNeighbor -> min_dist mutable_ih
+                | DistanceMetric.EarthMover -> earth_movers_dist mutable_ih
+                | DistanceMetric.MeanCentroid -> cent_dist mutable_ih
 
-            // do region inference
-            let rTree = BinaryMinEntropyTree.Infer cells hb_inv
-            let regions = BinaryMinEntropyTree.RectangularClustering rTree hb_inv
+            // do region inferenceto
+            let rTree = BinaryMinEntropyTree.Infer cells mutable_ih
+            let regions = BinaryMinEntropyTree.RectangularClustering rTree hb_inv_ro
 
             // compute NN table
             let keymaker = (fun (addr: AST.Address) ->
-                                let (_,_,co) = hb_inv.[addr]
+                                let (_,_,co) = mutable_ih.[addr]
                                 LSHCalc.h7 co
                             )
             let keyexists = (fun addr1 addr2 ->
                                 failwith "Duplicate keys should not happen."
                             )
-            let hs = HashSpace<AST.Address>(regions, keymaker, keyexists, LSHCalc.h7unmasker, DISTANCE)
+            let hs_initial = HashSpace<AST.Address>(regions, keymaker, keyexists, LSHCalc.h7unmasker, DISTANCE)
+            let mutable hs_mutable = hs_initial
+            let mutable_clustering = CopyImmutableToMutableClustering regions
 
             let mutable probable_knee = false
 
@@ -188,15 +191,15 @@
 
             member self.NumCells : int = cells.Length
             member self.CanStep : bool =
-                Seq.length (hs.NearestNeighborTable) > 1
+                Seq.length (hs_mutable.NearestNeighborTable) > 1
 
             member private self.IsKnee(s: HashSet<AST.Address>)(t: HashSet<AST.Address>) : bool =
                 // the first time we merge two clusters that have
                 // different resultants, we've probably hit the knee
-                not (refvect_same s t hb_inv)
+                not (refvect_same s t mutable_ih)
 
             member self.NearestNeighborForCluster(c: HashSet<AST.Address>) : HashSet<AST.Address> =
-                hs.NearestNeighbor c
+                hs_mutable.NearestNeighbor c
 
             member private self.IsFoot(s: HashSet<AST.Address>) : bool =
                 // the first time a former merge target becomes
@@ -206,8 +209,8 @@
             // determine whether the next step will be the knee
             // without actually doing another agglomeration step
             member self.NextStepIsKnee : bool =
-                if not (Seq.isEmpty hs.NearestNeighborTable) then
-                    let nn_next = hs.NextNearestNeighbor
+                if not (Seq.isEmpty hs_mutable.NearestNeighborTable) then
+                    let nn_next = hs_mutable.NextNearestNeighbor
                     let source = nn_next.FromCluster
                     let target = nn_next.ToCluster
                     self.IsKnee source target
@@ -225,7 +228,7 @@
                 sw.Start()
 
                 // get the two clusters that minimize distance
-                let nn_next = hs.NextNearestNeighbor
+                let nn_next = hs_mutable.NextNearestNeighbor
                 let source = nn_next.FromCluster
                 let target = nn_next.ToCluster
 
@@ -234,7 +237,7 @@
                     clusteringAtKnee <-
                         match clusteringAtKnee with
                         | Some cak -> Some cak
-                        | None -> Some (CopyClustering hs.Clusters)
+                        | None -> Some (CopyClustering hs_mutable.Clusters)
 
                     inCriticalRegion <- true
 
@@ -242,7 +245,7 @@
                     inCriticalRegion <- false
 
                 // record merge in log
-                let clusters = hs.Clusters
+                let clusters = hs_mutable.Clusters
                 log <- {
                             source = Set.ofSeq source;
                             target = Set.ofSeq target;
@@ -265,15 +268,15 @@
                 // dump clusters to log if debugging
                 if input.config.DebugMode then
                     let mutable clusterlog = []
-                    hs.Clusters
+                    hs_mutable.Clusters
                     |> Seq.iter (fun cl ->
                         cl
                         |> Seq.iter (fun addr ->
-                            let v = ToCountable addr hb_inv
+                            let v = ToCountable addr mutable_ih
                             match v with
                             | FullCVectorResultant(x,y,z,dx,dy,dz,dc) ->
                                 let row = new ExceLintFileFormats.VectorDumpRow()
-                                row.clusterID <- hs.ClusterID cl
+                                row.clusterID <- hs_mutable.ClusterID cl
                                 row.x <- x
                                 row.y <- y
                                 row.z <- z
@@ -288,7 +291,7 @@
                     per_log <- (List.rev clusterlog) :: per_log
 
                 // merge them
-                hs.Merge source target
+                hs_mutable.Merge source target
                 merge_targets.Add target |> ignore
 
                 // tell the user whether more steps remain
@@ -323,7 +326,7 @@
                 |> List.iter (fun step ->
                         let row = new ExceLintFileFormats.ClusterStepsRow()
                         row.Show <- step.in_critical_region
-                        row.Merge <- (pp step.source hb_inv) + " with " + (pp step.target hb_inv)
+                        row.Merge <- (pp step.source mutable_ih) + " with " + (pp step.target mutable_ih)
                         row.Distance <- step.distance
                         row.FScore <- step.f
                         row.WCSS <- step.within_cluster_sum_squares
@@ -340,7 +343,7 @@
                 // close file
                 csvw.Dispose()
 
-            member self.CurrentClustering = hs.Clusters
+            member self.CurrentClustering = mutable_clustering
 
             member self.ClusteringAtKnee =
                 match clusteringAtKnee with
@@ -393,21 +396,40 @@
 
             member self.TotalEntropy : double =
                 let addrs = self.CurrentClustering |> Seq.concat |> Seq.distinct |> Seq.toArray
-                let rmap = BinaryMinEntropyTree.MakeCells addrs hb_inv
+                let rmap = BinaryMinEntropyTree.MakeCells addrs mutable_ih
 
-                self.CurrentClustering
-                |> Seq.map (fun c -> BinaryMinEntropyTree.AddressSetEntropy (c |> Seq.toArray) rmap)
-                |> Seq.sum
+                // compute entropy for entire spreadsheet
+                let entropy = BinaryMinEntropyTree.AddressSetEntropy addrs rmap
+                
+                entropy
 
             member self.ScoreForCell(addr: AST.Address) : Countable =
-                let (_,_,c) = hb_inv.[addr]
-                c
+                ToCountable addr mutable_ih
+
+            member self.UpdateScoreForCell(addr: AST.Address)(score: Countable) : unit =
+                let (a,b,oldscore) = mutable_ih.[addr]
+                let score' = oldscore.UpdateResultant score
+                mutable_ih.[addr] <- (a,b,score')
+
+            member self.ManualMerge(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : unit =
+                // update countables in source
+                let rep_tgt_co = target |> Seq.head |> (fun a -> self.ScoreForCell a)
+                source |> Seq.iter (fun a -> self.UpdateScoreForCell a rep_tgt_co)
+                
+                // add all points in source cluster to the target cluster
+                HashSetUtils.inPlaceUnion source target
+
+                // remove source from clustering
+                mutable_clustering.Remove source |> ignore
+
+                // recompute distances
+//                hs_mutable <- new HashSpace<AST.Address>(regions, keymaker, keyexists, LSHCalc.h7unmasker, DISTANCE)
 
             member self.RankingTimeMs = List.sum steps_ms
             member self.ScoreTimeMs = score_time
             member self.Scores = nlfrs
             member self.Cutoff = self.Ranking.Length - 1
-            member self.LSHTree = hs.HashTree
+            member self.LSHTree = hs_mutable.HashTree
             member self.AnalysisBase = cells
             member self.Analysis =
                 Success(

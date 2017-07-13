@@ -167,7 +167,7 @@
             let merged = HashSetUtils.union source target
             BinaryMinEntropyTree.ClusterIsRectangular merged
 
-        static member CoaleseAdjacentClusters(coal_vert: bool)(clusters: ImmutableClustering)(hb_inv: InvertedHistogram) : ImmutableClustering =
+        static member CoaleseAdjacentClusters(coal_vert: bool)(clusters: ImmutableClustering)(hb_inv: ROInvertedHistogram) : ImmutableClustering =
             // sort cells array depending on coalesce direction:
             // 1. coalesce vertically means sort horizontally (small to large x values)
             // 2. coalesce horizontally means sort vertically (small to large y values)
@@ -220,7 +220,7 @@
 
             ToImmutableClustering clusters'
 
-        static member RectangularClustering(tree: BinaryMinEntropyTree)(hb_inv: InvertedHistogram) : ImmutableClustering =
+        static member RectangularClustering(tree: BinaryMinEntropyTree)(hb_inv: ROInvertedHistogram) : ImmutableClustering =
             // coalesce all cells that have the same cvector,
             // ensuring that all merged clusters remain rectangular
             let regs = BinaryMinEntropyTree.Regions tree

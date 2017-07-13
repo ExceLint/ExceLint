@@ -47,52 +47,47 @@ namespace ExceLintUI
 
                 // build the model
                 Worksheet activeWs = (Worksheet) Globals.ThisAddIn.Application.ActiveSheet;
-                var model = currentWorkbook.GetEntropyModelForWorksheet(activeWs, getConfig(),
+                fixClusterModel = currentWorkbook.GetEntropyModelForWorksheet(activeWs, getConfig(),
                     this.forceBuildDAG.Checked, pb);
 
                 // get inverse lookup for clustering
-                var addr2Cl = ExceLint.CommonFunctions.ReverseClusterLookup(model.InitialClustering);
+                var addr2Cl = ExceLint.CommonFunctions.ReverseClusterLookup(fixClusterModel.InitialClustering);
 
                 // get cluster for address
                 fixClusterSource = addr2Cl[cursorAddr];
 
                 // change button name
                 FixClusterButton.Label = "Select Target Cluster";
+
+                pb.Close();
             }
             else
             {
                 // compute total entropy
-                var total_entropy_before = fixClusterModel.TotalEntropy;
+                var totalEntropyBefore = fixClusterModel.TotalEntropy;
 
                 // get inverse lookup for clustering
                 var addr2Cl = ExceLint.CommonFunctions.ReverseClusterLookup(fixClusterModel.InitialClustering);
 
                 // grab the target cluster
-                var fixClusterTarget = addr2Cl[cursorAddr].ToArray();
+                var fixClusterTarget = addr2Cl[cursorAddr];
 
-                // choose a representative "fix"
-                var fix = fixClusterTarget[0];
-
-                // get the fix's vector
-                var fix_vector = fixClusterModel.ScoreForCell(fix);
-
-                // get the vectors for all the candidates
-                var candidate_vectors = fixClusterSource.Select(c => fixClusterModel.ScoreForCell(c));
-
-                // fix them; do this on the model side
-                // TODO fix
+                // fix source; do this on the model side
+                fixClusterModel.ManualMerge(fixClusterSource, fixClusterTarget);
 
                 // recompute entropy
-                var total_entropy_after = fixClusterModel.TotalEntropy;
+                var totalEntropyAfter = fixClusterModel.TotalEntropy;
 
                 // display output
-                System.Windows.Forms.MessageBox.Show("Before: " + total_entropy_before + "\n" + "After: " +
-                                                     total_entropy_after);
+                System.Windows.Forms.MessageBox.Show("Before: " + totalEntropyBefore + "\n" + "After: " +
+                                                     totalEntropyAfter);
 
                 // change button name
                 FixClusterButton.Label = "Fix Cluster";
+
+                // toss model so that the user can do this again
+                fixClusterModel = null;
             }
-            
         }
 
         private void clusterForCell_Click(object sender, RibbonControlEventArgs e)

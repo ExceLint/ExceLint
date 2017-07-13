@@ -44,7 +44,7 @@
                     fname, fvals
                 ) |> adict
 
-            let invertedHistogram(scoretable: ScoreTable)(dag: Depends.DAG)(config: FeatureConf) : InvertedHistogram =
+            let invertedHistogram(scoretable: ScoreTable)(dag: Depends.DAG)(config: FeatureConf) : ROInvertedHistogram =
                 assert (config.EnabledScopes.Length = 1 && config.EnabledFeatures.Length = 1)
 
                 let d = new Dict<AST.Address,HistoBin>()
@@ -63,7 +63,7 @@
                     ) (config.EnabledScopes)
                 ) (config.EnabledFeatures)
 
-                new InvertedHistogram(d)
+                new ROInvertedHistogram(d)
 
             let centroid(c: seq<AST.Address>)(ih: InvertedHistogram) : Countable =
                 c
