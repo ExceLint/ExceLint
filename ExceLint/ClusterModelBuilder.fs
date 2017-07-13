@@ -391,6 +391,18 @@
 
                 rnk
 
+            member self.TotalEntropy : double =
+                let addrs = self.CurrentClustering |> Seq.concat |> Seq.distinct |> Seq.toArray
+                let rmap = BinaryMinEntropyTree.MakeCells addrs hb_inv
+
+                self.CurrentClustering
+                |> Seq.map (fun c -> BinaryMinEntropyTree.AddressSetEntropy (c |> Seq.toArray) rmap)
+                |> Seq.sum
+
+            member self.ScoreForCell(addr: AST.Address) : Countable =
+                let (_,_,c) = hb_inv.[addr]
+                c
+
             member self.RankingTimeMs = List.sum steps_ms
             member self.ScoreTimeMs = score_time
             member self.Scores = nlfrs

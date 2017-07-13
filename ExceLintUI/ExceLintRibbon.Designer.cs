@@ -79,6 +79,7 @@
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
             this.clusterForCell = this.Factory.CreateRibbonButton();
+            this.FixClusterButton = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -134,6 +135,7 @@
             this.box1.Items.Add(this.inferRegions);
             this.box1.Items.Add(this.nearestNeighborForCluster);
             this.box1.Items.Add(this.clusterForCell);
+            this.box1.Items.Add(this.FixClusterButton);
             this.box1.Items.Add(this.RunCUSTODES);
             this.box1.Items.Add(this.MoranForSelectedCells);
             this.box1.Items.Add(this.box2);
@@ -434,6 +436,15 @@
             this.clusterForCell.ShowImage = true;
             this.clusterForCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.clusterForCell_Click);
             // 
+            // FixClusterButton
+            // 
+            this.FixClusterButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.FixClusterButton.Image = global::ExceLintUI.Properties.Resources.graph;
+            this.FixClusterButton.Label = "Fix Cluster";
+            this.FixClusterButton.Name = "FixClusterButton";
+            this.FixClusterButton.ShowImage = true;
+            this.FixClusterButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.FixClusterButton_Click);
+            // 
             // ExceLintRibbon
             // 
             this.Name = "ExceLintRibbon";
@@ -498,6 +509,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton inferRegions;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton nearestNeighborForCluster;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton clusterForCell;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton FixClusterButton;
     }
 
     partial class ThisRibbonCollection

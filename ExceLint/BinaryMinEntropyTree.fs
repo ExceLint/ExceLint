@@ -17,7 +17,7 @@
         abstract member Region: string
         default self.Region : string = lefttop.A1Local() + ":" + rightbottom.A1Local()
 
-        static member private AddressEntropy(addrs: AST.Address[])(rmap: Dict<AST.Address,Countable>) : double =
+        static member AddressSetEntropy(addrs: AST.Address[])(rmap: Dict<AST.Address,Countable>) : double =
             if addrs.Length = 0 then
                 // the decomposition where one side is the empty set
                 // is the worst decomposition, unless it is the only
@@ -63,8 +63,8 @@
                 parts
                 |> Array.map (fun (l,r) ->
                     // compute entropy
-                    let entropy_left = BinaryMinEntropyTree.AddressEntropy l rmap
-                    let entropy_right = BinaryMinEntropyTree.AddressEntropy r rmap
+                    let entropy_left = BinaryMinEntropyTree.AddressSetEntropy l rmap
+                    let entropy_right = BinaryMinEntropyTree.AddressSetEntropy r rmap
 
                     // total for left and right
                     (entropy_left + entropy_right),entropy_left,entropy_right
@@ -73,20 +73,23 @@
             parts
             |> Utils.argmin (fun (l,r) ->
                 // compute entropy
-                let entropy_left = BinaryMinEntropyTree.AddressEntropy l rmap
-                let entropy_right = BinaryMinEntropyTree.AddressEntropy r rmap
+                let entropy_left = BinaryMinEntropyTree.AddressSetEntropy l rmap
+                let entropy_right = BinaryMinEntropyTree.AddressSetEntropy r rmap
 
                 // total for left and right
                 entropy_left + entropy_right
             )
 
-
-        static member Infer(addrs: AST.Address[])(hb_inv: InvertedHistogram) : BinaryMinEntropyTree =
+        static member MakeCells(addrs: AST.Address[])(hb_inv: InvertedHistogram) : Cells =
             let d = new Dict<AST.Address, Countable>()
             for addr in addrs do
                 let (_,_,c) = hb_inv.[addr]
                 d.Add(addr, c)
-            BinaryMinEntropyTree.Decompose d None
+            d
+
+        static member Infer(addrs: AST.Address[])(hb_inv: InvertedHistogram) : BinaryMinEntropyTree =
+            let rmap = BinaryMinEntropyTree.MakeCells addrs hb_inv
+            BinaryMinEntropyTree.Decompose rmap None
 
         static member private Decompose(rmap: Cells)(parent_opt: Inner option) : BinaryMinEntropyTree =
             // get bounding region
@@ -101,10 +104,10 @@
                 let (top,bottom) = BinaryMinEntropyTree.MinEntropyPartition rmap false
 
                 // compute entropies again
-                let e_vert_l = BinaryMinEntropyTree.AddressEntropy left rmap
-                let e_vert_r = BinaryMinEntropyTree.AddressEntropy right rmap
-                let e_horz_t = BinaryMinEntropyTree.AddressEntropy top rmap
-                let e_horz_b = BinaryMinEntropyTree.AddressEntropy bottom rmap
+                let e_vert_l = BinaryMinEntropyTree.AddressSetEntropy left rmap
+                let e_vert_r = BinaryMinEntropyTree.AddressSetEntropy right rmap
+                let e_horz_t = BinaryMinEntropyTree.AddressSetEntropy top rmap
+                let e_horz_b = BinaryMinEntropyTree.AddressSetEntropy bottom rmap
 
                 let e_vert = e_vert_l + e_vert_r
                 let e_horz = e_horz_t + e_horz_b
