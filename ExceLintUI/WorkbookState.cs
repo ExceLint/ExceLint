@@ -816,6 +816,27 @@ namespace ExceLintUI
             DrawClusters(_m[w].CurrentClustering);
         }
 
+        public ExceLint.ClusterModelBuilder.ClusterModel NewEntropyModelForWorksheet(Worksheet w,
+            ExceLint.FeatureConf conf, Boolean forceDAGBuild, ProgBar pb)
+        {
+            ExceLint.ClusterModelBuilder.ClusterModel m = null;
+
+            Func<Depends.Progress, Unit> f = (p) =>
+            {
+                Excel.Application app = Globals.ThisAddIn.Application;
+
+                // create
+                m = ExceLint.ModelBuilder.initStepClusterModel(app, conf, _dag, 0.05, p);
+
+                return null;
+            };
+
+            // update DAG if necessary
+            buildDAGAndDoStuff(forceDAGBuild, f, 3, pb);
+
+            return m;
+        }
+
         public ExceLint.ClusterModelBuilder.ClusterModel GetEntropyModelForWorksheet(Worksheet w, ExceLint.FeatureConf conf, Boolean forceDAGBuild, ProgBar pb)
         {
             Func<Depends.Progress, Unit> f = (p) =>

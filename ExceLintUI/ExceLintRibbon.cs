@@ -47,7 +47,7 @@ namespace ExceLintUI
 
                 // build the model
                 Worksheet activeWs = (Worksheet) Globals.ThisAddIn.Application.ActiveSheet;
-                fixClusterModel = currentWorkbook.GetEntropyModelForWorksheet(activeWs, getConfig(),
+                fixClusterModel = currentWorkbook.NewEntropyModelForWorksheet(activeWs, getConfig(),
                     this.forceBuildDAG.Checked, pb);
 
                 // get inverse lookup for clustering
@@ -87,6 +87,7 @@ namespace ExceLintUI
 
                 // toss model so that the user can do this again
                 fixClusterModel = null;
+                fixClusterSource = null;
             }
         }
 
