@@ -206,6 +206,16 @@ namespace ExceLint
             | SquareVector(_,_,_,_,_,z1), SquareVector(_,_,_,_,_,z2) -> z1 = z2
             | CVectorResultant(_,_,z1,_), CVectorResultant(_,_,z2,_) -> z1 = z2
             | FullCVectorResultant(_,_,z1,_,_,_,_), FullCVectorResultant(_,_,z2,_,_,_,_) -> z1 = z2
+        member self.IsFormula : bool =
+            // NOTE: this does not work for formulas that normally have no references, e.g =RAND()
+            match self with
+            | Num n -> failwith "unknowable"
+            | Vector(x,y,z) -> failwith "unknowable"
+            | SquareVector(dx,dy,dz,x,y,z) -> failwith "unknowable"
+            | CVectorResultant(x1,y1,z1,c1) -> not (x1 = 0.0 && y1 = 0.0 && z1 = 0.0 && c1 = 0.0) // i.e., no refs at all
+            // i.e., no refs at all
+            // note that dc <= 0.0 is in keeping with the arbitrary choice to make strings dc = -1.0 and no constants dc = 0.0
+            | FullCVectorResultant(x,y,z,dx,dy,dz,dc) -> not (dx = 0.0 && dy = 0.0 && dz = 0.0 && dc <= 0.0)
         static member Normalize(X: Countable[]) : Countable[] =
             let min = Array.fold (fun (a:Countable)(x: Countable) -> a.ElementwiseMin x) X.[0] X 
             let max = Array.fold (fun (a:Countable)(x: Countable) -> a.ElementwiseMax x) X.[0] X 

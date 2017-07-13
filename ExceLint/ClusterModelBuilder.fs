@@ -356,50 +356,30 @@
             member self.DebugClusterSteps = log
 
             member self.Ranking : Ranking =
-                let numfrm = cells.Length
-
-                // keep a record of reported cells
-                let rptd = new HashSet<AST.Address>()
-
-                // for each step in the log,
-                // add each source address and distance (score) to the ranking
-                let rnk = 
-                    log
-                    |> List.rev
-                    |> List.map (fun (step : ClusterStep) ->
-                        if step.in_critical_region then
-                            Some(
-                                Seq.map (fun addr -> 
-                                    if not (rptd.Contains addr) then
-                                        let retval = Some(new KeyValuePair<AST.Address,double>(addr, step.distance))
-                                        rptd.Add(addr) |> ignore
-                                        retval
-                                    else
-                                        None
-                                ) step.source
-                                |> Seq.choose id
-                                |> Seq.toList
-                            )
-                        else
-                            None
-                       )
-                    |> List.choose id
-                    |> List.concat
-                    |> List.toArray
-
-                // the ranking must contain all the formulas and nothing more;
-                // some formulas may never be reported depending on location
-                // of knee
-                assert (rnk.Length <= numfrm)
-
-                rnk
+                failwith "new ranking coming soon"
 
             member self.TotalEntropy : double =
                 let addrs = self.CurrentClustering |> Seq.concat |> Seq.distinct |> Seq.toArray
                 let rmap = BinaryMinEntropyTree.MakeCells addrs mutable_ih
 
-                // compute entropy for entire spreadsheet
-                let entropy = BinaryMinEntropyTree.AddressSetEntropy addrs rmap
+                // compute entropy for entire spreadsheet, normalized by N
+                let entropy = BinaryMinEntropyTree.AddressSetEntropy addrs rmap / (double addrs.Length)
+                
+                entropy
+
+            member self.TotalFormulaEntropy : double =
+                let addrs = self.CurrentClustering |> Seq.concat |> Seq.distinct |> Seq.toArray
+                let rmap = BinaryMinEntropyTree.MakeCells addrs mutable_ih
+
+                // filter non-formulas
+                // note: we have to check both the dependence graph and the vector itself as
+                //       1. if formula is no-ref like =RAND(), its vector will look like an empty cell
+                //       2. if formula was "fixed" by user, the dependence graph will not know;
+                //          only the vector will tell us
+                let addrs' = addrs |> Array.filter (fun a -> input.dag.isFormula a || (self.ScoreForCell a).IsFormula)
+
+                // compute entropy for entire spreadsheet, normalized by N
+                let entropy = BinaryMinEntropyTree.AddressSetEntropy addrs' rmap / (double addrs'.Length)
                 
                 entropy
 
