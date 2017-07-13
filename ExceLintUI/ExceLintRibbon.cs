@@ -41,6 +41,36 @@ namespace ExceLintUI
             currentWorkbook.restoreOutputColors();
         }
 
+        private HashSet<HashSet<AST.Address>> ElideWhitespaceClusters(HashSet<HashSet<AST.Address>> cs, ExceLint.ClusterModelBuilder.ClusterModel m)
+        {
+            var output = new HashSet<HashSet<AST.Address>>();
+
+            foreach (HashSet<AST.Address> c in cs)
+            {
+                if (!c.All(m.AddressIsWhitespaceValued))
+                {
+                    output.Add(c);
+                }
+            }
+
+            return output;
+        }
+
+        private HashSet<HashSet<AST.Address>> ElideStringClusters(HashSet<HashSet<AST.Address>> cs, ExceLint.ClusterModelBuilder.ClusterModel m)
+        {
+            var output = new HashSet<HashSet<AST.Address>>();
+
+            foreach (HashSet<AST.Address> c in cs)
+            {
+                if (!c.All(m.AddressIsStringValued))
+                {
+                    output.Add(c);
+                }
+            }
+
+            return output;
+        }
+
         private void FixClusterButton_Click(object sender, RibbonControlEventArgs e)
         {
             if (fixClusterModel == null)
@@ -55,7 +85,7 @@ namespace ExceLintUI
                     this.forceBuildDAG.Checked, pb);
 
                 // do visualization
-                currentWorkbook.DrawClusters(fixClusterModel.InitialClustering);
+                currentWorkbook.DrawClusters(ElideStringClusters(ElideWhitespaceClusters(fixClusterModel.InitialClustering, fixClusterModel), fixClusterModel));
 
                 pb.Close();
 
@@ -118,7 +148,7 @@ namespace ExceLintUI
 
                     // redisplay visualiztion
                     currentWorkbook.restoreOutputColors();
-                    currentWorkbook.DrawClusters(fixClusterModel.CurrentClustering);
+                    currentWorkbook.DrawClusters(ElideStringClusters(ElideWhitespaceClusters(fixClusterModel.CurrentClustering, fixClusterModel), fixClusterModel));
 
                     // display output
                     System.Windows.Forms.MessageBox.Show("Before: " + totalEntropyBefore + "\n" + "After: " +

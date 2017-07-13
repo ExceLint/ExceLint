@@ -356,7 +356,32 @@
             member self.DebugClusterSteps = log
 
             member self.Ranking : Ranking =
-                failwith "new ranking coming soon"
+                failwith "coming soon to a theatre near you"
+
+            member self.AddressIsNumericValued(a: AST.Address) : bool =
+                if input.dag.Values.ContainsKey a then
+                    let s = input.dag.Values.[a]
+                    let mutable d: double = 0.0
+                    let b = Double.TryParse(s, &d)
+                    b && not (self.AddressIsFormulaValued a)
+                else
+                    false
+
+            member self.AddressIsFormulaValued(a: AST.Address) : bool =
+                // have to check both because, e.g., =RAND() has a whitespace vector
+                // and "fixes" may not be formulas in the dependence graph
+                input.dag.isFormula a || (self.ScoreForCell a).IsFormula
+
+            member self.AddressIsWhitespaceValued(a: AST.Address) : bool =
+                if input.dag.Values.ContainsKey a then
+                    let s = input.dag.Values.[a]
+                    let b = String.IsNullOrWhiteSpace(s)
+                    b && not (self.AddressIsFormulaValued a)
+                else
+                    true
+
+            member self.AddressIsStringValued(a: AST.Address) : bool =
+                not (self.AddressIsNumericValued a || self.AddressIsFormulaValued a || self.AddressIsWhitespaceValued a)
 
             member self.TotalComputationEntropy : double =
                 // this computes the entropy of formulas + data
@@ -364,29 +389,14 @@
                 // are germaine to the computation, and that
                 // hand-pasting data where formulas should be should
                 // INCREASE that entropy
-                let values = input.dag.Values
                 let addrs = self.CurrentClustering |> Seq.concat |> Seq.distinct |> Seq.toArray
                 let rmap = BinaryMinEntropyTree.MakeCells addrs mutable_ih
 
-                let isDouble(a: AST.Address) : bool =
-                    if values.ContainsKey a then
-                        let s = values.[a]
-                        let mutable d: double = 0.0
-                        let b = Double.TryParse(s, &d)
-                        b
-                    else
-                        false
-
-                let isFormula(a: AST.Address) : bool =
-                    // have to check both because, e.g., =RAND() has a whitespace vector
-                    // and "fixes" may not be formulas in the dependence graph
-                    input.dag.isFormula a || (self.ScoreForCell a).IsFormula
-
                 // find numeric data addresses
-                let data = addrs |> Array.filter (fun a -> not (isFormula a) && isDouble a)
+                let data = addrs |> Array.filter self.AddressIsNumericValued
 
                 // find formula addresses
-                let formulas = addrs |> Array.filter isFormula
+                let formulas = addrs |> Array.filter self.AddressIsFormulaValued
 
                 // update the reverse countable map so that countables
                 // include data values themselves
@@ -396,7 +406,7 @@
                     |> Seq.map (fun kvp ->
                            let addr = kvp.Key
                            if fdata.Contains addr then
-                               let ds = values.[kvp.Key]
+                               let ds = input.dag.Values.[kvp.Key]
                                let d = Double.Parse ds
                                let v = FullCVectorResultant(double addr.X, double addr.Y, 0.0, 0.0, 0.0, 0.0, d)
                                (kvp.Key, v)
@@ -408,6 +418,8 @@
 
                 // all relevant addresses
                 let addrs' = Array.concat([| data; formulas |])
+
+                assert (Seq.length (Seq.distinct addrs') = addrs'.Length)
 
                 // compute entropy for entire spreadsheet, normalized by N
                 let entropy = BinaryMinEntropyTree.AddressSetEntropy addrs' rmap' / (double addrs'.Length)
