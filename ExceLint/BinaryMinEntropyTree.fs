@@ -33,9 +33,6 @@
                 // compute probability vector
                 let ps = BasicStats.empiricalProbabilities cs vs.Length
 
-                // debug string
-                let debug = "x = c(" + System.String.Join(", ", cs) + ")"
-
                 // compute entropy
                 let entropy = BasicStats.entropy ps
 

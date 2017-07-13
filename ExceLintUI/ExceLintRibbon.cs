@@ -83,7 +83,7 @@ namespace ExceLintUI
                 else
                 {
                     // compute total entropy
-                    var totalEntropyBefore = fixClusterModel.TotalFormulaEntropy;
+                    var totalEntropyBefore = fixClusterModel.TotalComputationEntropy;
 
                     // get inverse lookup for clustering
                     var addr2Cl = ExceLint.CommonFunctions.ReverseClusterLookup(fixClusterModel.InitialClustering);
@@ -114,7 +114,7 @@ namespace ExceLintUI
                     }
 
                     // recompute entropy
-                    var totalEntropyAfter = fixClusterModel.TotalFormulaEntropy;
+                    var totalEntropyAfter = fixClusterModel.TotalComputationEntropy;
 
                     // redisplay visualiztion
                     currentWorkbook.restoreOutputColors();

@@ -358,28 +358,59 @@
             member self.Ranking : Ranking =
                 failwith "new ranking coming soon"
 
-            member self.TotalEntropy : double =
+            member self.TotalComputationEntropy : double =
+                // this computes the entropy of formulas + data
+                // the rationale is that both formulas and data
+                // are germaine to the computation, and that
+                // hand-pasting data where formulas should be should
+                // INCREASE that entropy
+                let values = input.dag.Values
                 let addrs = self.CurrentClustering |> Seq.concat |> Seq.distinct |> Seq.toArray
                 let rmap = BinaryMinEntropyTree.MakeCells addrs mutable_ih
 
+                let isDouble(a: AST.Address) : bool =
+                    if values.ContainsKey a then
+                        let s = values.[a]
+                        let mutable d: double = 0.0
+                        let b = Double.TryParse(s, &d)
+                        b
+                    else
+                        false
+
+                let isFormula(a: AST.Address) : bool =
+                    // have to check both because, e.g., =RAND() has a whitespace vector
+                    // and "fixes" may not be formulas in the dependence graph
+                    input.dag.isFormula a || (self.ScoreForCell a).IsFormula
+
+                // find numeric data addresses
+                let data = addrs |> Array.filter (fun a -> not (isFormula a) && isDouble a)
+
+                // find formula addresses
+                let formulas = addrs |> Array.filter isFormula
+
+                // update the reverse countable map so that countables
+                // include data values themselves
+                let fdata = new HashSet<AST.Address>(data);
+                let rmap' =
+                    rmap
+                    |> Seq.map (fun kvp ->
+                           let addr = kvp.Key
+                           if fdata.Contains addr then
+                               let ds = values.[kvp.Key]
+                               let d = Double.Parse ds
+                               let v = FullCVectorResultant(double addr.X, double addr.Y, 0.0, 0.0, 0.0, 0.0, d)
+                               (kvp.Key, v)
+                           else
+                               (kvp.Key, kvp.Value)
+                        
+                       )
+                    |> adict
+
+                // all relevant addresses
+                let addrs' = Array.concat([| data; formulas |])
+
                 // compute entropy for entire spreadsheet, normalized by N
-                let entropy = BinaryMinEntropyTree.AddressSetEntropy addrs rmap / (double addrs.Length)
-                
-                entropy
-
-            member self.TotalFormulaEntropy : double =
-                let addrs = self.CurrentClustering |> Seq.concat |> Seq.distinct |> Seq.toArray
-                let rmap = BinaryMinEntropyTree.MakeCells addrs mutable_ih
-
-                // filter non-formulas
-                // note: we have to check both the dependence graph and the vector itself as
-                //       1. if formula is no-ref like =RAND(), its vector will look like an empty cell
-                //       2. if formula was "fixed" by user, the dependence graph will not know;
-                //          only the vector will tell us
-                let addrs' = addrs |> Array.filter (fun a -> input.dag.isFormula a || (self.ScoreForCell a).IsFormula)
-
-                // compute entropy for entire spreadsheet, normalized by N
-                let entropy = BinaryMinEntropyTree.AddressSetEntropy addrs' rmap / (double addrs'.Length)
+                let entropy = BinaryMinEntropyTree.AddressSetEntropy addrs' rmap' / (double addrs'.Length)
                 
                 entropy
 
