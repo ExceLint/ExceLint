@@ -23,22 +23,26 @@ namespace ExceLintUI
         WorkbookState currentWorkbook;
         private ExceLintGroundTruth annotations;
         private string custodesPath = null;
-        private HashSet<AST.Address> fixClusterSource = null; 
+        private AST.Address fixAddress = null; 
         private ExceLint.ClusterModelBuilder.ClusterModel fixClusterModel = null;
 
         #region BUTTON_HANDLERS
 
+        private void resetFixesButton_Click(object sender, RibbonControlEventArgs e)
+        {
+            // change button name
+            FixClusterButton.Label = "Start Fix";
+
+            // toss everything so that the user can do this again
+            fixClusterModel = null;
+            fixAddress = null;
+
+            // redisplay visualiztion
+            currentWorkbook.restoreOutputColors();
+        }
+
         private void FixClusterButton_Click(object sender, RibbonControlEventArgs e)
         {
-            var app = Globals.ThisAddIn.Application;
-
-            // get cursor location
-            var cursor = (Excel.Range)app.Selection;
-
-            // get address for cursor
-            AST.Address cursorAddr =
-                ParcelCOMShim.Address.AddressFromCOMObject(cursor, Globals.ThisAddIn.Application.ActiveWorkbook);
-
             if (fixClusterModel == null)
             {
                 // create progbar in main thread;
@@ -50,44 +54,82 @@ namespace ExceLintUI
                 fixClusterModel = currentWorkbook.NewEntropyModelForWorksheet(activeWs, getConfig(),
                     this.forceBuildDAG.Checked, pb);
 
-                // get inverse lookup for clustering
-                var addr2Cl = ExceLint.CommonFunctions.ReverseClusterLookup(fixClusterModel.InitialClustering);
-
-                // get cluster for address
-                fixClusterSource = addr2Cl[cursorAddr];
-
-                // change button name
-                FixClusterButton.Label = "Select Target Cluster";
+                // do visualization
+                currentWorkbook.DrawClusters(fixClusterModel.InitialClustering);
 
                 pb.Close();
+
+                // change button name
+                FixClusterButton.Label = "Select Source";
             }
             else
             {
-                // compute total entropy
-                var totalEntropyBefore = fixClusterModel.TotalEntropy;
+                var app = Globals.ThisAddIn.Application;
 
-                // get inverse lookup for clustering
-                var addr2Cl = ExceLint.CommonFunctions.ReverseClusterLookup(fixClusterModel.InitialClustering);
+                // get cursor location
+                var cursor = (Excel.Range)app.Selection;
 
-                // grab the target cluster
-                var fixClusterTarget = addr2Cl[cursorAddr];
+                // get address for cursor
+                AST.Address cursorAddr =
+                    ParcelCOMShim.Address.AddressFromCOMObject(cursor, Globals.ThisAddIn.Application.ActiveWorkbook);
 
-                // fix source; do this on the model side
-                fixClusterModel.ManualMerge(fixClusterSource, fixClusterTarget);
+                if (fixAddress == null)
+                {
+                    fixAddress = cursorAddr;
 
-                // recompute entropy
-                var totalEntropyAfter = fixClusterModel.TotalEntropy;
+                    // change button name
+                    FixClusterButton.Label = "Select Target";
+                }
+                else
+                {
+                    // compute total entropy
+                    var totalEntropyBefore = fixClusterModel.TotalEntropy;
 
-                // display output
-                System.Windows.Forms.MessageBox.Show("Before: " + totalEntropyBefore + "\n" + "After: " +
-                                                     totalEntropyAfter);
+                    // get inverse lookup for clustering
+                    var addr2Cl = ExceLint.CommonFunctions.ReverseClusterLookup(fixClusterModel.InitialClustering);
 
-                // change button name
-                FixClusterButton.Label = "Fix Cluster";
+                    // is the address a formula or not?
+                    if (currentWorkbook.getDependenceGraph(false).isFormula(fixAddress))
+                    {
+                        // FORMULAS
 
-                // toss model so that the user can do this again
-                fixClusterModel = null;
-                fixClusterSource = null;
+                        // grab the source cluster
+                        var fixClusterSource = addr2Cl[fixAddress];
+
+                        // grab the target cluster
+                        var fixClusterTarget = addr2Cl[cursorAddr];
+
+                        // fix source; do this on the model side
+                        fixClusterModel.ManualClusterMerge(fixClusterSource, fixClusterTarget);
+                    }
+                    else
+                    {
+                        // NUMBERS, STRINGS, and WHITESPACE
+
+                        // grab the target cluster
+                        var fixClusterTarget = addr2Cl[cursorAddr];
+
+                        // fix source; do this on the model side
+                        fixClusterModel.ManualAddressMerge(fixAddress, fixClusterTarget);
+                    }
+
+                    // recompute entropy
+                    var totalEntropyAfter = fixClusterModel.TotalEntropy;
+
+                    // redisplay visualiztion
+                    currentWorkbook.restoreOutputColors();
+                    currentWorkbook.DrawClusters(fixClusterModel.CurrentClustering);
+
+                    // display output
+                    System.Windows.Forms.MessageBox.Show("Before: " + totalEntropyBefore + "\n" + "After: " +
+                                                         totalEntropyAfter);
+
+                    // reset address
+                    fixAddress = null;
+
+                    // change button name
+                    FixClusterButton.Label = "Select Source";
+                }
             }
         }
 

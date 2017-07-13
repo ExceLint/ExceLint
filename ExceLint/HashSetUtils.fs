@@ -30,6 +30,9 @@
         let inPlaceUnion<'a>(source: HashSet<'a>)(target: HashSet<'a>) : unit =
             target.UnionWith(source)
 
+        let inPlaceUnionElem<'a>(hs: HashSet<'a>)(elem: 'a) : unit =
+            hs.Add elem |> ignore
+
         let equals<'a>(hs1: HashSet<'a>)(hs2: HashSet<'a>) : bool =
             let hsu = union hs1 hs2
             hs1.Count = hsu.Count

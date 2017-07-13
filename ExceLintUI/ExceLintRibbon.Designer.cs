@@ -49,6 +49,8 @@
             this.LISAHeatmap = this.Factory.CreateRibbonButton();
             this.inferRegions = this.Factory.CreateRibbonButton();
             this.nearestNeighborForCluster = this.Factory.CreateRibbonButton();
+            this.clusterForCell = this.Factory.CreateRibbonButton();
+            this.FixClusterButton = this.Factory.CreateRibbonButton();
             this.RunCUSTODES = this.Factory.CreateRibbonButton();
             this.MoranForSelectedCells = this.Factory.CreateRibbonButton();
             this.box2 = this.Factory.CreateRibbonBox();
@@ -78,8 +80,8 @@
             this.separator4 = this.Factory.CreateRibbonSeparator();
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
-            this.clusterForCell = this.Factory.CreateRibbonButton();
-            this.FixClusterButton = this.Factory.CreateRibbonButton();
+            this.button1 = this.Factory.CreateRibbonButton();
+            this.resetFixesButton = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -136,6 +138,7 @@
             this.box1.Items.Add(this.nearestNeighborForCluster);
             this.box1.Items.Add(this.clusterForCell);
             this.box1.Items.Add(this.FixClusterButton);
+            this.box1.Items.Add(this.resetFixesButton);
             this.box1.Items.Add(this.RunCUSTODES);
             this.box1.Items.Add(this.MoranForSelectedCells);
             this.box1.Items.Add(this.box2);
@@ -205,6 +208,24 @@
             this.nearestNeighborForCluster.Name = "nearestNeighborForCluster";
             this.nearestNeighborForCluster.ShowImage = true;
             this.nearestNeighborForCluster.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.nearestNeighborForCluster_Click);
+            // 
+            // clusterForCell
+            // 
+            this.clusterForCell.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.clusterForCell.Image = global::ExceLintUI.Properties.Resources.graph;
+            this.clusterForCell.Label = "Cluster for Cell";
+            this.clusterForCell.Name = "clusterForCell";
+            this.clusterForCell.ShowImage = true;
+            this.clusterForCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.clusterForCell_Click);
+            // 
+            // FixClusterButton
+            // 
+            this.FixClusterButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.FixClusterButton.Image = global::ExceLintUI.Properties.Resources.graph;
+            this.FixClusterButton.Label = "Start Fix";
+            this.FixClusterButton.Name = "FixClusterButton";
+            this.FixClusterButton.ShowImage = true;
+            this.FixClusterButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.FixClusterButton_Click);
             // 
             // RunCUSTODES
             // 
@@ -427,23 +448,22 @@
             this.annotateThisCell.Visible = false;
             this.annotateThisCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotateThisCell_Click);
             // 
-            // clusterForCell
+            // button1
             // 
-            this.clusterForCell.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.clusterForCell.Image = global::ExceLintUI.Properties.Resources.graph;
-            this.clusterForCell.Label = "Cluster for Cell";
-            this.clusterForCell.Name = "clusterForCell";
-            this.clusterForCell.ShowImage = true;
-            this.clusterForCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.clusterForCell_Click);
+            this.button1.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.button1.Image = global::ExceLintUI.Properties.Resources.graph;
+            this.button1.Label = "Start Fix";
+            this.button1.Name = "button1";
+            this.button1.ShowImage = true;
             // 
-            // FixClusterButton
+            // resetFixesButton
             // 
-            this.FixClusterButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.FixClusterButton.Image = global::ExceLintUI.Properties.Resources.graph;
-            this.FixClusterButton.Label = "Fix Cluster";
-            this.FixClusterButton.Name = "FixClusterButton";
-            this.FixClusterButton.ShowImage = true;
-            this.FixClusterButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.FixClusterButton_Click);
+            this.resetFixesButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.resetFixesButton.Image = global::ExceLintUI.Properties.Resources.graph;
+            this.resetFixesButton.Label = "Reset Fixes";
+            this.resetFixesButton.Name = "resetFixesButton";
+            this.resetFixesButton.ShowImage = true;
+            this.resetFixesButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.resetFixesButton_Click);
             // 
             // ExceLintRibbon
             // 
@@ -510,6 +530,8 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton nearestNeighborForCluster;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton clusterForCell;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton FixClusterButton;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton resetFixesButton;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton button1;
     }
 
     partial class ThisRibbonCollection

@@ -73,7 +73,7 @@
                     |> Seq.map (fun (i,j) -> w i j)
                     |> Seq.sum
             let scale = N / W
-
+            
             let debug_xs = Seq.map x points
             let debug_ws = Seq.map (fun (i,j) -> w i j) pairs
 
@@ -165,9 +165,9 @@
                 | DistanceMetric.EarthMover -> earth_movers_dist mutable_ih
                 | DistanceMetric.MeanCentroid -> cent_dist mutable_ih
 
-            // do region inferenceto
-            let rTree = BinaryMinEntropyTree.Infer cells mutable_ih
-            let regions = BinaryMinEntropyTree.RectangularClustering rTree hb_inv_ro
+            // do region inference
+            let rTree_initial = BinaryMinEntropyTree.Infer cells mutable_ih
+            let regions = BinaryMinEntropyTree.RectangularClustering rTree_initial hb_inv_ro
 
             // compute NN table
             let keymaker = (fun (addr: AST.Address) ->
@@ -179,7 +179,7 @@
                             )
             let hs_initial = HashSpace<AST.Address>(regions, keymaker, keyexists, LSHCalc.h7unmasker, DISTANCE)
             let mutable hs_mutable = hs_initial
-            let mutable_clustering = CopyImmutableToMutableClustering regions
+            let mutable mutable_clustering = CopyImmutableToMutableClustering regions
 
             let mutable probable_knee = false
 
@@ -411,19 +411,25 @@
                 let score' = oldscore.UpdateResultant score
                 mutable_ih.[addr] <- (a,b,score')
 
-            member self.ManualMerge(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : unit =
+            member self.ManualAddressMerge(source: AST.Address)(target: HashSet<AST.Address>) : unit =
+                // update countable for source
+                let rep_tgt_co = target |> Seq.head |> (fun a -> self.ScoreForCell a)
+                self.UpdateScoreForCell source rep_tgt_co
+
+                // recompute entropy tree (this will re-coalesce)
+                let rTree = BinaryMinEntropyTree.Infer cells mutable_ih
+                let imm_ih = new ROInvertedHistogram(mutable_ih)
+                mutable_clustering <- CopyImmutableToMutableClustering (BinaryMinEntropyTree.RectangularClustering rTree imm_ih)
+
+            member self.ManualClusterMerge(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : unit =
                 // update countables in source
                 let rep_tgt_co = target |> Seq.head |> (fun a -> self.ScoreForCell a)
                 source |> Seq.iter (fun a -> self.UpdateScoreForCell a rep_tgt_co)
-                
-                // add all points in source cluster to the target cluster
-                HashSetUtils.inPlaceUnion source target
 
-                // remove source from clustering
-                mutable_clustering.Remove source |> ignore
-
-                // recompute distances
-//                hs_mutable <- new HashSpace<AST.Address>(regions, keymaker, keyexists, LSHCalc.h7unmasker, DISTANCE)
+                // recompute entropy tree (this will re-coalesce)
+                let rTree = BinaryMinEntropyTree.Infer cells mutable_ih
+                let imm_ih = new ROInvertedHistogram(mutable_ih)
+                mutable_clustering <- CopyImmutableToMutableClustering (BinaryMinEntropyTree.RectangularClustering rTree imm_ih)
 
             member self.RankingTimeMs = List.sum steps_ms
             member self.ScoreTimeMs = score_time

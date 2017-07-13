@@ -1288,7 +1288,7 @@ namespace ExceLintUI
             paintColor(cell, c);
         }
 
-        private void restoreOutputColors()
+        public void restoreOutputColors()
         {
             _app.ScreenUpdating = false;
 
