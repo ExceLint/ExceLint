@@ -363,25 +363,37 @@
                     let s = input.dag.Values.[a]
                     let mutable d: double = 0.0
                     let b = Double.TryParse(s, &d)
-                    b && not (self.AddressIsFormulaValued a)
+                    let nf = not (self.AddressIsFormulaValued a)
+                    b && nf
                 else
                     false
 
             member self.AddressIsFormulaValued(a: AST.Address) : bool =
                 // have to check both because, e.g., =RAND() has a whitespace vector
                 // and "fixes" may not be formulas in the dependence graph
-                input.dag.isFormula a || (self.ScoreForCell a).IsFormula
+                if mutable_ih.ContainsKey a then
+                    let score = self.ScoreForCell a
+                    let isfv = score.IsFormula
+                    let isf = input.dag.isFormula a
+                    let outcome = isf || isfv
+                    outcome
+                else
+                    false
 
             member self.AddressIsWhitespaceValued(a: AST.Address) : bool =
                 if input.dag.Values.ContainsKey a then
                     let s = input.dag.Values.[a]
                     let b = String.IsNullOrWhiteSpace(s)
-                    b && not (self.AddressIsFormulaValued a)
+                    let nf = not (self.AddressIsFormulaValued a)
+                    b && nf
                 else
                     true
 
             member self.AddressIsStringValued(a: AST.Address) : bool =
-                not (self.AddressIsNumericValued a || self.AddressIsFormulaValued a || self.AddressIsWhitespaceValued a)
+                let nn = not (self.AddressIsNumericValued a)
+                let nf = not (self.AddressIsFormulaValued a)
+                let nws = not (self.AddressIsWhitespaceValued a)
+                nn & nf & nws
 
             member self.TotalComputationEntropy : double =
                 // this computes the entropy of formulas + data

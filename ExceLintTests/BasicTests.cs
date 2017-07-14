@@ -2,13 +2,14 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using COMWrapper;
 using System.Linq;
+using ExceLint;
 
 namespace ExceLintTests
 {
     [TestClass]
     public class BasicTests
     {
-        Depends.DAG _addressModeDAG;
+        private Depends.DAG _addressModeDAG;
 
         public BasicTests()
         {
@@ -175,6 +176,198 @@ namespace ExceLintTests
             Assert.IsTrue(Array.Exists(vectors, e => e.Equals(new Tuple<int, int, int>(-2, -2, 0))));
             Assert.IsTrue(Array.Exists(vectors, e => e.Equals(new Tuple<int, int, int>(-2, -1, 0))));
             Assert.IsTrue(Array.Exists(vectors, e => e.Equals(new Tuple<int, int, int>(-2,  0, 0))));
+        }
+
+        [TestMethod]
+        public void IsFormulaTest()
+        {
+            using (var app = new Application())
+            {
+                using (var wb = app.OpenWorkbook(@"..\..\TestData\DataTest.xlsx"))
+                {
+                    var p = Depends.Progress.NOPProgress();
+                    var graph = wb.buildDependenceGraph();
+                    var conf = (new FeatureConf()).enableShallowInputVectorMixedFullCVectorResultantOSI(true);
+                    var m = ModelBuilder.initStepClusterModel(app.XLApplication(), conf, graph, 0.05, p);
+
+                    var wbname = graph.getWorkbookName();
+                    var wsname = graph.getWorksheetNames()[0];
+                    var path = graph.getWorkbookDirectory();
+
+                    // A1
+                    var a1_addr = AST.Address.fromA1withMode(1, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // B1
+                    var b1_addr = AST.Address.fromA1withMode(1, "B", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // C1
+                    var c1_addr = AST.Address.fromA1withMode(1, "C", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // A2
+                    var a2_addr = AST.Address.fromA1withMode(2, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // B2
+                    var b2_addr = AST.Address.fromA1withMode(2, "B", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // C2
+                    var c2_addr = AST.Address.fromA1withMode(2, "C", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // A3
+                    var a3_addr = AST.Address.fromA1withMode(3, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    Assert.IsFalse(m.AddressIsFormulaValued(a1_addr));
+                    Assert.IsFalse(m.AddressIsFormulaValued(b1_addr));
+                    Assert.IsFalse(m.AddressIsFormulaValued(c1_addr));
+                    Assert.IsFalse(m.AddressIsFormulaValued(a2_addr));
+                    Assert.IsFalse(m.AddressIsFormulaValued(b2_addr));
+                    Assert.IsTrue(m.AddressIsFormulaValued(c2_addr));
+                    Assert.IsFalse(m.AddressIsFormulaValued(a3_addr));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void IsNumericTest()
+        {
+            using (var app = new Application())
+            {
+                using (var wb = app.OpenWorkbook(@"..\..\TestData\DataTest.xlsx"))
+                {
+                    var p = Depends.Progress.NOPProgress();
+                    var graph = wb.buildDependenceGraph();
+                    var conf = (new FeatureConf()).enableShallowInputVectorMixedFullCVectorResultantOSI(true);
+                    var m = ModelBuilder.initStepClusterModel(app.XLApplication(), conf, graph, 0.05, p);
+
+                    var wbname = graph.getWorkbookName();
+                    var wsname = graph.getWorksheetNames()[0];
+                    var path = graph.getWorkbookDirectory();
+
+                    // A1
+                    var a1_addr = AST.Address.fromA1withMode(1, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // B1
+                    var b1_addr = AST.Address.fromA1withMode(1, "B", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // C1
+                    var c1_addr = AST.Address.fromA1withMode(1, "C", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // A2
+                    var a2_addr = AST.Address.fromA1withMode(2, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // B2
+                    var b2_addr = AST.Address.fromA1withMode(2, "B", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // C2
+                    var c2_addr = AST.Address.fromA1withMode(2, "C", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // A3
+                    var a3_addr = AST.Address.fromA1withMode(3, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    Assert.IsFalse(m.AddressIsNumericValued(a1_addr));
+                    Assert.IsFalse(m.AddressIsNumericValued(b1_addr));
+                    Assert.IsFalse(m.AddressIsNumericValued(c1_addr));
+                    Assert.IsTrue(m.AddressIsNumericValued(a2_addr));
+                    Assert.IsTrue(m.AddressIsNumericValued(b2_addr));
+                    Assert.IsFalse(m.AddressIsNumericValued(c2_addr));
+                    Assert.IsFalse(m.AddressIsNumericValued(a3_addr));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void IsStringTest()
+        {
+            using (var app = new Application())
+            {
+                using (var wb = app.OpenWorkbook(@"..\..\TestData\DataTest.xlsx"))
+                {
+                    var p = Depends.Progress.NOPProgress();
+                    var graph = wb.buildDependenceGraph();
+                    var conf = (new FeatureConf()).enableShallowInputVectorMixedFullCVectorResultantOSI(true);
+                    var m = ModelBuilder.initStepClusterModel(app.XLApplication(), conf, graph, 0.05, p);
+
+                    var wbname = graph.getWorkbookName();
+                    var wsname = graph.getWorksheetNames()[0];
+                    var path = graph.getWorkbookDirectory();
+
+                    // A1
+                    var a1_addr = AST.Address.fromA1withMode(1, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // B1
+                    var b1_addr = AST.Address.fromA1withMode(1, "B", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // C1
+                    var c1_addr = AST.Address.fromA1withMode(1, "C", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // A2
+                    var a2_addr = AST.Address.fromA1withMode(2, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // B2
+                    var b2_addr = AST.Address.fromA1withMode(2, "B", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // C2
+                    var c2_addr = AST.Address.fromA1withMode(2, "C", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // A3
+                    var a3_addr = AST.Address.fromA1withMode(3, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    Assert.IsTrue(m.AddressIsStringValued(a1_addr));
+                    Assert.IsTrue(m.AddressIsStringValued(b1_addr));
+                    Assert.IsTrue(m.AddressIsStringValued(c1_addr));
+                    Assert.IsFalse(m.AddressIsStringValued(a2_addr));
+                    Assert.IsFalse(m.AddressIsStringValued(b2_addr));
+                    Assert.IsFalse(m.AddressIsStringValued(c2_addr));
+                    Assert.IsFalse(m.AddressIsStringValued(a3_addr));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void IsWhitespaceTest()
+        {
+            using (var app = new Application())
+            {
+                using (var wb = app.OpenWorkbook(@"..\..\TestData\DataTest.xlsx"))
+                {
+                    var p = Depends.Progress.NOPProgress();
+                    var graph = wb.buildDependenceGraph();
+                    var conf = (new FeatureConf()).enableShallowInputVectorMixedFullCVectorResultantOSI(true);
+                    var m = ModelBuilder.initStepClusterModel(app.XLApplication(), conf, graph, 0.05, p);
+
+                    var wbname = graph.getWorkbookName();
+                    var wsname = graph.getWorksheetNames()[0];
+                    var path = graph.getWorkbookDirectory();
+
+                    // A1
+                    var a1_addr = AST.Address.fromA1withMode(1, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // B1
+                    var b1_addr = AST.Address.fromA1withMode(1, "B", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // C1
+                    var c1_addr = AST.Address.fromA1withMode(1, "C", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // A2
+                    var a2_addr = AST.Address.fromA1withMode(2, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // B2
+                    var b2_addr = AST.Address.fromA1withMode(2, "B", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // C2
+                    var c2_addr = AST.Address.fromA1withMode(2, "C", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // A3
+                    var a3_addr = AST.Address.fromA1withMode(3, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    Assert.IsFalse(m.AddressIsWhitespaceValued(a1_addr));
+                    Assert.IsFalse(m.AddressIsWhitespaceValued(b1_addr));
+                    Assert.IsFalse(m.AddressIsWhitespaceValued(c1_addr));
+                    Assert.IsFalse(m.AddressIsWhitespaceValued(a2_addr));
+                    Assert.IsFalse(m.AddressIsWhitespaceValued(b2_addr));
+                    Assert.IsFalse(m.AddressIsWhitespaceValued(c2_addr));
+                    Assert.IsTrue(m.AddressIsWhitespaceValued(a3_addr));
+                }
+            }
         }
     }
 }
