@@ -166,7 +166,7 @@
                 | DistanceMetric.MeanCentroid -> cent_dist mutable_ih
 
             // do region inference
-            let rTree_initial = BinaryMinEntropyTree.Infer cells mutable_ih
+            let rTree_initial = BinaryMinEntropyTree.Infer mutable_ih
             let regions = BinaryMinEntropyTree.RectangularClustering rTree_initial hb_inv_ro
 
             // compute NN table
@@ -197,6 +197,8 @@
                 // the first time we merge two clusters that have
                 // different resultants, we've probably hit the knee
                 not (refvect_same s t mutable_ih)
+
+            member self.InvertedHistogram : InvertedHistogram = mutable_ih
 
             member self.NearestNeighborForCluster(c: HashSet<AST.Address>) : HashSet<AST.Address> =
                 hs_mutable.NearestNeighbor c
@@ -358,57 +360,57 @@
             member self.Ranking : Ranking =
                 failwith "coming soon to a theatre near you"
 
-            member self.AddressIsNumericValued(a: AST.Address) : bool =
-                if input.dag.Values.ContainsKey a then
-                    let s = input.dag.Values.[a]
+            static member AddressIsNumericValued(a: AST.Address)(ih: InvertedHistogram)(graph: Depends.DAG) : bool =
+                if graph.Values.ContainsKey a then
+                    let s = graph.Values.[a]
                     let mutable d: double = 0.0
                     let b = Double.TryParse(s, &d)
-                    let nf = not (self.AddressIsFormulaValued a)
+                    let nf = not (ClusterModel.AddressIsFormulaValued a ih graph)
                     b && nf
                 else
                     false
 
-            member self.AddressIsFormulaValued(a: AST.Address) : bool =
+            static member AddressIsFormulaValued(a: AST.Address)(ih: InvertedHistogram)(graph: Depends.DAG) : bool =
                 // have to check both because, e.g., =RAND() has a whitespace vector
                 // and "fixes" may not be formulas in the dependence graph
-                if mutable_ih.ContainsKey a then
-                    let score = self.ScoreForCell a
+                if ih.ContainsKey a then
+                    let score = ClusterModel.ScoreForCell a ih
                     let isfv = score.IsFormula
-                    let isf = input.dag.isFormula a
+                    let isf = graph.isFormula a
                     let outcome = isf || isfv
                     outcome
                 else
                     false
 
-            member self.AddressIsWhitespaceValued(a: AST.Address) : bool =
-                if input.dag.Values.ContainsKey a then
-                    let s = input.dag.Values.[a]
+            static member AddressIsWhitespaceValued(a: AST.Address)(ih: InvertedHistogram)(graph: Depends.DAG) : bool =
+                if graph.Values.ContainsKey a then
+                    let s = graph.Values.[a]
                     let b = String.IsNullOrWhiteSpace(s)
-                    let nf = not (self.AddressIsFormulaValued a)
+                    let nf = not (ClusterModel.AddressIsFormulaValued a ih graph)
                     b && nf
                 else
                     true
 
-            member self.AddressIsStringValued(a: AST.Address) : bool =
-                let nn = not (self.AddressIsNumericValued a)
-                let nf = not (self.AddressIsFormulaValued a)
-                let nws = not (self.AddressIsWhitespaceValued a)
+            static member AddressIsStringValued(a: AST.Address)(ih: InvertedHistogram)(graph: Depends.DAG) : bool =
+                let nn = not (ClusterModel.AddressIsNumericValued a ih graph)
+                let nf = not (ClusterModel.AddressIsFormulaValued a ih graph)
+                let nws = not (ClusterModel.AddressIsWhitespaceValued a ih graph)
                 nn & nf & nws
 
-            member self.TotalComputationEntropy : double =
+            member self.TotalComputationEntropyNoDataClusters : double =
                 // this computes the entropy of formulas + data
                 // the rationale is that both formulas and data
                 // are germaine to the computation, and that
                 // hand-pasting data where formulas should be should
                 // INCREASE that entropy
                 let addrs = self.CurrentClustering |> Seq.concat |> Seq.distinct |> Seq.toArray
-                let rmap = BinaryMinEntropyTree.MakeCells addrs mutable_ih
+                let rmap = BinaryMinEntropyTree.MakeCells mutable_ih
 
                 // find numeric data addresses
-                let data = addrs |> Array.filter self.AddressIsNumericValued
+                let data = addrs |> Array.filter (fun a -> ClusterModel.AddressIsNumericValued a mutable_ih input.dag)
 
                 // find formula addresses
-                let formulas = addrs |> Array.filter self.AddressIsFormulaValued
+                let formulas = addrs |> Array.filter (fun a -> ClusterModel.AddressIsFormulaValued a mutable_ih input.dag)
 
                 // update the reverse countable map so that countables
                 // include data values themselves
@@ -438,8 +440,65 @@
                 
                 entropy
 
-            member self.ScoreForCell(addr: AST.Address) : Countable =
-                ToCountable addr mutable_ih
+            member self.TotalComputationEntropy : double =
+                // this computes the entropy of formulas + data
+                // the rationale is that both formulas and data
+                // are germaine to the computation, and that
+                // hand-pasting data where formulas should be should
+                // INCREASE that entropy
+                let addrs = self.CurrentClustering |> Seq.concat |> Seq.distinct |> Seq.toArray
+                let rmap = BinaryMinEntropyTree.MakeCells mutable_ih
+
+                // just formulas and numbers
+                let addrs' = addrs
+                             |> Array.filter (fun a ->
+                                    ClusterModel.AddressIsFormulaValued a mutable_ih input.dag ||
+                                    ClusterModel.AddressIsNumericValued a mutable_ih input.dag
+                                ) 
+
+                assert (Seq.length (Seq.distinct addrs') = addrs'.Length)
+
+                // compute entropy for entire spreadsheet, normalized by N
+                let entropy = BinaryMinEntropyTree.AddressSetEntropy addrs' rmap / (double addrs'.Length)
+                
+                entropy
+
+            member self.HistogramForProposedClusterMerge(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : InvertedHistogram =
+                // copy inverse histogram
+                let ih_copy = new Dict<AST.Address,HistoBin>(mutable_ih)
+
+                // get representative score from target
+                let rep_score = target |> Seq.head |> (fun a -> ClusterModel.ScoreForCell a ih_copy)
+
+                // update scores in histogram copy
+                source
+                |> Seq.iter (fun addr ->
+                    let (a,b,oldscore) = ih_copy.[addr]
+                    let score' = oldscore.UpdateResultant rep_score
+                    ih_copy.[addr] <- (a,b,score')
+                )
+
+                ih_copy
+
+            member self.HistogramForProposedCellMerge(source: AST.Address)(target: HashSet<AST.Address>) : InvertedHistogram =
+                let source' = new HashSet<AST.Address>([| source |])
+                self.HistogramForProposedClusterMerge source' target
+
+            static member TreeForProposedMerge(ih: InvertedHistogram) : BinaryMinEntropyTree =
+                // run tree clustering with new histogram
+                BinaryMinEntropyTree.Infer ih
+
+            member self.InitialTree : BinaryMinEntropyTree = rTree_initial
+
+            member self.TreeEntropyDiff(t: BinaryMinEntropyTree) : double =
+                // compute change in entropy
+                let e = BinaryMinEntropyTree.TreeEntropyDiff rTree_initial t
+
+                // return delta
+                e
+
+            static member ScoreForCell(addr: AST.Address)(ih: InvertedHistogram) : Countable =
+                ToCountable addr ih
 
             member self.UpdateScoreForCell(addr: AST.Address)(score: Countable) : unit =
                 let (a,b,oldscore) = mutable_ih.[addr]
@@ -448,21 +507,21 @@
 
             member self.ManualAddressMerge(source: AST.Address)(target: HashSet<AST.Address>) : unit =
                 // update countable for source
-                let rep_tgt_co = target |> Seq.head |> (fun a -> self.ScoreForCell a)
+                let rep_tgt_co = target |> Seq.head |> (fun a -> ClusterModel.ScoreForCell a mutable_ih)
                 self.UpdateScoreForCell source rep_tgt_co
 
                 // recompute entropy tree (this will re-coalesce)
-                let rTree = BinaryMinEntropyTree.Infer cells mutable_ih
+                let rTree = BinaryMinEntropyTree.Infer mutable_ih
                 let imm_ih = new ROInvertedHistogram(mutable_ih)
                 mutable_clustering <- CopyImmutableToMutableClustering (BinaryMinEntropyTree.RectangularClustering rTree imm_ih)
 
             member self.ManualClusterMerge(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : unit =
                 // update countables in source
-                let rep_tgt_co = target |> Seq.head |> (fun a -> self.ScoreForCell a)
+                let rep_tgt_co = target |> Seq.head |> (fun a -> ClusterModel.ScoreForCell a mutable_ih)
                 source |> Seq.iter (fun a -> self.UpdateScoreForCell a rep_tgt_co)
-
+                
                 // recompute entropy tree (this will re-coalesce)
-                let rTree = BinaryMinEntropyTree.Infer cells mutable_ih
+                let rTree = BinaryMinEntropyTree.Infer mutable_ih
                 let imm_ih = new ROInvertedHistogram(mutable_ih)
                 mutable_clustering <- CopyImmutableToMutableClustering (BinaryMinEntropyTree.RectangularClustering rTree imm_ih)
 

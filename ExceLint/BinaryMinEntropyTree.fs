@@ -14,8 +14,10 @@
 
     [<AbstractClass>]
     type BinaryMinEntropyTree(lefttop: AST.Address, rightbottom: AST.Address) =
-        abstract member Region: string
+        abstract member Region : string
         default self.Region : string = lefttop.A1Local() + ":" + rightbottom.A1Local()
+        abstract member ID : string
+        abstract member ToGraphViz : string
 
         static member AddressSetEntropy(addrs: AST.Address[])(rmap: Dict<AST.Address,Countable>) : double =
             if addrs.Length = 0 then
@@ -31,12 +33,50 @@
                 let cs = BasicStats.counts vs
 
                 // compute probability vector
-                let ps = BasicStats.empiricalProbabilities cs vs.Length
+                let ps = BasicStats.empiricalProbabilities cs
 
                 // compute entropy
                 let entropy = BasicStats.entropy ps
 
                 entropy
+
+        static member GraphViz(t: BinaryMinEntropyTree) : string =
+            "graph {" + t.ToGraphViz + "}"
+
+        /// <summary>
+        /// Measure the entropy of a clustering, where the number of cells
+        /// inside clusters is used to determine frequency.
+        /// </summary>
+        /// <param name="t">A BinaryMinEntropyTree  </param>
+        static member TreeEntropy(t: BinaryMinEntropyTree) : double =
+            // get regions from tree
+            let tRegions = BinaryMinEntropyTree.Regions t |> Array.map (fun leaf -> leaf.Cells)
+
+            // count
+            let cs = tRegions |> Array.map (fun reg -> reg.Count)
+
+            // debug
+            let debug_cs = cs |> Array.sort |> (fun arr -> "c(" + System.String.Join(", ", arr) + ")")
+
+            // compute probability vector
+            let ps = BasicStats.empiricalProbabilities cs
+
+            // compute entropy
+            let entropy = BasicStats.entropy ps
+
+            entropy
+
+        /// <summary>
+        /// The difference in tree entropy between t2 and t1. A negative number
+        /// denotes a decrease in entropy from t1 to t2 whereas a positive number
+        /// denotes an increase in entropy from t1 to t2.
+        /// </summary>
+        /// <param name="t1"></param>
+        /// <param name="t2"></param>
+        static member TreeEntropyDiff(t1: BinaryMinEntropyTree)(t2: BinaryMinEntropyTree) : double =
+            let t1e = BinaryMinEntropyTree.TreeEntropy t1
+            let t2e = BinaryMinEntropyTree.TreeEntropy t2
+            t2e - t1e
 
         static member private MinEntropyPartition(rmap: Cells)(vert: bool) : AST.Address[]*AST.Address[] =
             // which axis we use depends on whether we are
@@ -77,15 +117,16 @@
                 entropy_left + entropy_right
             )
 
-        static member MakeCells(addrs: AST.Address[])(hb_inv: InvertedHistogram) : Cells =
+        static member MakeCells(hb_inv: InvertedHistogram) : Cells =
+            let addrs = hb_inv.Keys
             let d = new Dict<AST.Address, Countable>()
             for addr in addrs do
                 let (_,_,c) = hb_inv.[addr]
                 d.Add(addr, c)
             d
 
-        static member Infer(addrs: AST.Address[])(hb_inv: InvertedHistogram) : BinaryMinEntropyTree =
-            let rmap = BinaryMinEntropyTree.MakeCells addrs hb_inv
+        static member Infer(hb_inv: InvertedHistogram) : BinaryMinEntropyTree =
+            let rmap = BinaryMinEntropyTree.MakeCells hb_inv
             BinaryMinEntropyTree.Decompose rmap None
 
         static member private Decompose(rmap: Cells)(parent_opt: Inner option) : BinaryMinEntropyTree =
@@ -150,6 +191,11 @@
             let regions = BinaryMinEntropyTree.Regions tree
             let cs = regions |> Array.map (fun leaf -> leaf.Cells)
             makeImmutableGenericClustering cs
+
+        static member MutableClustering(tree: BinaryMinEntropyTree) : Clustering =
+            let regions = BinaryMinEntropyTree.Regions tree
+            let cs = regions |> Array.map (fun leaf -> new HashSet<AST.Address>(leaf.Cells))
+            new Clustering(cs)
 
         static member ClusterIsRectangular(c: HashSet<AST.Address>) : bool =
             let boundingbox = Utils.BoundingBoxHS c 0
@@ -234,6 +280,7 @@
 
     and Inner(lefttop: AST.Address, rightbottom: AST.Address) =
         inherit BinaryMinEntropyTree(lefttop, rightbottom)
+        let id = System.Guid.NewGuid().ToString().Replace("-","")
         let mutable left = None
         let mutable right = None
         let mutable parent = None
@@ -251,7 +298,24 @@
             match right with
             | Some r -> r
             | None -> failwith "Cannot traverse tree until it is constructed!"
+        override self.ID = id
+        override self.ToGraphViz =
+            let start = "\"" + self.ID + "\""
+            let start_node = start + " [label=\"" + self.Region + "\"]\n"
+            let ledge = match left with
+                        | Some l -> start + " -- " + "\"" + l.ID + "\"" + "\n" + l.ToGraphViz
+                        | None -> ""
+            let redge = match right with
+                        | Some r -> start + " -- " + "\"" + r.ID + "\"" + "\n" + r.ToGraphViz
+                        | None -> ""
+            start_node + ledge + redge
 
     and Leaf(lefttop: AST.Address, rightbottom: AST.Address, parent: Inner option, cells: Cells) =
         inherit BinaryMinEntropyTree(lefttop, rightbottom)
+        let id = System.Guid.NewGuid().ToString().Replace("-","")
         member self.Cells : ImmutableHashSet<AST.Address> = (new HashSet<AST.Address>(cells.Keys)).ToImmutableHashSet()
+        override self.ID = id
+        override self.ToGraphViz =
+            let start = "\"" + self.ID + "\""
+            let node = start + " [label=\"" + self.Region + "\"]\n"
+            node

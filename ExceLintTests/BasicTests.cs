@@ -189,6 +189,7 @@ namespace ExceLintTests
                     var graph = wb.buildDependenceGraph();
                     var conf = (new FeatureConf()).enableShallowInputVectorMixedFullCVectorResultantOSI(true);
                     var m = ModelBuilder.initStepClusterModel(app.XLApplication(), conf, graph, 0.05, p);
+                    var ih = m.InvertedHistogram;
 
                     var wbname = graph.getWorkbookName();
                     var wsname = graph.getWorksheetNames()[0];
@@ -215,13 +216,13 @@ namespace ExceLintTests
                     // A3
                     var a3_addr = AST.Address.fromA1withMode(3, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
 
-                    Assert.IsFalse(m.AddressIsFormulaValued(a1_addr));
-                    Assert.IsFalse(m.AddressIsFormulaValued(b1_addr));
-                    Assert.IsFalse(m.AddressIsFormulaValued(c1_addr));
-                    Assert.IsFalse(m.AddressIsFormulaValued(a2_addr));
-                    Assert.IsFalse(m.AddressIsFormulaValued(b2_addr));
-                    Assert.IsTrue(m.AddressIsFormulaValued(c2_addr));
-                    Assert.IsFalse(m.AddressIsFormulaValued(a3_addr));
+                    Assert.IsFalse(ClusterModelBuilder.ClusterModel.AddressIsFormulaValued(a1_addr, ih, graph));
+                    Assert.IsFalse(ClusterModelBuilder.ClusterModel.AddressIsFormulaValued(b1_addr, ih, graph));
+                    Assert.IsFalse(ClusterModelBuilder.ClusterModel.AddressIsFormulaValued(c1_addr, ih, graph));
+                    Assert.IsFalse(ClusterModelBuilder.ClusterModel.AddressIsFormulaValued(a2_addr, ih, graph));
+                    Assert.IsFalse(ClusterModelBuilder.ClusterModel.AddressIsFormulaValued(b2_addr, ih, graph));
+                    Assert.IsTrue(ClusterModelBuilder.ClusterModel.AddressIsFormulaValued(c2_addr, ih, graph));
+                    Assert.IsFalse(ClusterModelBuilder.ClusterModel.AddressIsFormulaValued(a3_addr, ih, graph));
                 }
             }
         }
@@ -237,6 +238,7 @@ namespace ExceLintTests
                     var graph = wb.buildDependenceGraph();
                     var conf = (new FeatureConf()).enableShallowInputVectorMixedFullCVectorResultantOSI(true);
                     var m = ModelBuilder.initStepClusterModel(app.XLApplication(), conf, graph, 0.05, p);
+                    var ih = m.InvertedHistogram;
 
                     var wbname = graph.getWorkbookName();
                     var wsname = graph.getWorksheetNames()[0];
@@ -263,13 +265,13 @@ namespace ExceLintTests
                     // A3
                     var a3_addr = AST.Address.fromA1withMode(3, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
 
-                    Assert.IsFalse(m.AddressIsNumericValued(a1_addr));
-                    Assert.IsFalse(m.AddressIsNumericValued(b1_addr));
-                    Assert.IsFalse(m.AddressIsNumericValued(c1_addr));
-                    Assert.IsTrue(m.AddressIsNumericValued(a2_addr));
-                    Assert.IsTrue(m.AddressIsNumericValued(b2_addr));
-                    Assert.IsFalse(m.AddressIsNumericValued(c2_addr));
-                    Assert.IsFalse(m.AddressIsNumericValued(a3_addr));
+                    Assert.IsFalse(ClusterModelBuilder.ClusterModel.AddressIsNumericValued(a1_addr, ih, graph));
+                    Assert.IsFalse(ClusterModelBuilder.ClusterModel.AddressIsNumericValued(b1_addr, ih, graph));
+                    Assert.IsFalse(ClusterModelBuilder.ClusterModel.AddressIsNumericValued(c1_addr, ih, graph));
+                    Assert.IsTrue(ClusterModelBuilder.ClusterModel.AddressIsNumericValued(a2_addr, ih, graph));
+                    Assert.IsTrue(ClusterModelBuilder.ClusterModel.AddressIsNumericValued(b2_addr, ih, graph));
+                    Assert.IsFalse(ClusterModelBuilder.ClusterModel.AddressIsNumericValued(c2_addr, ih, graph));
+                    Assert.IsFalse(ClusterModelBuilder.ClusterModel.AddressIsNumericValued(a3_addr, ih, graph));
                 }
             }
         }
@@ -285,6 +287,7 @@ namespace ExceLintTests
                     var graph = wb.buildDependenceGraph();
                     var conf = (new FeatureConf()).enableShallowInputVectorMixedFullCVectorResultantOSI(true);
                     var m = ModelBuilder.initStepClusterModel(app.XLApplication(), conf, graph, 0.05, p);
+                    var ih = m.InvertedHistogram;
 
                     var wbname = graph.getWorkbookName();
                     var wsname = graph.getWorksheetNames()[0];
@@ -311,13 +314,13 @@ namespace ExceLintTests
                     // A3
                     var a3_addr = AST.Address.fromA1withMode(3, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
 
-                    Assert.IsTrue(m.AddressIsStringValued(a1_addr));
-                    Assert.IsTrue(m.AddressIsStringValued(b1_addr));
-                    Assert.IsTrue(m.AddressIsStringValued(c1_addr));
-                    Assert.IsFalse(m.AddressIsStringValued(a2_addr));
-                    Assert.IsFalse(m.AddressIsStringValued(b2_addr));
-                    Assert.IsFalse(m.AddressIsStringValued(c2_addr));
-                    Assert.IsFalse(m.AddressIsStringValued(a3_addr));
+                    Assert.IsTrue(ClusterModelBuilder.ClusterModel.AddressIsStringValued(a1_addr, ih, graph));
+                    Assert.IsTrue(ClusterModelBuilder.ClusterModel.AddressIsStringValued(b1_addr, ih, graph));
+                    Assert.IsTrue(ClusterModelBuilder.ClusterModel.AddressIsStringValued(c1_addr, ih, graph));
+                    Assert.IsFalse(ClusterModelBuilder.ClusterModel.AddressIsStringValued(a2_addr, ih, graph));
+                    Assert.IsFalse(ClusterModelBuilder.ClusterModel.AddressIsStringValued(b2_addr, ih, graph));
+                    Assert.IsFalse(ClusterModelBuilder.ClusterModel.AddressIsStringValued(c2_addr, ih, graph));
+                    Assert.IsFalse(ClusterModelBuilder.ClusterModel.AddressIsStringValued(a3_addr, ih, graph));
                 }
             }
         }
@@ -333,6 +336,7 @@ namespace ExceLintTests
                     var graph = wb.buildDependenceGraph();
                     var conf = (new FeatureConf()).enableShallowInputVectorMixedFullCVectorResultantOSI(true);
                     var m = ModelBuilder.initStepClusterModel(app.XLApplication(), conf, graph, 0.05, p);
+                    var ih = m.InvertedHistogram;
 
                     var wbname = graph.getWorkbookName();
                     var wsname = graph.getWorksheetNames()[0];
@@ -359,13 +363,13 @@ namespace ExceLintTests
                     // A3
                     var a3_addr = AST.Address.fromA1withMode(3, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
 
-                    Assert.IsFalse(m.AddressIsWhitespaceValued(a1_addr));
-                    Assert.IsFalse(m.AddressIsWhitespaceValued(b1_addr));
-                    Assert.IsFalse(m.AddressIsWhitespaceValued(c1_addr));
-                    Assert.IsFalse(m.AddressIsWhitespaceValued(a2_addr));
-                    Assert.IsFalse(m.AddressIsWhitespaceValued(b2_addr));
-                    Assert.IsFalse(m.AddressIsWhitespaceValued(c2_addr));
-                    Assert.IsTrue(m.AddressIsWhitespaceValued(a3_addr));
+                    Assert.IsFalse(ClusterModelBuilder.ClusterModel.AddressIsWhitespaceValued(a1_addr, ih, graph));
+                    Assert.IsFalse(ClusterModelBuilder.ClusterModel.AddressIsWhitespaceValued(b1_addr, ih, graph));
+                    Assert.IsFalse(ClusterModelBuilder.ClusterModel.AddressIsWhitespaceValued(c1_addr, ih, graph));
+                    Assert.IsFalse(ClusterModelBuilder.ClusterModel.AddressIsWhitespaceValued(a2_addr, ih, graph));
+                    Assert.IsFalse(ClusterModelBuilder.ClusterModel.AddressIsWhitespaceValued(b2_addr, ih, graph));
+                    Assert.IsFalse(ClusterModelBuilder.ClusterModel.AddressIsWhitespaceValued(c2_addr, ih, graph));
+                    Assert.IsTrue(ClusterModelBuilder.ClusterModel.AddressIsWhitespaceValued(a3_addr, ih, graph));
                 }
             }
         }

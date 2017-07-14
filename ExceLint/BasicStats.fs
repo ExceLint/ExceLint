@@ -63,13 +63,13 @@
 
         // find the multinomial probability vector for a sample;
         // probabilties are in value-sorted order
-        let empiricalProbabilities(Y: int[])(n: int) : double[] =
+        let empiricalProbabilities(Y: int[]) : double[] =
             // compute probabilities
-            let n' = double n
+            let n = double (Array.sum Y)
             Y
             |> Seq.toArray
             |> Array.sort
-            |> Array.map (fun count -> double count / n')
+            |> Array.map (fun count -> double count / n)
 
         /// <summary>
         /// Returns the entropy for the given multinomial probability vector.
