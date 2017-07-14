@@ -16,8 +16,7 @@
     type BinaryMinEntropyTree(lefttop: AST.Address, rightbottom: AST.Address) =
         abstract member Region : string
         default self.Region : string = lefttop.A1Local() + ":" + rightbottom.A1Local()
-        abstract member ID : string
-        abstract member ToGraphViz : string
+        abstract member ToGraphViz : int -> int*string
 
         static member AddressSetEntropy(addrs: AST.Address[])(rmap: Dict<AST.Address,Countable>) : double =
             if addrs.Length = 0 then
@@ -41,7 +40,8 @@
                 entropy
 
         static member GraphViz(t: BinaryMinEntropyTree) : string =
-            "graph {" + t.ToGraphViz + "}"
+            let (_,graph) = t.ToGraphViz 0
+            "graph {" + graph + "}"
 
         /// <summary>
         /// Measure the entropy of a clustering, where the number of cells
@@ -298,24 +298,26 @@
             match right with
             | Some r -> r
             | None -> failwith "Cannot traverse tree until it is constructed!"
-        override self.ID = id
-        override self.ToGraphViz =
-            let start = "\"" + self.ID + "\""
+        override self.ToGraphViz(i: int) =
+            let start = "\"" + i.ToString() + "\""
             let start_node = start + " [label=\"" + self.Region + "\"]\n"
-            let ledge = match left with
-                        | Some l -> start + " -- " + "\"" + l.ID + "\"" + "\n" + l.ToGraphViz
-                        | None -> ""
-            let redge = match right with
-                        | Some r -> start + " -- " + "\"" + r.ID + "\"" + "\n" + r.ToGraphViz
-                        | None -> ""
-            start_node + ledge + redge
+            let (j,ledge) = match left with
+                            | Some l ->
+                                let (i',graph) = l.ToGraphViz (i + 1)
+                                i', start + " -- " + "\"" + (i + 1).ToString() + "\"" + "\n" + graph
+                            | None -> i,""
+            let (k,redge) = match right with
+                            | Some r ->
+                                let (j',graph) = r.ToGraphViz (j + 1)
+                                j', start + " -- " + "\"" + (j + 1).ToString() + "\"" + "\n" + graph
+                            | None -> j,""
+            k,start_node + ledge + redge
 
     and Leaf(lefttop: AST.Address, rightbottom: AST.Address, parent: Inner option, cells: Cells) =
         inherit BinaryMinEntropyTree(lefttop, rightbottom)
         let id = System.Guid.NewGuid().ToString().Replace("-","")
         member self.Cells : ImmutableHashSet<AST.Address> = (new HashSet<AST.Address>(cells.Keys)).ToImmutableHashSet()
-        override self.ID = id
-        override self.ToGraphViz =
-            let start = "\"" + self.ID + "\""
+        override self.ToGraphViz(i: int)=
+            let start = "\"" + i.ToString() + "\""
             let node = start + " [label=\"" + self.Region + "\"]\n"
-            node
+            i,node
