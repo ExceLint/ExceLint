@@ -247,9 +247,9 @@
                         // get the cluster that currently belongs to
                         let c = reverseLookup.[a]
 
-                        // merge all of the cells in c
+                        // merge all of the cells from c into biggest
                         if not (biggest = c) then
-                            HashSetUtils.inPlaceUnion biggest c
+                            HashSetUtils.inPlaceUnion c biggest
 
                             // remove c from clustering
                             cs.Remove c |> ignore
