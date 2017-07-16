@@ -240,8 +240,11 @@
                         else
                             e_horz, top, bottom
 
-                    // base case 2: (perfect decomposition & right values same as left values)
-                    if entropy = 0.0 && rmap.[p1.[0]].ToCVectorResultant = rmap.[p2.[0]].ToCVectorResultant then
+                    // base case 2: perfect decomposition & right values same as left values
+                    if entropy = 0.0 && rmap.[p1.[0]].ToCVectorResultant = rmap.[p2.[0]].ToCVectorResultant ||
+                    // base case 3: cluster is indivisible, so min entropy is "infinite"
+                       System.Double.IsPositiveInfinity entropy
+                    then
                         let leaf = Leaf(lefttop, rightbottom, subtree_kind, rmap) :> BinaryMinEntropyTree
 
                         // is this leaf the root?
@@ -251,7 +254,6 @@
 
                         // add leaf to to link-up list
                         linkUp <- leaf :: linkUp
-                    // "recursive" case
                     else
                         let p1_rmap = p1 |> Array.map (fun a -> a,rmap.[a]) |> adict
                         let p2_rmap = p2 |> Array.map (fun a -> a,rmap.[a]) |> adict
