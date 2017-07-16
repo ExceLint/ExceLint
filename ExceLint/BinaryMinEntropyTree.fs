@@ -125,17 +125,6 @@
 
             assert (parts.Length <> 0)
 
-            let debug_es =
-                parts
-                |> Array.map (fun (l,r) ->
-                    // compute entropy
-                    let entropy_left = BinaryMinEntropyTree.AddressSetEntropy l rmap
-                    let entropy_right = BinaryMinEntropyTree.AddressSetEntropy r rmap
-
-                    // total for left and right
-                    (entropy_left + entropy_right),entropy_left,entropy_right
-                )
-
             parts
             |> Utils.argmin (fun (l,r) ->
                 // compute entropy
@@ -157,46 +146,6 @@
         static member Infer(hb_inv: InvertedHistogram)(indivisibles: HashSet<HashSet<AST.Address>>) : BinaryMinEntropyTree =
             let rmap = BinaryMinEntropyTree.MakeCells hb_inv
             BinaryMinEntropyTree.Decompose rmap indivisibles
-
-//        static member private Decompose(rmap: Cells)(indivisibles: HashSet<HashSet<AST.Address>>)(parent_opt: Inner option) : BinaryMinEntropyTree =
-//            // get bounding region
-//            let (lefttop,rightbottom) = Utils.BoundingRegion rmap.Keys 0
-//
-//            // base case 1: there's only 1 cell
-//            if lefttop = rightbottom then
-//                Leaf(lefttop, rightbottom, parent_opt, rmap) :> BinaryMinEntropyTree
-//            else
-//                // find the minimum entropy decompositions
-//                let (left,right) = BinaryMinEntropyTree.MinEntropyPartition rmap indivisibles true
-//                let (top,bottom) = BinaryMinEntropyTree.MinEntropyPartition rmap indivisibles false
-//
-//                // compute entropies again
-//                let e_vert = BinaryMinEntropyTree.AddressSetEntropy left rmap +
-//                                BinaryMinEntropyTree.AddressSetEntropy right rmap
-//                let e_horz = BinaryMinEntropyTree.AddressSetEntropy top rmap +
-//                                BinaryMinEntropyTree.AddressSetEntropy bottom rmap
-//
-//                // split vertically or horizontally (favor vert for ties)
-//                let (entropy,p1,p2) =
-//                    if e_vert <= e_horz then
-//                        e_vert, left, right
-//                    else
-//                        e_horz, top, bottom
-//
-//                // base case 2: (perfect decomposition & right values same as left values)
-//                if entropy = 0.0 && rmap.[p1.[0]].ToCVectorResultant = rmap.[p2.[0]].ToCVectorResultant then
-//                    Leaf(lefttop, rightbottom, parent_opt, rmap) :> BinaryMinEntropyTree
-//                // recursive case
-//                else
-//                    let p1_rmap = p1 |> Array.map (fun a -> a,rmap.[a]) |> adict
-//                    let p2_rmap = p2 |> Array.map (fun a -> a,rmap.[a]) |> adict
-//
-//                    let node = Inner(lefttop, rightbottom)
-//                    let p1node = BinaryMinEntropyTree.Decompose p1_rmap indivisibles (Some node)
-//                    let p2node = BinaryMinEntropyTree.Decompose p2_rmap indivisibles (Some node)
-//                    node.AddLeft p1node
-//                    node.AddRight p2node
-//                    node :> BinaryMinEntropyTree
 
         static member private Decompose (initial_rmap: Cells)(indivisibles: HashSet<HashSet<AST.Address>>) : BinaryMinEntropyTree =
             let mutable todos = [ (Root, initial_rmap) ]

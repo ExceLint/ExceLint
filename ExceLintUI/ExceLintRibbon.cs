@@ -29,6 +29,9 @@ namespace ExceLintUI
         private string custodesPath = null;
         private AST.Address fixAddress = null; 
         private ClusterModelBuilder.ClusterModel fixClusterModel = null;
+        private InvertedHistogram currentHistogram = null;
+        private Clusters currentClustering = null;
+        private Clusters indivisibles = new Clusters();
 
         #region BUTTON_HANDLERS
 
@@ -39,7 +42,10 @@ namespace ExceLintUI
 
             // toss everything so that the user can do this again
             fixClusterModel = null;
+            currentHistogram = null;
+            currentClustering = null;
             fixAddress = null;
+            indivisibles = new Clusters();
 
             // redisplay visualiztion
             currentWorkbook.restoreOutputColors();
@@ -90,16 +96,6 @@ namespace ExceLintUI
             return sb.ToString();
         }
 
-        private string StringDiff(String string1, String string2)
-        {
-            var first = string1.Split(' ');
-            var second = string2.Split(' ');
-            var primary = first.Length > second.Length ? first : second;
-            var secondary = primary == second ? first : second;
-            var difference = primary.Except(secondary).ToArray();
-            return String.Join("\n", difference);
-        }
-
         private void FixClusterButton_Click(object sender, RibbonControlEventArgs e)
         {
             // get dependence graph
@@ -116,10 +112,11 @@ namespace ExceLintUI
                 fixClusterModel = currentWorkbook.NewEntropyModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
 
                 // do visualization
-                var initial_cl = fixClusterModel.InitialClustering;
-                var initial_ih = fixClusterModel.InvertedHistogram;
-                var fcm = ElideStringClusters(ElideWhitespaceClusters(initial_cl, initial_ih, graph), initial_ih, graph);
-                currentWorkbook.DrawClusters(fcm);
+                currentClustering = fixClusterModel.InitialClustering;
+                currentHistogram = fixClusterModel.InvertedHistogram;
+                var cl_filt = ElideStringClusters(ElideWhitespaceClusters(currentClustering, currentHistogram, graph), currentHistogram, graph);
+                currentWorkbook.restoreOutputColors();
+                currentWorkbook.DrawClusters(cl_filt);
 
                 // remove progress bar
                 pb.Close();
@@ -148,10 +145,7 @@ namespace ExceLintUI
                 else
                 {
                     // get inverse lookup for clustering
-                    var addr2Cl = CommonFunctions.ReverseClusterLookup(fixClusterModel.InitialClustering);
-
-                    InvertedHistogram ih = null;
-                    Clusters indivisibles = new Clusters();
+                    var addr2Cl = CommonFunctions.ReverseClusterLookup(currentClustering);
 
                     // is the address a formula or not?
                     if (graph.isFormula(fixAddress))
@@ -165,7 +159,7 @@ namespace ExceLintUI
                         var fixClusterTarget = addr2Cl[cursorAddr];
 
                         // fix source
-                        ih = fixClusterModel.HistogramForProposedClusterMerge(fixClusterSource, fixClusterTarget);
+                        currentHistogram = fixClusterModel.HistogramForProposedClusterMerge(fixClusterSource, fixClusterTarget);
 
                         // update indivisibles
                         indivisibles.Add(HashSetUtils.union(fixClusterSource, fixClusterTarget));
@@ -178,35 +172,23 @@ namespace ExceLintUI
                         var fixClusterTarget = addr2Cl[cursorAddr];
 
                         // fix source
-                        ih = fixClusterModel.HistogramForProposedCellMerge(fixAddress, fixClusterTarget);
+                        currentHistogram = fixClusterModel.HistogramForProposedCellMerge(fixAddress, fixClusterTarget);
 
                         // update indivisibles
                         indivisibles.Add(HashSetUtils.unionElem(fixClusterTarget, fixAddress));
                     }
 
-                    // DEBUG DIFF
-                    System.Windows.Forms.Clipboard.SetText(InvertedHistogramPrettyPrinter(fixClusterModel.InvertedHistogram));
-                    System.Windows.Forms.MessageBox.Show("first ih");
-                    System.Windows.Forms.Clipboard.SetText(InvertedHistogramPrettyPrinter(ih));
-                    System.Windows.Forms.MessageBox.Show("second ih");
-
                     // get tree
-                    var t2 = ClusterModelBuilder.ClusterModel.TreeForProposedMerge(ih, indivisibles);
-
-                    // DEBUG DIFF
-                    System.Windows.Forms.Clipboard.SetText(BinaryMinEntropyTree.GraphViz(fixClusterModel.InitialTree));
-                    System.Windows.Forms.MessageBox.Show("first tree");
-                    System.Windows.Forms.Clipboard.SetText(BinaryMinEntropyTree.GraphViz(t2));
-                    System.Windows.Forms.MessageBox.Show("second tree");
+                    var t2 = ClusterModelBuilder.ClusterModel.TreeForProposedMerge(currentHistogram, indivisibles);
 
                     // compute change in entropy
                     var deltaE = fixClusterModel.TreeEntropyDiff(t2);
 
                     // redisplay visualiztion
-                    var cl2 = BinaryMinEntropyTree.MutableClustering(t2);
-                    var cl2_filtered = ElideStringClusters(ElideWhitespaceClusters(cl2, ih, graph), ih, graph);
+                    currentClustering = BinaryMinEntropyTree.MutableClustering(t2);
+                    var cl_filt = ElideStringClusters(ElideWhitespaceClusters(currentClustering, currentHistogram, graph), currentHistogram, graph);
                     currentWorkbook.restoreOutputColors();
-                    currentWorkbook.DrawClusters(cl2_filtered);
+                    currentWorkbook.DrawClusters(cl_filt);
 
                     // display output
                     System.Windows.Forms.MessageBox.Show("Change in entropy: " + deltaE);
