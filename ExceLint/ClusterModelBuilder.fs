@@ -166,7 +166,7 @@
                 | DistanceMetric.MeanCentroid -> cent_dist mutable_ih
 
             // do region inference
-            let rTree_initial = BinaryMinEntropyTree.Infer mutable_ih
+            let rTree_initial = BinaryMinEntropyTree.Infer mutable_ih (new HashSet<HashSet<AST.Address>>())
             let regions = BinaryMinEntropyTree.RectangularClustering rTree_initial hb_inv_ro
 
             // compute NN table
@@ -484,9 +484,9 @@
                 let source' = new HashSet<AST.Address>([| source |])
                 self.HistogramForProposedClusterMerge source' target
 
-            static member TreeForProposedMerge(ih: InvertedHistogram) : BinaryMinEntropyTree =
+            static member TreeForProposedMerge(ih: InvertedHistogram)(indivisibles: HashSet<HashSet<AST.Address>>) : BinaryMinEntropyTree =
                 // run tree clustering with new histogram
-                BinaryMinEntropyTree.Infer ih
+                BinaryMinEntropyTree.Infer ih indivisibles
 
             member self.InitialTree : BinaryMinEntropyTree = rTree_initial
 
@@ -505,23 +505,23 @@
                 let score' = oldscore.UpdateResultant score
                 mutable_ih.[addr] <- (a,b,score')
 
-            member self.ManualAddressMerge(source: AST.Address)(target: HashSet<AST.Address>) : unit =
+            member self.ManualAddressMerge(source: AST.Address)(target: HashSet<AST.Address>)(indivisibles: HashSet<HashSet<AST.Address>>) : unit =
                 // update countable for source
                 let rep_tgt_co = target |> Seq.head |> (fun a -> ClusterModel.ScoreForCell a mutable_ih)
                 self.UpdateScoreForCell source rep_tgt_co
 
                 // recompute entropy tree (this will re-coalesce)
-                let rTree = BinaryMinEntropyTree.Infer mutable_ih
+                let rTree = BinaryMinEntropyTree.Infer mutable_ih indivisibles
                 let imm_ih = new ROInvertedHistogram(mutable_ih)
                 mutable_clustering <- CopyImmutableToMutableClustering (BinaryMinEntropyTree.RectangularClustering rTree imm_ih)
 
-            member self.ManualClusterMerge(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : unit =
+            member self.ManualClusterMerge(source: HashSet<AST.Address>)(target: HashSet<AST.Address>)(indivisibles: HashSet<HashSet<AST.Address>>) : unit =
                 // update countables in source
                 let rep_tgt_co = target |> Seq.head |> (fun a -> ClusterModel.ScoreForCell a mutable_ih)
                 source |> Seq.iter (fun a -> self.UpdateScoreForCell a rep_tgt_co)
                 
                 // recompute entropy tree (this will re-coalesce)
-                let rTree = BinaryMinEntropyTree.Infer mutable_ih
+                let rTree = BinaryMinEntropyTree.Infer mutable_ih indivisibles
                 let imm_ih = new ROInvertedHistogram(mutable_ih)
                 mutable_clustering <- CopyImmutableToMutableClustering (BinaryMinEntropyTree.RectangularClustering rTree imm_ih)
 

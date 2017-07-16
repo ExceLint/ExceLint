@@ -148,9 +148,10 @@ namespace ExceLintUI
                 else
                 {
                     // get inverse lookup for clustering
-                    var addr2Cl = ExceLint.CommonFunctions.ReverseClusterLookup(fixClusterModel.InitialClustering);
+                    var addr2Cl = CommonFunctions.ReverseClusterLookup(fixClusterModel.InitialClustering);
 
                     InvertedHistogram ih = null;
+                    Clusters indivisibles = new Clusters();
 
                     // is the address a formula or not?
                     if (graph.isFormula(fixAddress))
@@ -165,6 +166,9 @@ namespace ExceLintUI
 
                         // fix source
                         ih = fixClusterModel.HistogramForProposedClusterMerge(fixClusterSource, fixClusterTarget);
+
+                        // update indivisibles
+                        indivisibles.Add(HashSetUtils.union(fixClusterSource, fixClusterTarget));
                     }
                     else
                     {
@@ -175,6 +179,9 @@ namespace ExceLintUI
 
                         // fix source
                         ih = fixClusterModel.HistogramForProposedCellMerge(fixAddress, fixClusterTarget);
+
+                        // update indivisibles
+                        indivisibles.Add(HashSetUtils.unionElem(fixClusterTarget, fixAddress));
                     }
 
                     // DEBUG DIFF
@@ -184,7 +191,7 @@ namespace ExceLintUI
                     System.Windows.Forms.MessageBox.Show("second ih");
 
                     // get tree
-                    var t2 = ClusterModelBuilder.ClusterModel.TreeForProposedMerge(ih);
+                    var t2 = ClusterModelBuilder.ClusterModel.TreeForProposedMerge(ih, indivisibles);
 
                     // DEBUG DIFF
                     System.Windows.Forms.Clipboard.SetText(BinaryMinEntropyTree.GraphViz(fixClusterModel.InitialTree));
