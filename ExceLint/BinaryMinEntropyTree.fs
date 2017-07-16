@@ -49,16 +49,10 @@
         /// Measure the entropy of a clustering, where the number of cells
         /// inside clusters is used to determine frequency.
         /// </summary>
-        /// <param name="t">A BinaryMinEntropyTree  </param>
-        static member TreeEntropy(t: BinaryMinEntropyTree) : double =
-            // get regions from tree
-            let tRegions = BinaryMinEntropyTree.Regions t |> Array.map (fun leaf -> leaf.Cells)
-
+        /// <param name="c">A Clustering</param>
+        static member ClusteringEntropy(c: Clustering) : double =
             // count
-            let cs = tRegions |> Array.map (fun reg -> reg.Count)
-
-            // debug
-            let debug_cs = cs |> Array.sort |> (fun arr -> "c(" + System.String.Join(", ", arr) + ")")
+            let cs = c |> Seq.map (fun reg -> reg.Count) |> Seq.toArray
 
             // compute probability vector
             let ps = BasicStats.empiricalProbabilities cs
@@ -69,18 +63,18 @@
             entropy
 
         /// <summary>
-        /// The difference in tree entropy between t2 and t1. A negative number
-        /// denotes a decrease in entropy from t1 to t2 whereas a positive number
-        /// denotes an increase in entropy from t1 to t2.
+        /// The difference in clustering entropy between c2 and c1. A negative number
+        /// denotes a decrease in entropy from c1 to c2 whereas a positive number
+        /// denotes an increase in entropy from c1 to c2.
         /// </summary>
-        /// <param name="t1"></param>
-        /// <param name="t2"></param>
-        static member TreeEntropyDiff(t1: BinaryMinEntropyTree)(t2: BinaryMinEntropyTree) : double =
-            let t1e = BinaryMinEntropyTree.TreeEntropy t1
-            let t2e = BinaryMinEntropyTree.TreeEntropy t2
-            t2e - t1e
+        /// <param name="c1"></param>
+        /// <param name="c2"></param>
+        static member ClusteringEntropyDiff(c1: Clustering)(c2: Clustering) : double =
+            let c1e = BinaryMinEntropyTree.ClusteringEntropy c1
+            let c2e = BinaryMinEntropyTree.ClusteringEntropy c2
+            c2e - c1e
 
-        static member private MinEntropyPartition(rmap: Cells)(indivisibles: HashSet<HashSet<AST.Address>>)(vert: bool) : AST.Address[]*AST.Address[] =
+        static member private MinEntropyPartition(rmap: Cells)(vert: bool) : AST.Address[]*AST.Address[] =
             // which axis we use depends on whether we are
             // decomposing verticalls or horizontally
             let indexer = (fun (a: AST.Address) -> if vert then a.X else a.Y)
@@ -100,28 +94,9 @@
                                // ignore this partitioning
                                let left' = new HashSet<AST.Address>(left)
                                let right' = new HashSet<AST.Address>(right)
-                               let ok = indivisibles |>
-                                        Seq.fold (fun acc indiv ->
-                                            // either the left side contains the entire indivisible set
-                                            // or the right side contains the entire indivisible set
-                                            // or neither side contains any of the indivisible set
-                                            acc && (
-                                                let l_int = HashSetUtils.intersection left' indiv
-                                                let r_int = HashSetUtils.intersection right' indiv
-                                                (l_int.Count = indiv.Count && r_int.Count = 0) ||
-                                                (l_int.Count = 0 && r_int.Count = indiv.Count) ||
-                                                (l_int.Count = 0 && r_int.Count = 0)
-                                            )
-                                        ) true
-                               if ok then
-                                   Some(left, right)
-                               else
-                                   let i' = indivisibles
-                                   let l' = left
-                                   let r' = right
-                                   None
+
+                               left, right
                            ) [| indexer lt .. indexer rb + 1 |]
-                        |> Array.choose id
 
             assert (parts.Length <> 0)
 
@@ -145,9 +120,13 @@
 
         static member Infer(hb_inv: InvertedHistogram)(indivisibles: HashSet<HashSet<AST.Address>>) : BinaryMinEntropyTree =
             let rmap = BinaryMinEntropyTree.MakeCells hb_inv
-            BinaryMinEntropyTree.Decompose rmap indivisibles
+            BinaryMinEntropyTree.Decompose rmap
 
-        static member private Decompose (initial_rmap: Cells)(indivisibles: HashSet<HashSet<AST.Address>>) : BinaryMinEntropyTree =
+        static member private IsHomogeneous(c: AST.Address[])(rmap: Cells) : bool =
+            let rep = rmap.[c.[0]]
+            c |> Array.forall (fun a -> rmap.[a] = rep)
+
+        static member private Decompose (initial_rmap: Cells) : BinaryMinEntropyTree =
             let mutable todos = [ (Root, initial_rmap) ]
             let mutable linkUp = []
             let mutable root_opt = None
@@ -173,8 +152,8 @@
                     | _ -> ()
                 else
                     // find the minimum entropy decompositions
-                    let (left,right) = BinaryMinEntropyTree.MinEntropyPartition rmap indivisibles true
-                    let (top,bottom) = BinaryMinEntropyTree.MinEntropyPartition rmap indivisibles false
+                    let (left,right) = BinaryMinEntropyTree.MinEntropyPartition rmap true
+                    let (top,bottom) = BinaryMinEntropyTree.MinEntropyPartition rmap false
 
                     // compute entropies again
                     let e_vert = BinaryMinEntropyTree.AddressSetEntropy left rmap +
@@ -190,9 +169,7 @@
                             e_horz, top, bottom
 
                     // base case 2: perfect decomposition & right values same as left values
-                    if entropy = 0.0 && rmap.[p1.[0]].ToCVectorResultant = rmap.[p2.[0]].ToCVectorResultant ||
-                    // base case 3: cluster is indivisible, so min entropy is "infinite"
-                       System.Double.IsPositiveInfinity entropy
+                    if entropy = 0.0 && rmap.[p1.[0]].ToCVectorResultant = rmap.[p2.[0]].ToCVectorResultant
                     then
                         let leaf = Leaf(lefttop, rightbottom, subtree_kind, rmap) :> BinaryMinEntropyTree
 
@@ -249,15 +226,28 @@
             | :? Leaf as l -> [| l |]
             | _ -> failwith "Unknown tree node type."
 
-        static member Clustering(tree: BinaryMinEntropyTree) : ImmutableClustering =
-            let regions = BinaryMinEntropyTree.Regions tree
-            let cs = regions |> Array.map (fun leaf -> leaf.Cells)
-            makeImmutableGenericClustering cs
+//        static member Clustering(tree: BinaryMinEntropyTree) : ImmutableClustering =
+//            let regions = BinaryMinEntropyTree.Regions tree
+//            let cs = regions |> Array.map (fun leaf -> leaf.Cells)
+//            makeImmutableGenericClustering cs
 
-        static member MutableClustering(tree: BinaryMinEntropyTree) : Clustering =
-            let regions = BinaryMinEntropyTree.Regions tree
-            let cs = regions |> Array.map (fun leaf -> new HashSet<AST.Address>(leaf.Cells))
-            new Clustering(cs)
+        static member MutableClustering(tree: BinaryMinEntropyTree)(ih: InvertedHistogram)(indivisibles: HashSet<HashSet<AST.Address>>) : Clustering =
+            // coalesce rectangular regions
+            let cs = BinaryMinEntropyTree.RectangularClusteringMutable tree ih
+
+            // get rmap
+            let reverseLookup = ReverseClusterLookup cs
+
+            // coalesce indivisibles
+            for i in indivisibles do
+                // get the biggest cluster
+                let biggest = i |> Seq.map (fun a -> reverseLookup.[a]) |> Seq.maxBy (fun c -> c.Count)
+                for a in i do
+                    if not (biggest.Contains a) then
+                        // merge cell
+                        HashSetUtils.inPlaceUnionElem biggest a
+
+            cs
 
         static member ClusterIsRectangular(c: HashSet<AST.Address>) : bool =
             let boundingbox = Utils.BoundingBoxHS c 0
@@ -339,6 +329,11 @@
 
             // return clustering
             clusters''
+
+        static member RectangularClusteringMutable(tree: BinaryMinEntropyTree)(hb_inv: InvertedHistogram) : Clustering =
+            let hb_inv_imm = new ROInvertedHistogram(hb_inv)
+            let imm_cl = BinaryMinEntropyTree.RectangularClustering tree hb_inv_imm
+            CopyImmutableToMutableClustering imm_cl
 
     and Inner(lefttop: AST.Address, rightbottom: AST.Address, subtree: SubtreeKind) =
         inherit BinaryMinEntropyTree(lefttop, rightbottom, subtree)

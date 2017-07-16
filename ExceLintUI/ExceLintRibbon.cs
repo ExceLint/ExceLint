@@ -112,8 +112,9 @@ namespace ExceLintUI
                 fixClusterModel = currentWorkbook.NewEntropyModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
 
                 // do visualization
-                currentClustering = fixClusterModel.InitialClustering;
                 currentHistogram = fixClusterModel.InvertedHistogram;
+                currentClustering = fixClusterModel.InitialClustering;
+                
                 var cl_filt = ElideStringClusters(ElideWhitespaceClusters(currentClustering, currentHistogram, graph), currentHistogram, graph);
                 currentWorkbook.restoreOutputColors();
                 currentWorkbook.DrawClusters(cl_filt);
@@ -185,7 +186,7 @@ namespace ExceLintUI
                     var deltaE = fixClusterModel.TreeEntropyDiff(t2);
 
                     // redisplay visualiztion
-                    currentClustering = BinaryMinEntropyTree.MutableClustering(t2);
+                    currentClustering = BinaryMinEntropyTree.MutableClustering(t2, currentHistogram, indivisibles);
                     var cl_filt = ElideStringClusters(ElideWhitespaceClusters(currentClustering, currentHistogram, graph), currentHistogram, graph);
                     currentWorkbook.restoreOutputColors();
                     currentWorkbook.DrawClusters(cl_filt);
