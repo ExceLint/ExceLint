@@ -13,10 +13,12 @@
     type Region = LeftTop * RightBottom
 
     [<AbstractClass>]
-    type BinaryMinEntropyTree(lefttop: AST.Address, rightbottom: AST.Address) =
+    type BinaryMinEntropyTree(lefttop: AST.Address, rightbottom: AST.Address, subtree_kind: SubtreeKind) =
         abstract member Region : string
         default self.Region : string = lefttop.A1Local() + ":" + rightbottom.A1Local()
         abstract member ToGraphViz : int -> int*string
+        abstract member Subtree : SubtreeKind
+        default self.Subtree = subtree_kind
 
         static member AddressSetEntropy(addrs: AST.Address[])(rmap: Dict<AST.Address,Countable>) : double =
             if addrs.Length = 0 then
@@ -154,46 +156,140 @@
 
         static member Infer(hb_inv: InvertedHistogram)(indivisibles: HashSet<HashSet<AST.Address>>) : BinaryMinEntropyTree =
             let rmap = BinaryMinEntropyTree.MakeCells hb_inv
-            BinaryMinEntropyTree.Decompose rmap indivisibles None
+            BinaryMinEntropyTree.Decompose rmap indivisibles
 
-        static member private Decompose(rmap: Cells)(indivisibles: HashSet<HashSet<AST.Address>>)(parent_opt: Inner option) : BinaryMinEntropyTree =
-            // get bounding region
-            let (lefttop,rightbottom) = Utils.BoundingRegion rmap.Keys 0
+//        static member private Decompose(rmap: Cells)(indivisibles: HashSet<HashSet<AST.Address>>)(parent_opt: Inner option) : BinaryMinEntropyTree =
+//            // get bounding region
+//            let (lefttop,rightbottom) = Utils.BoundingRegion rmap.Keys 0
+//
+//            // base case 1: there's only 1 cell
+//            if lefttop = rightbottom then
+//                Leaf(lefttop, rightbottom, parent_opt, rmap) :> BinaryMinEntropyTree
+//            else
+//                // find the minimum entropy decompositions
+//                let (left,right) = BinaryMinEntropyTree.MinEntropyPartition rmap indivisibles true
+//                let (top,bottom) = BinaryMinEntropyTree.MinEntropyPartition rmap indivisibles false
+//
+//                // compute entropies again
+//                let e_vert = BinaryMinEntropyTree.AddressSetEntropy left rmap +
+//                                BinaryMinEntropyTree.AddressSetEntropy right rmap
+//                let e_horz = BinaryMinEntropyTree.AddressSetEntropy top rmap +
+//                                BinaryMinEntropyTree.AddressSetEntropy bottom rmap
+//
+//                // split vertically or horizontally (favor vert for ties)
+//                let (entropy,p1,p2) =
+//                    if e_vert <= e_horz then
+//                        e_vert, left, right
+//                    else
+//                        e_horz, top, bottom
+//
+//                // base case 2: (perfect decomposition & right values same as left values)
+//                if entropy = 0.0 && rmap.[p1.[0]].ToCVectorResultant = rmap.[p2.[0]].ToCVectorResultant then
+//                    Leaf(lefttop, rightbottom, parent_opt, rmap) :> BinaryMinEntropyTree
+//                // recursive case
+//                else
+//                    let p1_rmap = p1 |> Array.map (fun a -> a,rmap.[a]) |> adict
+//                    let p2_rmap = p2 |> Array.map (fun a -> a,rmap.[a]) |> adict
+//
+//                    let node = Inner(lefttop, rightbottom)
+//                    let p1node = BinaryMinEntropyTree.Decompose p1_rmap indivisibles (Some node)
+//                    let p2node = BinaryMinEntropyTree.Decompose p2_rmap indivisibles (Some node)
+//                    node.AddLeft p1node
+//                    node.AddRight p2node
+//                    node :> BinaryMinEntropyTree
 
-            // base case 1: there's only 1 cell
-            if lefttop = rightbottom then
-                Leaf(lefttop, rightbottom, parent_opt, rmap) :> BinaryMinEntropyTree
-            else
-                // find the minimum entropy decompositions
-                let (left,right) = BinaryMinEntropyTree.MinEntropyPartition rmap indivisibles true
-                let (top,bottom) = BinaryMinEntropyTree.MinEntropyPartition rmap indivisibles false
+        static member private Decompose (initial_rmap: Cells)(indivisibles: HashSet<HashSet<AST.Address>>) : BinaryMinEntropyTree =
+            let mutable todos = [ (Root, initial_rmap) ]
+            let mutable linkUp = []
+            let mutable root_opt = None
 
-                // compute entropies again
-                let e_vert = BinaryMinEntropyTree.AddressSetEntropy left rmap +
-                                BinaryMinEntropyTree.AddressSetEntropy right rmap
-                let e_horz = BinaryMinEntropyTree.AddressSetEntropy top rmap +
-                                BinaryMinEntropyTree.AddressSetEntropy bottom rmap
+            // process work list
+            while not todos.IsEmpty do
+                // grab next item
+                let (subtree_kind, rmap) = todos.Head
+                todos <- todos.Tail
 
-                // split vertically or horizontally (favor vert for ties)
-                let (entropy,p1,p2) =
-                    if e_vert <= e_horz then
-                        e_vert, left, right
-                    else
-                        e_horz, top, bottom
+                // get bounding region
+                let (lefttop,rightbottom) = Utils.BoundingRegion rmap.Keys 0
 
-                // base case 2: (perfect decomposition & right values same as left values)
-                if entropy = 0.0 && rmap.[p1.[0]].ToCVectorResultant = rmap.[p2.[0]].ToCVectorResultant then
-                    Leaf(lefttop, rightbottom, parent_opt, rmap) :> BinaryMinEntropyTree
+                // base case 1: there's only 1 cell
+                if lefttop = rightbottom then
+                    let leaf = Leaf(lefttop, rightbottom, subtree_kind, rmap) :> BinaryMinEntropyTree
+                    // add leaf to to link-up list
+                    linkUp <- leaf :: linkUp
+
+                    // is this leaf the root?
+                    match subtree_kind with
+                    | Root -> root_opt <- Some leaf
+                    | _ -> ()
                 else
-                    let p1_rmap = p1 |> Array.map (fun a -> a,rmap.[a]) |> adict
-                    let p2_rmap = p2 |> Array.map (fun a -> a,rmap.[a]) |> adict
+                    // find the minimum entropy decompositions
+                    let (left,right) = BinaryMinEntropyTree.MinEntropyPartition rmap indivisibles true
+                    let (top,bottom) = BinaryMinEntropyTree.MinEntropyPartition rmap indivisibles false
 
-                    let node = Inner(lefttop, rightbottom)
-                    let p1node = BinaryMinEntropyTree.Decompose p1_rmap indivisibles (Some node)
-                    let p2node = BinaryMinEntropyTree.Decompose p2_rmap indivisibles (Some node)
-                    node.AddLeft p1node
-                    node.AddRight p2node
-                    node :> BinaryMinEntropyTree
+                    // compute entropies again
+                    let e_vert = BinaryMinEntropyTree.AddressSetEntropy left rmap +
+                                    BinaryMinEntropyTree.AddressSetEntropy right rmap
+                    let e_horz = BinaryMinEntropyTree.AddressSetEntropy top rmap +
+                                    BinaryMinEntropyTree.AddressSetEntropy bottom rmap
+
+                    // split vertically or horizontally (favor vert for ties)
+                    let (entropy,p1,p2) =
+                        if e_vert <= e_horz then
+                            e_vert, left, right
+                        else
+                            e_horz, top, bottom
+
+                    // base case 2: (perfect decomposition & right values same as left values)
+                    if entropy = 0.0 && rmap.[p1.[0]].ToCVectorResultant = rmap.[p2.[0]].ToCVectorResultant then
+                        let leaf = Leaf(lefttop, rightbottom, subtree_kind, rmap) :> BinaryMinEntropyTree
+
+                        // is this leaf the root?
+                        match subtree_kind with
+                        | Root -> root_opt <- Some leaf
+                        | _ -> ()
+
+                        // add leaf to to link-up list
+                        linkUp <- leaf :: linkUp
+                    // "recursive" case
+                    else
+                        let p1_rmap = p1 |> Array.map (fun a -> a,rmap.[a]) |> adict
+                        let p2_rmap = p2 |> Array.map (fun a -> a,rmap.[a]) |> adict
+
+                        let node = Inner(lefttop, rightbottom, subtree_kind)
+
+                        // is this node the root?
+                        match subtree_kind with
+                        | Root -> root_opt <- Some (node :> BinaryMinEntropyTree)
+                        | _ -> ()
+
+                        // add next nodes to work list
+                        todos <- (LeftOf node, p1_rmap) :: (RightOf node, p2_rmap) :: todos
+                        
+            // process "link-up" list
+            while not linkUp.IsEmpty do
+                // grab next item
+                let node = linkUp.Head
+                linkUp <- linkUp.Tail
+
+                match node.Subtree with
+                | LeftOf parent ->
+                    // add parent to linkup list
+                    linkUp <- (parent :> BinaryMinEntropyTree) :: linkUp
+
+                    // make link
+                    parent.AddLeft node
+                | RightOf parent ->
+                    // add parent to linkup list
+                    linkUp <- (parent :> BinaryMinEntropyTree) :: linkUp
+
+                    // make link
+                    parent.AddRight node
+                | Root -> ()    // do nothing
+
+            match root_opt with
+            | Some root -> root
+            | None -> failwith "this should never happen"
 
         /// <summary>return the leaves of the tree, in order of smallest to largest region</summary>
         static member Regions(tree: BinaryMinEntropyTree) : Leaf[] =
@@ -293,13 +389,10 @@
             // return clustering
             clusters''
 
-    and Inner(lefttop: AST.Address, rightbottom: AST.Address) =
-        inherit BinaryMinEntropyTree(lefttop, rightbottom)
+    and Inner(lefttop: AST.Address, rightbottom: AST.Address, subtree: SubtreeKind) =
+        inherit BinaryMinEntropyTree(lefttop, rightbottom, subtree)
         let mutable left = None
         let mutable right = None
-        let mutable parent = None
-        member self.AddParent(p: Inner) : unit =
-            parent <- Some p
         member self.AddLeft(n: BinaryMinEntropyTree) : unit =
             left <- Some n
         member self.AddRight(n: BinaryMinEntropyTree) : unit =
@@ -327,10 +420,15 @@
                             | None -> j,""
             k,start_node + ledge + redge
 
-    and Leaf(lefttop: AST.Address, rightbottom: AST.Address, parent: Inner option, cells: Cells) =
-        inherit BinaryMinEntropyTree(lefttop, rightbottom)
+    and Leaf(lefttop: AST.Address, rightbottom: AST.Address, subtree: SubtreeKind, cells: Cells) =
+        inherit BinaryMinEntropyTree(lefttop, rightbottom, subtree)
         member self.Cells : ImmutableHashSet<AST.Address> = (new HashSet<AST.Address>(cells.Keys)).ToImmutableHashSet()
         override self.ToGraphViz(i: int)=
             let start = "\"" + i.ToString() + "\""
             let node = start + " [label=\"" + self.Region + "\"]\n"
             i,node
+
+    and SubtreeKind =
+    | LeftOf of Inner
+    | RightOf of Inner
+    | Root
