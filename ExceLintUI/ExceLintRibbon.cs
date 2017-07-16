@@ -1162,15 +1162,12 @@ namespace ExceLintUI
             // get cursor location
             var cursor = (Excel.Range)app.Selection;
 
-            // get range object
-            var rng = ParcelCOMShim.Range.RangeFromCOMObject(cursor, app.ActiveWorkbook);
-
-            if (rng.Addresses().Length == 1)
+            if (cursor.Count == 1)
             {
                 // user selected a single cell
                 annotateThisCell.Enabled = true;
                 annotateThisCell.Label = "Annotate This Cell";
-            } else if (rng.Addresses().Length > 1)
+            } else if (cursor.Count > 1)
             {
                 // user selected a single cell
                 annotateThisCell.Enabled = true;
