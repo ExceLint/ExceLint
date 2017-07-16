@@ -490,13 +490,6 @@
 
             member self.InitialTree : BinaryMinEntropyTree = rTree_initial
 
-            member self.TreeEntropyDiff(t: BinaryMinEntropyTree) : double =
-                // compute change in entropy
-                let e = BinaryMinEntropyTree.TreeEntropyDiff rTree_initial t
-
-                // return delta
-                e
-
             static member ScoreForCell(addr: AST.Address)(ih: InvertedHistogram) : Countable =
                 ToCountable addr ih
 

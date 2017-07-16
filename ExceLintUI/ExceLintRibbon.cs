@@ -182,11 +182,16 @@ namespace ExceLintUI
                     // get tree
                     var t2 = ClusterModelBuilder.ClusterModel.TreeForProposedMerge(currentHistogram, indivisibles);
 
+                    // recompute clustering
+                    var newClustering = BinaryMinEntropyTree.MutableClustering(t2, currentHistogram, indivisibles);
+
                     // compute change in entropy
-                    var deltaE = fixClusterModel.TreeEntropyDiff(t2);
+                    var deltaE = BinaryMinEntropyTree.ClusteringEntropyDiff(currentClustering, newClustering);
+
+                    // save new clustering
+                    currentClustering = newClustering;
 
                     // redisplay visualiztion
-                    currentClustering = BinaryMinEntropyTree.MutableClustering(t2, currentHistogram, indivisibles);
                     var cl_filt = ElideStringClusters(ElideWhitespaceClusters(currentClustering, currentHistogram, graph), currentHistogram, graph);
                     currentWorkbook.restoreOutputColors();
                     currentWorkbook.DrawClusters(cl_filt);
