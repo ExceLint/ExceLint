@@ -463,9 +463,9 @@
                 
                 entropy
 
-            member self.HistogramForProposedClusterMerge(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : InvertedHistogram =
+            static member HistogramForProposedClusterMerge(source: HashSet<AST.Address>)(target: HashSet<AST.Address>)(ih: InvertedHistogram) : InvertedHistogram =
                 // copy inverse histogram
-                let ih_copy = new Dict<AST.Address,HistoBin>(mutable_ih)
+                let ih_copy = new Dict<AST.Address,HistoBin>(ih)
 
                 // get representative score from target
                 let rep_score = target |> Seq.head |> (fun a -> ClusterModel.ScoreForCell a ih_copy)
@@ -480,9 +480,9 @@
 
                 ih_copy
 
-            member self.HistogramForProposedCellMerge(source: AST.Address)(target: HashSet<AST.Address>) : InvertedHistogram =
+            static member HistogramForProposedCellMerge(source: AST.Address)(target: HashSet<AST.Address>)(ih: InvertedHistogram) : InvertedHistogram =
                 let source' = new HashSet<AST.Address>([| source |])
-                self.HistogramForProposedClusterMerge source' target
+                ClusterModel.HistogramForProposedClusterMerge source' target ih
 
             static member TreeForProposedMerge(ih: InvertedHistogram)(indivisibles: HashSet<HashSet<AST.Address>>) : BinaryMinEntropyTree =
                 // run tree clustering with new histogram

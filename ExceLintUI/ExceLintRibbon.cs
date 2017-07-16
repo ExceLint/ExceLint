@@ -160,7 +160,7 @@ namespace ExceLintUI
                         var fixClusterTarget = addr2Cl[cursorAddr];
 
                         // fix source
-                        currentHistogram = fixClusterModel.HistogramForProposedClusterMerge(fixClusterSource, fixClusterTarget);
+                        currentHistogram = ClusterModelBuilder.ClusterModel.HistogramForProposedClusterMerge(fixClusterSource, fixClusterTarget, currentHistogram);
 
                         // update indivisibles
                         indivisibles.Add(HashSetUtils.union(fixClusterSource, fixClusterTarget));
@@ -173,7 +173,7 @@ namespace ExceLintUI
                         var fixClusterTarget = addr2Cl[cursorAddr];
 
                         // fix source
-                        currentHistogram = fixClusterModel.HistogramForProposedCellMerge(fixAddress, fixClusterTarget);
+                        currentHistogram = ClusterModelBuilder.ClusterModel.HistogramForProposedCellMerge(fixAddress, fixClusterTarget, currentHistogram);
 
                         // update indivisibles
                         indivisibles.Add(HashSetUtils.unionElem(fixClusterTarget, fixAddress));
