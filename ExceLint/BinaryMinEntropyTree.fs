@@ -244,9 +244,15 @@
                 let biggest = i |> Seq.map (fun a -> reverseLookup.[a]) |> Seq.maxBy (fun c -> c.Count)
                 for a in i do
                     if not (biggest.Contains a) then
-                        // merge cell
-                        HashSetUtils.inPlaceUnionElem biggest a
+                        // get the cluster that currently belongs to
+                        let c = reverseLookup.[a]
 
+                        // merge all of the cells in c
+                        if not (biggest = c) then
+                            HashSetUtils.inPlaceUnion biggest c
+
+                            // remove c from clustering
+                            cs.Remove c |> ignore
             cs
 
         static member ClusterIsRectangular(c: HashSet<AST.Address>) : bool =
