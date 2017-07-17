@@ -187,6 +187,7 @@ namespace ExceLintUI
 
                     // compute change in entropy
                     var deltaE = BinaryMinEntropyTree.ClusteringEntropyDiff(currentClustering, newClustering);
+                    var deltaGridE = BinaryMinEntropyTree.GridEntropyDiff(currentClustering, newClustering);
 
                     // save new clustering
                     currentClustering = newClustering;
@@ -198,6 +199,9 @@ namespace ExceLintUI
 
                     // display output
                     System.Windows.Forms.MessageBox.Show("Change in entropy: " + deltaE);
+
+                    // display output
+                    System.Windows.Forms.MessageBox.Show("Change in grid entropy: " + deltaGridE);
 
                     // reset address
                     fixAddress = null;

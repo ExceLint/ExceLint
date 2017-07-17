@@ -45,26 +45,33 @@
             let (_,graph) = t.ToGraphViz 0
             "graph {" + graph + "}"
 
-        static member Condition(cs: Clustering)(attribute: AST.Address -> int)(value: int) : Clustering =
+        static member Condition(cs: Clustering)(attribute: AST.Address -> int)(value: int)(noEmptyClusters) : Clustering =
             cs
             |> Seq.map (fun cluster ->
                 cluster
                 |> Seq.filter (fun addr ->
                     (attribute addr) = value
                 )
-                |> (fun cluster2 -> new HashSet<AST.Address>(cluster2))
+                |> (fun cluster2 ->
+                    if noEmptyClusters && Seq.length cluster2 = 0 then
+                        None
+                    else
+                        Some(new HashSet<AST.Address>(cluster2))
+                   )
             )
+            |> Seq.choose id
             |> (fun cs' -> new Clustering(cs'))
 
         static member ColumnEntropy(cs: Clustering) : double =
             let cells = cs |> Seq.concat |> Seq.toArray
             let (lt,rb) = Utils.BoundingRegion cells 0
             
+            let col = (fun (a: AST.Address) -> a.Y )
+
             let colE =
                 [| lt.Y .. rb.Y |]
                 |> Array.sumBy (fun y ->
-                    let col = (fun (a: AST.Address) -> a.Y )
-                    let cs' = BinaryMinEntropyTree.Condition cs col y
+                    let cs' = BinaryMinEntropyTree.Condition cs col y true
                     let entropy = BinaryMinEntropyTree.ClusteringEntropy cs'
                     entropy
                 )
@@ -74,11 +81,12 @@
             let cells = cs |> Seq.concat |> Seq.toArray
             let (lt,rb) = Utils.BoundingRegion cells 0
             
+            let row = (fun (a: AST.Address) -> a.X )
+
             let rowE =
                 [| lt.X .. rb.X |]
                 |> Array.sumBy (fun x ->
-                    let col = (fun (a: AST.Address) -> a.X )
-                    let cs' = BinaryMinEntropyTree.Condition cs col x
+                    let cs' = BinaryMinEntropyTree.Condition cs row x true
                     let entropy = BinaryMinEntropyTree.ClusteringEntropy cs'
                     entropy
                 )
