@@ -82,7 +82,7 @@ namespace ExceLintUI
         private Dictionary<Worksheet, bool> _custodes_shown = new Dictionary<Worksheet, bool>();
         #endregion BUTTON_STATE
 
-        public WorkbookState(Excel.Application app, Excel.Workbook workbook)
+        public WorkbookState(Excel.Application app, Workbook workbook)
         {
             _app = app;
             _workbook = workbook;

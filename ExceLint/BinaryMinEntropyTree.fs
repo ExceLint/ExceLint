@@ -45,6 +45,48 @@
             let (_,graph) = t.ToGraphViz 0
             "graph {" + graph + "}"
 
+        static member Condition(cs: Clustering)(attribute: AST.Address -> int)(value: int) : Clustering =
+            cs
+            |> Seq.map (fun cluster ->
+                cluster
+                |> Seq.filter (fun addr ->
+                    (attribute addr) = value
+                )
+                |> (fun cluster2 -> new HashSet<AST.Address>(cluster2))
+            )
+            |> (fun cs' -> new Clustering(cs'))
+
+        static member ColumnEntropy(cs: Clustering) : double =
+            let cells = cs |> Seq.concat |> Seq.toArray
+            let (lt,rb) = Utils.BoundingRegion cells 0
+            
+            let colE =
+                [| lt.Y .. rb.Y |]
+                |> Array.sumBy (fun y ->
+                    let col = (fun (a: AST.Address) -> a.Y )
+                    let cs' = BinaryMinEntropyTree.Condition cs col y
+                    let entropy = BinaryMinEntropyTree.ClusteringEntropy cs'
+                    entropy
+                )
+            colE
+
+        static member RowEntropy(cs: Clustering) : double =
+            let cells = cs |> Seq.concat |> Seq.toArray
+            let (lt,rb) = Utils.BoundingRegion cells 0
+            
+            let rowE =
+                [| lt.X .. rb.X |]
+                |> Array.sumBy (fun x ->
+                    let col = (fun (a: AST.Address) -> a.X )
+                    let cs' = BinaryMinEntropyTree.Condition cs col x
+                    let entropy = BinaryMinEntropyTree.ClusteringEntropy cs'
+                    entropy
+                )
+            rowE
+
+        static member GridEntropy(cs: Clustering) : double =
+            BinaryMinEntropyTree.RowEntropy cs + BinaryMinEntropyTree.ColumnEntropy cs
+
         /// <summary>
         /// Measure the entropy of a clustering, where the number of cells
         /// inside clusters is used to determine frequency.
@@ -63,16 +105,28 @@
             entropy
 
         /// <summary>
-        /// The difference in clustering entropy between c2 and c1. A negative number
-        /// denotes a decrease in entropy from c1 to c2 whereas a positive number
-        /// denotes an increase in entropy from c1 to c2.
+        /// The difference in clustering entropy between cTo and cFrom. A negative number
+        /// denotes a decrease in entropy from cFrom to cTo whereas a positive number
+        /// denotes an increase in entropy from cFrom to cTo.
         /// </summary>
-        /// <param name="c1"></param>
-        /// <param name="c2"></param>
-        static member ClusteringEntropyDiff(c1: Clustering)(c2: Clustering) : double =
-            let c1e = BinaryMinEntropyTree.ClusteringEntropy c1
-            let c2e = BinaryMinEntropyTree.ClusteringEntropy c2
+        /// <param name="cFrom">original clustering</param>
+        /// <param name="cTo">new clustering</param>
+        static member ClusteringEntropyDiff(cFrom: Clustering)(cTo: Clustering) : double =
+            let c1e = BinaryMinEntropyTree.ClusteringEntropy cFrom
+            let c2e = BinaryMinEntropyTree.ClusteringEntropy cTo
             c2e - c1e
+
+        /// <summary>
+        /// The difference in grid entropy between cTo and cFrom. A negative number
+        /// denotes a decrease in entropy from cFrom to cTo whereas a positive number
+        /// denotes an increase in entropy from cFrom to cTo.
+        /// </summary>
+        /// <param name="cFrom">original clustering</param>
+        /// <param name="cTo">new clustering</param>
+        static member GridEntropyDiff(cFrom: Clustering)(cTo: Clustering) : double =
+            let g1e = BinaryMinEntropyTree.GridEntropy cFrom
+            let g2e = BinaryMinEntropyTree.GridEntropy cTo
+            g2e - g1e
 
         static member private MinEntropyPartition(rmap: Cells)(vert: bool) : AST.Address[]*AST.Address[] =
             // which axis we use depends on whether we are
