@@ -7,6 +7,7 @@
     open CommonTypes
     open CommonFunctions
     open ClusterModelBuilder
+    open EntropyModelBuilder
     open COFModelBuilder
     open SpectralModelBuilder
 
@@ -20,6 +21,11 @@
                 let config' = config.validate
                 let input : Input = { app = app; config = config'; dag = dag; alpha = alpha; progress = progress; }
                 ClusterModel input
+
+            let initEntropyModel(app: Microsoft.Office.Interop.Excel.Application)(config: FeatureConf)(dag: Depends.DAG)(progress: Depends.Progress) : EntropyModel =
+                let config' = config.validate
+                let input : Input = { app = app; config = config'; dag = dag; alpha = 0.00; progress = progress; }
+                EntropyModel.Initialize input
 
             let analyze(app: Microsoft.Office.Interop.Excel.Application)(config: FeatureConf)(dag: Depends.DAG)(alpha: double)(progress: Depends.Progress) =
                 let config' = config.validate

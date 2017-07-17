@@ -45,7 +45,7 @@
             let (_,graph) = t.ToGraphViz 0
             "graph {" + graph + "}"
 
-        static member Condition(cs: Clustering)(attribute: AST.Address -> int)(value: int)(noEmptyClusters) : Clustering =
+        static member Condition(cs: ImmutableClustering)(attribute: AST.Address -> int)(value: int)(noEmptyClusters) : ImmutableClustering =
             cs
             |> Seq.map (fun cluster ->
                 cluster
@@ -56,13 +56,13 @@
                     if noEmptyClusters && Seq.length cluster2 = 0 then
                         None
                     else
-                        Some(new HashSet<AST.Address>(cluster2))
+                        Some((new HashSet<AST.Address>(cluster2)).ToImmutableHashSet())
                    )
             )
             |> Seq.choose id
-            |> (fun cs' -> new Clustering(cs'))
+            |> (fun cs' -> cs'.ToImmutableHashSet())
 
-        static member ColumnEntropy(cs: Clustering) : double =
+        static member ColumnEntropy(cs: ImmutableClustering) : double =
             let cells = cs |> Seq.concat |> Seq.toArray
             let (lt,rb) = Utils.BoundingRegion cells 0
             
@@ -77,7 +77,7 @@
                 )
             colE
 
-        static member RowEntropy(cs: Clustering) : double =
+        static member RowEntropy(cs: ImmutableClustering) : double =
             let cells = cs |> Seq.concat |> Seq.toArray
             let (lt,rb) = Utils.BoundingRegion cells 0
             
@@ -92,7 +92,7 @@
                 )
             rowE
 
-        static member GridEntropy(cs: Clustering) : double =
+        static member GridEntropy(cs: ImmutableClustering) : double =
             BinaryMinEntropyTree.RowEntropy cs + BinaryMinEntropyTree.ColumnEntropy cs
 
         /// <summary>
@@ -100,7 +100,7 @@
         /// inside clusters is used to determine frequency.
         /// </summary>
         /// <param name="c">A Clustering</param>
-        static member NormalizedClusteringEntropy(c: Clustering) : double =
+        static member NormalizedClusteringEntropy(c: ImmutableClustering) : double =
             // count
             let cs = c |> Seq.map (fun reg -> reg.Count) |> Seq.toArray
 
@@ -139,9 +139,9 @@
         /// </summary>
         /// <param name="cFrom">original clustering</param>
         /// <param name="cTo">new clustering</param>
-        static member ClusteringEntropyDiff(cFrom: Clustering)(cTo: Clustering) : double =
-            let c1e = BinaryMinEntropyTree.ClusteringEntropy cFrom
-            let c2e = BinaryMinEntropyTree.ClusteringEntropy cTo
+        static member ClusteringEntropyDiff(cFrom: ImmutableClustering)(cTo: ImmutableClustering) : double =
+            let c1e = BinaryMinEntropyTree.NormalizedClusteringEntropy cFrom
+            let c2e = BinaryMinEntropyTree.NormalizedClusteringEntropy cTo
             c2e - c1e
 
         /// <summary>
@@ -151,7 +151,7 @@
         /// </summary>
         /// <param name="cFrom">original clustering</param>
         /// <param name="cTo">new clustering</param>
-        static member GridEntropyDiff(cFrom: Clustering)(cTo: Clustering) : double =
+        static member GridEntropyDiff(cFrom: ImmutableClustering)(cTo: ImmutableClustering) : double =
             let g1e = BinaryMinEntropyTree.GridEntropy cFrom
             let g2e = BinaryMinEntropyTree.GridEntropy cTo
             g2e - g1e
@@ -192,7 +192,7 @@
                 entropy_left + entropy_right
             )
 
-        static member MakeCells(hb_inv: InvertedHistogram) : Cells =
+        static member MakeCells(hb_inv: ROInvertedHistogram) : Cells =
             let addrs = hb_inv.Keys
             let d = new Dict<AST.Address, Countable>()
             for addr in addrs do
@@ -200,7 +200,7 @@
                 d.Add(addr, c)
             d
 
-        static member Infer(hb_inv: InvertedHistogram)(indivisibles: HashSet<HashSet<AST.Address>>) : BinaryMinEntropyTree =
+        static member Infer(hb_inv: ROInvertedHistogram) : BinaryMinEntropyTree =
             let rmap = BinaryMinEntropyTree.MakeCells hb_inv
             BinaryMinEntropyTree.Decompose rmap
 
@@ -308,17 +308,11 @@
             | :? Leaf as l -> [| l |]
             | _ -> failwith "Unknown tree node type."
 
-//        static member Clustering(tree: BinaryMinEntropyTree) : ImmutableClustering =
-//            let regions = BinaryMinEntropyTree.Regions tree
-//            let cs = regions |> Array.map (fun leaf -> leaf.Cells)
-//            makeImmutableGenericClustering cs
-
-        static member MutableClustering(tree: BinaryMinEntropyTree)(ih: InvertedHistogram)(indivisibles: HashSet<HashSet<AST.Address>>) : Clustering =
-            // coalesce rectangular regions
-            let cs = BinaryMinEntropyTree.RectangularClusteringMutable tree ih
+        static member MergeIndivisibles(ic: ImmutableClustering)(indivisibles: ImmutableClustering) : ImmutableClustering =
+            let cs = ToMutableClustering ic
 
             // get rmap
-            let reverseLookup = ReverseClusterLookup cs
+            let reverseLookup = ReverseClusterLookupMutable cs
 
             // coalesce indivisibles
             for i in indivisibles do
@@ -335,7 +329,18 @@
 
                             // remove c from clustering
                             cs.Remove c |> ignore
-            cs
+
+            // restore immutability
+            ToImmutableClustering cs
+
+        static member Clustering(tree: BinaryMinEntropyTree)(ih: ROInvertedHistogram)(indivisibles: ImmutableClustering) : ImmutableClustering =
+            // coalesce rectangular regions
+            let cs = BinaryMinEntropyTree.RectangularClustering tree ih
+
+            // merge indivisible clusters
+            let cs' = BinaryMinEntropyTree.MergeIndivisibles cs indivisibles
+
+            cs'
 
         static member ClusterIsRectangular(c: HashSet<AST.Address>) : bool =
             let boundingbox = Utils.BoundingBoxHS c 0
@@ -361,9 +366,9 @@
                 |> Array.sortBy (fun addr -> if coal_vert then (addr.X, addr.Y) else (addr.Y, addr.X))
 
             // algorithm mutates clusters'
-            let clusters' = CopyImmutableToMutableClustering clusters
+            let clusters' = ToMutableClustering clusters
 
-            let revLookup = ReverseClusterLookup clusters'
+            let revLookup = ReverseClusterLookupMutable clusters'
 
             let adjacent = if coal_vert then
                                 (fun (c1: AST.Address)(c2: AST.Address) -> c1.X = c2.X && c1.Y < c2.Y)
@@ -417,11 +422,6 @@
 
             // return clustering
             clusters''
-
-        static member RectangularClusteringMutable(tree: BinaryMinEntropyTree)(hb_inv: InvertedHistogram) : Clustering =
-            let hb_inv_imm = new ROInvertedHistogram(hb_inv)
-            let imm_cl = BinaryMinEntropyTree.RectangularClustering tree hb_inv_imm
-            CopyImmutableToMutableClustering imm_cl
 
     and Inner(lefttop: AST.Address, rightbottom: AST.Address, subtree: SubtreeKind) =
         inherit BinaryMinEntropyTree(lefttop, rightbottom, subtree)

@@ -5,6 +5,7 @@
     open Utils
     open CommonTypes
     open HashSetUtils
+    open Microsoft.FSharp.Linq
 
     module CommonFunctions =
             // _analysis_base specifies which cells should be ranked:
@@ -47,7 +48,7 @@
             let invertedHistogram(scoretable: ScoreTable)(dag: Depends.DAG)(config: FeatureConf) : ROInvertedHistogram =
                 assert (config.EnabledScopes.Length = 1 && config.EnabledFeatures.Length = 1)
 
-                let d = new Dict<AST.Address,HistoBin>()
+                let d = ImmutableDictionary.CreateBuilder<AST.Address, HistoBin>()
 
                 Array.iter (fun fname ->
                     Array.iter (fun (sel: Scope.Selector) ->
@@ -63,9 +64,17 @@
                     ) (config.EnabledScopes)
                 ) (config.EnabledFeatures)
 
-                new ROInvertedHistogram(d)
+                d.ToImmutable()
 
             let centroid(c: seq<AST.Address>)(ih: InvertedHistogram) : Countable =
+                c
+                |> Seq.map (fun a ->
+                    let (_,_,c) = ih.[a]    // get histobin for address
+                    c                       // get countable from bin
+                   )
+                |> Countable.Mean               // get mean
+
+            let centroid_ro(c: seq<AST.Address>)(ih: ROInvertedHistogram) : Countable =
                 c
                 |> Seq.map (fun a ->
                     let (_,_,c) = ih.[a]    // get histobin for address
@@ -532,21 +541,23 @@
                     Seq.fold (fun acc clustering -> acc + clustering.Count) 0
                 double totalIntersect / double totalCells
 
-            let ReverseClusterLookup(clusters: Clustering) : Dict<AST.Address,HashSet<AST.Address>> =
+            let ReverseClusterLookup(clusters: ImmutableClustering) : ImmutableDictionary<AST.Address,ImmutableHashSet<AST.Address>> =
+                let builder = ImmutableDictionary.CreateBuilder<AST.Address, ImmutableHashSet<AST.Address>>()
                 let revLookup = new Dict<AST.Address,HashSet<AST.Address>>()
                 for c in clusters do
                     for a in c do
-                        revLookup.Add(a,c)
-                revLookup
+                        builder.Add(a,c)
+                builder.ToImmutable()
 
-            let ReverseImmutableClusterLookup(clusters: ImmutableClustering) : ImmutDict<AST.Address,ImmutableHashSet<AST.Address>> =
-                let revLookup = new Dict<AST.Address,ImmutableHashSet<AST.Address>>()
+            let ReverseClusterLookupMutable(clusters: Clustering) : Dictionary<AST.Address,HashSet<AST.Address>> =
+                let d = new Dict<AST.Address, HashSet<AST.Address>>()
+                let revLookup = new Dict<AST.Address,HashSet<AST.Address>>()
                 for c in clusters do
                     for a in c do
-                        revLookup.Add(a,c)
-                revLookup.ToImmutableDictionary()
+                        d.Add(a,c)
+                d
 
-            let CopyImmutableToMutableClustering<'p>(clustering: ImmutableGenericClustering<'p>) : GenericClustering<'p> =
+            let ToMutableClustering<'p>(clustering: ImmutableGenericClustering<'p>) : GenericClustering<'p> =
                 let clustering' =
                     Seq.map (fun cl ->
                         new HashSet<'p>(Seq.toArray cl)
@@ -562,14 +573,11 @@
 
                 new HashSet<HashSet<'p>>(clustering')
 
-            let SameCluster(c1: HashSet<AST.Address>)(c2: HashSet<AST.Address>) : bool =
-                (HashSetUtils.difference c1 c2).Count = 0
-
-            let SameClusters(cs: seq<HashSet<AST.Address>>) : bool =
+            let SameClusters(cs: seq<ImmutableHashSet<AST.Address>>) : bool =
                 let first = Seq.head cs
-                cs |> Seq.fold (fun acc c -> acc && SameCluster first c) true 
+                cs |> Seq.fold (fun acc c -> acc && first.SetEquals c) true 
 
-            let SameClustering(c1: Clustering)(c2: Clustering) : bool =
+            let SameClustering(c1: ImmutableClustering)(c2: ImmutableClustering) : bool =
                 let c1R = ReverseClusterLookup c1
                 let c2R = ReverseClusterLookup c2
 
@@ -583,7 +591,7 @@
                     let c2cs = c |> Seq.map (fun a -> c2R.[a])
                     if not (SameClusters c2cs) then
                         ok <- false
-                    if not (SameCluster c (Seq.head c2cs)) then
+                    if not (c.SetEquals(Seq.head c2cs)) then
                         ok <- false
 
                 // ditto but for c2
@@ -591,7 +599,7 @@
                     let c1cs = c |> Seq.map (fun a -> c1R.[a])
                     if not (SameClusters c1cs) then
                         ok <- false
-                    if not (SameCluster c (Seq.head c1cs)) then
+                    if not (c.SetEquals(Seq.head c1cs)) then
                         ok <- false
 
                 ok

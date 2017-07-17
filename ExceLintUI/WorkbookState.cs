@@ -13,6 +13,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using Worksheet = Microsoft.Office.Interop.Excel.Worksheet;
 using Workbook = Microsoft.Office.Interop.Excel.Workbook;
+using Clusters = System.Collections.Immutable.ImmutableHashSet<System.Collections.Immutable.ImmutableHashSet<AST.Address>>;
 
 namespace ExceLintUI
 {
@@ -771,9 +772,7 @@ namespace ExceLintUI
             // show initial clustering, one cluster at a time
             if (conf.DebugMode)
             {
-                var clustering = _m[w].InitialClustering.OrderBy(c => c.Count);
-
-                
+                var clustering = _m[w].CurrentClustering.OrderBy(c => c.Count);
 
                 foreach (var cluster in clustering)
                 {
@@ -816,17 +815,17 @@ namespace ExceLintUI
             DrawClusters(_m[w].CurrentClustering);
         }
 
-        public ExceLint.ClusterModelBuilder.ClusterModel NewEntropyModelForWorksheet(Worksheet w,
+        public ExceLint.EntropyModelBuilder.EntropyModel NewEntropyModelForWorksheet(Worksheet w,
             ExceLint.FeatureConf conf, Boolean forceDAGBuild, ProgBar pb)
         {
-            ExceLint.ClusterModelBuilder.ClusterModel m = null;
+            ExceLint.EntropyModelBuilder.EntropyModel m = null;
 
             Func<Depends.Progress, Unit> f = (p) =>
             {
                 Excel.Application app = Globals.ThisAddIn.Application;
 
                 // create
-                m = ExceLint.ModelBuilder.initStepClusterModel(app, conf, _dag, 0.05, p);
+                m = ExceLint.ModelBuilder.initEntropyModel(app, conf, _dag, p);
 
                 return null;
             };
@@ -837,7 +836,7 @@ namespace ExceLintUI
             return m;
         }
 
-        public ExceLint.ClusterModelBuilder.ClusterModel GetEntropyModelForWorksheet(Worksheet w, ExceLint.FeatureConf conf, Boolean forceDAGBuild, ProgBar pb)
+        public ExceLint.ClusterModelBuilder.ClusterModel GetClusterModelForWorksheet(Worksheet w, ExceLint.FeatureConf conf, Boolean forceDAGBuild, ProgBar pb)
         {
             Func<Depends.Progress, Unit> f = (p) =>
             {
@@ -901,10 +900,21 @@ namespace ExceLintUI
             buildDAGAndDoStuff(forceDAGBuild, f, 3, pb);
 
             // extract regions
-            var clustering = _m[w].InitialClustering;
+            var clustering = _m[w].CurrentClustering;
 
             // draw
             DrawClusters(clustering);
+        }
+
+        public void DrawImmutableClusters(Clusters clusters)
+        {
+            var hs = new HashSet<HashSet<AST.Address>>();
+            foreach (var c in clusters)
+            {
+                var c2 = new HashSet<AST.Address>(c);
+                hs.Add(c2);
+            }
+            DrawClusters(hs);
         }
 
         public void DrawClusters(HashSet<HashSet<AST.Address>> clusters)

@@ -78,6 +78,7 @@
     <Compile Include="ASTMutator.fs" />
     <Compile Include="BinaryMinEntropyTree.fs" />
     <Compile Include="ErrorModel.fs" />
+    <Compile Include="EntropyModelBuilder.fs" />
     <Compile Include="ClusterModelBuilder.fs" />
     <Compile Include="OldClusterModel.fs" />
     <Compile Include="COFModelBuilder.fs" />

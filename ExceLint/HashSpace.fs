@@ -25,7 +25,7 @@
     type HashSpace<'p when 'p : equality>(clustering: ImmutableGenericClustering<'p>, keymaker: 'p -> UInt128, keyexists: 'p -> 'p -> 'p, unmasker: UInt128 -> UInt128, d: DistanceF<'p>) =
         // make a mutable copy of immutable clustering
         // because the Merge procedure is side-effecting
-        let clustering' = CommonFunctions.CopyImmutableToMutableClustering clustering
+        let clustering' = CommonFunctions.ToMutableClustering clustering
         
         // extract points
         let points = clustering' |> Seq.concat |> Seq.toArray

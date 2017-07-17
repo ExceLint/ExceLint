@@ -46,13 +46,9 @@
             this.MarkAsOKButton = this.Factory.CreateRibbonButton();
             this.StartOverButton = this.Factory.CreateRibbonButton();
             this.showHeatmap = this.Factory.CreateRibbonButton();
-            this.LISAHeatmap = this.Factory.CreateRibbonButton();
-            this.inferRegions = this.Factory.CreateRibbonButton();
-            this.nearestNeighborForCluster = this.Factory.CreateRibbonButton();
-            this.clusterForCell = this.Factory.CreateRibbonButton();
             this.FixClusterButton = this.Factory.CreateRibbonButton();
+            this.resetFixesButton = this.Factory.CreateRibbonButton();
             this.RunCUSTODES = this.Factory.CreateRibbonButton();
-            this.MoranForSelectedCells = this.Factory.CreateRibbonButton();
             this.box2 = this.Factory.CreateRibbonBox();
             this.LSHTest = this.Factory.CreateRibbonButton();
             this.getLSH = this.Factory.CreateRibbonButton();
@@ -81,7 +77,7 @@
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
             this.button1 = this.Factory.CreateRibbonButton();
-            this.resetFixesButton = this.Factory.CreateRibbonButton();
+            this.clusterForCell = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -133,14 +129,10 @@
             this.box1.Items.Add(this.MarkAsOKButton);
             this.box1.Items.Add(this.StartOverButton);
             this.box1.Items.Add(this.showHeatmap);
-            this.box1.Items.Add(this.LISAHeatmap);
-            this.box1.Items.Add(this.inferRegions);
-            this.box1.Items.Add(this.nearestNeighborForCluster);
             this.box1.Items.Add(this.clusterForCell);
             this.box1.Items.Add(this.FixClusterButton);
             this.box1.Items.Add(this.resetFixesButton);
             this.box1.Items.Add(this.RunCUSTODES);
-            this.box1.Items.Add(this.MoranForSelectedCells);
             this.box1.Items.Add(this.box2);
             this.box1.Items.Add(this.distanceCombo);
             this.box1.Name = "box1";
@@ -181,43 +173,6 @@
             this.showHeatmap.ShowImage = true;
             this.showHeatmap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.showHeatmap_Click);
             // 
-            // LISAHeatmap
-            // 
-            this.LISAHeatmap.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.LISAHeatmap.Image = ((System.Drawing.Image)(resources.GetObject("LISAHeatmap.Image")));
-            this.LISAHeatmap.Label = "LISA";
-            this.LISAHeatmap.Name = "LISAHeatmap";
-            this.LISAHeatmap.ShowImage = true;
-            this.LISAHeatmap.Visible = false;
-            this.LISAHeatmap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.LISAHeatmap_Click);
-            // 
-            // inferRegions
-            // 
-            this.inferRegions.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.inferRegions.Image = ((System.Drawing.Image)(resources.GetObject("inferRegions.Image")));
-            this.inferRegions.Label = "Infer Regions";
-            this.inferRegions.Name = "inferRegions";
-            this.inferRegions.ShowImage = true;
-            this.inferRegions.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.inferRegions_Click);
-            // 
-            // nearestNeighborForCluster
-            // 
-            this.nearestNeighborForCluster.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.nearestNeighborForCluster.Image = global::ExceLintUI.Properties.Resources.graph;
-            this.nearestNeighborForCluster.Label = "NN for cluster";
-            this.nearestNeighborForCluster.Name = "nearestNeighborForCluster";
-            this.nearestNeighborForCluster.ShowImage = true;
-            this.nearestNeighborForCluster.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.nearestNeighborForCluster_Click);
-            // 
-            // clusterForCell
-            // 
-            this.clusterForCell.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.clusterForCell.Image = global::ExceLintUI.Properties.Resources.graph;
-            this.clusterForCell.Label = "Cluster for Cell";
-            this.clusterForCell.Name = "clusterForCell";
-            this.clusterForCell.ShowImage = true;
-            this.clusterForCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.clusterForCell_Click);
-            // 
             // FixClusterButton
             // 
             this.FixClusterButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
@@ -227,6 +182,15 @@
             this.FixClusterButton.ShowImage = true;
             this.FixClusterButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.FixClusterButton_Click);
             // 
+            // resetFixesButton
+            // 
+            this.resetFixesButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.resetFixesButton.Image = global::ExceLintUI.Properties.Resources.graph;
+            this.resetFixesButton.Label = "Reset Fixes";
+            this.resetFixesButton.Name = "resetFixesButton";
+            this.resetFixesButton.ShowImage = true;
+            this.resetFixesButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.resetFixesButton_Click);
+            // 
             // RunCUSTODES
             // 
             this.RunCUSTODES.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
@@ -235,15 +199,6 @@
             this.RunCUSTODES.Name = "RunCUSTODES";
             this.RunCUSTODES.ShowImage = true;
             this.RunCUSTODES.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.RunCUSTODES_Click);
-            // 
-            // MoranForSelectedCells
-            // 
-            this.MoranForSelectedCells.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.MoranForSelectedCells.Image = global::ExceLintUI.Properties.Resources.analyze_small;
-            this.MoranForSelectedCells.Label = "Moran for Selection";
-            this.MoranForSelectedCells.Name = "MoranForSelectedCells";
-            this.MoranForSelectedCells.ShowImage = true;
-            this.MoranForSelectedCells.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.moranForSelectedCells_Click);
             // 
             // box2
             // 
@@ -456,14 +411,14 @@
             this.button1.Name = "button1";
             this.button1.ShowImage = true;
             // 
-            // resetFixesButton
+            // clusterForCell
             // 
-            this.resetFixesButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.resetFixesButton.Image = global::ExceLintUI.Properties.Resources.graph;
-            this.resetFixesButton.Label = "Reset Fixes";
-            this.resetFixesButton.Name = "resetFixesButton";
-            this.resetFixesButton.ShowImage = true;
-            this.resetFixesButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.resetFixesButton_Click);
+            this.clusterForCell.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.clusterForCell.Image = global::ExceLintUI.Properties.Resources.graph;
+            this.clusterForCell.Label = "Cluster for Cell";
+            this.clusterForCell.Name = "clusterForCell";
+            this.clusterForCell.ShowImage = true;
+            this.clusterForCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.clusterForCell_Click);
             // 
             // ExceLintRibbon
             // 
@@ -523,15 +478,11 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton readClusterDump;
         internal Microsoft.Office.Tools.Ribbon.RibbonComboBox distanceCombo;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton RunCUSTODES;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton LISAHeatmap;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton MoranForSelectedCells;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton VectorForCell;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton inferRegions;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton nearestNeighborForCluster;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton clusterForCell;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton FixClusterButton;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton resetFixesButton;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton button1;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton clusterForCell;
     }
 
     partial class ThisRibbonCollection
