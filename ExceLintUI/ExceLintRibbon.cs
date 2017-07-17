@@ -140,35 +140,9 @@ namespace ExceLintUI
                 }
                 else
                 {
-                    // get inverse lookup for clustering
-                    var addr2Cl = CommonFunctions.ReverseClusterLookup(fixClusterModel.Clustering);
+                    // do fix
+                    var newModel = fixClusterModel.MergeCell(fixAddress, cursorAddr);
 
-                    EntropyModelBuilder.EntropyModel newModel = null;
-
-                    // is the address a formula or not?
-                    if (graph.isFormula(fixAddress))
-                    {
-                        // FORMULAS
-
-                        // grab the source cluster
-                        var fixClusterSource = addr2Cl[fixAddress];
-
-                        // grab the target cluster
-                        var fixClusterTarget = addr2Cl[cursorAddr];
-
-                        // do fix
-                        newModel = fixClusterModel.MergeCluster(fixClusterSource, fixClusterTarget);
-                    }
-                    else
-                    {
-                        // NUMBERS, STRINGS, and WHITESPACE
-
-                        // grab the target cluster
-                        var fixClusterTarget = addr2Cl[cursorAddr];
-
-                        // do fix
-                        newModel = fixClusterModel.MergeCell(fixAddress, fixClusterTarget);
-                    }
                     // compute change in entropy
                     var deltaE = fixClusterModel.EntropyDiff(newModel);
 
