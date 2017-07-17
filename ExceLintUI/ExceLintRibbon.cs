@@ -187,7 +187,6 @@ namespace ExceLintUI
 
                     // compute change in entropy
                     var deltaE = BinaryMinEntropyTree.ClusteringEntropyDiff(currentClustering, newClustering);
-                    var deltaGridE = BinaryMinEntropyTree.GridEntropyDiff(currentClustering, newClustering);
 
                     // save new clustering
                     currentClustering = newClustering;
