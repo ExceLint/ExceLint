@@ -72,7 +72,7 @@
                 [| lt.Y .. rb.Y |]
                 |> Array.sumBy (fun y ->
                     let cs' = BinaryMinEntropyTree.Condition cs col y true
-                    let entropy = BinaryMinEntropyTree.ClusteringEntropy cs'
+                    let entropy = BinaryMinEntropyTree.NormalizedClusteringEntropy cs'
                     entropy
                 )
             colE
@@ -87,13 +87,33 @@
                 [| lt.X .. rb.X |]
                 |> Array.sumBy (fun x ->
                     let cs' = BinaryMinEntropyTree.Condition cs row x true
-                    let entropy = BinaryMinEntropyTree.ClusteringEntropy cs'
+                    let entropy = BinaryMinEntropyTree.NormalizedClusteringEntropy cs'
                     entropy
                 )
             rowE
 
         static member GridEntropy(cs: Clustering) : double =
             BinaryMinEntropyTree.RowEntropy cs + BinaryMinEntropyTree.ColumnEntropy cs
+
+        /// <summary>
+        /// Measure the normalized entropy of a clustering, where the number of cells
+        /// inside clusters is used to determine frequency.
+        /// </summary>
+        /// <param name="c">A Clustering</param>
+        static member NormalizedClusteringEntropy(c: Clustering) : double =
+            // count
+            let cs = c |> Seq.map (fun reg -> reg.Count) |> Seq.toArray
+
+            // n
+            let n = Array.sum cs
+
+            // compute probability vector
+            let ps = BasicStats.empiricalProbabilities cs
+
+            // compute entropy
+            let entropy = BasicStats.normalizedEntropy ps n
+
+            entropy
 
         /// <summary>
         /// Measure the entropy of a clustering, where the number of cells

@@ -80,3 +80,18 @@
             let sum = Array.sum products
             let result = -sum
             result
+
+        /// <summary>
+        /// Returns the normalized entropy (aka the "efficiency") for the given
+        /// multinomial probability vector.
+        /// </summary>
+        /// <param name="P"></param>
+        let normalizedEntropy(P: double[])(n: int) : double =
+            if n = 1 then
+                0.0
+            else
+                let products = P |> Array.map (fun p -> p * System.Math.Log(p, 2.0))
+                let sum = Array.sum products
+                let maxEntropy = System.Math.Log(double n, 2.0)
+                let result = -sum / maxEntropy
+                result
