@@ -52,8 +52,6 @@
             nn & nf & nws
 
         type EntropyModel(graph: Depends.DAG, ih: ROInvertedHistogram, d: ImmutableDistanceF, indivisibles: ImmutableClustering) =
-            let cells = ih.Keys |> Seq.toArray
-
             // do region inference
             let tree = BinaryMinEntropyTree.Infer ih
             let regions = BinaryMinEntropyTree.Clustering tree ih indivisibles
@@ -61,14 +59,12 @@
             // save the reverse lookup for later use
             let revLookup = ReverseClusterLookup regions
 
-            member self.NumCells : int = cells.Length
             member self.InvertedHistogram : ROInvertedHistogram = ih
+
             member self.Clustering : ImmutableClustering = regions
+
             member self.Tree : BinaryMinEntropyTree = tree
-            member self.Ranking : Ranking =
-                failwith "coming soon to a theatre near you"
-            member self.AnalysisBase = cells
-            member self.Analysis = failwith "not yet"
+
             member private self.MergeCluster(source: ImmutableHashSet<AST.Address>)(target: ImmutableHashSet<AST.Address>) : EntropyModel =
                 // get representative score from target
                 let rep_score = target |> Seq.head |> (fun a -> ScoreForCell a ih)
@@ -108,24 +104,70 @@
                 let c2 = target.Clustering
                 BinaryMinEntropyTree.ClusteringEntropyDiff c1 c2
 
+            member self.Ranking : Ranking =
+                // get adjacencies
+                let adjs =
+                    self.Clustering
+                    |> Seq.map (fun target ->
+                           // get adjacencies
+                           let adj = HSAdjacentCellsImm target
+
+                           // do not include adjacencies that are not in our histogram
+                           let adj' = adj |> Seq.filter (fun addr -> ih.ContainsKey addr)
+
+                           // flatten
+                           adj'
+                           |> Seq.map (fun a -> target, a)
+                       )
+                    |> Seq.concat
+                    |> Seq.toArray
+
+                // get models
+                let models = 
+                    adjs
+                    // produce one model for each adjacency
+                    |> Array.Parallel.map (fun (target, addr) ->
+                            // put each address in its own cluster
+                            let source = [| addr |].ToImmutableHashSet()
+
+                            // produce a new model for each adjacency
+                            let numodel = self.MergeCluster source target
+
+                            // compute entropy difference
+                            let entropy = self.EntropyDiff numodel
+                            (addr, numodel, entropy)
+                       )
+
+                // eliminate duplicates
+                let modelsNoDupes =
+                    models
+                    |> Array.groupBy (fun (k,_,_) -> k)
+                    |> Array.map (fun (grp_k,fixes) ->
+                         // eliminate all positive entropy fixes
+                         let fixes' = fixes 
+                                      |> Array.map (fun (k,m,e) -> if e < 0.0 then Some (k,m,e) else None )
+                                      |> Array.choose id
+                         if fixes'.Length = 0 then
+                            None
+                         else
+                            Some(fixes' |> Array.sortBy (fun (_,_,e) -> e) |> Seq.head)
+                       )
+                    |> Array.choose id
+
+                // convert to ranking and sort from highest entropy delta to lowest
+                // (entropy deltas should be negative)
+                let ranking =
+                    modelsNoDupes
+                    |> Array.map (fun (k,_,e) -> new KeyValuePair<AST.Address,double>(k,e))
+                    |> Array.sortByDescending (fun kvp -> kvp.Value)
+
+                ranking
+
             member self.MostLikelyAnomaly: AST.Address =
-                // for each cluster
+                let ranking = self.Ranking
 
-                // get all adjacent cells
-
-                // produce a merge for each cell
-
-                // compute entropy for each new model
-
-                // if a cell is chosen twice
-                // because it is adjacent to multiple clusters,
-                // select the best fix
-
-                // rank by smallest entropy
-
-                // return best to user
-
-                failwith "not done"
+                // return best address to user
+                ranking.[0].Key
 
             static member Initialize(input: Input) : EntropyModel =
                 // determine the set of cells to be analyzed

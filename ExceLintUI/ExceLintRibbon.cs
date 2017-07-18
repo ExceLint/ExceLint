@@ -33,6 +33,39 @@ namespace ExceLintUI
 
         #region BUTTON_HANDLERS
 
+        private void EntropyRanking_Click(object sender, RibbonControlEventArgs e)
+        {
+            // get dependence graph
+            var graph = currentWorkbook.getDependenceGraph(false);
+
+            // create progbar in main thread;
+            // worker thread will call Dispose
+            var pb = new ProgBar();
+
+            // build the model
+            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+            var model = currentWorkbook.NewEntropyModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
+
+            // remove progress bar
+            pb.Close();
+
+            // get ranking
+            var ranking = model.Ranking;
+
+            // produce output string
+            var sb = new StringBuilder();
+            foreach (var pair in ranking)
+            {
+                sb.Append(pair.Key.A1Local().ToString());
+                sb.Append(" -> ");
+                sb.Append(pair.Value.ToString());
+                sb.AppendLine();
+            }
+
+            // show message box
+            System.Windows.Forms.MessageBox.Show(sb.ToString());
+        }
+
         private void resetFixesButton_Click(object sender, RibbonControlEventArgs e)
         {
             // change button name

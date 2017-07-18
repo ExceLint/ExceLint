@@ -78,6 +78,7 @@
             this.annotateThisCell = this.Factory.CreateRibbonButton();
             this.button1 = this.Factory.CreateRibbonButton();
             this.clusterForCell = this.Factory.CreateRibbonButton();
+            this.EntropyRanking = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -132,6 +133,7 @@
             this.box1.Items.Add(this.clusterForCell);
             this.box1.Items.Add(this.FixClusterButton);
             this.box1.Items.Add(this.resetFixesButton);
+            this.box1.Items.Add(this.EntropyRanking);
             this.box1.Items.Add(this.RunCUSTODES);
             this.box1.Items.Add(this.box2);
             this.box1.Items.Add(this.distanceCombo);
@@ -420,6 +422,15 @@
             this.clusterForCell.ShowImage = true;
             this.clusterForCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.clusterForCell_Click);
             // 
+            // EntropyRanking
+            // 
+            this.EntropyRanking.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.EntropyRanking.Image = global::ExceLintUI.Properties.Resources.analyze_small;
+            this.EntropyRanking.Label = "Entropy Ranking";
+            this.EntropyRanking.Name = "EntropyRanking";
+            this.EntropyRanking.ShowImage = true;
+            this.EntropyRanking.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.EntropyRanking_Click);
+            // 
             // ExceLintRibbon
             // 
             this.Name = "ExceLintRibbon";
@@ -483,6 +494,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton resetFixesButton;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton button1;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton clusterForCell;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton EntropyRanking;
     }
 
     partial class ThisRibbonCollection

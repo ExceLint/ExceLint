@@ -88,6 +88,20 @@ open System.Collections.Immutable
 
             new HashSet<AST.Address>(addrs |> Array.filter isSane)
 
+        let HSAdjacentCells(hs: HashSet<AST.Address>) : HashSet<AST.Address> =
+            let adjacencies = new HashSet<AST.Address>()
+            for addr in hs do
+                for aaddr in AdjacentCells addr do
+                    adjacencies.Add aaddr |> ignore
+            adjacencies
+
+        let HSAdjacentCellsImm(hs: ImmutableHashSet<AST.Address>) : ImmutableHashSet<AST.Address> =
+            let adjacencies = new HashSet<AST.Address>()
+            for addr in hs do
+                for aaddr in AdjacentCells addr do
+                    adjacencies.Add aaddr |> ignore
+            adjacencies.ToImmutableHashSet()
+
         let isAdjacent(addr1: AST.Address)(addr2: AST.Address) : bool =
             Seq.contains addr2 (AdjacentCells addr1)
 
