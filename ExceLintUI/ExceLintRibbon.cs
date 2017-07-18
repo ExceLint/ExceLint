@@ -136,6 +136,14 @@ namespace ExceLintUI
             return output.ToImmutableHashSet();
         }
 
+        private Clusters PrettyClusters(Clusters cs, ROInvertedHistogram ih, Depends.DAG graph)
+        {
+            //var cs1 = ElideStringClusters(cs, ih, graph);
+            //var cs2 = ElideWhitespaceClusters(cs1, ih, graph);
+            //return cs2;
+            return cs;
+        }
+
         private string InvertedHistogramPrettyPrinter(ROInvertedHistogram ih)
         {
             var sb = new StringBuilder();
@@ -169,8 +177,8 @@ namespace ExceLintUI
                 // do visualization
                 var histo = fixClusterModel.InvertedHistogram;
                 var clusters = fixClusterModel.Clustering;
-                
-                var cl_filt = ElideStringClusters(ElideWhitespaceClusters(clusters, histo, graph), histo, graph);
+
+                var cl_filt = PrettyClusters(clusters, histo, graph);
                 currentWorkbook.restoreOutputColors();
                 currentWorkbook.DrawImmutableClusters(cl_filt);
 
@@ -210,16 +218,7 @@ namespace ExceLintUI
                     fixClusterModel = newModel;
 
                     // redisplay visualiztion
-                    var cl_filt =
-                        ElideStringClusters(
-                            ElideWhitespaceClusters(
-                                newModel.Clustering,
-                                newModel.InvertedHistogram,
-                                graph
-                            ),
-                            newModel.InvertedHistogram,
-                            graph
-                        );
+                    var cl_filt = PrettyClusters(newModel.Clustering, newModel.InvertedHistogram, graph);
                     currentWorkbook.restoreOutputColors();
                     currentWorkbook.DrawImmutableClusters(cl_filt);
 
