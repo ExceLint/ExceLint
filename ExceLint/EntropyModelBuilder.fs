@@ -10,6 +10,13 @@
     type ImmutableDistanceF = ROInvertedHistogram -> DistanceF
 
     module EntropyModelBuilder =
+        [<Struct>]
+        type ProposedFix(source: ImmutableHashSet<AST.Address>, target: ImmutableHashSet<AST.Address>, entropyDelta: double, dotproduct: double) =
+            member self.Source = source
+            member self.Target = target
+            member self.EntropyDelta = entropyDelta
+            member self.DotProduct = dotproduct
+
         let ScoreForCell(addr: AST.Address)(ih: ROInvertedHistogram) : Countable =
             let (_,_,v) = ih.[addr]
             v
@@ -50,6 +57,13 @@
             let nf = not (AddressIsFormulaValued a ih graph)
             let nws = not (AddressIsWhitespaceValued a ih graph)
             nn & nf & nws
+
+        let ClusterIsFormulaValued(c: ImmutableHashSet<AST.Address>)(ih: ROInvertedHistogram)(graph: Depends.DAG) : bool =
+            c |> Seq.forall (fun addr -> AddressIsFormulaValued addr ih graph)
+
+        let ClusterDirectionVector(c1: ImmutableHashSet<AST.Address>) : Countable =
+            let (lt,rb) = Utils.BoundingRegion c1 0
+            Vector(double (rb.X - lt.X), double (rb.Y - lt.Y), 0.0)
 
         type EntropyModel(graph: Depends.DAG, ih: ROInvertedHistogram, d: ImmutableDistanceF, indivisibles: ImmutableClustering) =
             // do region inference
@@ -104,7 +118,7 @@
                 let c2 = target.Clustering
                 BinaryMinEntropyTree.ClusteringEntropyDiff c1 c2
 
-            member self.Ranking : Ranking =
+            member self.Ranking : ProposedFix[] =
                 // get adjacencies
                 let adjs =
                     self.Clustering
@@ -122,52 +136,62 @@
                     |> Seq.concat
                     |> Seq.toArray
 
-                // get models
+                // get models & prune
                 let models = 
                     adjs
                     // produce one model for each adjacency
                     |> Array.Parallel.map (fun (target, addr) ->
-                            // put each address in its own cluster
-                            let source = [| addr |].ToImmutableHashSet()
+                            // is the merge rectangular?
+                            if ClusterIsFormulaValued target ih graph &&
+                               BinaryMinEntropyTree.CellMergeIsRectangular addr target then
 
-                            // produce a new model for each adjacency
-                            let numodel = self.MergeCluster source target
+                                // Fix equivalence class?
+                                // Formuals and strings must all be fixed as a cluster together;
+                                // Whitespace and numbers may be 'borrowed' from parent cluster
+                                let source = if AddressIsFormulaValued addr ih graph
+                                                || AddressIsStringValued addr ih graph then
+                                                // get equivalence class
+                                                revLookup.[addr]
+                                             else
+                                                // put ad-hoc fix in its own cluster
+                                                [| addr |].ToImmutableHashSet()
 
-                            // compute entropy difference
-                            let entropy = self.EntropyDiff numodel
-                            (addr, numodel, entropy)
-                       )
+                                // produce a new model for each adjacency
+                                let numodel = self.MergeCluster source target
 
-                // eliminate duplicates
-                let modelsNoDupes =
-                    models
-                    |> Array.groupBy (fun (k,_,_) -> k)
-                    |> Array.map (fun (grp_k,fixes) ->
-                         // eliminate all positive entropy fixes
-                         let fixes' = fixes 
-                                      |> Array.map (fun (k,m,e) -> if e < 0.0 then Some (k,m,e) else None )
-                                      |> Array.choose id
-                         if fixes'.Length = 0 then
-                            None
-                         else
-                            Some(fixes' |> Array.sortBy (fun (_,_,e) -> e) |> Seq.head)
+                                // compute entropy difference
+                                let entropy = self.EntropyDiff numodel
+
+                                // compute dot product
+                                let source_v = ClusterDirectionVector source
+                                let target_v = ClusterDirectionVector target
+                                let dotproduct =
+                                    // special case for null vectors, which
+                                    // correspond to single cells
+                                    if source_v.IsZero then
+                                        1.0
+                                    else
+                                        source_v.DotProduct target_v
+
+                                // eliminate all fixes that don't decrease entropy
+                                // or cancel out because of dot product weight
+                                if entropy * dotproduct >= 0.0 then
+                                    None
+                                else
+                                    Some (source, target, numodel, entropy, dotproduct)
+                            else
+                                None
                        )
                     |> Array.choose id
 
                 // convert to ranking and sort from highest entropy delta to lowest
                 // (entropy deltas should be negative)
                 let ranking =
-                    modelsNoDupes
-                    |> Array.map (fun (k,_,e) -> new KeyValuePair<AST.Address,double>(k,e))
-                    |> Array.sortByDescending (fun kvp -> kvp.Value)
+                    models
+                    |> Array.map (fun (s,t,m,e,d) -> ProposedFix(s,t,e,d))
+                    |> Array.sortByDescending (fun f -> f.EntropyDelta * f.DotProduct)
 
                 ranking
-
-            member self.MostLikelyAnomaly: AST.Address =
-                let ranking = self.Ranking
-
-                // return best address to user
-                ranking.[0].Key
 
             static member Initialize(input: Input) : EntropyModel =
                 // determine the set of cells to be analyzed

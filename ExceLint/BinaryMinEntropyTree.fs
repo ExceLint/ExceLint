@@ -351,6 +351,10 @@
         static member ClusteringContainsOnlyRectangles(cs: Clustering) : bool =
             cs |> Seq.fold (fun a c -> a && BinaryMinEntropyTree.ClusterIsRectangular c) true
 
+        static member CellMergeIsRectangular(source: AST.Address)(target: ImmutableHashSet<AST.Address>) : bool =
+            let merged = new HashSet<AST.Address>(target.Add source)
+            BinaryMinEntropyTree.ClusterIsRectangular merged
+
         static member MergeIsRectangular(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : bool =
             let merged = HashSetUtils.union source target
             BinaryMinEntropyTree.ClusterIsRectangular merged

@@ -176,6 +176,8 @@ namespace ExceLint
                     op dc1 dc2
                 )
             | _ -> failwith "Cannot do operation on vectors of different lengths."
+        member self.DotProduct(co: Countable) : double =
+            Array.sum (self.ElementwiseMultiply co).toArray
         member self.toArray : double[] =
             match self with
             | Num n -> [| n |]

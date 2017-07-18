@@ -54,11 +54,38 @@ namespace ExceLintUI
 
             // produce output string
             var sb = new StringBuilder();
-            foreach (var pair in ranking)
+            foreach (var fix in ranking)
             {
-                sb.Append(pair.Key.A1Local().ToString());
+                // source
+                var bbSource = Utils.BoundingRegion(fix.Source, 0);
+                var sourceStart = bbSource.Item1.A1Local();
+                var sourceEnd = bbSource.Item2.A1Local();
+                sb.Append(sourceStart.ToString());
+                sb.Append(":");
+                sb.Append(sourceEnd.ToString());
+
+                // separator
                 sb.Append(" -> ");
-                sb.Append(pair.Value.ToString());
+
+                // target
+                var bbTarget = Utils.BoundingRegion(fix.Target, 0);
+                var targetStart = bbTarget.Item1.A1Local();
+                var targetEnd = bbTarget.Item2.A1Local();
+                sb.Append(targetStart.ToString());
+                sb.Append(":");
+                sb.Append(targetEnd.ToString());
+
+                // separator
+                sb.Append(" = ");
+
+                // entropy * dp weight
+                sb.Append(fix.EntropyDelta.ToString());
+                sb.Append(" * ");
+                sb.Append(fix.DotProduct.ToString());
+                sb.Append(" = ");
+                sb.Append((fix.EntropyDelta * fix.DotProduct).ToString());
+
+                // EOL
                 sb.AppendLine();
             }
 
