@@ -33,28 +33,11 @@ namespace ExceLintUI
 
         #region BUTTON_HANDLERS
 
-        private void EntropyRanking_Click(object sender, RibbonControlEventArgs e)
+        private string ProposedFixesToString(EntropyModelBuilder.ProposedFix[] fixes)
         {
-            // get dependence graph
-            var graph = currentWorkbook.getDependenceGraph(false);
-
-            // create progbar in main thread;
-            // worker thread will call Dispose
-            var pb = new ProgBar();
-
-            // build the model
-            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-            var model = currentWorkbook.NewEntropyModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
-
-            // remove progress bar
-            pb.Close();
-
-            // get ranking
-            var ranking = model.Ranking;
-
             // produce output string
             var sb = new StringBuilder();
-            foreach (var fix in ranking)
+            foreach (var fix in fixes)
             {
                 // source
                 var bbSource = Utils.BoundingRegion(fix.Source, 0);
@@ -89,8 +72,35 @@ namespace ExceLintUI
                 sb.AppendLine();
             }
 
-            // show message box
-            System.Windows.Forms.MessageBox.Show(sb.ToString());
+            return sb.ToString();
+        }
+
+        private void EntropyRanking_Click(object sender, RibbonControlEventArgs e)
+        {
+            // get dependence graph
+            var graph = currentWorkbook.getDependenceGraph(false);
+
+            // create progbar in main thread;
+            // worker thread will call Dispose
+            var pb = new ProgBar();
+
+            // build the model
+            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+            var model = currentWorkbook.NewEntropyModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
+
+            // remove progress bar
+            pb.Close();
+
+            // get ranking
+            var franking = model.FastRanking;
+            var ranking = model.Ranking;
+
+            var isSame = franking.SequenceEqual(ranking);
+            System.Windows.Forms.MessageBox.Show("rankings same? " + (isSame ? "YES" : "NO"));
+
+            // show message boxes
+            System.Windows.Forms.MessageBox.Show("FAST FIXES\n\n" + ProposedFixesToString(franking));
+            System.Windows.Forms.MessageBox.Show("SLOW FIXES\n\n" + ProposedFixesToString(ranking));
         }
 
         private void resetFixesButton_Click(object sender, RibbonControlEventArgs e)

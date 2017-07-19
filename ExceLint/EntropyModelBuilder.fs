@@ -73,34 +73,52 @@
             // save the reverse lookup for later use
             let revLookup = ReverseClusterLookup regions
 
-            let breakhere = "hi"
-
             member self.InvertedHistogram : ROInvertedHistogram = ih
 
             member self.Clustering : ImmutableClustering = regions
 
             member self.Tree : BinaryMinEntropyTree = tree
 
-            member private self.MergeCluster(source: ImmutableHashSet<AST.Address>)(target: ImmutableHashSet<AST.Address>) : EntropyModel =
+            member private self.UpdateHistogram(source: ImmutableHashSet<AST.Address>)(target: ImmutableHashSet<AST.Address>) : ROInvertedHistogram =
                 // get representative score from target
                 let rep_score = target |> Seq.head |> (fun a -> ScoreForCell a ih)
 
                 // update scores in histogram copy
-                let ih' =
-                    source
-                    |> Seq.fold (fun (acc: ROInvertedHistogram)(addr: AST.Address) ->
-                           let (a,b,oldscore) = ih.[addr]
-                           let score' = oldscore.UpdateResultant rep_score
-                           let bin = (a,b,score')
-                           let acc' = acc.Remove addr
-                           acc'.Add(addr, bin)
-                       ) ih
+                source
+                |> Seq.fold (fun (acc: ROInvertedHistogram)(addr: AST.Address) ->
+                        let (a,b,oldscore) = ih.[addr]
+                        let score' = oldscore.UpdateResultant rep_score
+                        let bin = (a,b,score')
+                        let acc' = acc.Remove addr
+                        acc'.Add(addr, bin)
+                    ) ih
+
+            member private self.MergeCluster(source: ImmutableHashSet<AST.Address>)(target: ImmutableHashSet<AST.Address>) : EntropyModel =
+                let ih' = self.UpdateHistogram source target
 
                 // update indivisibles
                 let indivisibles' = indivisibles.Add (source.ToImmutableHashSet())
 
                 new EntropyModel(graph, ih', d, indivisibles')
 
+            // does a merge like the other MergeCell call, but does not
+            // build an entire model
+            member self.FastMergeCluster(source: ImmutableHashSet<AST.Address>)(target: ImmutableHashSet<AST.Address>) : ImmutableClustering =
+                // remove old source and target
+                let cs = (self.Clustering.Remove source).Remove target
+
+                // merge source and target
+                let unioned = target.Union source
+
+                // put union back into clustering
+                let cs' = cs.Add unioned
+
+                // update inverted histogram
+                let ih' = self.UpdateHistogram source target
+
+                // coalesce
+                BinaryMinEntropyTree.RectangularCoalesce cs' ih'
+                
             member self.MergeCell(source: AST.Address)(target: AST.Address) : EntropyModel =
                 // find the cluster of the target cell
                 let target' = revLookup.[target]
@@ -114,6 +132,46 @@
                     // otherwise, this is an ad-hoc fix
                     let source' = (new HashSet<AST.Address>([| source |])).ToImmutableHashSet()
                     self.MergeCluster source' target'
+
+            // returns the source cluster and the new clustering
+            member self.FastMerge(source: AST.Address)(target: ImmutableHashSet<AST.Address>) : ImmutableHashSet<AST.Address>*ImmutableClustering =
+                // find the cluster of the source cell
+                let source' = revLookup.[source]
+
+                // is the cell a formula or string?
+                if AddressIsFormulaValued source ih graph ||
+                   AddressIsStringValued source ih graph then
+                    // merge the equivalence class
+                    source',self.FastMergeCluster source' target
+                // the cell is a number or whitespace
+                else
+                    // remove the cell from its cluster
+                    let source'' = source'.Remove source
+
+                    // remove the original source cluster
+                    let cs = self.Clustering.Remove source'
+
+                    // put the new source cluster back
+                    let cs' = cs.Add source''
+
+                    // remove the target
+                    let cs' = cs.Remove target
+
+                    // merge the single cell with the target
+                    let target' = target.Add source
+
+                    // put the new target back
+                    let cs'' = cs'.Add target'
+
+                    // update histogram
+                    let source_as_cl = (new HashSet<AST.Address>([| source |])).ToImmutableHashSet()
+                    let ih' = self.UpdateHistogram source_as_cl target
+
+                    // do rectangular coalesce
+                    let cs''' = BinaryMinEntropyTree.RectangularCoalesce cs'' ih'
+
+                    // and we're done
+                    source_as_cl,cs''
 
             member self.EntropyDiff(target: EntropyModel) : double =
                 let c1 = self.Clustering
@@ -182,7 +240,7 @@
                                 if entropy * dotproduct >= 0.0 then
                                     None
                                 else
-                                    Some (source, target, numodel, entropy, dotproduct)
+                                    Some (ProposedFix(source, target, entropy, dotproduct))
                             else
                                 None
                        )
@@ -192,7 +250,71 @@
                 // (entropy deltas should be negative)
                 let ranking =
                     models
-                    |> Array.map (fun (s,t,m,e,d) -> ProposedFix(s,t,e,d))
+                    |> Array.sortByDescending (fun f -> f.EntropyDelta * f.DotProduct)
+
+                ranking
+
+            member self.FastRanking : ProposedFix[] =
+                // get adjacencies
+                let adjs =
+                    self.Clustering
+                    |> Seq.map (fun target ->
+                           // get adjacencies
+                           let adj = HSAdjacentCellsImm target
+
+                           // do not include adjacencies that are not in our histogram
+                           let adj' = adj |> Seq.filter (fun addr -> ih.ContainsKey addr)
+
+                           // flatten
+                           adj'
+                           |> Seq.map (fun a -> target, a)
+                       )
+                    |> Seq.concat
+                    |> Seq.toArray
+
+                // get models & prune
+                let proposals = 
+                    adjs
+                    // produce one model for each adjacency
+                    |> Array.map (fun (target, addr) ->
+                            // is the merge rectangular?
+                            if ClusterIsFormulaValued target ih graph &&
+                               BinaryMinEntropyTree.CellMergeIsRectangular addr target then
+
+                                // generate fix clustering
+                                let (source,proposal) = self.FastMerge addr target
+
+                                // compute entropy difference
+                                let entropy = BinaryMinEntropyTree.ClusteringEntropyDiff self.Clustering proposal
+
+                                // compute dot product
+                                // we always use the prevailing direction of
+                                // the parent cluster even for ad-hoc fixes
+                                let source_v = ClusterDirectionVector revLookup.[addr]
+                                let target_v = ClusterDirectionVector target
+                                let dotproduct =
+                                    // special case for null vectors, which
+                                    // correspond to single cells
+                                    if source_v.IsZero then
+                                        1.0
+                                    else
+                                        source_v.DotProduct target_v
+
+                                // eliminate all fixes that don't decrease entropy
+                                // or cancel out because of dot product weight
+                                if entropy * dotproduct >= 0.0 then
+                                    None
+                                else
+                                    Some (ProposedFix(source, target, entropy, dotproduct))
+                            else
+                                None
+                       )
+                    |> Array.choose id
+
+                // convert to ranking and sort from highest entropy delta to lowest
+                // (entropy deltas should be negative)
+                let ranking =
+                    proposals
                     |> Array.sortByDescending (fun f -> f.EntropyDelta * f.DotProduct)
 
                 ranking

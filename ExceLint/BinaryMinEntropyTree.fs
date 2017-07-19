@@ -416,8 +416,12 @@
             // coalesce all cells that have the same cvector,
             // ensuring that all merged clusters remain rectangular
             let regs = BinaryMinEntropyTree.Regions tree
-            let mutable clusters = regs |> Array.map (fun leaf -> leaf.Cells) |> makeImmutableGenericClustering
+            let clusters = regs |> Array.map (fun leaf -> leaf.Cells) |> makeImmutableGenericClustering
 
+            BinaryMinEntropyTree.RectangularCoalesce clusters hb_inv
+
+        static member RectangularCoalesce(cs: ImmutableClustering)(hb_inv: ROInvertedHistogram) : ImmutableClustering =
+            let mutable clusters = cs
             let mutable changed = true
             while changed do
                 // coalesce vertical ordering horizontally
