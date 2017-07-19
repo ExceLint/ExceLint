@@ -160,11 +160,34 @@
                            
                            source, source_class, target
                        )
-                    |> Array.distinct
 
-                let models = 
+                // no converse fixes or duplicates
+                let fhs = new HashSet<ImmutableHashSet<AST.Address>*ImmutableHashSet<AST.Address>>(fixes |> Array.map (fun (s,_,t) -> s,t))
+                let fixes' =
                     fixes
-                    // produce one model for each adjacency
+                    |> Array.map (fun (s,sc,t) ->
+                        // fix-normal-form:
+                        // smallest number of things to change is the "source"
+                        if s.Count < t.Count then
+                            s,sc,t
+                        else if s.Count = t.Count then
+                            // same size; compare position; favor upperlefter
+                            let (s_lt,_) = Utils.BoundingRegion s 0
+                            let (t_lt,_) = Utils.BoundingRegion t 0
+                            if s_lt.Y < t_lt.Y then
+                                s,sc,t
+                            else if s_lt.Y = t_lt.Y && s_lt.X < t_lt.X then
+                                s,sc,t
+                            else
+                                t,sc,s
+                        else
+                            t,sc,s
+                       )
+                    |> Array.distinctBy (fun (s,_,t) -> s,t)
+
+                // produce one model for each adjacency
+                let models = 
+                    fixes'
                     |> Array.Parallel.map (fun (source, source_class, target) ->
                             // compute dot product
                             // we always use the prevailing direction of
