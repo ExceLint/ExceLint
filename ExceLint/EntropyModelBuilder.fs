@@ -184,33 +184,35 @@
                             t,sc,s
                        )
                     |> Array.distinctBy (fun (s,_,t) -> s,t)
+                    |> Array.map (fun (s,sc,t) ->
+                           // compute dot product
+                           // we always use the prevailing direction of
+                           // the parent cluster even for ad-hoc fixes
+                           let source_v = ClusterDirectionVector sc
+                           let target_v = ClusterDirectionVector t
 
-                // produce one model for each adjacency
+                           // if we're borrowing an element from its parent
+                           // then scale the dot product accordingly
+                           let dp_weight = if s = sc then 1.0 else 1.0 / double sc.Count                                   
+                           let wdotproduct =
+                                   // special case for null vectors, which
+                                   // correspond to single cells
+                                   if source_v.IsZero then
+                                       1.0
+                                   else
+                                       dp_weight * (source_v.DotProduct target_v)
+                           (s,t,wdotproduct)
+                       )
+                    // keep only fixes with a similar "prevailing direction"
+                    |> Array.filter (fun (_,_,dp) -> dp > 0.0)
+
+                // produce one model for each adjacency;
+                // this is somewhat expensive to compute
                 let models = 
                     fixes'
-                    |> Array.Parallel.map (fun (source, source_class, target) ->
-                            // compute dot product
-                            // we always use the prevailing direction of
-                            // the parent cluster even for ad-hoc fixes
-                            let source_v = ClusterDirectionVector source_class
-                            let target_v = ClusterDirectionVector target
-
-                            // if we're borrowing an element from its parent
-                            // then scale the dot product accordingly
-                            let dp_weight = if source = source_class then 1.0 else 1.0 / double source_class.Count                                   
-                            let wdotproduct =
-                                    // special case for null vectors, which
-                                    // correspond to single cells
-                                    if source_v.IsZero then
-                                        1.0
-                                    else
-                                        dp_weight * (source_v.DotProduct target_v)
-
-                            // keep only fixes with the same "prevailing direction"
-                            if wdotproduct <= 0.0 then
-                                None
+                    |> Array.Parallel.map (fun (source, target, wdotproduct) ->
                             // is the potential merge rectangular?
-                            else if not (BinaryMinEntropyTree.ImmMergeIsRectangular source target) then
+                            if not (BinaryMinEntropyTree.ImmMergeIsRectangular source target) then
                                 None
                             else
                                 // produce a new model for each adjacency
