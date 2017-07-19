@@ -242,6 +242,15 @@
 
                 ranking
 
+            static member RankingToClusters(fixes: ProposedFix[]) : ImmutableClustering =
+                fixes
+                |> Array.map (fun pf -> pf.Source)
+                |> Array.distinctBy (fun s ->
+                    let xs = s |> Seq.map (fun a -> a.A1Local().ToString())
+                    String.Join(",", xs |> Seq.sort)
+                   )
+                |> (fun arr -> CommonTypes.makeImmutableGenericClustering arr)
+                
             static member Initialize(input: Input) : EntropyModel =
                 // determine the set of cells to be analyzed
                 let cells = analysisBase input.config input.dag

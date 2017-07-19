@@ -114,6 +114,12 @@ namespace ExceLintUI
             // get ranking
             var ranking = model.Ranking;
 
+            // extract fixes
+            var fixes = EntropyModelBuilder.EntropyModel.RankingToClusters(ranking);
+
+            // draw
+            currentWorkbook.DrawImmutableClusters(fixes);
+
             // show message boxes
             System.Windows.Forms.MessageBox.Show(ProposedFixesToString(ranking));
         }
