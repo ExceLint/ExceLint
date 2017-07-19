@@ -1,6 +1,7 @@
 ﻿namespace ExceLint
     open System
     open System.Collections.Generic
+    open System.Collections.Immutable
     open Utils
     open CommonTypes
     open CommonFunctions
@@ -24,8 +25,8 @@
                 dist * (double source.Count)
             )
 
-        let min_dist_ro(hb_inv: ROInvertedHistogram) : DistanceF =
-            (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>) ->
+        let min_dist_ro(hb_inv: ROInvertedHistogram) : ImmDistanceF =
+            (fun (source: ImmutableHashSet<AST.Address>)(target: ImmutableHashSet<AST.Address>) ->
                 let pairs = cartesianProduct source target
 
                 let compute = (fun (a,b) ->
@@ -68,8 +69,8 @@
 
                 // this is kinda-sorta EMD; it has no notion of flows because I have
         // no idea what that means in terms of spreadsheet formula fixes
-        let earth_movers_dist_ro(hb_inv: ROInvertedHistogram) : DistanceF =
-            (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>) ->
+        let earth_movers_dist_ro(hb_inv: ROInvertedHistogram) : ImmDistanceF =
+            (fun (source: ImmutableHashSet<AST.Address>)(target: ImmutableHashSet<AST.Address>) ->
                 let compute = (fun (a,b) ->
                                 let (_,_,ac) = hb_inv.[a]
                                 let (_,_,bc) = hb_inv.[b]
@@ -92,8 +93,8 @@
             )
 
         // define distance (min distance between clusters)
-        let cent_dist_ro(hb_inv: ROInvertedHistogram) : DistanceF =
-            (fun (source: HashSet<AST.Address>)(target: HashSet<AST.Address>) ->
+        let cent_dist_ro(hb_inv: ROInvertedHistogram) : ImmDistanceF =
+            (fun (source: ImmutableHashSet<AST.Address>)(target: ImmutableHashSet<AST.Address>) ->
                 // Euclidean distance with a small twist:
                 // The distance between any two cells on different
                 // sheets is defined as infinity.

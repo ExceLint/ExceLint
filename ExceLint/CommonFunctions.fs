@@ -2,6 +2,7 @@
     open System
     open System.Collections.Generic
     open System.Collections.Immutable
+    open System.Linq
     open Utils
     open CommonTypes
     open HashSetUtils
@@ -578,31 +579,89 @@
                 cs |> Seq.fold (fun acc c -> acc && first.SetEquals c) true 
 
             let SameClustering(c1: ImmutableClustering)(c2: ImmutableClustering) : bool =
+                try 
+                    let c1R = ReverseClusterLookup c1
+                    let c2R = ReverseClusterLookup c2
+
+                    let mutable ok = true
+
+                    // lookup every address in every cluster in c1
+                    // and make sure that:
+                    // 1. the cluster in c2 is the same cluster
+                    // 2. the cluster in c2 and the cluster in c1 are the same cluster
+                    for c in c1 do
+                        let c2cs = c |> Seq.map (fun a -> c2R.[a])
+                        if not (SameClusters c2cs) then
+                            ok <- false
+                        if not (c.SetEquals(Seq.head c2cs)) then
+                            ok <- false
+
+                    // ditto but for c2
+                    for c in c2 do
+                        let c1cs = c |> Seq.map (fun a -> c1R.[a])
+                        if not (SameClusters c1cs) then
+                            ok <- false
+                        if not (c.SetEquals(Seq.head c1cs)) then
+                            ok <- false
+
+                    ok
+                with
+                | _ -> false
+
+            let ClusterToString(c: ImmutableHashSet<AST.Address>) : string =
+                System.String.Join(", ", c |> Seq.map (fun a -> a.A1Local.ToString()))
+
+            type Diffs =
+            | MissingInSecond of AST.Address
+            | MissingInFirst of AST.Address
+            | ClustersDifferent of ImmutableHashSet<AST.Address>*ImmutableHashSet<AST.Address>
+                override self.ToString() =
+                    match self with
+                    | MissingInSecond(a) -> "The second clustering is missing address: " + a.A1Local().ToString()
+                    | MissingInFirst(a) -> "The first clustering is missing address: " + a.A1Local().ToString()
+                    | ClustersDifferent(c1,c2) -> "Cluster { " + (ClusterToString c1) + " } different than { " + (ClusterToString c2) + " }"
+
+            let ClusterDiff(c1: ImmutableClustering)(c2: ImmutableClustering) : Diffs[] =
                 let c1R = ReverseClusterLookup c1
                 let c2R = ReverseClusterLookup c2
 
-                let mutable ok = true
+                let d = new Dict<string, Diffs>()
 
-                // lookup every address in every cluster in c1
-                // and make sure that:
-                // 1. the cluster in c2 is the same cluster
-                // 2. the cluster in c2 and the cluster in c1 are the same cluster
-                for c in c1 do
-                    let c2cs = c |> Seq.map (fun a -> c2R.[a])
-                    if not (SameClusters c2cs) then
-                        ok <- false
-                    if not (c.SetEquals(Seq.head c2cs)) then
-                        ok <- false
+                for pair in c1R do
+                    let addr = pair.Key
+                    let c1c = pair.Value
+                    if not (c2R.ContainsKey addr) then
+                        let diff = MissingInSecond(addr)
+                        let dstr = diff.ToString()
+                        if not (d.ContainsKey dstr) then
+                            d.Add(dstr, diff)
+                    else
+                        let c1str = ClusterToString c1c
+                        let c2str = ClusterToString c2R.[addr]
+                        if c1str <> c2str then
+                            let diff = ClustersDifferent(c1c, c2R.[addr])
+                            let dstr = diff.ToString()
+                            if not (d.ContainsKey dstr) then
+                                d.Add(dstr, diff)
 
-                // ditto but for c2
-                for c in c2 do
-                    let c1cs = c |> Seq.map (fun a -> c1R.[a])
-                    if not (SameClusters c1cs) then
-                        ok <- false
-                    if not (c.SetEquals(Seq.head c1cs)) then
-                        ok <- false
+                for pair in c2R do
+                    let addr = pair.Key
+                    let c2c = pair.Value
+                    if not (c1R.ContainsKey addr) then
+                        let diff = MissingInFirst(addr)
+                        let dstr = diff.ToString()
+                        if not (d.ContainsKey dstr) then
+                            d.Add(dstr, diff)
+                    else
+                        let c2str = ClusterToString c2c
+                        let c1str = ClusterToString c1R.[addr]
+                        if c2str <> c1str then
+                            let diff = ClustersDifferent(c2c, c1R.[addr])
+                            let dstr = diff.ToString()
+                            if not (d.ContainsKey dstr) then
+                                d.Add(dstr, diff)
 
-                ok
+                d.Values |> Seq.toArray
 
             let numberClusters(clustering: Clustering) : ClusterIDs =
                 let d = new Dict<HashSet<AST.Address>,int>()

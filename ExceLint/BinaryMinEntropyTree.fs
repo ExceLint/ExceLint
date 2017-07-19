@@ -355,6 +355,10 @@
             let merged = new HashSet<AST.Address>(target.Add source)
             BinaryMinEntropyTree.ClusterIsRectangular merged
 
+        static member ImmMergeIsRectangular(source: ImmutableHashSet<AST.Address>)(target: ImmutableHashSet<AST.Address>) : bool =
+            let merged = source.Union target
+            BinaryMinEntropyTree.ClusterIsRectangular (new HashSet<AST.Address>(merged))
+
         static member MergeIsRectangular(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : bool =
             let merged = HashSetUtils.union source target
             BinaryMinEntropyTree.ClusterIsRectangular merged
@@ -423,6 +427,9 @@
         static member RectangularCoalesce(cs: ImmutableClustering)(hb_inv: ROInvertedHistogram) : ImmutableClustering =
             let mutable clusters = cs
             let mutable changed = true
+
+            let mutable timesAround = 1
+
             while changed do
                 // coalesce vertical ordering horizontally
                 let clusters' = BinaryMinEntropyTree.CoaleseAdjacentClusters false clusters hb_inv
@@ -433,8 +440,20 @@
                 if CommonFunctions.SameClustering clusters clusters'' then
                     changed <- false
                 else
+                    let bad = if timesAround > 10 then
+                                  let diff = CommonFunctions.ClusterDiff clusters clusters''
+                                  "super fucking bad"
+                              else
+                                  "not so bad"
+
                     changed <- true
                     clusters <- clusters''
+
+                    
+
+
+
+                timesAround <- timesAround + 1
 
             // return clustering
             clusters

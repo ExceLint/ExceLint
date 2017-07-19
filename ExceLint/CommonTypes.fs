@@ -47,7 +47,9 @@
                 let (x,y) = self.tupled
                 x.ToString() + " -> " + y.ToString()
 
+
         type DistanceF = HashSet<AST.Address> -> HashSet<AST.Address> -> double
+        type ImmDistanceF = ImmutableHashSet<AST.Address> -> ImmutableHashSet<AST.Address> -> double
         type Distances = Dict<Edge,double>
         type ClusterStep = {
                 source: Set<AST.Address>;

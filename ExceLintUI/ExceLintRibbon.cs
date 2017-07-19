@@ -37,6 +37,22 @@ namespace ExceLintUI
         {
             // produce output string
             var sb = new StringBuilder();
+
+            sb.Append("SOURCE");
+            sb.Append(" -> ");
+            sb.Append("TARGET");
+            sb.Append(" = ");
+            sb.Append("(");
+            sb.Append(" NEG_INV_ENTROPY_DELTA ");
+            sb.Append(" * ");
+            sb.Append(" DOTPRODUCT ");
+            sb.Append(")");
+            sb.Append(" / ");
+            sb.Append(" DISTANCE ");
+            sb.Append(" = ");
+            sb.Append(" RESULT ");
+            sb.AppendLine();
+
             foreach (var fix in fixes)
             {
                 // source
@@ -61,12 +77,16 @@ namespace ExceLintUI
                 // separator
                 sb.Append(" = ");
 
-                // entropy * dp weight
-                sb.Append(fix.EntropyDelta.ToString());
+                // entropy * dp weight * inv_distance
+                sb.Append("(");
+                sb.Append(fix.E.ToString());
                 sb.Append(" * ");
-                sb.Append(fix.DotProduct.ToString());
+                sb.Append(fix.WeightedDotProduct.ToString());
+                sb.Append(")");
+                sb.Append(" / ");
+                sb.Append(fix.Distance.ToString());
                 sb.Append(" = ");
-                sb.Append((fix.EntropyDelta * fix.DotProduct).ToString());
+                sb.Append(fix.Score.ToString());
 
                 // EOL
                 sb.AppendLine();
@@ -92,15 +112,10 @@ namespace ExceLintUI
             pb.Close();
 
             // get ranking
-            var franking = model.FastRanking;
             var ranking = model.Ranking;
 
-            var isSame = franking.SequenceEqual(ranking);
-            System.Windows.Forms.MessageBox.Show("rankings same? " + (isSame ? "YES" : "NO"));
-
             // show message boxes
-            System.Windows.Forms.MessageBox.Show("FAST FIXES\n\n" + ProposedFixesToString(franking));
-            System.Windows.Forms.MessageBox.Show("SLOW FIXES\n\n" + ProposedFixesToString(ranking));
+            System.Windows.Forms.MessageBox.Show(ProposedFixesToString(ranking));
         }
 
         private void resetFixesButton_Click(object sender, RibbonControlEventArgs e)
