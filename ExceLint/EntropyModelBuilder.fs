@@ -73,6 +73,8 @@
             // save the reverse lookup for later use
             let revLookup = ReverseClusterLookup regions
 
+            let breakhere = "hi"
+
             member self.InvertedHistogram : ROInvertedHistogram = ih
 
             member self.Clustering : ImmutableClustering = regions
@@ -140,7 +142,7 @@
                 let models = 
                     adjs
                     // produce one model for each adjacency
-                    |> Array.Parallel.map (fun (target, addr) ->
+                    |> Array.map (fun (target, addr) ->
                             // is the merge rectangular?
                             if ClusterIsFormulaValued target ih graph &&
                                BinaryMinEntropyTree.CellMergeIsRectangular addr target then
@@ -163,7 +165,9 @@
                                 let entropy = self.EntropyDiff numodel
 
                                 // compute dot product
-                                let source_v = ClusterDirectionVector source
+                                // we always use the prevailing direction of
+                                // the parent cluster even for ad-hoc fixes
+                                let source_v = ClusterDirectionVector revLookup.[addr]
                                 let target_v = ClusterDirectionVector target
                                 let dotproduct =
                                     // special case for null vectors, which

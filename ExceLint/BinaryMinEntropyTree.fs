@@ -416,16 +416,24 @@
             // coalesce all cells that have the same cvector,
             // ensuring that all merged clusters remain rectangular
             let regs = BinaryMinEntropyTree.Regions tree
-            let clusters = regs |> Array.map (fun leaf -> leaf.Cells) |> makeImmutableGenericClustering
+            let mutable clusters = regs |> Array.map (fun leaf -> leaf.Cells) |> makeImmutableGenericClustering
 
-            // coalesce vertical ordering horizontally
-            let clusters' = BinaryMinEntropyTree.CoaleseAdjacentClusters false clusters hb_inv
+            let mutable changed = true
+            while changed do
+                // coalesce vertical ordering horizontally
+                let clusters' = BinaryMinEntropyTree.CoaleseAdjacentClusters false clusters hb_inv
 
-            // coalesce horizontal ordering vertically
-            let clusters'' = BinaryMinEntropyTree.CoaleseAdjacentClusters true clusters' hb_inv
+                // coalesce horizontal ordering vertically
+                let clusters'' = BinaryMinEntropyTree.CoaleseAdjacentClusters true clusters' hb_inv
+
+                if CommonFunctions.SameClustering clusters clusters'' then
+                    changed <- false
+                else
+                    changed <- true
+                    clusters <- clusters''
 
             // return clustering
-            clusters''
+            clusters
 
     and Inner(lefttop: AST.Address, rightbottom: AST.Address, subtree: SubtreeKind) =
         inherit BinaryMinEntropyTree(lefttop, rightbottom, subtree)
