@@ -85,6 +85,7 @@
     <Compile Include="SpectralModelBuilder.fs" />
     <Compile Include="KMedioidsClusterModelBuilder.fs" />
     <Compile Include="ModelBuilder.fs" />
+    <Compile Include="FastSheetCounter.fs" />
     <None Include="App.config" />
     <Content Include="packages.config" />
   </ItemGroup>
