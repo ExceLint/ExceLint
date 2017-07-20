@@ -440,11 +440,8 @@
                 if CommonFunctions.SameClustering clusters clusters'' then
                     changed <- false
                 else
-                    let bad = if timesAround > 1000 then
-                                  let diff = CommonFunctions.ClusterDiff clusters clusters''
-                                  "super fucking bad"
-                              else
-                                  "not so bad"
+                    if timesAround > 10000 then
+                        failwith "Coalesce convergence error."
 
                     changed <- true
                     clusters <- clusters''
