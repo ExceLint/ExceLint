@@ -49,11 +49,14 @@
                                             +> kneeIndexOpt
                             pipeline input 
                         // LSH-NN clustering
-                        elif input.config.Cluster then
+                        elif input.config.LSHNNCluster then
                             runClusterModel input
                         // NN clustering
                         elif input.config.OldCluster then
                             OldClusterModel.runClusterModel input
+                        // entropy clustering
+                        elif input.config.Cluster then
+                            EntropyModel.runClusterModel input
                         else
                         // spectral clustering
                             let pipeline = runSpectralModel         // produce initial (unsorted) ranking

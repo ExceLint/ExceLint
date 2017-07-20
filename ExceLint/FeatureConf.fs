@@ -244,6 +244,8 @@
             ((_config.ContainsKey name1 && _config.[name1].enabled) ||
             (_config.ContainsKey name2 && _config.[name2].enabled)) &&
             (_config.ContainsKey "oldclusteralgo" && _config.["oldclusteralgo"].enabled)
+        member self.LSHNNCluster : bool =
+            false
         member self.IsCOF : bool =
             let (name,_) = Vector.ShallowInputVectorMixedCOFNoAspect.capability
             _config.ContainsKey name && _config.[name].enabled

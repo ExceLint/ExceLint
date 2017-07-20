@@ -111,17 +111,20 @@ namespace ExceLintUI
             // remove progress bar
             pb.Close();
 
-            // get ranking
-            var ranking = model.Ranking;
+            // get fixes
+            var fixes = model.Fixes;
 
-            // extract fixes
-            var fixes = EntropyModelBuilder.EntropyModel.RankingToClusters(ranking);
+            // get ranking
+            var ranking = EntropyModelBuilder.EntropyModel.Ranking(fixes);
+
+            // extract clusters
+            var clusters = EntropyModelBuilder.EntropyModel.RankingToClusters(fixes);
 
             // draw
-            currentWorkbook.DrawImmutableClusters(fixes);
+            currentWorkbook.DrawImmutableClusters(clusters);
 
             // show message boxes
-            System.Windows.Forms.MessageBox.Show(ProposedFixesToString(ranking));
+            System.Windows.Forms.MessageBox.Show(ProposedFixesToString(fixes));
         }
 
         private void resetFixesButton_Click(object sender, RibbonControlEventArgs e)

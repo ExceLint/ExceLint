@@ -690,3 +690,21 @@
                 ) scores
 
                 d
+
+            let ROInvertedHistogramToScoreTable(ih: ROInvertedHistogram) : ScoreTable =
+                let d = new ScoreTable()
+                ih
+                |> Seq.map (fun kvp ->
+                       let addr = kvp.Key
+                       let (feat,scope,countable) = kvp.Value
+                       feat, addr, countable
+                   )
+                |> Seq.groupBy(fun (feat,_,_) -> feat)
+                |> Seq.iter (fun (key, xs) ->
+                       let xs' =
+                           xs
+                           |> Seq.map (fun (feat, addr, countable) -> addr, countable)
+                           |> Seq.toArray
+                       d.Add(key, xs')
+                   )
+                d

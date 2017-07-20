@@ -10,6 +10,8 @@
     type ImmDistanceFMaker = ROInvertedHistogram -> ImmDistanceF
 
     module EntropyModelBuilder =
+        let PCT_TO_FLAG = 5
+
         [<Struct>]
         type ProposedFix(source: ImmutableHashSet<AST.Address>, target: ImmutableHashSet<AST.Address>, entropyDelta: double, weighted_dp: double, distance: double) =
             member self.Source = source
@@ -19,6 +21,12 @@
             member self.Distance = distance
             member self.WeightedDotProduct = weighted_dp
             member self.Score = (self.E * self.WeightedDotProduct) / self.Distance
+
+        [<Struct>]
+        type Times(feat_ms: int64, scale_ms: int64, invert_ms: int64) =
+            member self.FeatureTimeMS = feat_ms
+            member self.ScaleTimeMS = scale_ms
+            member self.InvertTimeMS = invert_ms
 
         let ScoreForCell(addr: AST.Address)(ih: ROInvertedHistogram) : Countable =
             let (_,_,v) = ih.[addr]
@@ -68,7 +76,7 @@
             let (lt,rb) = Utils.BoundingRegion c1 0
             Vector(double (rb.X - lt.X), double (rb.Y - lt.Y), 0.0)
 
-        type EntropyModel(graph: Depends.DAG, ih: ROInvertedHistogram, d: ImmDistanceFMaker, indivisibles: ImmutableClustering) =
+        type EntropyModel(graph: Depends.DAG, ih: ROInvertedHistogram, d: ImmDistanceFMaker, indivisibles: ImmutableClustering, times: Times) =
             // do region inference
             let tree = BinaryMinEntropyTree.Infer ih
             let regions = BinaryMinEntropyTree.Clustering tree ih indivisibles
@@ -102,7 +110,7 @@
                 // update indivisibles
                 let indivisibles' = indivisibles.Add (source.ToImmutableHashSet())
 
-                new EntropyModel(graph, ih', d, indivisibles')
+                new EntropyModel(graph, ih', d, indivisibles', times)
                 
             member self.MergeCell(source: AST.Address)(target: AST.Address) : EntropyModel =
                 // find the cluster of the target cell
@@ -141,7 +149,7 @@
                 |> Seq.concat
                 |> Seq.toArray
 
-            member self.Ranking : ProposedFix[] =
+            member self.Fixes : ProposedFix[] =
                 // get models & prune
                 let fixes =
                     self.Adjacencies true
@@ -242,6 +250,52 @@
 
                 ranking
 
+            member self.Scores : ScoreTable = ROInvertedHistogramToScoreTable ih
+
+            member self.ScoreTimeMs = times.FeatureTimeMS + times.ScaleTimeMS + times.InvertTimeMS
+
+            // compute the cutoff based on a percentage of the number of formulas,
+            // by default PCT_TO_FLAG %
+            member self.Cutoff : int =
+                let num_formulas = graph.getAllFormulaAddrs().Length
+                let frac = (double PCT_TO_FLAG) / 100.0
+                int (Math.Floor((double num_formulas) * frac))
+
+            static member Ranking(fixes: ProposedFix[]) : int64*Ranking =
+                let sw = new System.Diagnostics.Stopwatch()
+                sw.Start()
+
+                // convert proposed fixes to ordinary 'cell flags'
+                let rs = fixes
+                         |> Array.map (fun pf ->
+                                pf.Source
+                                |> Seq.map (fun addr ->
+                                       new KeyValuePair<AST.Address,double>(addr, pf.Score)
+                                   )
+                                |> Seq.toArray
+                            )
+                         |> Array.concat
+
+                // no duplicate sources
+                let rs' = rs |> Array.distinctBy (fun kvp -> kvp.Key)
+
+                sw.Stop()
+                let ranking_time_ms = sw.ElapsedMilliseconds
+
+                ranking_time_ms,rs'
+
+            static member Weights(fixes: ProposedFix[]) : Dict<AST.Address,double> =
+                let d = new Dict<AST.Address,double>()
+                fixes
+                |> Seq.iter (fun pf ->
+                       pf.Source
+                       |> Seq.iter (fun addr ->
+                            if not (d.ContainsKey addr) then
+                                d.Add(addr, pf.EntropyDelta)
+                          )
+                   )
+                d
+
             static member RankingToClusters(fixes: ProposedFix[]) : ImmutableClustering =
                 fixes
                 |> Array.map (fun pf -> pf.Source)
@@ -251,6 +305,30 @@
                    )
                 |> (fun arr -> CommonTypes.makeImmutableGenericClustering arr)
                 
+            static member runClusterModel(input: Input) : AnalysisOutcome =
+                try
+                    if (analysisBase input.config input.dag).Length <> 0 then
+                        let m = EntropyModel.Initialize input
+                        let fixes = m.Fixes
+                        let (rtime,ranking) = EntropyModel.Ranking fixes
+
+                        Success(Cluster
+                            {
+                                scores = m.Scores;
+                                ranking = ranking
+                                score_time = m.ScoreTimeMs;
+                                ranking_time = rtime;
+                                sig_threshold_idx = 0;
+                                cutoff_idx = m.Cutoff;
+                                weights = EntropyModel.Weights fixes;    // this just returns entropy delta for now
+                                clustering = CommonFunctions.ToMutableClustering (EntropyModel.RankingToClusters fixes);
+                            }
+                        )
+                    else
+                        CantRun "Cannot perform analysis. This worksheet contains no formulas."
+                with
+                | AnalysisCancelled -> Cancellation
+
             static member Initialize(input: Input) : EntropyModel =
                 // determine the set of cells to be analyzed
                 let cells = analysisBase input.config input.dag
@@ -260,16 +338,15 @@
                 let (ns: ScoreTable,feat_time: int64) = PerfUtils.runMillis _runf ()
 
                 // scale
-//                let _runscale = fun () -> ScaleBySheet ns
-//                let (nlfrs: ScoreTable,scale_time: int64) = PerfUtils.runMillis _runscale () 
+                let _runscale = fun () -> ScaleBySheet ns
+                let (nlfrs: ScoreTable,scale_time: int64) = PerfUtils.runMillis _runscale () 
 
                 // make HistoBin lookup by address
-                let _runhisto = fun () -> invertedHistogram ns input.dag input.config
+                let _runhisto = fun () -> invertedHistogram nlfrs input.dag input.config
                 let (ih: ROInvertedHistogram,invert_time: int64) = PerfUtils.runMillis _runhisto ()
 
-                // do something with this eventually
-//                let score_time = feat_time + scale_time + invert_time
-                let score_time = feat_time + invert_time
+                // collate time measurements
+                let times = Times(feat_time, scale_time, invert_time)
 
                 // define distance function
                 let distance_f(invertedHistogram: ROInvertedHistogram) =
@@ -278,4 +355,4 @@
                     | DistanceMetric.EarthMover -> earth_movers_dist_ro invertedHistogram
                     | DistanceMetric.MeanCentroid -> cent_dist_ro invertedHistogram
 
-                new EntropyModel(input.dag, ih, distance_f, ToImmutableClustering (new Clustering()))
+                new EntropyModel(input.dag, ih, distance_f, ToImmutableClustering (new Clustering()), times)
