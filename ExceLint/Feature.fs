@@ -89,9 +89,12 @@ namespace ExceLint
                 CVectorResultant(x1 / d, y1 / d, z1 / d, c1 / d)
             | FullCVectorResultant(x,y,z,dx,dy,dz,dc) ->
                 FullCVectorResultant(x / d, y / d, z / d, dx / d, dy / d, dz / d, dc / d)
+        // this simulates the effect of "fixing" a cell
+        // copy the non-location part of the resultant from co to self
         member self.UpdateResultant(co: Countable) : Countable =
             match (self,co) with
             | FullCVectorResultant(x,y,z,dx,dy,dz,dc),CVectorResultant(dx2,dy2,dz2,dc2) -> FullCVectorResultant(x,y,z,dx2,dy2,dz2,dc2)
+            | FullCVectorResultant(x,y,z,_,_,_,_),FullCVectorResultant(_,_,_,dx2,dy2,dz2,dc2) -> FullCVectorResultant(x,y,z,dx2,dy2,dz2,dc2)
             | _ -> failwith "Operation not supported."
         member self.VectorMultiply(co: Countable) : double =
             match (self,co) with
@@ -173,6 +176,8 @@ namespace ExceLint
                     op dc1 dc2
                 )
             | _ -> failwith "Cannot do operation on vectors of different lengths."
+        member self.DotProduct(co: Countable) : double =
+            Array.sum (self.ElementwiseMultiply co).toArray
         member self.toArray : double[] =
             match self with
             | Num n -> [| n |]
@@ -203,6 +208,34 @@ namespace ExceLint
             | SquareVector(_,_,_,_,_,z1), SquareVector(_,_,_,_,_,z2) -> z1 = z2
             | CVectorResultant(_,_,z1,_), CVectorResultant(_,_,z2,_) -> z1 = z2
             | FullCVectorResultant(_,_,z1,_,_,_,_), FullCVectorResultant(_,_,z2,_,_,_,_) -> z1 = z2
+        member self.IsFormula : bool =
+            // NOTE: this does not work for formulas that normally have no references, e.g =RAND()
+            match self with
+            | Num n -> failwith "unknowable"
+            | Vector(x,y,z) -> failwith "unknowable"
+            | SquareVector(dx,dy,dz,x,y,z) -> failwith "unknowable"
+            // i.e., no refs at all
+            // note that dc <= 0.0 is in keeping with the arbitrary choice to make strings dc = -1.0 and no constants dc = 0.0
+            | CVectorResultant(x1,y1,z1,c1) -> not (x1 = 0.0 && y1 = 0.0 && z1 = 0.0)
+            // i.e., no refs at all
+            // note that dc <= 0.0 is in keeping with the arbitrary choice to make strings dc = -1.0 and no constants dc = 0.0
+            | FullCVectorResultant(x,y,z,dx,dy,dz,dc) -> not (dx = 0.0 && dy = 0.0 && dz = 0.0)
+        member self.IsZero : bool =
+            // NOTE: this does not work for formulas that normally have no references, e.g =RAND()
+            match self with
+            | Num n -> n = 0.0
+            | Vector(x,y,z) -> x = 0.0 && y = 0.0 && z = 0.0
+            | SquareVector(dx,dy,dz,x,y,z) -> dx = 0.0 && dy = 0.0 && dz = 0.0 && x = 0.0 && y = 0.0 && z = 0.0
+            | CVectorResultant(x1,y1,z1,c1) -> x1 = 0.0 && y1 = 0.0 && z1 = 0.0 && c1 = 0.0
+            | FullCVectorResultant(x,y,z,dx,dy,dz,dc) -> x = 0.0 && y = 0.0 && z = 0.0 && dx = 0.0 && dy = 0.0 && dz = 0.0 && dc = 0.0
+        member self.IsString : bool =
+            // NOTE: this does not work for formulas that normally have no references, e.g =RAND()
+            match self with
+            | Num n -> failwith "invalid operation for countable type"
+            | Vector(x,y,z) -> failwith "invalid operation for countable type"
+            | SquareVector(dx,dy,dz,x,y,z) -> failwith "invalid operation for countable type"
+            | CVectorResultant(x1,y1,z1,c1) -> c1 = -1.0
+            | FullCVectorResultant(x,y,z,dx,dy,dz,dc) -> dc = -1.0
         static member Normalize(X: Countable[]) : Countable[] =
             let min = Array.fold (fun (a:Countable)(x: Countable) -> a.ElementwiseMin x) X.[0] X 
             let max = Array.fold (fun (a:Countable)(x: Countable) -> a.ElementwiseMax x) X.[0] X 

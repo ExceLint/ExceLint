@@ -230,7 +230,7 @@
         member self.IsEnabledOptWeightConditioningSetSize : bool = _config.ContainsKey "WeightByConditioningSetSize" && _config.["WeightByConditioningSetSize"].enabled
         member self.IsEnabledSpectralRanking : bool = _config.ContainsKey "SpectralRanking" && _config.["SpectralRanking"].enabled
         member self.IsEnabledAnalyzeOnlyFormulas : bool = _config.ContainsKey "AnalyzeOnlyFormulas" && _config.["AnalyzeOnlyFormulas"].enabled
-        member self.IsEnabledAnalyzeAllCells : bool = _config.ContainsKey "AnalyzeOnlyFormulas" && not (_config.["AnalyzeOnlyFormulas"].enabled)
+        member self.IsEnabledAnalyzeAllCells : bool = not (_config.ContainsKey "AnalyzeOnlyFormulas") || not (_config.["AnalyzeOnlyFormulas"].enabled)
         member self.Cluster : bool =
             let (name0,_) = Vector.ShallowInputVectorMixedFullCVectorResultantOSI.capability
             let (name1,_) = Vector.ShallowInputVectorMixedFullCVectorResultantNotOSI.capability
@@ -244,6 +244,8 @@
             ((_config.ContainsKey name1 && _config.[name1].enabled) ||
             (_config.ContainsKey name2 && _config.[name2].enabled)) &&
             (_config.ContainsKey "oldclusteralgo" && _config.["oldclusteralgo"].enabled)
+        member self.LSHNNCluster : bool =
+            false
         member self.IsCOF : bool =
             let (name,_) = Vector.ShallowInputVectorMixedCOFNoAspect.capability
             _config.ContainsKey name && _config.[name].enabled

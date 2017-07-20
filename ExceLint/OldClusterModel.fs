@@ -118,7 +118,7 @@
                 |> toDict
 
             // make HistoBin lookup by address
-            let hb_inv = invertedHistogram nlfrs input.dag input.config
+            let hb_inv = new Dict<AST.Address,HistoBin>(invertedHistogram nlfrs input.dag input.config)
 
             // initially assign every cell to its own cluster
             let clusters = initialClustering nlfrs input.dag input.config
@@ -167,13 +167,14 @@
 
             // compute initial NN table
             let keymaker = (fun (addr: AST.Address) ->
-                                let (_,_,co) = hb_inv.[addr]
-                                LSHCalc.h7 co
-                            )
+                    let (_,_,co) = hb_inv.[addr]
+                    LSHCalc.h7 co
+                )
             let keyexists = (fun addr1 addr2 ->
                                 failwith "Duplicate keys should not happen."
                             )
-            let hs = HashSpace<AST.Address>(cells, keymaker, keyexists, LSHCalc.h7unmasker, DISTANCE)
+            let initialClustering = ToImmutableClustering (HashSpace.DegenerateClustering cells)
+            let hs = HashSpace<AST.Address>(initialClustering, keymaker, keyexists, LSHCalc.h7unmasker, DISTANCE)
 
             let mutable probable_knee = false
 
@@ -351,7 +352,8 @@
 
         let runClusterModel(input: Input) : AnalysisOutcome =
             try
-                if (analysisBase input.config input.dag).Length <> 0 then
+                let cells = analysisBase input.config input.dag
+                if cells.Length <> 0 then
                     let m = OldClusterModel input
 
                     let mutable notdone = true
@@ -360,6 +362,8 @@
 
                     Success(Cluster
                         {
+                            numcells = input.dag.allCells().Length;
+                            numformulas = input.dag.getAllFormulaAddrs().Length;
                             scores = m.Scores;
                             ranking = m.Ranking;
                             score_time = m.ScoreTimeMs;

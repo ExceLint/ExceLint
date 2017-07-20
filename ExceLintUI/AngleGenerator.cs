@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms.DataVisualization.Charting;
 
 namespace ExceLintUI
 {
@@ -21,6 +22,7 @@ namespace ExceLintUI
         {
             get { return start; }
         }
+
         public double End
         {
             get { return end; }

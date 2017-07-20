@@ -151,6 +151,39 @@
                     let numbits = endpos - startpos + 1
                     (UInt128.nBitMask numbits).LeftShift (128 - numbits - startpos)
 
+            /// <summary>
+            /// Find the longest common prefix (starting from high bits)
+            /// for the set of UInt128s and and return its length.
+            /// </summary>
+            /// <param name="nums">
+            /// A set of UInt128 to compare.
+            /// </param>
+            static member LongestCommonPrefix(nums: UInt128[]) : int =
+                let testFn = (fun i ->
+                                let mask = UInt128.calcMask 0 i
+
+                                let nums' = nums |> Array.map (fun num -> num.BitwiseAnd mask)
+
+                                let (_,allEqual) =
+                                    nums'
+                                    |> Array.fold (fun (anded: UInt128, ok: bool)(num: UInt128) ->
+                                           if ok then
+                                               // subsequently, check to see that all bits are the same
+                                               (anded, anded = num)
+                                           else
+                                               // once we fail, we always fail
+                                               (anded, false)
+                                       ) (nums'.[0], true)
+
+                                if allEqual then
+                                    UInt128Ops.BinarySearchOutcome.SearchHigh
+                                else
+                                    UInt128Ops.BinarySearchOutcome.SearchLow
+                             )
+                match UInt128Ops.GeneralizedBinarySearch 0 127 testFn UInt128Ops.BinarySearchOutcome.SearchLow with
+                | UInt128Ops.GenBinarySearchOutcome.Found i -> i
+                | UInt128Ops.GenBinarySearchOutcome.Last i -> i
+
             member self.ToBigInteger : BigInteger =
                 let l = BigInteger(self.Low)
                 let h = BigInteger.op_LeftShift(BigInteger(self.High),64)
@@ -231,6 +264,7 @@
                 UInt128Ops.CountOnes64 self.High + UInt128Ops.CountOnes64 self.Low
             member self.CountZeroes : int =
                 128 - self.CountOnes
+
             /// <summary>
             /// Find the longest common prefix (starting from high bits)
             /// and return its length.
@@ -239,19 +273,7 @@
             /// Another UInt128 to compare against this UInt128.
             /// </param>
             member self.LongestCommonPrefix(b: UInt128) : int =
-                let a = self
-                let testFn = (fun i ->
-                                let mask = UInt128.calcMask 0 i
-                                let a' = a.BitwiseAnd mask
-                                let b' = b.BitwiseAnd mask
-                                if a' = b' then
-                                    UInt128Ops.BinarySearchOutcome.SearchHigh
-                                else
-                                    UInt128Ops.BinarySearchOutcome.SearchLow
-                             )
-                match UInt128Ops.GeneralizedBinarySearch 0 127 testFn UInt128Ops.BinarySearchOutcome.SearchLow with
-                | UInt128Ops.GenBinarySearchOutcome.Found i -> i
-                | UInt128Ops.GenBinarySearchOutcome.Last i -> i
+                UInt128.LongestCommonPrefix [| self; b |]
 
             override self.GetHashCode() : int = int32 self.Low
             override self.Equals(o: obj) : bool =

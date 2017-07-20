@@ -13,6 +13,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using Worksheet = Microsoft.Office.Interop.Excel.Worksheet;
 using Workbook = Microsoft.Office.Interop.Excel.Workbook;
+using Clusters = System.Collections.Immutable.ImmutableHashSet<System.Collections.Immutable.ImmutableHashSet<AST.Address>>;
 
 namespace ExceLintUI
 {
@@ -82,7 +83,7 @@ namespace ExceLintUI
         private Dictionary<Worksheet, bool> _custodes_shown = new Dictionary<Worksheet, bool>();
         #endregion BUTTON_STATE
 
-        public WorkbookState(Excel.Application app, Excel.Workbook workbook)
+        public WorkbookState(Excel.Application app, Workbook workbook)
         {
             _app = app;
             _workbook = workbook;
@@ -691,6 +692,15 @@ namespace ExceLintUI
             System.Windows.Forms.MessageBox.Show(m.ToGraphViz);
         }
 
+        public Depends.DAG getDependenceGraph(Boolean forceDAGBuild)
+        {
+            // update if necessary
+            var p = Depends.Progress.NOPProgress();
+            RefreshDAG(forceDAGBuild, p);
+
+            return _dag;
+        }
+
         public void getLSHforAddr(AST.Address cursorAddr, Boolean forceDAGBuild)
         {
             // update if necessary
@@ -759,12 +769,157 @@ namespace ExceLintUI
             // update DAG if necessary
             buildDAGAndDoStuff(forceDAGBuild, f, 3, pb);
 
+            // show initial clustering, one cluster at a time
+            if (conf.DebugMode)
+            {
+                var clustering = _m[w].CurrentClustering.OrderBy(c => c.Count);
+
+                foreach (var cluster in clustering)
+                {
+                    // sanity check again
+                    if (!ExceLint.BinaryMinEntropyTree.ClusterIsRectangular(cluster))
+                    {
+                        System.Windows.Forms.MessageBox.Show(String.Join(", ",
+                            cluster.Select(a => a.A1Local())) + " IS NOT RECTANGULAR");
+                    }
+
+                    HashSet<AST.Address>[] cArr = { cluster };
+                    var cl2 = new HashSet<HashSet<AST.Address>>(cArr);
+
+                    restoreOutputColors();
+                    DrawClusters(cl2);
+                    System.Windows.Forms.MessageBox.Show(String.Join(", ", cluster.Select(a => a.A1Local())));
+                }
+            }
+
+            // draw agglomeration steps in debug mode
+            //if (conf.DebugMode)
+            //{
+            //    var log = _m[w].DebugClusterSteps;
+            //    for (int i = 0; i < log.Length; i++)
+            //    {
+            //        var step = log[i];
+            //        var source = new HashSet<AST.Address>(step.source);
+            //        var target = new HashSet<AST.Address>(step.target);
+            //        HashSet<AST.Address>[] cArr = {source, target};
+            //        var clustering = new HashSet<HashSet<AST.Address>>(cArr);
+
+            //        restoreOutputColors();
+            //        DrawClusters(clustering);
+            //        System.Windows.Forms.MessageBox.Show("step " + i);
+            //    }
+            //}
+
+
             // draw
             DrawClusters(_m[w].CurrentClustering);
         }
 
+        public ExceLint.EntropyModelBuilder.EntropyModel NewEntropyModelForWorksheet(Worksheet w,
+            ExceLint.FeatureConf conf, Boolean forceDAGBuild, ProgBar pb)
+        {
+            ExceLint.EntropyModelBuilder.EntropyModel m = null;
+
+            Func<Depends.Progress, Unit> f = (p) =>
+            {
+                Excel.Application app = Globals.ThisAddIn.Application;
+
+                // create
+                m = ExceLint.ModelBuilder.initEntropyModel(app, conf, _dag, p);
+
+                return null;
+            };
+
+            // update DAG if necessary
+            buildDAGAndDoStuff(forceDAGBuild, f, 3, pb);
+
+            return m;
+        }
+
+        public ExceLint.ClusterModelBuilder.ClusterModel GetClusterModelForWorksheet(Worksheet w, ExceLint.FeatureConf conf, Boolean forceDAGBuild, ProgBar pb)
+        {
+            Func<Depends.Progress, Unit> f = (p) =>
+            {
+                if (!_m.ContainsKey(w))
+                {
+                    Excel.Application app = Globals.ThisAddIn.Application;
+
+                    // create
+                    var m = ExceLint.ModelBuilder.initStepClusterModel(app, conf, _dag, 0.05, p);
+
+                    _m.Add(w, m);
+                }
+                else
+                {
+                    // fake progress bar if we've already done the work
+                    for (int i = 0; i < _m[w].NumCells; i++)
+                    {
+                        pb.IncrementProgress();
+                    }
+                }
+                return null;
+            };
+
+            // update DAG if necessary
+            buildDAGAndDoStuff(forceDAGBuild, f, 3, pb);
+
+            return _m[w];
+        }
+
+        public void GetRegionsForWorksheet(Worksheet w, ExceLint.FeatureConf conf, Boolean forceDAGBuild, ProgBar pb)
+        {
+            Func<Depends.Progress, Unit> f = (p) =>
+            {
+                if (!_m.ContainsKey(w))
+                {
+                    Excel.Application app = Globals.ThisAddIn.Application;
+
+                    // create
+                    var m = ExceLint.ModelBuilder.initStepClusterModel(app, conf, _dag, 0.05, p);
+
+                    // run agglomerative clustering until we reach inflection point
+                    while (!m.NextStepIsKnee)
+                    {
+                        m.Step();
+                    }
+
+                    _m.Add(w, m);
+                }
+                else
+                {
+                    // fake progress bar if we've already done the work
+                    for (int i = 0; i < _m[w].NumCells; i++)
+                    {
+                        pb.IncrementProgress();
+                    }
+                }
+                return null;
+            };
+
+            // update DAG if necessary
+            buildDAGAndDoStuff(forceDAGBuild, f, 3, pb);
+
+            // extract regions
+            var clustering = _m[w].CurrentClustering;
+
+            // draw
+            DrawClusters(clustering);
+        }
+
+        public void DrawImmutableClusters(Clusters clusters)
+        {
+            var hs = new HashSet<HashSet<AST.Address>>();
+            foreach (var c in clusters)
+            {
+                var c2 = new HashSet<AST.Address>(c);
+                hs.Add(c2);
+            }
+            DrawClusters(hs);
+        }
+
         public void DrawClusters(HashSet<HashSet<AST.Address>> clusters)
         {
+
             // init cluster color map
             ClusterColorer clusterColors = new ClusterColorer(clusters, 0, 360, 0);
 
@@ -1143,7 +1298,7 @@ namespace ExceLintUI
             paintColor(cell, c);
         }
 
-        private void restoreOutputColors()
+        public void restoreOutputColors()
         {
             _app.ScreenUpdating = false;
 

@@ -1,9 +1,11 @@
 ﻿namespace ExceLint
 open System.Collections.Generic
+open System.Collections.Immutable
     module Utils =
         // we're using C# Dictionary instead of F# map
         // for debugging (it's inspectable) and speed purposes
         type Dict<'a,'b> = Dictionary<'a,'b>
+        type ImmutDict<'a,'b> = ImmutableDictionary<'a,'b>
 
         let adict(a: seq<('a*'b)>) = new Dict<'a,'b>(a |> dict)
         let argwhatever(f: 'a -> double)(xs: seq<'a>)(whatev: double -> double -> bool) : 'a =
@@ -86,15 +88,29 @@ open System.Collections.Generic
 
             new HashSet<AST.Address>(addrs |> Array.filter isSane)
 
+        let HSAdjacentCells(hs: HashSet<AST.Address>) : HashSet<AST.Address> =
+            let adjacencies = new HashSet<AST.Address>()
+            for addr in hs do
+                for aaddr in AdjacentCells addr do
+                    adjacencies.Add aaddr |> ignore
+            adjacencies
+
+        let HSAdjacentCellsImm(hs: ImmutableHashSet<AST.Address>) : ImmutableHashSet<AST.Address> =
+            let adjacencies = new HashSet<AST.Address>()
+            for addr in hs do
+                for aaddr in AdjacentCells addr do
+                    adjacencies.Add aaddr |> ignore
+            adjacencies.ToImmutableHashSet()
+
         let isAdjacent(addr1: AST.Address)(addr2: AST.Address) : bool =
             Seq.contains addr2 (AdjacentCells addr1)
 
         let Adjust(epsilon: int)(i: int) : int =
             if (i + epsilon) > 0 then i + epsilon else i
 
-        /// <summary>returns the set of cells in the bounding box around the given set of
+        /// <summary>returns the bounding range for the given set of
         /// cells, with an additional (positive-valued) epsilon</summary>
-        let BoundingBox(cells: HashSet<AST.Address>)(epsilon: int) : HashSet<AST.Address> =
+        let BoundingRegion(cells: seq<AST.Address>)(epsilon: int) : AST.Address * AST.Address =
             assert (Seq.length cells > 0)
             assert (epsilon >= 0)
             
@@ -111,4 +127,14 @@ open System.Collections.Generic
             let lefttop = AST.Address.fromR1C1withMode(ymin, xmin, AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path)
             let rightbottom = AST.Address.fromR1C1withMode(ymax, xmax, AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path)
 
-            new HashSet<AST.Address>((new AST.Range(lefttop, rightbottom)).Addresses())
+            lefttop, rightbottom
+
+        /// <summary>returns the set of cells in the bounding box around the given set of
+        /// cells, with an additional (positive-valued) epsilon</summary>
+        let BoundingBox(cells: seq<AST.Address>)(epsilon: int) : seq<AST.Address> =
+            let (lefttop,rightbottom) = BoundingRegion cells epsilon
+            let bregion = new AST.Range(lefttop, rightbottom)
+            seq (bregion.Addresses())
+
+        let BoundingBoxHS(cells: HashSet<AST.Address>)(epsilon: int) : HashSet<AST.Address> =
+            new HashSet<AST.Address>(BoundingBox cells epsilon)

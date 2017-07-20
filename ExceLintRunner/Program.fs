@@ -204,7 +204,7 @@ open ExceLintFileFormats
         // write stats
         let row = ExceLintStatsRow()
         row.BenchmarkName <- stats.shortname
-        row.NumCells <- model.DependenceGraph.allCells().Length
+        row.NumCells <- model.AllCells.Count
         row.NumFormulas <- model.DependenceGraph.getAllFormulaAddrs().Length
         row.SigThresh <- stats.threshold
         row.TimeMarshalingMs <- model.DependenceGraph.TimeMarshalingMilliseconds

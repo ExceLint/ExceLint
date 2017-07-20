@@ -1,6 +1,7 @@
 ﻿namespace ExceLint
     module CommonTypes =
         open System.Collections.Generic
+        open System.Collections.Immutable
         open System.Collections
         open System
         open Utils
@@ -15,14 +16,18 @@
         type FlatScoreTable = Dict<Feature*AST.Address,Countable>
         type ConditioningSetSizeTable = Dict<Scope.Selector,Dict<AST.Address,Count>>
         type HistoBin = Feature*Scope.SelectID*Countable
-        type InvertedHistogram = System.Collections.ObjectModel.ReadOnlyDictionary<AST.Address,HistoBin>
+        type ROInvertedHistogram = ImmutableDictionary<AST.Address,HistoBin>
+        type InvertedHistogram = System.Collections.Generic.Dictionary<AST.Address,HistoBin>
         type FreqTable = Dict<HistoBin,Count>
         type ClusterTable = Dict<HistoBin,AST.Address list>
         type Weights = IDictionary<AST.Address,Weight>
         type Ranking = KeyValuePair<AST.Address,double>[]
         type HypothesizedFixes = Dict<AST.Address,Dict<Feature,Countable>>
         type Causes = Dict<AST.Address,(HistoBin*Count*Weight)[]>
-        type Clustering = HashSet<HashSet<AST.Address>>
+        type GenericClustering<'p> = HashSet<HashSet<'p>>
+        type ImmutableGenericClustering<'p> = ImmutableHashSet<ImmutableHashSet<'p>>
+        type Clustering = GenericClustering<AST.Address>
+        type ImmutableClustering = ImmutableGenericClustering<AST.Address>
         type ChangeSet = {
             mutants: KeyValuePair<AST.Address,string>[];
             scores: ScoreTable;
@@ -42,7 +47,9 @@
                 let (x,y) = self.tupled
                 x.ToString() + " -> " + y.ToString()
 
+
         type DistanceF = HashSet<AST.Address> -> HashSet<AST.Address> -> double
+        type ImmDistanceF = ImmutableHashSet<AST.Address> -> ImmutableHashSet<AST.Address> -> double
         type Distances = Dict<Edge,double>
         type ClusterStep = {
                 source: Set<AST.Address>;
@@ -123,6 +130,8 @@
         }
 
         type ClusterAnalysis = {
+            numcells: int;
+            numformulas: int;
             scores: ScoreTable;
             ranking: Ranking;
             score_time: int64;
@@ -154,3 +163,10 @@
                 | Cancellation -> Cancellation
 
         let (+>) (fn1: PipeStart)(fn2: Pipe) : PipeStart = comb fn2 fn1
+
+        let ToImmutableClustering(cs: Clustering) : ImmutableClustering =
+            let hs_of_ic = cs |> Seq.map (fun c -> c.ToImmutableHashSet())
+            hs_of_ic.ToImmutableHashSet()
+
+        let makeImmutableGenericClustering<'p>(cs: seq<ImmutableHashSet<'p>>) : ImmutableGenericClustering<'p> =
+            cs.ToImmutableHashSet()

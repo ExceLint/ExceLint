@@ -8,6 +8,12 @@ using System.Threading;
 using ExceLintFileFormats;
 using Application = Microsoft.Office.Interop.Excel.Application;
 using Worksheet = Microsoft.Office.Interop.Excel.Worksheet;
+using System.Text;
+using ExceLint;
+using System.Collections.Immutable;
+using Clusters = System.Collections.Immutable.ImmutableHashSet<System.Collections.Immutable.ImmutableHashSet<AST.Address>>;
+using HistoBin = System.Tuple<string, ExceLint.Scope.SelectID, ExceLint.Countable>;
+using ROInvertedHistogram = System.Collections.Immutable.ImmutableDictionary<AST.Address, System.Tuple<string, ExceLint.Scope.SelectID, ExceLint.Countable>>;
 
 namespace ExceLintUI
 {
@@ -22,24 +28,313 @@ namespace ExceLintUI
         WorkbookState currentWorkbook;
         private ExceLintGroundTruth annotations;
         private string custodesPath = null;
+        private AST.Address fixAddress = null; 
+        private EntropyModelBuilder.EntropyModel fixClusterModel = null;
 
         #region BUTTON_HANDLERS
-        private void LISAHeatmap_Click(object sender, RibbonControlEventArgs e)
+
+        private string ProposedFixesToString(EntropyModelBuilder.ProposedFix[] fixes)
         {
-            // workbook- and UI-update callback
-            Action<WorkbookState> updateWorkbook = (WorkbookState wbs) =>
-            {
-                this.currentWorkbook = wbs;
-                setUIState(currentWorkbook);
-            };
+            // produce output string
+            var sb = new StringBuilder();
 
-            // get significance threshold
-            var sig = getPercent(this.significanceTextBox.Text, this.significanceTextBox.Label);
+            sb.Append("SOURCE");
+            sb.Append(" -> ");
+            sb.Append("TARGET");
+            sb.Append(" = ");
+            sb.Append("(");
+            sb.Append(" NEG_INV_ENTROPY_DELTA ");
+            sb.Append(" * ");
+            sb.Append(" DOTPRODUCT ");
+            sb.Append(")");
+            sb.Append(" / ");
+            sb.Append(" DISTANCE ");
+            sb.Append(" = ");
+            sb.Append(" RESULT ");
+            sb.AppendLine();
 
-            using (var pb = new ProgBar())
+            foreach (var fix in fixes)
             {
-                DoHeatmap(sig, currentWorkbook, getConfig(), this.forceBuildDAG.Checked, updateWorkbook, pb);
+                // source
+                var bbSource = Utils.BoundingRegion(fix.Source, 0);
+                var sourceStart = bbSource.Item1.A1Local();
+                var sourceEnd = bbSource.Item2.A1Local();
+                sb.Append(sourceStart.ToString());
+                sb.Append(":");
+                sb.Append(sourceEnd.ToString());
+
+                // separator
+                sb.Append(" -> ");
+
+                // target
+                var bbTarget = Utils.BoundingRegion(fix.Target, 0);
+                var targetStart = bbTarget.Item1.A1Local();
+                var targetEnd = bbTarget.Item2.A1Local();
+                sb.Append(targetStart.ToString());
+                sb.Append(":");
+                sb.Append(targetEnd.ToString());
+
+                // separator
+                sb.Append(" = ");
+
+                // entropy * dp weight * inv_distance
+                sb.Append("(");
+                sb.Append(fix.E.ToString());
+                sb.Append(" * ");
+                sb.Append(fix.WeightedDotProduct.ToString());
+                sb.Append(")");
+                sb.Append(" / ");
+                sb.Append(fix.Distance.ToString());
+                sb.Append(" = ");
+                sb.Append(fix.Score.ToString());
+
+                // EOL
+                sb.AppendLine();
             }
+
+            return sb.ToString();
+        }
+
+        private void EntropyRanking_Click(object sender, RibbonControlEventArgs e)
+        {
+            // get dependence graph
+            var graph = currentWorkbook.getDependenceGraph(false);
+
+            // create progbar in main thread;
+            // worker thread will call Dispose
+            var pb = new ProgBar();
+
+            // build the model
+            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+            var model = currentWorkbook.NewEntropyModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
+
+            // remove progress bar
+            pb.Close();
+
+            // get fixes
+            var fixes = model.Fixes;
+
+            // get ranking
+            var ranking = EntropyModelBuilder.EntropyModel.Ranking(fixes);
+
+            // extract clusters
+            var clusters = EntropyModelBuilder.EntropyModel.RankingToClusters(fixes);
+
+            // draw
+            currentWorkbook.DrawImmutableClusters(clusters);
+
+            // show message boxes
+            System.Windows.Forms.MessageBox.Show(ProposedFixesToString(fixes));
+        }
+
+        private void resetFixesButton_Click(object sender, RibbonControlEventArgs e)
+        {
+            // change button name
+            FixClusterButton.Label = "Start Fix";
+
+            // toss everything so that the user can do this again
+            fixClusterModel = null;
+            fixAddress = null;
+
+            // redisplay visualiztion
+            currentWorkbook.restoreOutputColors();
+        }
+
+        private Clusters ElideWhitespaceClusters(Clusters cs, ROInvertedHistogram ih, Depends.DAG graph)
+        {
+            var output = new HashSet<ImmutableHashSet<AST.Address>>();
+
+            foreach (ImmutableHashSet<AST.Address> c in cs)
+            {
+                if (!c.All(a => EntropyModelBuilder.AddressIsWhitespaceValued(a, ih, graph)))
+                {
+                    output.Add(c);
+                }
+            }
+
+            return output.ToImmutableHashSet();
+        }
+
+        private Clusters ElideStringClusters(Clusters cs, ROInvertedHistogram ih, Depends.DAG graph)
+        {
+            var output = new HashSet<ImmutableHashSet<AST.Address>>();
+
+            foreach (ImmutableHashSet<AST.Address> c in cs)
+            {
+                if (!c.All(a => EntropyModelBuilder.AddressIsStringValued(a, ih, graph)))
+                {
+                    output.Add(c);
+                }
+            }
+
+            return output.ToImmutableHashSet();
+        }
+
+        private Clusters PrettyClusters(Clusters cs, ROInvertedHistogram ih, Depends.DAG graph)
+        {
+            //var cs1 = ElideStringClusters(cs, ih, graph);
+            //var cs2 = ElideWhitespaceClusters(cs1, ih, graph);
+            //return cs2;
+            return cs;
+        }
+
+        private string InvertedHistogramPrettyPrinter(ROInvertedHistogram ih)
+        {
+            var sb = new StringBuilder();
+
+            sb.Append("[\n");
+            foreach (var kvp in ih)
+            {
+                var c = kvp.Value.Item3;
+                sb.Append(c.ToString());
+                sb.Append("\n");
+            }
+            sb.Append("]\n");
+            return sb.ToString();
+        }
+
+        private void FixClusterButton_Click(object sender, RibbonControlEventArgs e)
+        {
+            // get dependence graph
+            var graph = currentWorkbook.getDependenceGraph(false);
+
+            if (fixClusterModel == null)
+            {
+                // create progbar in main thread;
+                // worker thread will call Dispose
+                var pb = new ProgBar();
+
+                // build the model
+                Worksheet activeWs = (Worksheet) Globals.ThisAddIn.Application.ActiveSheet;
+                fixClusterModel = currentWorkbook.NewEntropyModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
+
+                // do visualization
+                var histo = fixClusterModel.InvertedHistogram;
+                var clusters = fixClusterModel.Clustering;
+
+                var cl_filt = PrettyClusters(clusters, histo, graph);
+                currentWorkbook.restoreOutputColors();
+                currentWorkbook.DrawImmutableClusters(cl_filt);
+
+                // remove progress bar
+                pb.Close();
+
+                // change button name
+                FixClusterButton.Label = "Select Source";
+            }
+            else
+            {
+                var app = Globals.ThisAddIn.Application;
+
+                // get cursor location
+                var cursor = (Excel.Range)app.Selection;
+
+                // get address for cursor
+                AST.Address cursorAddr =
+                    ParcelCOMShim.Address.AddressFromCOMObject(cursor, Globals.ThisAddIn.Application.ActiveWorkbook);
+
+                if (fixAddress == null)
+                {
+                    fixAddress = cursorAddr;
+
+                    // change button name
+                    FixClusterButton.Label = "Select Target";
+                }
+                else
+                {
+                    // do fix
+                    var newModel = fixClusterModel.MergeCell(fixAddress, cursorAddr);
+
+                    // compute change in entropy
+                    var deltaE = fixClusterModel.EntropyDiff(newModel);
+
+                    // save new model
+                    fixClusterModel = newModel;
+
+                    // redisplay visualiztion
+                    var cl_filt = PrettyClusters(newModel.Clustering, newModel.InvertedHistogram, graph);
+                    currentWorkbook.restoreOutputColors();
+                    currentWorkbook.DrawImmutableClusters(cl_filt);
+
+                    // display output
+                    System.Windows.Forms.MessageBox.Show("Change in entropy: " + deltaE);
+
+                    // reset address
+                    fixAddress = null;
+
+                    // change button name
+                    FixClusterButton.Label = "Select Source";
+                }
+            }
+        }
+
+        private void clusterForCell_Click(object sender, RibbonControlEventArgs e)
+        {
+            var w = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+
+            var app = Globals.ThisAddIn.Application;
+
+            // get cursor location
+            var cursor = (Excel.Range)app.Selection;
+
+            // get address for cursor
+            AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, Globals.ThisAddIn.Application.ActiveWorkbook);
+
+            // create progbar in main thread;
+            // worker thread will call Dispose
+            var pb = new ProgBar();
+
+            // build the model
+            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+            var model = currentWorkbook.NewEntropyModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
+
+            // get inverse lookup for clustering
+            var addr2Cl = CommonFunctions.ReverseClusterLookup(model.Clustering);
+
+            // get cluster for address
+            var cluster = addr2Cl[cursorAddr];
+
+            // remove progress bar
+            pb.Close();
+
+            // display cluster
+            System.Windows.Forms.MessageBox.Show(String.Join(", ", cluster.Select(a => a.A1Local())));
+        }
+
+        private void nearestNeighborForCluster_Click(object sender, RibbonControlEventArgs e)
+        {
+            var w = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+
+            var app = Globals.ThisAddIn.Application;
+
+            // get cursor location
+            var cursor = (Excel.Range)app.Selection;
+
+            // get address for cursor
+            AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, Globals.ThisAddIn.Application.ActiveWorkbook);
+
+            // create progbar in main thread;
+            // worker thread will call Dispose
+            var pb = new ProgBar();
+
+            // build the model
+            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+            var model = currentWorkbook.GetClusterModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
+
+            // get inverse lookup for clustering
+            var addr2Cl = CommonFunctions.ReverseClusterLookupMutable(model.CurrentClustering);
+
+            // get cluster for address
+            var cluster = addr2Cl[cursorAddr];
+
+            // find the nearest neighbor
+            var neighbor = model.NearestNeighborForCluster(cluster);
+
+            // remove progress bar
+            pb.Close();
+
+            // display cluster
+            System.Windows.Forms.MessageBox.Show(String.Join(", ", neighbor.Select(a => a.A1Local())));
         }
 
         private void RunCUSTODES_Click(object sender, RibbonControlEventArgs e)
@@ -81,6 +376,35 @@ namespace ExceLintUI
             AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, Globals.ThisAddIn.Application.ActiveWorkbook);
 
             currentWorkbook.getLSHforAddr(cursorAddr, false);
+        }
+
+        private void VectorForCell_Click(object sender, RibbonControlEventArgs e)
+        {
+            // get cursor location
+            var cursor = (Excel.Range)Globals.ThisAddIn.Application.Selection;
+            AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, Globals.ThisAddIn.Application.ActiveWorkbook);
+
+            // get config
+            var conf = getConfig();
+
+            // get dependence graph
+            var dag = currentWorkbook.getDependenceGraph(this.forceBuildDAG.Checked);
+
+            var sb = new StringBuilder();
+
+            // get vector for each enabled feature
+            var feats = conf.EnabledFeatures;
+            for (int i = 0; i < feats.Length; i++)
+            {
+                // run feature
+                sb.Append(feats[i]);
+                sb.Append(" = ");
+                sb.Append(conf.get_FeatureByName(feats[i]).Invoke(cursorAddr).Invoke(dag).ToString());
+                sb.Append("\n");
+            }
+
+            // display
+            System.Windows.Forms.MessageBox.Show(sb.ToString());
         }
 
         public WorkbookState CurrentWorkbook { 
@@ -779,6 +1103,21 @@ namespace ExceLintUI
             currentWorkbook.DrawClusters(clustering);
         }
 
+        private void moranForSelectedCells_Click(object sender, RibbonControlEventArgs e)
+        {
+            // get workbook
+            var w = (Excel.Workbook)((Worksheet)Globals.ThisAddIn.Application.ActiveSheet).Parent;
+
+            // get cursor location
+            var cursor = (Excel.Range)Globals.ThisAddIn.Application.Selection;
+
+            // compute I
+            var I = currentWorkbook.MoranForSelection(cursor, w, getConfig(), this.forceBuildDAG.Checked);
+
+            // display
+            System.Windows.Forms.MessageBox.Show(I.ToString());
+        }
+
         #endregion BUTTON_HANDLERS
 
         #region EVENTS
@@ -835,15 +1174,12 @@ namespace ExceLintUI
             // get cursor location
             var cursor = (Excel.Range)app.Selection;
 
-            // get range object
-            var rng = ParcelCOMShim.Range.RangeFromCOMObject(cursor, app.ActiveWorkbook);
-
-            if (rng.Addresses().Length == 1)
+            if (cursor.Count == 1)
             {
                 // user selected a single cell
                 annotateThisCell.Enabled = true;
                 annotateThisCell.Label = "Annotate This Cell";
-            } else if (rng.Addresses().Length > 1)
+            } else if (cursor.Count > 1)
             {
                 // user selected a single cell
                 annotateThisCell.Enabled = true;
@@ -1201,6 +1537,9 @@ namespace ExceLintUI
             // limit analysis to a single sheet
             c = c.limitAnalysisToSheet(((Excel.Worksheet)Globals.ThisAddIn.Application.ActiveWorkbook.ActiveSheet).Name);
 
+            // debug mode
+            if (this.DebugOutput.Checked) { c = c.enableDebugMode(true); }
+
             return c;
         }
 
@@ -1216,20 +1555,6 @@ namespace ExceLintUI
         }
 
         #endregion UTILITY_FUNCTIONS
-
-        private void moranForSelectedCells_Click(object sender, RibbonControlEventArgs e)
-        {
-            // get workbook
-            var w = (Excel.Workbook)((Worksheet)Globals.ThisAddIn.Application.ActiveSheet).Parent;
-
-            // get cursor location
-            var cursor = (Excel.Range)Globals.ThisAddIn.Application.Selection;
-
-            // compute I
-            var I = currentWorkbook.MoranForSelection(cursor, w, getConfig(), this.forceBuildDAG.Checked);
-
-            // display
-            System.Windows.Forms.MessageBox.Show(I.ToString());
-        }
     }
 }
+

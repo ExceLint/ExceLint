@@ -2,13 +2,14 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using COMWrapper;
 using System.Linq;
+using ExceLint;
 
 namespace ExceLintTests
 {
     [TestClass]
     public class BasicTests
     {
-        Depends.DAG _addressModeDAG;
+        private Depends.DAG _addressModeDAG;
 
         public BasicTests()
         {
@@ -175,6 +176,202 @@ namespace ExceLintTests
             Assert.IsTrue(Array.Exists(vectors, e => e.Equals(new Tuple<int, int, int>(-2, -2, 0))));
             Assert.IsTrue(Array.Exists(vectors, e => e.Equals(new Tuple<int, int, int>(-2, -1, 0))));
             Assert.IsTrue(Array.Exists(vectors, e => e.Equals(new Tuple<int, int, int>(-2,  0, 0))));
+        }
+
+        [TestMethod]
+        public void IsFormulaTest()
+        {
+            using (var app = new Application())
+            {
+                using (var wb = app.OpenWorkbook(@"..\..\TestData\DataTest.xlsx"))
+                {
+                    var p = Depends.Progress.NOPProgress();
+                    var graph = wb.buildDependenceGraph();
+                    var conf = (new FeatureConf()).enableShallowInputVectorMixedFullCVectorResultantOSI(true);
+                    var m = ModelBuilder.initEntropyModel(app.XLApplication(), conf, graph, p);
+                    var ih = m.InvertedHistogram;
+
+                    var wbname = graph.getWorkbookName();
+                    var wsname = graph.getWorksheetNames()[0];
+                    var path = graph.getWorkbookDirectory();
+
+                    // A1
+                    var a1_addr = AST.Address.fromA1withMode(1, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // B1
+                    var b1_addr = AST.Address.fromA1withMode(1, "B", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // C1
+                    var c1_addr = AST.Address.fromA1withMode(1, "C", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // A2
+                    var a2_addr = AST.Address.fromA1withMode(2, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // B2
+                    var b2_addr = AST.Address.fromA1withMode(2, "B", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // C2
+                    var c2_addr = AST.Address.fromA1withMode(2, "C", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // A3
+                    var a3_addr = AST.Address.fromA1withMode(3, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    Assert.IsFalse(EntropyModelBuilder.AddressIsFormulaValued(a1_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder.AddressIsFormulaValued(b1_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder.AddressIsFormulaValued(c1_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder.AddressIsFormulaValued(a2_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder.AddressIsFormulaValued(b2_addr, ih, graph));
+                    Assert.IsTrue(EntropyModelBuilder.AddressIsFormulaValued(c2_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder.AddressIsFormulaValued(a3_addr, ih, graph));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void IsNumericTest()
+        {
+            using (var app = new Application())
+            {
+                using (var wb = app.OpenWorkbook(@"..\..\TestData\DataTest.xlsx"))
+                {
+                    var p = Depends.Progress.NOPProgress();
+                    var graph = wb.buildDependenceGraph();
+                    var conf = (new FeatureConf()).enableShallowInputVectorMixedFullCVectorResultantOSI(true);
+                    var m = ModelBuilder.initEntropyModel(app.XLApplication(), conf, graph, p);
+                    var ih = m.InvertedHistogram;
+
+                    var wbname = graph.getWorkbookName();
+                    var wsname = graph.getWorksheetNames()[0];
+                    var path = graph.getWorkbookDirectory();
+
+                    // A1
+                    var a1_addr = AST.Address.fromA1withMode(1, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // B1
+                    var b1_addr = AST.Address.fromA1withMode(1, "B", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // C1
+                    var c1_addr = AST.Address.fromA1withMode(1, "C", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // A2
+                    var a2_addr = AST.Address.fromA1withMode(2, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // B2
+                    var b2_addr = AST.Address.fromA1withMode(2, "B", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // C2
+                    var c2_addr = AST.Address.fromA1withMode(2, "C", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // A3
+                    var a3_addr = AST.Address.fromA1withMode(3, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    Assert.IsFalse(EntropyModelBuilder.AddressIsNumericValued(a1_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder.AddressIsNumericValued(b1_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder.AddressIsNumericValued(c1_addr, ih, graph));
+                    Assert.IsTrue(EntropyModelBuilder.AddressIsNumericValued(a2_addr, ih, graph));
+                    Assert.IsTrue(EntropyModelBuilder.AddressIsNumericValued(b2_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder.AddressIsNumericValued(c2_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder.AddressIsNumericValued(a3_addr, ih, graph));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void IsStringTest()
+        {
+            using (var app = new Application())
+            {
+                using (var wb = app.OpenWorkbook(@"..\..\TestData\DataTest.xlsx"))
+                {
+                    var p = Depends.Progress.NOPProgress();
+                    var graph = wb.buildDependenceGraph();
+                    var conf = (new FeatureConf()).enableShallowInputVectorMixedFullCVectorResultantOSI(true);
+                    var m = ModelBuilder.initEntropyModel(app.XLApplication(), conf, graph, p);
+                    var ih = m.InvertedHistogram;
+
+                    var wbname = graph.getWorkbookName();
+                    var wsname = graph.getWorksheetNames()[0];
+                    var path = graph.getWorkbookDirectory();
+
+                    // A1
+                    var a1_addr = AST.Address.fromA1withMode(1, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // B1
+                    var b1_addr = AST.Address.fromA1withMode(1, "B", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // C1
+                    var c1_addr = AST.Address.fromA1withMode(1, "C", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // A2
+                    var a2_addr = AST.Address.fromA1withMode(2, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // B2
+                    var b2_addr = AST.Address.fromA1withMode(2, "B", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // C2
+                    var c2_addr = AST.Address.fromA1withMode(2, "C", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // A3
+                    var a3_addr = AST.Address.fromA1withMode(3, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    Assert.IsTrue(EntropyModelBuilder.AddressIsStringValued(a1_addr, ih, graph));
+                    Assert.IsTrue(EntropyModelBuilder.AddressIsStringValued(b1_addr, ih, graph));
+                    Assert.IsTrue(EntropyModelBuilder.AddressIsStringValued(c1_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder.AddressIsStringValued(a2_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder.AddressIsStringValued(b2_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder.AddressIsStringValued(c2_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder.AddressIsStringValued(a3_addr, ih, graph));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void IsWhitespaceTest()
+        {
+            using (var app = new Application())
+            {
+                using (var wb = app.OpenWorkbook(@"..\..\TestData\DataTest.xlsx"))
+                {
+                    var p = Depends.Progress.NOPProgress();
+                    var graph = wb.buildDependenceGraph();
+                    var conf = (new FeatureConf()).enableShallowInputVectorMixedFullCVectorResultantOSI(true);
+                    var m = ModelBuilder.initEntropyModel(app.XLApplication(), conf, graph, p);
+                    var ih = m.InvertedHistogram;
+
+                    var wbname = graph.getWorkbookName();
+                    var wsname = graph.getWorksheetNames()[0];
+                    var path = graph.getWorkbookDirectory();
+
+                    // A1
+                    var a1_addr = AST.Address.fromA1withMode(1, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // B1
+                    var b1_addr = AST.Address.fromA1withMode(1, "B", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // C1
+                    var c1_addr = AST.Address.fromA1withMode(1, "C", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // A2
+                    var a2_addr = AST.Address.fromA1withMode(2, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // B2
+                    var b2_addr = AST.Address.fromA1withMode(2, "B", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // C2
+                    var c2_addr = AST.Address.fromA1withMode(2, "C", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    // A3
+                    var a3_addr = AST.Address.fromA1withMode(3, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+
+                    Assert.IsFalse(EntropyModelBuilder.AddressIsWhitespaceValued(a1_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder.AddressIsWhitespaceValued(b1_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder.AddressIsWhitespaceValued(c1_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder.AddressIsWhitespaceValued(a2_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder.AddressIsWhitespaceValued(b2_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder.AddressIsWhitespaceValued(c2_addr, ih, graph));
+                    Assert.IsTrue(EntropyModelBuilder.AddressIsWhitespaceValued(a3_addr, ih, graph));
+                }
+            }
         }
     }
 }

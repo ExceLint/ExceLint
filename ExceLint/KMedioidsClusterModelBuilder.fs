@@ -144,7 +144,7 @@
             let nlfrs: ScoreTable = ScaleBySheet ns
 
             // make HistoBin lookup by address
-            let hb_inv = invertedHistogram nlfrs input.dag input.config
+            let hb_inv = new Dict<AST.Address,HistoBin>(invertedHistogram nlfrs input.dag input.config)
 
             // DEFINE DISTANCE
             let DISTANCE =

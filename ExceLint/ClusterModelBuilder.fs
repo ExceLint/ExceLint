@@ -129,7 +129,8 @@
 
             // make HistoBin lookup by address
             let _runhisto = fun () -> invertedHistogram nlfrs input.dag input.config
-            let (hb_inv: InvertedHistogram,invert_time: int64) = PerfUtils.runMillis _runhisto ()
+            let (hb_inv_ro: ROInvertedHistogram,invert_time: int64) = PerfUtils.runMillis _runhisto ()
+            let hb_inv = new Dict<AST.Address,HistoBin>(hb_inv_ro)
 
             let score_time = feat_time + scale_time + invert_time + flatten_time
 
@@ -172,7 +173,8 @@
             let keyexists = (fun addr1 addr2 ->
                                 failwith "Duplicate keys should not happen."
                             )
-            let hs = HashSpace<AST.Address>(cells, keymaker, keyexists, LSHCalc.h7unmasker, DISTANCE)
+            let dgencs = ToImmutableClustering (HashSpace.DegenerateClustering cells)
+            let hs = HashSpace<AST.Address>(dgencs, keymaker, keyexists, LSHCalc.h7unmasker, DISTANCE)
 
             let mutable probable_knee = false
 
@@ -378,6 +380,9 @@
 
                 rnk
 
+            member self.NearestNeighborForCluster(c: HashSet<AST.Address>) : HashSet<AST.Address> =
+                hs.NearestNeighbor c
+
             member self.Ranking : Ranking =
                 // enabled features (in principle, ExceLint can have many enabled simultaneously)
                 let fs = input.config.EnabledFeatures
@@ -395,7 +400,7 @@
 
                 // compute I_i for all i not in a cluster
                 for cluster in self.ClusteringAtKnee do
-                    let box = Utils.BoundingBox cluster 0
+                    let box = Utils.BoundingBoxHS cluster 0
                     let potential_outliers = box |> Seq.filter (fun a -> not (Seq.contains a cluster))
                     for cell in potential_outliers do
                         let I_i = LISA cell box x W
@@ -422,7 +427,8 @@
 
         let runClusterModel(input: Input) : AnalysisOutcome =
             try
-                if (analysisBase input.config input.dag).Length <> 0 then
+                let cells = analysisBase input.config input.dag
+                if cells.Length <> 0 then
                     let m = ClusterModel input
 
                     let mutable notdone = true
@@ -431,6 +437,8 @@
 
                     Success(Cluster
                         {
+                            numcells = input.dag.allCells().Length;
+                            numformulas = cells.Length;
                             scores = m.Scores;
                             ranking = m.Ranking;
                             score_time = m.ScoreTimeMs;

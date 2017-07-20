@@ -1,9 +1,12 @@
 ﻿namespace ExceLint
     open System
     open System.Collections.Generic
+    open System.Collections.Immutable
+    open System.Linq
     open Utils
     open CommonTypes
     open HashSetUtils
+    open Microsoft.FSharp.Linq
 
     module CommonFunctions =
             // _analysis_base specifies which cells should be ranked:
@@ -13,7 +16,8 @@
                 let cs = if config.IsEnabled("AnalyzeOnlyFormulas") then
                             d.getAllFormulaAddrs()
                          else
-                            d.allCells()
+//                            d.allCells()
+                            d.allCellsIncludingBlanks()
                 let cs' = match config.IsLimitedToSheet with
                           | Some(wsname) -> cs |> Array.filter (fun addr -> addr.A1Worksheet() = wsname)
                           | None -> cs 
@@ -42,10 +46,10 @@
                     fname, fvals
                 ) |> adict
 
-            let invertedHistogram(scoretable: ScoreTable)(dag: Depends.DAG)(config: FeatureConf) : InvertedHistogram =
+            let invertedHistogram(scoretable: ScoreTable)(dag: Depends.DAG)(config: FeatureConf) : ROInvertedHistogram =
                 assert (config.EnabledScopes.Length = 1 && config.EnabledFeatures.Length = 1)
 
-                let d = new Dict<AST.Address,HistoBin>()
+                let d = ImmutableDictionary.CreateBuilder<AST.Address, HistoBin>()
 
                 Array.iter (fun fname ->
                     Array.iter (fun (sel: Scope.Selector) ->
@@ -61,9 +65,17 @@
                     ) (config.EnabledScopes)
                 ) (config.EnabledFeatures)
 
-                new InvertedHistogram(d)
+                d.ToImmutable()
 
             let centroid(c: seq<AST.Address>)(ih: InvertedHistogram) : Countable =
+                c
+                |> Seq.map (fun a ->
+                    let (_,_,c) = ih.[a]    // get histobin for address
+                    c                       // get countable from bin
+                   )
+                |> Countable.Mean               // get mean
+
+            let centroid_ro(c: seq<AST.Address>)(ih: ROInvertedHistogram) : Countable =
                 c
                 |> Seq.map (fun a ->
                     let (_,_,c) = ih.[a]    // get histobin for address
@@ -530,13 +542,126 @@
                     Seq.fold (fun acc clustering -> acc + clustering.Count) 0
                 double totalIntersect / double totalCells
 
-            let CopyClustering(clustering: Clustering) : Clustering =
+            let ReverseClusterLookup(clusters: ImmutableClustering) : ImmutableDictionary<AST.Address,ImmutableHashSet<AST.Address>> =
+                let builder = ImmutableDictionary.CreateBuilder<AST.Address, ImmutableHashSet<AST.Address>>()
+                let revLookup = new Dict<AST.Address,HashSet<AST.Address>>()
+                for c in clusters do
+                    for a in c do
+                        builder.Add(a,c)
+                builder.ToImmutable()
+
+            let ReverseClusterLookupMutable(clusters: Clustering) : Dictionary<AST.Address,HashSet<AST.Address>> =
+                let d = new Dict<AST.Address, HashSet<AST.Address>>()
+                let revLookup = new Dict<AST.Address,HashSet<AST.Address>>()
+                for c in clusters do
+                    for a in c do
+                        d.Add(a,c)
+                d
+
+            let ToMutableClustering<'p>(clustering: ImmutableGenericClustering<'p>) : GenericClustering<'p> =
                 let clustering' =
                     Seq.map (fun cl ->
-                        new HashSet<AST.Address>(Seq.toArray cl)
+                        new HashSet<'p>(Seq.toArray cl)
                     ) clustering
 
-                new HashSet<HashSet<AST.Address>>(clustering')
+                new HashSet<HashSet<'p>>(clustering')
+
+            let CopyClustering<'p>(clustering: GenericClustering<'p>) : GenericClustering<'p> =
+                let clustering' =
+                    Seq.map (fun cl ->
+                        new HashSet<'p>(Seq.toArray cl)
+                    ) clustering
+
+                new HashSet<HashSet<'p>>(clustering')
+
+            let SameClusters(cs: seq<ImmutableHashSet<AST.Address>>) : bool =
+                let first = Seq.head cs
+                cs |> Seq.fold (fun acc c -> acc && first.SetEquals c) true 
+
+            let SameClustering(c1: ImmutableClustering)(c2: ImmutableClustering) : bool =
+                try 
+                    let c1R = ReverseClusterLookup c1
+                    let c2R = ReverseClusterLookup c2
+
+                    let mutable ok = true
+
+                    // lookup every address in every cluster in c1
+                    // and make sure that:
+                    // 1. the cluster in c2 is the same cluster
+                    // 2. the cluster in c2 and the cluster in c1 are the same cluster
+                    for c in c1 do
+                        let c2cs = c |> Seq.map (fun a -> c2R.[a])
+                        if not (SameClusters c2cs) then
+                            ok <- false
+                        if not (c.SetEquals(Seq.head c2cs)) then
+                            ok <- false
+
+                    // ditto but for c2
+                    for c in c2 do
+                        let c1cs = c |> Seq.map (fun a -> c1R.[a])
+                        if not (SameClusters c1cs) then
+                            ok <- false
+                        if not (c.SetEquals(Seq.head c1cs)) then
+                            ok <- false
+
+                    ok
+                with
+                | _ -> false
+
+            let ClusterToString(c: ImmutableHashSet<AST.Address>) : string =
+                System.String.Join(", ", c |> Seq.map (fun a -> a.A1Local.ToString()))
+
+            type Diffs =
+            | MissingInSecond of AST.Address
+            | MissingInFirst of AST.Address
+            | ClustersDifferent of ImmutableHashSet<AST.Address>*ImmutableHashSet<AST.Address>
+                override self.ToString() =
+                    match self with
+                    | MissingInSecond(a) -> "The second clustering is missing address: " + a.A1Local().ToString()
+                    | MissingInFirst(a) -> "The first clustering is missing address: " + a.A1Local().ToString()
+                    | ClustersDifferent(c1,c2) -> "Cluster { " + (ClusterToString c1) + " } different than { " + (ClusterToString c2) + " }"
+
+            let ClusterDiff(c1: ImmutableClustering)(c2: ImmutableClustering) : Diffs[] =
+                let c1R = ReverseClusterLookup c1
+                let c2R = ReverseClusterLookup c2
+
+                let d = new Dict<string, Diffs>()
+
+                for pair in c1R do
+                    let addr = pair.Key
+                    let c1c = pair.Value
+                    if not (c2R.ContainsKey addr) then
+                        let diff = MissingInSecond(addr)
+                        let dstr = diff.ToString()
+                        if not (d.ContainsKey dstr) then
+                            d.Add(dstr, diff)
+                    else
+                        let c1str = ClusterToString c1c
+                        let c2str = ClusterToString c2R.[addr]
+                        if c1str <> c2str then
+                            let diff = ClustersDifferent(c1c, c2R.[addr])
+                            let dstr = diff.ToString()
+                            if not (d.ContainsKey dstr) then
+                                d.Add(dstr, diff)
+
+                for pair in c2R do
+                    let addr = pair.Key
+                    let c2c = pair.Value
+                    if not (c1R.ContainsKey addr) then
+                        let diff = MissingInFirst(addr)
+                        let dstr = diff.ToString()
+                        if not (d.ContainsKey dstr) then
+                            d.Add(dstr, diff)
+                    else
+                        let c2str = ClusterToString c2c
+                        let c1str = ClusterToString c1R.[addr]
+                        if c2str <> c1str then
+                            let diff = ClustersDifferent(c2c, c1R.[addr])
+                            let dstr = diff.ToString()
+                            if not (d.ContainsKey dstr) then
+                                d.Add(dstr, diff)
+
+                d.Values |> Seq.toArray
 
             let numberClusters(clustering: Clustering) : ClusterIDs =
                 let d = new Dict<HashSet<AST.Address>,int>()
@@ -564,4 +689,22 @@
                     ) arr
                 ) scores
 
+                d
+
+            let ROInvertedHistogramToScoreTable(ih: ROInvertedHistogram) : ScoreTable =
+                let d = new ScoreTable()
+                ih
+                |> Seq.map (fun kvp ->
+                       let addr = kvp.Key
+                       let (feat,scope,countable) = kvp.Value
+                       feat, addr, countable
+                   )
+                |> Seq.groupBy(fun (feat,_,_) -> feat)
+                |> Seq.iter (fun (key, xs) ->
+                       let xs' =
+                           xs
+                           |> Seq.map (fun (feat, addr, countable) -> addr, countable)
+                           |> Seq.toArray
+                       d.Add(key, xs')
+                   )
                 d

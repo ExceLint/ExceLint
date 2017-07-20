@@ -28,10 +28,14 @@ namespace ExceLintUI
         /// the effective degreeEnd is 405 mod 360.</param>
         public ClusterColorer(Clustering cs, double degreeStart, double degreeEnd, double offset)
         {
+            // sort clusters so that repainting on subsequent
+            // runs produces a stable coloring
+            var cSorted = cs.OrderBy(c => c.OrderBy(a => new Tuple<int, int>(a.X, a.Y)).ToArray()[0]).ToArray();
+
             // init address-to-cluster lookup
             // address-to-cluster lookup
             var cdict = new Dictionary<AST.Address, HashSet<AST.Address>>();
-            foreach (Cluster c in cs)
+            foreach (Cluster c in cSorted)
             {
                 foreach (AST.Address addr in c)
                 {
@@ -41,11 +45,11 @@ namespace ExceLintUI
 
             // init cluster neighbor map
             var cNeighbors = new Dictionary<HashSet<AST.Address>, HashSet<HashSet<AST.Address>>>();
-            foreach (Cluster c in cs)
+            foreach (Cluster c in cSorted)
             {
                 cNeighbors.Add(c, new HashSet<Cluster>());
                 var neighbors = AdjacentCells(c);
-                foreach (Cluster c2 in cs)
+                foreach (Cluster c2 in cSorted)
                 {
                     // append if c is adjacent to c2
                     if (neighbors.Intersect(c2).Count() > 0)
@@ -56,7 +60,7 @@ namespace ExceLintUI
             }
 
             // rank clusters by their degree
-            Cluster[] csSorted = cs.OrderByDescending(c => cNeighbors[c].Count).ToArray();
+            Cluster[] csSorted2 = cSorted.OrderByDescending(c => cNeighbors[c].Count).ToArray();
 
             // greedily assign colors by degree, largest first;
             // aka Welsh-Powell heuristic
@@ -64,10 +68,10 @@ namespace ExceLintUI
             // init angle generator
             var angles = new AngleGenerator(degreeStart, degreeEnd);
 
-            foreach (Cluster c in csSorted)
+            foreach (Cluster c in csSorted2)
             {
                 // get neighbor colors
-                var ns = cNeighbors[c];
+                var ns = cNeighbors[c].ToArray();
                 var nscs = new HashSet<Color>();
                 foreach (Cluster n in ns)
                 {

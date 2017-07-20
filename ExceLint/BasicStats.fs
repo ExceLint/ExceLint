@@ -48,3 +48,50 @@
                 mean([|X'.[X'.Length / 2]; X'.[X'.Length / 2 - 1]|])
             else
                 X'.[X'.Length / 2]
+
+        let counts<'a when 'a : comparison>(X: 'a[]) : int[] =
+            let d = new Utils.Dict<'a, int>()
+
+            // count values of X
+            for x in X do
+                if d.ContainsKey(x) then
+                    d.[x] <- d.[x] + 1
+                else
+                    d.Add(x, 1)
+
+            d.Values |> Seq.toArray
+
+        // find the multinomial probability vector for a sample;
+        // probabilties are in value-sorted order
+        let empiricalProbabilities(Y: int[]) : double[] =
+            // compute probabilities
+            let n = double (Array.sum Y)
+            Y
+            |> Seq.toArray
+            |> Array.sort
+            |> Array.map (fun count -> double count / n)
+
+        /// <summary>
+        /// Returns the entropy for the given multinomial probability vector.
+        /// </summary>
+        /// <param name="P">Vector of probabilities, one for each outcome of the random variable X.</param>
+        let entropy(P: double[]) : double =
+            let products = P |> Array.map (fun p -> p * System.Math.Log(p, 2.0))
+            let sum = Array.sum products
+            let result = -sum
+            result
+
+        /// <summary>
+        /// Returns the normalized entropy (aka the "efficiency") for the given
+        /// multinomial probability vector.
+        /// </summary>
+        /// <param name="P"></param>
+        let normalizedEntropy(P: double[])(n: int) : double =
+            if n = 1 then
+                0.0
+            else
+                let products = P |> Array.map (fun p -> p * System.Math.Log(p, 2.0))
+                let sum = Array.sum products
+                let maxEntropy = System.Math.Log(double n, 2.0)
+                let result = -sum / maxEntropy
+                result
