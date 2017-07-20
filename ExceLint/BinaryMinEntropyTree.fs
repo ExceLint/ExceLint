@@ -440,7 +440,7 @@
                 if CommonFunctions.SameClustering clusters clusters'' then
                     changed <- false
                 else
-                    let bad = if timesAround > 10 then
+                    let bad = if timesAround > 1000 then
                                   let diff = CommonFunctions.ClusterDiff clusters clusters''
                                   "super fucking bad"
                               else
@@ -448,10 +448,6 @@
 
                     changed <- true
                     clusters <- clusters''
-
-                    
-
-
 
                 timesAround <- timesAround + 1
 

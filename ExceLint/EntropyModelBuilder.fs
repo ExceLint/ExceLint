@@ -23,7 +23,7 @@
             member self.Score = (self.E * self.WeightedDotProduct) / self.Distance
 
         [<Struct>]
-        type Times(feat_ms: int64, scale_ms: int64, invert_ms: int64) =
+        type Stats(feat_ms: int64, scale_ms: int64, invert_ms: int64) =
             member self.FeatureTimeMS = feat_ms
             member self.ScaleTimeMS = scale_ms
             member self.InvertTimeMS = invert_ms
@@ -76,7 +76,7 @@
             let (lt,rb) = Utils.BoundingRegion c1 0
             Vector(double (rb.X - lt.X), double (rb.Y - lt.Y), 0.0)
 
-        type EntropyModel(graph: Depends.DAG, ih: ROInvertedHistogram, d: ImmDistanceFMaker, indivisibles: ImmutableClustering, times: Times) =
+        type EntropyModel(graph: Depends.DAG, ih: ROInvertedHistogram, d: ImmDistanceFMaker, indivisibles: ImmutableClustering, stats: Stats) =
             // do region inference
             let tree = BinaryMinEntropyTree.Infer ih
             let regions = BinaryMinEntropyTree.Clustering tree ih indivisibles
@@ -110,7 +110,7 @@
                 // update indivisibles
                 let indivisibles' = indivisibles.Add (source.ToImmutableHashSet())
 
-                new EntropyModel(graph, ih', d, indivisibles', times)
+                new EntropyModel(graph, ih', d, indivisibles', stats)
                 
             member self.MergeCell(source: AST.Address)(target: AST.Address) : EntropyModel =
                 // find the cluster of the target cell
@@ -252,7 +252,7 @@
 
             member self.Scores : ScoreTable = ROInvertedHistogramToScoreTable ih
 
-            member self.ScoreTimeMs = times.FeatureTimeMS + times.ScaleTimeMS + times.InvertTimeMS
+            member self.ScoreTimeMs = stats.FeatureTimeMS + stats.ScaleTimeMS + stats.InvertTimeMS
 
             // compute the cutoff based on a percentage of the number of formulas,
             // by default PCT_TO_FLAG %
@@ -314,6 +314,8 @@
 
                         Success(Cluster
                             {
+                                numcells = input.dag.allCells().Length;
+                                numformulas = input.dag.getAllFormulaAddrs().Length;
                                 scores = m.Scores;
                                 ranking = ranking
                                 score_time = m.ScoreTimeMs;
@@ -345,8 +347,8 @@
                 let _runhisto = fun () -> invertedHistogram nlfrs input.dag input.config
                 let (ih: ROInvertedHistogram,invert_time: int64) = PerfUtils.runMillis _runhisto ()
 
-                // collate time measurements
-                let times = Times(feat_time, scale_time, invert_time)
+                // collate stats
+                let times = Stats(feat_time, scale_time, invert_time)
 
                 // define distance function
                 let distance_f(invertedHistogram: ROInvertedHistogram) =

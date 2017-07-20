@@ -427,7 +427,8 @@
 
         let runClusterModel(input: Input) : AnalysisOutcome =
             try
-                if (analysisBase input.config input.dag).Length <> 0 then
+                let cells = analysisBase input.config input.dag
+                if cells.Length <> 0 then
                     let m = ClusterModel input
 
                     let mutable notdone = true
@@ -436,6 +437,8 @@
 
                     Success(Cluster
                         {
+                            numcells = input.dag.allCells().Length;
+                            numformulas = cells.Length;
                             scores = m.Scores;
                             ranking = m.Ranking;
                             score_time = m.ScoreTimeMs;

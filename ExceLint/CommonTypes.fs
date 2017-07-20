@@ -130,6 +130,8 @@
         }
 
         type ClusterAnalysis = {
+            numcells: int;
+            numformulas: int;
             scores: ScoreTable;
             ranking: Ranking;
             score_time: int64;
