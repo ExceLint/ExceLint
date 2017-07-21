@@ -208,6 +208,25 @@
             let rep = rmap.[c.[0]]
             c |> Array.forall (fun a -> rmap.[a] = rep)
 
+        static member private FasterDecompose (fsc: FastSheetCounter, z: int) : BinaryMinEntropyTree =
+            let initial_lt = (fsc.MinXForWorksheet z, fsc.MinYForWorksheet z)
+            let initial_rb = (fsc.MaxXForWorksheet z, fsc.MaxYForWorksheet z)
+            let mutable todos = [ (Root, initial_lt, initial_rb) ]
+            let mutable linkUp = []
+            let mutable root_opt = None
+
+            // process work list
+            while not todos.IsEmpty do
+                // grab next item
+                let (subtree_kind, lefttop, rightbottom) = todos.Head
+                todos <- todos.Tail
+
+                // base case 1: there's only 1 cell
+                if lefttop = rightbottom then
+                    let leaf = Leaf(lefttop, rightbottom, subtree_kind, // CELLS HERE)
+
+            failwith "not yet"
+
         static member private Decompose (initial_rmap: Cells) : BinaryMinEntropyTree =
             let mutable todos = [ (Root, initial_rmap) ]
             let mutable linkUp = []
