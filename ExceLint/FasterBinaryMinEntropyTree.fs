@@ -6,35 +6,35 @@
     open CommonFunctions
     open Utils
 
-    type Coord = int*int
-    type LeftTop = Coord
-    type RightBottom = Coord
-    type Region = LeftTop * RightBottom
+    type Crd = int*int
+    type LT = Crd
+    type RB = Crd
+    type Rgn = LT * RB
 
-    module Reg =
-        let XLo(r: Region) =
+    module RUtil =
+        let XLo(r: Rgn) =
             let ((x_lo,_),_) = r
             x_lo
 
-        let XHi(r: Region) =
+        let XHi(r: Rgn) =
             let (_,(x_hi,_)) = r
             x_hi
 
-        let YLo(r: Region) =
+        let YLo(r: Rgn) =
             let ((_,y_lo),_) = r
             y_lo
 
-        let YHi(r: Region) =
+        let YHi(r: Rgn) =
             let (_,(_,y_hi)) = r
             y_hi
 
     [<AbstractClass>]
-    type FasterBinaryMinEntropyTree(lefttop: int*int, rightbottom: int*int, subtree_kind: ParentRelation) =
+    type FasterBinaryMinEntropyTree(lefttop: int*int, rightbottom: int*int, parentRel: ParentRelation) =
         abstract member Region : string
         default self.Region : string = lefttop.ToString() + ":" + rightbottom.ToString()
         abstract member ToGraphViz : int -> int*string
-        abstract member Subtree : ParentRelation
-        default self.Subtree = subtree_kind
+        abstract member ParentRelation : ParentRelation
+        default self.ParentRelation = parentRel
 
         static member GraphViz(t: FasterBinaryMinEntropyTree) : string =
             let (_,graph) = t.ToGraphViz 0
@@ -106,7 +106,7 @@
             let c2e = FasterBinaryMinEntropyTree.NormalizedClusteringEntropy cTo
             c2e - c1e
 
-        static member private MinEntropyPartition(lefttop: int*int)(rightbottom: int*int)(z: int)(fsc: FastSheetCounter)(vert: bool) : Region*Region=
+        static member private MinEntropyPartition(lefttop: int*int)(rightbottom: int*int)(z: int)(fsc: FastSheetCounter)(vert: bool) : Rgn*Rgn=
             let (minX,minY) = lefttop
             let (maxX,maxY) = rightbottom
 
@@ -161,7 +161,7 @@
 
                 // base case 1: there's only 1 cell
                 if lefttop = rightbottom then
-                    let leaf = Leaf(lefttop, rightbottom, parentRelation) :> FasterBinaryMinEntropyTree
+                    let leaf = FLeaf(lefttop, rightbottom, parentRelation) :> FasterBinaryMinEntropyTree
                     // add leaf to link-up list
                     linkUp <- leaf :: linkUp
 
@@ -175,10 +175,10 @@
                     let (top,bottom) = FasterBinaryMinEntropyTree.MinEntropyPartition lefttop rightbottom z fsc false
 
                     // compute entropies again
-                    let e_vert = fsc.EntropyFor z (Reg.XLo left) (Reg.XHi left) (Reg.YLo left) (Reg.YHi left) +
-                                 fsc.EntropyFor z (Reg.XLo right) (Reg.XHi right) (Reg.YLo right) (Reg.YHi right)
-                    let e_horz = fsc.EntropyFor z (Reg.XLo top) (Reg.XHi top) (Reg.YLo top) (Reg.YHi top) +
-                                 fsc.EntropyFor z (Reg.XLo bottom) (Reg.XHi bottom) (Reg.YLo bottom) (Reg.YHi bottom)
+                    let e_vert = fsc.EntropyFor z (RUtil.XLo left) (RUtil.XHi left) (RUtil.YLo left) (RUtil.YHi left) +
+                                 fsc.EntropyFor z (RUtil.XLo right) (RUtil.XHi right) (RUtil.YLo right) (RUtil.YHi right)
+                    let e_horz = fsc.EntropyFor z (RUtil.XLo top) (RUtil.XHi top) (RUtil.YLo top) (RUtil.YHi top) +
+                                 fsc.EntropyFor z (RUtil.XLo bottom) (RUtil.XHi bottom) (RUtil.YLo bottom) (RUtil.YHi bottom)
 
                     // split vertically or horizontally (favor vert for ties)
                     let (entropy,p1,p2) =
@@ -188,11 +188,11 @@
                             e_horz, top, bottom
 
                     // base case 2: perfect decomposition & p1 values same as p2 values
-                    let rep_p1 = fsc.ValueFor (Reg.XLo p1) (Reg.YLo p1) z
-                    let rep_p2 = fsc.ValueFor (Reg.XLo p2) (Reg.YLo p2) z
+                    let rep_p1 = fsc.ValueFor (RUtil.XLo p1) (RUtil.YLo p1) z
+                    let rep_p2 = fsc.ValueFor (RUtil.XLo p2) (RUtil.YLo p2) z
                     if entropy = 0.0 && rep_p1 = rep_p2
                     then
-                        let leaf = Leaf(lefttop, rightbottom, parentRelation) :> FasterBinaryMinEntropyTree
+                        let leaf = FLeaf(lefttop, rightbottom, parentRelation) :> FasterBinaryMinEntropyTree
 
                         // is this leaf the root?
                         match parentRelation with
@@ -203,7 +203,7 @@
                         linkUp <- leaf :: linkUp
                     else
                         // "recursive" case
-                        let node = Inner(lefttop, rightbottom, parentRelation)
+                        let node = FInner(lefttop, rightbottom, parentRelation)
 
                         // is this node the root?
                         match parentRelation with
@@ -219,7 +219,7 @@
                 let node = linkUp.Head
                 linkUp <- linkUp.Tail
 
-                match node.Subtree with
+                match node.ParentRelation with
                 | LeftOf parent ->
                     // add parent to linkup list
                     linkUp <- (parent :> FasterBinaryMinEntropyTree) :: linkUp
@@ -239,10 +239,10 @@
             | None -> failwith "this should never happen"
 
         /// <summary>return the leaves of the tree, in order of smallest to largest region</summary>
-        static member Regions(tree: FasterBinaryMinEntropyTree) : Leaf[] =
+        static member Regions(tree: FasterBinaryMinEntropyTree) : FLeaf[] =
             match tree with
-            | :? Inner as i -> Array.append (FasterBinaryMinEntropyTree.Regions (i.Left)) (FasterBinaryMinEntropyTree.Regions (i.Right))
-            | :? Leaf as l -> [| l |]
+            | :? FInner as i -> Array.append (FasterBinaryMinEntropyTree.Regions (i.Left)) (FasterBinaryMinEntropyTree.Regions (i.Right))
+            | :? FLeaf as l -> [| l |]
             | _ -> failwith "Unknown tree node type."
 
         static member MergeIndivisibles(ic: ImmutableClustering)(indivisibles: ImmutableClustering) : ImmutableClustering =
@@ -388,7 +388,7 @@
             // return clustering
             clusters
 
-    and Inner(lefttop: int*int, rightbottom: int*int, parentRel: ParentRelation) =
+    and FInner(lefttop: int*int, rightbottom: int*int, parentRel: ParentRelation) =
         inherit FasterBinaryMinEntropyTree(lefttop, rightbottom, parentRel)
         let mutable left = None
         let mutable right = None
@@ -419,7 +419,7 @@
                             | None -> j,""
             k,start_node + ledge + redge
 
-    and Leaf(lefttop: int*int, rightbottom: int*int, parentRel: ParentRelation) =
+    and FLeaf(lefttop: int*int, rightbottom: int*int, parentRel: ParentRelation) =
         inherit FasterBinaryMinEntropyTree(lefttop, rightbottom, parentRel)
         member self.Cells(ih: ROInvertedHistogram) : ImmutableHashSet<AST.Address> =
             let (ltX,ltY) = lefttop
@@ -438,6 +438,6 @@
             i,node
 
     and ParentRelation =
-    | LeftOf of Inner
-    | RightOf of Inner
+    | LeftOf of FInner
+    | RightOf of FInner
     | Root
