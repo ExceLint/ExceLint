@@ -6,42 +6,37 @@
     open CommonFunctions
     open Utils
 
-    type Cells = Dict<AST.Address,Countable>
-    type Coord = AST.Address * AST.Address
+    type Coord = int*int
     type LeftTop = Coord
     type RightBottom = Coord
     type Region = LeftTop * RightBottom
 
+    module Reg =
+        let XLo(r: Region) =
+            let ((x_lo,_),_) = r
+            x_lo
+
+        let XHi(r: Region) =
+            let (_,(x_hi,_)) = r
+            x_hi
+
+        let YLo(r: Region) =
+            let ((_,y_lo),_) = r
+            y_lo
+
+        let YHi(r: Region) =
+            let (_,(_,y_hi)) = r
+            y_hi
+
     [<AbstractClass>]
-    type BinaryMinEntropyTree(lefttop: AST.Address, rightbottom: AST.Address, subtree_kind: SubtreeKind) =
+    type FasterBinaryMinEntropyTree(lefttop: int*int, rightbottom: int*int, subtree_kind: ParentRelation) =
         abstract member Region : string
-        default self.Region : string = lefttop.A1Local() + ":" + rightbottom.A1Local()
+        default self.Region : string = lefttop.ToString() + ":" + rightbottom.ToString()
         abstract member ToGraphViz : int -> int*string
-        abstract member Subtree : SubtreeKind
+        abstract member Subtree : ParentRelation
         default self.Subtree = subtree_kind
 
-        static member AddressSetEntropy(addrs: AST.Address[])(rmap: Dict<AST.Address,Countable>) : double =
-            if addrs.Length = 0 then
-                // the decomposition where one side is the empty set
-                // is the worst decomposition, unless it is the only
-                // decomposition
-                System.Double.PositiveInfinity
-            else
-                // get values
-                let vs = addrs |> Array.map (fun a -> rmap.[a].ToCVectorResultant)
-
-                // count
-                let cs = BasicStats.counts vs
-
-                // compute probability vector
-                let ps = BasicStats.empiricalProbabilities cs
-
-                // compute entropy
-                let entropy = BasicStats.entropy ps
-
-                entropy
-
-        static member GraphViz(t: BinaryMinEntropyTree) : string =
+        static member GraphViz(t: FasterBinaryMinEntropyTree) : string =
             let (_,graph) = t.ToGraphViz 0
             "graph {" + graph + "}"
 
@@ -61,39 +56,6 @@
             )
             |> Seq.choose id
             |> (fun cs' -> cs'.ToImmutableHashSet())
-
-        static member ColumnEntropy(cs: ImmutableClustering) : double =
-            let cells = cs |> Seq.concat |> Seq.toArray
-            let (lt,rb) = Utils.BoundingRegion cells 0
-            
-            let col = (fun (a: AST.Address) -> a.Y )
-
-            let colE =
-                [| lt.Y .. rb.Y |]
-                |> Array.sumBy (fun y ->
-                    let cs' = BinaryMinEntropyTree.Condition cs col y true
-                    let entropy = BinaryMinEntropyTree.NormalizedClusteringEntropy cs'
-                    entropy
-                )
-            colE
-
-        static member RowEntropy(cs: ImmutableClustering) : double =
-            let cells = cs |> Seq.concat |> Seq.toArray
-            let (lt,rb) = Utils.BoundingRegion cells 0
-            
-            let row = (fun (a: AST.Address) -> a.X )
-
-            let rowE =
-                [| lt.X .. rb.X |]
-                |> Array.sumBy (fun x ->
-                    let cs' = BinaryMinEntropyTree.Condition cs row x true
-                    let entropy = BinaryMinEntropyTree.NormalizedClusteringEntropy cs'
-                    entropy
-                )
-            rowE
-
-        static member GridEntropy(cs: ImmutableClustering) : double =
-            BinaryMinEntropyTree.RowEntropy cs + BinaryMinEntropyTree.ColumnEntropy cs
 
         /// <summary>
         /// Measure the normalized entropy of a clustering, where the number of cells
@@ -140,108 +102,83 @@
         /// <param name="cFrom">original clustering</param>
         /// <param name="cTo">new clustering</param>
         static member ClusteringEntropyDiff(cFrom: ImmutableClustering)(cTo: ImmutableClustering) : double =
-            let c1e = BinaryMinEntropyTree.NormalizedClusteringEntropy cFrom
-            let c2e = BinaryMinEntropyTree.NormalizedClusteringEntropy cTo
+            let c1e = FasterBinaryMinEntropyTree.NormalizedClusteringEntropy cFrom
+            let c2e = FasterBinaryMinEntropyTree.NormalizedClusteringEntropy cTo
             c2e - c1e
 
-        /// <summary>
-        /// The difference in grid entropy between cTo and cFrom. A negative number
-        /// denotes a decrease in entropy from cFrom to cTo whereas a positive number
-        /// denotes an increase in entropy from cFrom to cTo.
-        /// </summary>
-        /// <param name="cFrom">original clustering</param>
-        /// <param name="cTo">new clustering</param>
-        static member GridEntropyDiff(cFrom: ImmutableClustering)(cTo: ImmutableClustering) : double =
-            let g1e = BinaryMinEntropyTree.GridEntropy cFrom
-            let g2e = BinaryMinEntropyTree.GridEntropy cTo
-            g2e - g1e
+        static member private MinEntropyPartition(lefttop: int*int)(rightbottom: int*int)(z: int)(fsc: FastSheetCounter)(vert: bool) : Region*Region=
+            let (minX,minY) = lefttop
+            let (maxX,maxY) = rightbottom
 
-        static member private MinEntropyPartition(rmap: Cells)(vert: bool) : AST.Address[]*AST.Address[] =
             // which axis we use depends on whether we are
-            // decomposing verticalls or horizontally
-            let indexer = (fun (a: AST.Address) -> if vert then a.X else a.Y)
+            // decomposing vertically or horizontally
+            if vert then
+                let part = Utils.argmin (fun i ->
+                               let entropy_one = fsc.EntropyFor z minX (i - 1) minY maxY
+                               let entropy_two = fsc.EntropyFor z i maxX minY maxY
+                               entropy_one + entropy_two
+                           ) [| minX .. maxX |]
 
-            // extract addresses
-            let addrs = Array.ofSeq rmap.Keys
+                let region_one = (minX,minY),(part - 1,maxY)
+                let region_two = (part,minY),(maxX,maxY)
+            
+                region_one,region_two
+            else
+                let part = Utils.argmin (fun i ->
+                               let entropy_one = fsc.EntropyFor z minX maxX minY (i - 1)
+                               let entropy_two = fsc.EntropyFor z minX maxX i maxY
+                               entropy_one + entropy_two
+                           ) [| minY .. maxY |]
 
-            // find bounding box
-            let (lt,rb) = Utils.BoundingRegion (rmap.Keys) 0
+                let region_one = (minX,minY),(maxX,part - 1)
+                let region_two = (minX,part),(maxX,maxY)
+            
+                region_one,region_two
 
-            let parts = Array.map (fun i ->
-                               // partition addresses by "less than index of a",
-                               // e.g., if vert then "less than x"
-                               let (left,right) = addrs |> Array.partition (fun a -> indexer a < i)
+        static member Infer(fsc: FastSheetCounter)(z: int)(hb_inv: ROInvertedHistogram) : FasterBinaryMinEntropyTree =
+            FasterBinaryMinEntropyTree.Decompose fsc z hb_inv
 
-                               // if left and right divide any indivisible clusters,
-                               // ignore this partitioning
-                               let left' = new HashSet<AST.Address>(left)
-                               let right' = new HashSet<AST.Address>(right)
-
-                               left, right
-                           ) [| indexer lt .. indexer rb + 1 |]
-
-            assert (parts.Length <> 0)
-
-            parts
-            |> Utils.argmin (fun (l,r) ->
-                // compute entropy
-                let entropy_left = BinaryMinEntropyTree.AddressSetEntropy l rmap
-                let entropy_right = BinaryMinEntropyTree.AddressSetEntropy r rmap
-
-                // total for left and right
-                entropy_left + entropy_right
+        static member private IsHomogeneous(c: AST.Address[])(ih: ROInvertedHistogram) : bool =
+            let (_,_,rep) = ih.[c.[0]]
+            c |>
+            Array.forall (fun a ->
+                let (_,_,co) = ih.[a]
+                co = rep
             )
 
-        static member MakeCells(hb_inv: ROInvertedHistogram) : Cells =
-            let addrs = hb_inv.Keys
-            let d = new Dict<AST.Address, Countable>()
-            for addr in addrs do
-                let (_,_,c) = hb_inv.[addr]
-                d.Add(addr, c)
-            d
-
-        static member Infer(hb_inv: ROInvertedHistogram) : BinaryMinEntropyTree =
-            let rmap = BinaryMinEntropyTree.MakeCells hb_inv
-            BinaryMinEntropyTree.Decompose rmap
-
-        static member private IsHomogeneous(c: AST.Address[])(rmap: Cells) : bool =
-            let rep = rmap.[c.[0]]
-            c |> Array.forall (fun a -> rmap.[a] = rep)
-
-        static member private Decompose (initial_rmap: Cells) : BinaryMinEntropyTree =
-            let mutable todos = [ (Root, initial_rmap) ]
+        static member private Decompose (fsc: FastSheetCounter)(z: int)(ih: ROInvertedHistogram) : FasterBinaryMinEntropyTree =
+            let initial_lt = (fsc.MinXForWorksheet z, fsc.MinYForWorksheet z)
+            let initial_rb = (fsc.MaxXForWorksheet z, fsc.MaxYForWorksheet z)
+            let mutable todos = [ (Root, (initial_lt, initial_rb)) ]
             let mutable linkUp = []
             let mutable root_opt = None
 
             // process work list
             while not todos.IsEmpty do
                 // grab next item
-                let (subtree_kind, rmap) = todos.Head
+                let (parentRelation, (lefttop, rightbottom)) = todos.Head
                 todos <- todos.Tail
-
-                // get bounding region
-                let (lefttop,rightbottom) = Utils.BoundingRegion rmap.Keys 0
 
                 // base case 1: there's only 1 cell
                 if lefttop = rightbottom then
-                    let leaf = Leaf(lefttop, rightbottom, subtree_kind, rmap) :> BinaryMinEntropyTree
-                    // add leaf to to link-up list
+                    let leaf = Leaf(lefttop, rightbottom, parentRelation) :> FasterBinaryMinEntropyTree
+                    // add leaf to link-up list
                     linkUp <- leaf :: linkUp
 
                     // is this leaf the root?
-                    match subtree_kind with
+                    match parentRelation with
                     | Root -> root_opt <- Some leaf
                     | _ -> ()
                 else
-                    // find the minimum entropy decompositions
-                    let (left,right) = BinaryMinEntropyTree.MinEntropyPartition rmap true
-                    let (top,bottom) = BinaryMinEntropyTree.MinEntropyPartition rmap false
+                    // find the minimum entropy decomposition
+                    let (left,right) = FasterBinaryMinEntropyTree.MinEntropyPartition lefttop rightbottom z fsc true
+                    let (top,bottom) = FasterBinaryMinEntropyTree.MinEntropyPartition lefttop rightbottom z fsc false
 
                     // compute entropies again
-                    let e_vert = BinaryMinEntropyTree.AddressSetEntropy left rmap +
-                                    BinaryMinEntropyTree.AddressSetEntropy right rmap
-                    let e_horz = BinaryMinEntropyTree.AddressSetEntropy top rmap +
-                                    BinaryMinEntropyTree.AddressSetEntropy bottom rmap
+                    let e_vert = fsc.EntropyFor z (Reg.XLo left) (Reg.XHi left) (Reg.YLo left) (Reg.YHi left) +
+                                 fsc.EntropyFor z (Reg.XLo right) (Reg.XHi right) (Reg.YLo right) (Reg.YHi right)
+                    let e_horz = fsc.EntropyFor z (Reg.XLo top) (Reg.XHi top) (Reg.YLo top) (Reg.YHi top) +
+                                 fsc.EntropyFor z (Reg.XLo bottom) (Reg.XHi bottom) (Reg.YLo bottom) (Reg.YHi bottom)
 
                     // split vertically or horizontally (favor vert for ties)
                     let (entropy,p1,p2) =
@@ -250,33 +187,33 @@
                         else
                             e_horz, top, bottom
 
-                    // base case 2: perfect decomposition & right values same as left values
-                    if entropy = 0.0 && rmap.[p1.[0]].ToCVectorResultant = rmap.[p2.[0]].ToCVectorResultant
+                    // base case 2: perfect decomposition & p1 values same as p2 values
+                    let rep_p1 = fsc.ValueFor (Reg.XLo p1) (Reg.YLo p1) z
+                    let rep_p2 = fsc.ValueFor (Reg.XLo p2) (Reg.YLo p2) z
+                    if entropy = 0.0 && rep_p1 = rep_p2
                     then
-                        let leaf = Leaf(lefttop, rightbottom, subtree_kind, rmap) :> BinaryMinEntropyTree
+                        let leaf = Leaf(lefttop, rightbottom, parentRelation) :> FasterBinaryMinEntropyTree
 
                         // is this leaf the root?
-                        match subtree_kind with
+                        match parentRelation with
                         | Root -> root_opt <- Some leaf
                         | _ -> ()
 
                         // add leaf to to link-up list
                         linkUp <- leaf :: linkUp
                     else
-                        let p1_rmap = p1 |> Array.map (fun a -> a,rmap.[a]) |> adict
-                        let p2_rmap = p2 |> Array.map (fun a -> a,rmap.[a]) |> adict
-
-                        let node = Inner(lefttop, rightbottom, subtree_kind)
+                        // "recursive" case
+                        let node = Inner(lefttop, rightbottom, parentRelation)
 
                         // is this node the root?
-                        match subtree_kind with
-                        | Root -> root_opt <- Some (node :> BinaryMinEntropyTree)
+                        match parentRelation with
+                        | Root -> root_opt <- Some (node :> FasterBinaryMinEntropyTree)
                         | _ -> ()
 
                         // add next nodes to work list
-                        todos <- (LeftOf node, p1_rmap) :: (RightOf node, p2_rmap) :: todos
-                        
-            // process "link-up" list
+                        todos <- (LeftOf node, p1) :: (RightOf node, p2) :: todos
+
+                // process "link-up" list
             while not linkUp.IsEmpty do
                 // grab next item
                 let node = linkUp.Head
@@ -285,13 +222,13 @@
                 match node.Subtree with
                 | LeftOf parent ->
                     // add parent to linkup list
-                    linkUp <- (parent :> BinaryMinEntropyTree) :: linkUp
+                    linkUp <- (parent :> FasterBinaryMinEntropyTree) :: linkUp
 
                     // make link
                     parent.AddLeft node
                 | RightOf parent ->
                     // add parent to linkup list
-                    linkUp <- (parent :> BinaryMinEntropyTree) :: linkUp
+                    linkUp <- (parent :> FasterBinaryMinEntropyTree) :: linkUp
 
                     // make link
                     parent.AddRight node
@@ -302,9 +239,9 @@
             | None -> failwith "this should never happen"
 
         /// <summary>return the leaves of the tree, in order of smallest to largest region</summary>
-        static member Regions(tree: BinaryMinEntropyTree) : Leaf[] =
+        static member Regions(tree: FasterBinaryMinEntropyTree) : Leaf[] =
             match tree with
-            | :? Inner as i -> Array.append (BinaryMinEntropyTree.Regions (i.Left)) (BinaryMinEntropyTree.Regions (i.Right))
+            | :? Inner as i -> Array.append (FasterBinaryMinEntropyTree.Regions (i.Left)) (FasterBinaryMinEntropyTree.Regions (i.Right))
             | :? Leaf as l -> [| l |]
             | _ -> failwith "Unknown tree node type."
 
@@ -333,12 +270,12 @@
             // restore immutability
             ToImmutableClustering cs
 
-        static member Clustering(tree: BinaryMinEntropyTree)(ih: ROInvertedHistogram)(indivisibles: ImmutableClustering) : ImmutableClustering =
+        static member Clustering(tree: FasterBinaryMinEntropyTree)(ih: ROInvertedHistogram)(indivisibles: ImmutableClustering) : ImmutableClustering =
             // coalesce rectangular regions
-            let cs = BinaryMinEntropyTree.RectangularClustering tree ih
+            let cs = FasterBinaryMinEntropyTree.RectangularClustering tree ih
 
             // merge indivisible clusters
-            let cs' = BinaryMinEntropyTree.MergeIndivisibles cs indivisibles
+            let cs' = FasterBinaryMinEntropyTree.MergeIndivisibles cs indivisibles
 
             cs'
 
@@ -349,19 +286,19 @@
             isRect
 
         static member ClusteringContainsOnlyRectangles(cs: Clustering) : bool =
-            cs |> Seq.fold (fun a c -> a && BinaryMinEntropyTree.ClusterIsRectangular c) true
+            cs |> Seq.fold (fun a c -> a && FasterBinaryMinEntropyTree.ClusterIsRectangular c) true
 
         static member CellMergeIsRectangular(source: AST.Address)(target: ImmutableHashSet<AST.Address>) : bool =
             let merged = new HashSet<AST.Address>(target.Add source)
-            BinaryMinEntropyTree.ClusterIsRectangular merged
+            FasterBinaryMinEntropyTree.ClusterIsRectangular merged
 
         static member ImmMergeIsRectangular(source: ImmutableHashSet<AST.Address>)(target: ImmutableHashSet<AST.Address>) : bool =
             let merged = source.Union target
-            BinaryMinEntropyTree.ClusterIsRectangular (new HashSet<AST.Address>(merged))
+            FasterBinaryMinEntropyTree.ClusterIsRectangular (new HashSet<AST.Address>(merged))
 
         static member MergeIsRectangular(source: HashSet<AST.Address>)(target: HashSet<AST.Address>) : bool =
             let merged = HashSetUtils.union source target
-            BinaryMinEntropyTree.ClusterIsRectangular merged
+            FasterBinaryMinEntropyTree.ClusterIsRectangular merged
 
         static member CoaleseAdjacentClusters(coal_vert: bool)(clusters: ImmutableClustering)(hb_inv: ROInvertedHistogram) : ImmutableClustering =
             // sort cells array depending on coalesce direction:
@@ -404,7 +341,7 @@
                         // get cluster for maybeAdj
                         let target = revLookup.[maybeAdj]
                         // if I merge source and target, does the merge remain rectangular?
-                        let isRect = BinaryMinEntropyTree.MergeIsRectangular source target
+                        let isRect = FasterBinaryMinEntropyTree.MergeIsRectangular source target
                         if isRect then
                             // add every cell from source to target hashset
                             HashSetUtils.inPlaceUnion source target
@@ -416,13 +353,13 @@
 
             ToImmutableClustering clusters'
 
-        static member RectangularClustering(tree: BinaryMinEntropyTree)(hb_inv: ROInvertedHistogram) : ImmutableClustering =
+        static member RectangularClustering(tree: FasterBinaryMinEntropyTree)(hb_inv: ROInvertedHistogram) : ImmutableClustering =
             // coalesce all cells that have the same cvector,
             // ensuring that all merged clusters remain rectangular
-            let regs = BinaryMinEntropyTree.Regions tree
-            let clusters = regs |> Array.map (fun leaf -> leaf.Cells) |> makeImmutableGenericClustering
+            let regs = FasterBinaryMinEntropyTree.Regions tree
+            let clusters = regs |> Array.map (fun leaf -> leaf.Cells hb_inv) |> makeImmutableGenericClustering
 
-            BinaryMinEntropyTree.RectangularCoalesce clusters hb_inv
+            FasterBinaryMinEntropyTree.RectangularCoalesce clusters hb_inv
 
         static member RectangularCoalesce(cs: ImmutableClustering)(hb_inv: ROInvertedHistogram) : ImmutableClustering =
             let mutable clusters = cs
@@ -432,10 +369,10 @@
 
             while changed do
                 // coalesce vertical ordering horizontally
-                let clusters' = BinaryMinEntropyTree.CoaleseAdjacentClusters false clusters hb_inv
+                let clusters' = FasterBinaryMinEntropyTree.CoaleseAdjacentClusters false clusters hb_inv
 
                 // coalesce horizontal ordering vertically
-                let clusters'' = BinaryMinEntropyTree.CoaleseAdjacentClusters true clusters' hb_inv
+                let clusters'' = FasterBinaryMinEntropyTree.CoaleseAdjacentClusters true clusters' hb_inv
 
                 if CommonFunctions.SameClustering clusters clusters'' then
                     changed <- false
@@ -451,13 +388,13 @@
             // return clustering
             clusters
 
-    and Inner(lefttop: AST.Address, rightbottom: AST.Address, subtree: SubtreeKind) =
-        inherit BinaryMinEntropyTree(lefttop, rightbottom, subtree)
+    and Inner(lefttop: int*int, rightbottom: int*int, parentRel: ParentRelation) =
+        inherit FasterBinaryMinEntropyTree(lefttop, rightbottom, parentRel)
         let mutable left = None
         let mutable right = None
-        member self.AddLeft(n: BinaryMinEntropyTree) : unit =
+        member self.AddLeft(n: FasterBinaryMinEntropyTree) : unit =
             left <- Some n
-        member self.AddRight(n: BinaryMinEntropyTree) : unit =
+        member self.AddRight(n: FasterBinaryMinEntropyTree) : unit =
             right <- Some n
         member self.Left =
             match left with
@@ -482,15 +419,25 @@
                             | None -> j,""
             k,start_node + ledge + redge
 
-    and Leaf(lefttop: AST.Address, rightbottom: AST.Address, subtree: SubtreeKind, cells: Cells) =
-        inherit BinaryMinEntropyTree(lefttop, rightbottom, subtree)
-        member self.Cells : ImmutableHashSet<AST.Address> = (new HashSet<AST.Address>(cells.Keys)).ToImmutableHashSet()
+    and Leaf(lefttop: int*int, rightbottom: int*int, parentRel: ParentRelation) =
+        inherit FasterBinaryMinEntropyTree(lefttop, rightbottom, parentRel)
+        member self.Cells(ih: ROInvertedHistogram) : ImmutableHashSet<AST.Address> =
+            let (ltX,ltY) = lefttop
+            let (rbX,rbY) = rightbottom
+            ih
+            |> Seq.filter (fun kvp ->
+                   let addr = kvp.Key
+                   addr.X >= ltX && addr.X <= rbX &&
+                   addr.Y >= ltY && addr.Y <= rbY
+               )
+            |> Seq.map (fun kvp -> kvp.Key)
+            |> (fun xs -> xs.ToImmutableHashSet<AST.Address>())
         override self.ToGraphViz(i: int)=
             let start = "\"" + i.ToString() + "\""
             let node = start + " [label=\"" + self.Region + "\"]\n"
             i,node
 
-    and SubtreeKind =
+    and ParentRelation =
     | LeftOf of Inner
     | RightOf of Inner
     | Root

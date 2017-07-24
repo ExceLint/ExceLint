@@ -6,8 +6,9 @@
     type InitGrids = Dict<Countable,int[][][]>
     type Grids = int[][][][]    // c, z, x, y; i.e., countable num, worksheet num, adjusted x coord, adjusted y coord
     type Dimensions = int[][]
+    type Values = Dict<int*int*int, Countable>
 
-    type FastSheetCounter(grids: Grids, dimensions: Dimensions, zNum: Dict<string,int>, countableMap: Dict<Countable,int>) = 
+    type FastSheetCounter(grids: Grids, dimensions: Dimensions, zNum: Dict<string,int>, countableMap: Dict<Countable,int>, valueMap: Values) = 
         let numCountables = grids.Length
 
         // all coordinates are inclusive
@@ -34,14 +35,17 @@
             counts
 
         member self.EntropyFor(z: int)(x_lo: int)(x_hi: int)(y_lo: int)(y_hi: int) : double =
-            // get counts
-            let cs = self.CountsForZ z x_lo x_hi y_lo y_hi
+            if x_lo > x_hi || y_lo > y_hi then
+                System.Double.PositiveInfinity
+            else
+                // get counts
+                let cs = self.CountsForZ z x_lo x_hi y_lo y_hi
 
-            // compute probability vector
-            let ps = BasicStats.empiricalProbabilities cs
+                // compute probability vector
+                let ps = BasicStats.empiricalProbabilities cs
 
-            // compute entropy
-            BasicStats.entropy ps
+                // compute entropy
+                BasicStats.entropy ps
 
         member self.ZForWorksheet(ws: string) = zNum.[ws]
 
@@ -57,6 +61,8 @@
         member self.MaxYForWorksheet(z: int) =
             dimensions.[z].[3]
 
+        member self.ValueFor(x: int)(y: int)(z: int) = valueMap.[x,y,z]
+
         // layout of grid is [x][y]
         static member NewZeroGrid(width: int)(height: int) : int[][] =
             [| 1 .. width |]
@@ -64,10 +70,11 @@
                 Array.zeroCreate height
             )
 
-        static member Initialize(ih: InvertedHistogram) : FastSheetCounter =
+        static member Initialize(ih: ROInvertedHistogram) : FastSheetCounter =
             let mutable zMax = 0
             let zNum = new Dict<string,int>()
             let initdim = new Dict<int,int[]>()
+            let values = new Values()
 
             // init grid dict
             let initgrids = new InitGrids()
@@ -127,6 +134,9 @@
                 // get countable
                 let (_,_,c) = kvp.Value
                 let res = c.ToCVectorResultant
+
+                // store x,y,z -> Countable map
+                values.Add((x,y,z), res)
                 
                 // create grids, if necessary
                 if not (initgrids.ContainsKey res) then
@@ -159,4 +169,4 @@
                     gs
                 )
 
-            FastSheetCounter(grids, dimensions, zNum, countableMap)
+            FastSheetCounter(grids, dimensions, zNum, countableMap, values)

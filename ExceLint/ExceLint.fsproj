@@ -76,6 +76,8 @@
     <Compile Include="Distances.fs" />
     <Compile Include="PerfUtils.fs" />
     <Compile Include="ASTMutator.fs" />
+    <Compile Include="FastSheetCounter.fs" />
+    <Compile Include="FasterBinaryMinEntropyTree.fs" />
     <Compile Include="BinaryMinEntropyTree.fs" />
     <Compile Include="ErrorModel.fs" />
     <Compile Include="EntropyModelBuilder.fs" />
@@ -85,7 +87,6 @@
     <Compile Include="SpectralModelBuilder.fs" />
     <Compile Include="KMedioidsClusterModelBuilder.fs" />
     <Compile Include="ModelBuilder.fs" />
-    <Compile Include="FastSheetCounter.fs" />
     <None Include="App.config" />
     <Content Include="packages.config" />
   </ItemGroup>
