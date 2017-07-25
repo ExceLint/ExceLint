@@ -816,7 +816,7 @@ namespace ExceLintUI
         }
 
         public ExceLint.EntropyModelBuilder.EntropyModel NewEntropyModelForWorksheet(Worksheet w,
-            ExceLint.FeatureConf conf, Boolean forceDAGBuild, ProgBar pb)
+            ExceLint.FeatureConf conf, Boolean forceDAGBuild, ProgBar pb, Boolean use_f)
         {
             ExceLint.EntropyModelBuilder.EntropyModel m = null;
 
@@ -825,7 +825,7 @@ namespace ExceLintUI
                 Excel.Application app = Globals.ThisAddIn.Application;
 
                 // create
-                m = ExceLint.ModelBuilder.initEntropyModel(app, conf, _dag, p);
+                m = ExceLint.ModelBuilder.initEntropyModel(app, conf, _dag, p, use_f);
 
                 return null;
             };

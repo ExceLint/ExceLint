@@ -76,12 +76,19 @@
             let (lt,rb) = Utils.BoundingRegion c1 0
             Vector(double (rb.X - lt.X), double (rb.Y - lt.Y), 0.0)
 
-        type EntropyModel(sheet: string, graph: Depends.DAG, ih: ROInvertedHistogram, d: ImmDistanceFMaker, indivisibles: ImmutableClustering, stats: Stats) =
+        type EntropyModel(use_f: bool, graph: Depends.DAG, ih: ROInvertedHistogram, d: ImmDistanceFMaker, indivisibles: ImmutableClustering, stats: Stats) =
             // do region inference
-            let fsc = FastSheetCounter.Initialize ih
-            let z = fsc.ZForWorksheet sheet
-            let tree = FasterBinaryMinEntropyTree.Infer fsc z ih
-            let regions = FasterBinaryMinEntropyTree.Clustering tree ih indivisibles
+            let regions =
+                if use_f then
+                    let fsc = FastSheetCounter.Initialize ih
+                    let z = Seq.head ih |> (fun kvp -> fsc.ZForWorksheet(kvp.Key.WorksheetName))
+                    let tree = FasterBinaryMinEntropyTree.Infer fsc z ih
+                    let regions = FasterBinaryMinEntropyTree.Clustering tree ih indivisibles
+                    regions
+                else
+                    let tree = BinaryMinEntropyTree.Infer ih
+                    let regions = BinaryMinEntropyTree.Clustering tree ih indivisibles
+                    regions
 
             // save the reverse lookup for later use
             let revLookup = ReverseClusterLookup regions
@@ -90,7 +97,7 @@
 
             member self.Clustering : ImmutableClustering = regions
 
-            member self.Tree : FasterBinaryMinEntropyTree = tree
+//            member self.Tree : BinaryMinEntropyTree = tree
 
             member private self.UpdateHistogram(source: ImmutableHashSet<AST.Address>)(target: ImmutableHashSet<AST.Address>) : ROInvertedHistogram =
                 // get representative score from target
@@ -112,7 +119,7 @@
                 // update indivisibles
                 let indivisibles' = indivisibles.Add (source.ToImmutableHashSet())
 
-                new EntropyModel(sheet, graph, ih', d, indivisibles', stats)
+                new EntropyModel(use_f, graph, ih', d, indivisibles', stats)
                 
             member self.MergeCell(source: AST.Address)(target: AST.Address) : EntropyModel =
                 // find the cluster of the target cell
@@ -131,7 +138,7 @@
             member self.EntropyDiff(target: EntropyModel) : double =
                 let c1 = self.Clustering
                 let c2 = target.Clustering
-                FasterBinaryMinEntropyTree.ClusteringEntropyDiff c1 c2
+                BinaryMinEntropyTree.ClusteringEntropyDiff c1 c2
 
             member private self.Adjacencies(onlyFormulaTargets: bool) : (ImmutableHashSet<AST.Address>*AST.Address)[] =
                 // get adjacencies
@@ -222,7 +229,7 @@
                     fixes'
                     |> Array.Parallel.map (fun (source, target, wdotproduct) ->
                             // is the potential merge rectangular?
-                            if not (FasterBinaryMinEntropyTree.ImmMergeIsRectangular source target) then
+                            if not (BinaryMinEntropyTree.ImmMergeIsRectangular source target) then
                                 None
                             else
                                 // produce a new model for each adjacency
@@ -307,10 +314,10 @@
                    )
                 |> (fun arr -> CommonTypes.makeImmutableGenericClustering arr)
                 
-            static member runClusterModel(input: Input) : AnalysisOutcome =
+            static member runClusterModel(input: Input)(use_f: bool) : AnalysisOutcome =
                 try
                     if (analysisBase input.config input.dag).Length <> 0 then
-                        let m = EntropyModel.Initialize input
+                        let m = EntropyModel.Initialize input use_f
                         let fixes = m.Fixes
                         let (rtime,ranking) = EntropyModel.Ranking fixes
 
@@ -333,7 +340,7 @@
                 with
                 | AnalysisCancelled -> Cancellation
 
-            static member Initialize(input: Input) : EntropyModel =
+            static member Initialize(input: Input)(use_f: bool) : EntropyModel =
                 // determine the set of cells to be analyzed
                 let cells = analysisBase input.config input.dag
 
@@ -362,4 +369,4 @@
                     | DistanceMetric.EarthMover -> earth_movers_dist_ro invertedHistogram
                     | DistanceMetric.MeanCentroid -> cent_dist_ro invertedHistogram
 
-                new EntropyModel(sheets.[0], input.dag, ih, distance_f, ToImmutableClustering (new Clustering()), times)
+                new EntropyModel(use_f, input.dag, ih, distance_f, ToImmutableClustering (new Clustering()), times)

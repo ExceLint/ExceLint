@@ -106,7 +106,7 @@ namespace ExceLintUI
 
             // build the model
             Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-            var model = currentWorkbook.NewEntropyModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
+            var model = currentWorkbook.NewEntropyModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb, false);
 
             // remove progress bar
             pb.Close();
@@ -204,17 +204,39 @@ namespace ExceLintUI
                 // worker thread will call Dispose
                 var pb = new ProgBar();
 
-                // build the model
+                // build the first model
                 Worksheet activeWs = (Worksheet) Globals.ThisAddIn.Application.ActiveSheet;
-                fixClusterModel = currentWorkbook.NewEntropyModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                fixClusterModel = currentWorkbook.NewEntropyModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb, false);
 
                 // do visualization
                 var histo = fixClusterModel.InvertedHistogram;
                 var clusters = fixClusterModel.Clustering;
+                sw.Stop();
 
                 var cl_filt = PrettyClusters(clusters, histo, graph);
                 currentWorkbook.restoreOutputColors();
                 currentWorkbook.DrawImmutableClusters(cl_filt);
+
+                System.Windows.Forms.MessageBox.Show("BMET time ms: " + sw.ElapsedMilliseconds);
+
+                // build the second model
+                var sw2 = System.Diagnostics.Stopwatch.StartNew();
+                fixClusterModel = currentWorkbook.NewEntropyModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb, true);
+
+                // do visualization
+                var histo2 = fixClusterModel.InvertedHistogram;
+                var clusters2 = fixClusterModel.Clustering;
+                sw2.Stop();
+
+                var cl_filt2 = PrettyClusters(clusters2, histo2, graph);
+                currentWorkbook.restoreOutputColors();
+                currentWorkbook.DrawImmutableClusters(cl_filt2);
+
+                System.Windows.Forms.MessageBox.Show("FBMET time ms: " + sw2.ElapsedMilliseconds);
+
+                var same = CommonFunctions.SameClustering(clusters, clusters2);
+                System.Windows.Forms.MessageBox.Show("Clustering is same: " + same);
 
                 // remove progress bar
                 pb.Close();
@@ -286,7 +308,7 @@ namespace ExceLintUI
 
             // build the model
             Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-            var model = currentWorkbook.NewEntropyModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
+            var model = currentWorkbook.NewEntropyModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb, false);
 
             // get inverse lookup for clustering
             var addr2Cl = CommonFunctions.ReverseClusterLookup(model.Clustering);

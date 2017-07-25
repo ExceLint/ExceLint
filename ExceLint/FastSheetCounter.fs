@@ -30,7 +30,10 @@
                 for x in [| x_lo' .. x_hi' |] do
                     for y in [| y_lo' .. y_hi' |] do
                         // each grid element stores either a 0 or a 1
-                        counts.[cNum] <- counts.[cNum] + grid2d.[x].[y]
+                        if grid2d.[x].[y] = 1 then
+                            i <- i + 1
+//                        counts.[cNum] <- counts.[cNum] + grid2d.[x].[y]
+                counts.[cNum] <- i
 
             counts
 

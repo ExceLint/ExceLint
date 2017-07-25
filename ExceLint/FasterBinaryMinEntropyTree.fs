@@ -106,34 +106,60 @@
             let c2e = FasterBinaryMinEntropyTree.NormalizedClusteringEntropy cTo
             c2e - c1e
 
-        static member private MinEntropyPartition(lefttop: int*int)(rightbottom: int*int)(z: int)(fsc: FastSheetCounter)(vert: bool) : Rgn*Rgn=
+        static member MinEntropyPartition(lefttop: int*int)(rightbottom: int*int)(z: int)(fsc: FastSheetCounter)(vert: bool) : Rgn*Rgn=
             let (minX,minY) = lefttop
             let (maxX,maxY) = rightbottom
 
+            let e =
+                if vert then
+                    (fun (vert)(xlo)(xhi)(ylo)(yhi)(i) ->
+                        let entropy_one = fsc.EntropyFor z xlo (i - 1) ylo yhi
+                        let entropy_two = fsc.EntropyFor z i xhi ylo yhi
+                        entropy_one + entropy_two
+                    )
+                else
+                    (fun (vert)(xlo)(xhi)(ylo)(yhi)(i) ->
+                        let entropy_one = fsc.EntropyFor z xlo xhi ylo (i - 1)
+                        let entropy_two = fsc.EntropyFor z xlo xhi i yhi
+                        entropy_one + entropy_two
+                    )
+
+            let decomp =
+                if vert then
+                    (fun (vert)(xlo)(xhi)(ylo)(yhi)(part) ->
+                        let region_one = (minX,minY),(part - 1,maxY)
+                        let region_two = (part,minY),(maxX,maxY)
+                        region_one,region_two
+                    )
+                else
+                    (fun (vert)(xlo)(xhi)(ylo)(yhi)(part) ->
+                        let region_one = (minX,minY),(maxX,part - 1)
+                        let region_two = (minX,part),(maxX,maxY)
+                        region_one,region_two
+                    )
+
+            let indices =
+                if vert then
+                    [| minX .. maxX |]
+                else
+                    [| minY .. maxY |]
+
             // which axis we use depends on whether we are
             // decomposing vertically or horizontally
-            if vert then
-                let part = Utils.argmin (fun i ->
-                               let entropy_one = fsc.EntropyFor z minX (i - 1) minY maxY
-                               let entropy_two = fsc.EntropyFor z i maxX minY maxY
-                               entropy_one + entropy_two
-                           ) [| minX .. maxX |]
+            let parts = Array.Parallel.map (fun i ->
+                            i, e vert minX maxX minY maxY i
+                        ) indices
 
-                let region_one = (minX,minY),(part - 1,maxY)
-                let region_two = (part,minY),(maxX,maxY)
-            
-                region_one,region_two
-            else
-                let part = Utils.argmin (fun i ->
-                               let entropy_one = fsc.EntropyFor z minX maxX minY (i - 1)
-                               let entropy_two = fsc.EntropyFor z minX maxX i maxY
-                               entropy_one + entropy_two
-                           ) [| minY .. maxY |]
+            // argmin
+            let mutable min_j = 0
+            for j in [| 0 .. parts.Length - 1 |] do
+                let (i,ent) = parts.[j]
+                if ent < snd parts.[min_j] then
+                    min_j <- j
 
-                let region_one = (minX,minY),(maxX,part - 1)
-                let region_two = (minX,part),(maxX,maxY)
-            
-                region_one,region_two
+            let part = fst parts.[min_j]
+
+            decomp vert minX maxX minY maxY part
 
         static member Infer(fsc: FastSheetCounter)(z: int)(hb_inv: ROInvertedHistogram) : FasterBinaryMinEntropyTree =
             FasterBinaryMinEntropyTree.Decompose fsc z hb_inv
