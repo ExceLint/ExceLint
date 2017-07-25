@@ -76,10 +76,12 @@
             let (lt,rb) = Utils.BoundingRegion c1 0
             Vector(double (rb.X - lt.X), double (rb.Y - lt.Y), 0.0)
 
-        type EntropyModel(graph: Depends.DAG, ih: ROInvertedHistogram, d: ImmDistanceFMaker, indivisibles: ImmutableClustering, stats: Stats) =
+        type EntropyModel(sheet: string, graph: Depends.DAG, ih: ROInvertedHistogram, d: ImmDistanceFMaker, indivisibles: ImmutableClustering, stats: Stats) =
             // do region inference
-            let tree = BinaryMinEntropyTree.Infer ih
-            let regions = BinaryMinEntropyTree.Clustering tree ih indivisibles
+            let fsc = FastSheetCounter.Initialize ih
+            let z = fsc.ZForWorksheet sheet
+            let tree = FasterBinaryMinEntropyTree.Infer fsc z ih
+            let regions = FasterBinaryMinEntropyTree.Clustering tree ih indivisibles
 
             // save the reverse lookup for later use
             let revLookup = ReverseClusterLookup regions
@@ -88,7 +90,7 @@
 
             member self.Clustering : ImmutableClustering = regions
 
-            member self.Tree : BinaryMinEntropyTree = tree
+            member self.Tree : FasterBinaryMinEntropyTree = tree
 
             member private self.UpdateHistogram(source: ImmutableHashSet<AST.Address>)(target: ImmutableHashSet<AST.Address>) : ROInvertedHistogram =
                 // get representative score from target
@@ -110,7 +112,7 @@
                 // update indivisibles
                 let indivisibles' = indivisibles.Add (source.ToImmutableHashSet())
 
-                new EntropyModel(graph, ih', d, indivisibles', stats)
+                new EntropyModel(sheet, graph, ih', d, indivisibles', stats)
                 
             member self.MergeCell(source: AST.Address)(target: AST.Address) : EntropyModel =
                 // find the cluster of the target cell
@@ -129,7 +131,7 @@
             member self.EntropyDiff(target: EntropyModel) : double =
                 let c1 = self.Clustering
                 let c2 = target.Clustering
-                BinaryMinEntropyTree.ClusteringEntropyDiff c1 c2
+                FasterBinaryMinEntropyTree.ClusteringEntropyDiff c1 c2
 
             member private self.Adjacencies(onlyFormulaTargets: bool) : (ImmutableHashSet<AST.Address>*AST.Address)[] =
                 // get adjacencies
@@ -220,7 +222,7 @@
                     fixes'
                     |> Array.Parallel.map (fun (source, target, wdotproduct) ->
                             // is the potential merge rectangular?
-                            if not (BinaryMinEntropyTree.ImmMergeIsRectangular source target) then
+                            if not (FasterBinaryMinEntropyTree.ImmMergeIsRectangular source target) then
                                 None
                             else
                                 // produce a new model for each adjacency
@@ -335,6 +337,9 @@
                 // determine the set of cells to be analyzed
                 let cells = analysisBase input.config input.dag
 
+                let sheets = cells |> Array.map (fun a -> a.WorksheetName) |> Array.distinct
+                assert (sheets.Length = 1)
+
                 // get all NLFRs for every formula cell
                 let _runf = fun () -> runEnabledFeatures cells input.dag input.config input.progress
                 let (ns: ScoreTable,feat_time: int64) = PerfUtils.runMillis _runf ()
@@ -357,4 +362,4 @@
                     | DistanceMetric.EarthMover -> earth_movers_dist_ro invertedHistogram
                     | DistanceMetric.MeanCentroid -> cent_dist_ro invertedHistogram
 
-                new EntropyModel(input.dag, ih, distance_f, ToImmutableClustering (new Clustering()), times)
+                new EntropyModel(sheets.[0], input.dag, ih, distance_f, ToImmutableClustering (new Clustering()), times)

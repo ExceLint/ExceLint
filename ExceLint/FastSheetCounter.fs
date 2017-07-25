@@ -87,6 +87,7 @@
                             zNum.[kvp.Key.WorksheetName]
                         else
                             let zn = zMax
+                            zNum.[kvp.Key.WorksheetName] <- zn
                             zMax <- zMax + 1
                             zn
 
