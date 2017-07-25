@@ -38,8 +38,9 @@
             if x_lo > x_hi || y_lo > y_hi then
                 System.Double.PositiveInfinity
             else
-                // get counts
+                // get counts, omitting zeroes
                 let cs = self.CountsForZ z x_lo x_hi y_lo y_hi
+                         |> Array.filter (fun i -> i > 0)
 
                 // compute probability vector
                 let ps = BasicStats.empiricalProbabilities cs
@@ -111,8 +112,9 @@
             // compute width and height and index by z
             let widthAndHeight =
                 Array.init zMax (fun z ->
-                    let width = initdim.[z].[2] - initdim.[z].[0]
-                    let height = initdim.[z].[3] - initdim.[z].[1]
+                    // add one because min and max are both inclusive
+                    let width = initdim.[z].[2] - initdim.[z].[0] + 1
+                    let height = initdim.[z].[3] - initdim.[z].[1] + 1
                     width, height
                 )
 
@@ -137,7 +139,8 @@
                 let res = c.ToCVectorResultant
 
                 // store x,y,z -> Countable map
-                values.Add((x,y,z), res)
+                // use the real x, y, and z here; not adjusted values
+                values.Add((kvp.Key.X,kvp.Key.Y,z), res)
                 
                 // create grids, if necessary
                 if not (initgrids.ContainsKey res) then
