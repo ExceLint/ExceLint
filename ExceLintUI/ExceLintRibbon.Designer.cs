@@ -46,8 +46,10 @@
             this.MarkAsOKButton = this.Factory.CreateRibbonButton();
             this.StartOverButton = this.Factory.CreateRibbonButton();
             this.showHeatmap = this.Factory.CreateRibbonButton();
+            this.clusterForCell = this.Factory.CreateRibbonButton();
             this.FixClusterButton = this.Factory.CreateRibbonButton();
             this.resetFixesButton = this.Factory.CreateRibbonButton();
+            this.EntropyRanking = this.Factory.CreateRibbonButton();
             this.RunCUSTODES = this.Factory.CreateRibbonButton();
             this.box2 = this.Factory.CreateRibbonBox();
             this.LSHTest = this.Factory.CreateRibbonButton();
@@ -77,8 +79,7 @@
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
             this.button1 = this.Factory.CreateRibbonButton();
-            this.clusterForCell = this.Factory.CreateRibbonButton();
-            this.EntropyRanking = this.Factory.CreateRibbonButton();
+            this.drawAllClusters = this.Factory.CreateRibbonCheckBox();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -175,6 +176,15 @@
             this.showHeatmap.ShowImage = true;
             this.showHeatmap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.showHeatmap_Click);
             // 
+            // clusterForCell
+            // 
+            this.clusterForCell.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.clusterForCell.Image = global::ExceLintUI.Properties.Resources.graph;
+            this.clusterForCell.Label = "Cluster for Cell";
+            this.clusterForCell.Name = "clusterForCell";
+            this.clusterForCell.ShowImage = true;
+            this.clusterForCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.clusterForCell_Click);
+            // 
             // FixClusterButton
             // 
             this.FixClusterButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
@@ -193,6 +203,15 @@
             this.resetFixesButton.ShowImage = true;
             this.resetFixesButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.resetFixesButton_Click);
             // 
+            // EntropyRanking
+            // 
+            this.EntropyRanking.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.EntropyRanking.Image = global::ExceLintUI.Properties.Resources.analyze_small;
+            this.EntropyRanking.Label = "Entropy Ranking";
+            this.EntropyRanking.Name = "EntropyRanking";
+            this.EntropyRanking.ShowImage = true;
+            this.EntropyRanking.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.EntropyRanking_Click);
+            // 
             // RunCUSTODES
             // 
             this.RunCUSTODES.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
@@ -209,6 +228,7 @@
             this.box2.Items.Add(this.getLSH);
             this.box2.Items.Add(this.readClusterDump);
             this.box2.Items.Add(this.VectorForCell);
+            this.box2.Items.Add(this.drawAllClusters);
             this.box2.Name = "box2";
             this.box2.Visible = false;
             // 
@@ -413,23 +433,11 @@
             this.button1.Name = "button1";
             this.button1.ShowImage = true;
             // 
-            // clusterForCell
+            // drawAllClusters
             // 
-            this.clusterForCell.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.clusterForCell.Image = global::ExceLintUI.Properties.Resources.graph;
-            this.clusterForCell.Label = "Cluster for Cell";
-            this.clusterForCell.Name = "clusterForCell";
-            this.clusterForCell.ShowImage = true;
-            this.clusterForCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.clusterForCell_Click);
-            // 
-            // EntropyRanking
-            // 
-            this.EntropyRanking.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.EntropyRanking.Image = global::ExceLintUI.Properties.Resources.analyze_small;
-            this.EntropyRanking.Label = "Entropy Ranking";
-            this.EntropyRanking.Name = "EntropyRanking";
-            this.EntropyRanking.ShowImage = true;
-            this.EntropyRanking.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.EntropyRanking_Click);
+            this.drawAllClusters.Checked = true;
+            this.drawAllClusters.Label = "Draw all Clusters";
+            this.drawAllClusters.Name = "drawAllClusters";
             // 
             // ExceLintRibbon
             // 
@@ -495,6 +503,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton button1;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton clusterForCell;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton EntropyRanking;
+        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox drawAllClusters;
     }
 
     partial class ThisRibbonCollection

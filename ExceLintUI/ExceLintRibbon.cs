@@ -12,7 +12,6 @@ using System.Text;
 using ExceLint;
 using System.Collections.Immutable;
 using Clusters = System.Collections.Immutable.ImmutableHashSet<System.Collections.Immutable.ImmutableHashSet<AST.Address>>;
-using HistoBin = System.Tuple<string, ExceLint.Scope.SelectID, ExceLint.Countable>;
 using ROInvertedHistogram = System.Collections.Immutable.ImmutableDictionary<AST.Address, System.Tuple<string, ExceLint.Scope.SelectID, ExceLint.Countable>>;
 
 namespace ExceLintUI
@@ -172,10 +171,15 @@ namespace ExceLintUI
 
         private Clusters PrettyClusters(Clusters cs, ROInvertedHistogram ih, Depends.DAG graph)
         {
-            //var cs1 = ElideStringClusters(cs, ih, graph);
-            //var cs2 = ElideWhitespaceClusters(cs1, ih, graph);
-            //return cs2;
-            return cs;
+            if (this.drawAllClusters.Checked)
+            {
+                return cs;
+            } else
+            {
+                var cs1 = ElideStringClusters(cs, ih, graph);
+                var cs2 = ElideWhitespaceClusters(cs1, ih, graph);
+                return cs2;
+            }
         }
 
         private string InvertedHistogramPrettyPrinter(ROInvertedHistogram ih)
@@ -204,21 +208,22 @@ namespace ExceLintUI
                 // worker thread will call Dispose
                 var pb = new ProgBar();
 
-                // build the first model
-                Worksheet activeWs = (Worksheet) Globals.ThisAddIn.Application.ActiveSheet;
-                var sw = System.Diagnostics.Stopwatch.StartNew();
-                var fcm = currentWorkbook.NewEntropyModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
+                Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+
+                //// build the first model
+                //var sw = System.Diagnostics.Stopwatch.StartNew();
+                //var fcm = currentWorkbook.NewEntropyModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
 
                 // do visualization
-                var histo = fcm.InvertedHistogram;
-                var clusters = fcm.Clustering;
-                sw.Stop();
+                //var histo = fcm.InvertedHistogram;
+                //var clusters = fcm.Clustering;
+                //sw.Stop();
 
-                var cl_filt = PrettyClusters(clusters, histo, graph);
-                currentWorkbook.restoreOutputColors();
-                currentWorkbook.DrawImmutableClusters(cl_filt);
+                //var cl_filt = PrettyClusters(clusters, histo, graph);
+                //currentWorkbook.restoreOutputColors();
+                //currentWorkbook.DrawImmutableClusters(cl_filt);
 
-                System.Windows.Forms.MessageBox.Show("BMET time ms: " + sw.ElapsedMilliseconds);
+                //System.Windows.Forms.MessageBox.Show("BMET time ms: " + sw.ElapsedMilliseconds);
 
                 // build the second model
                 var sw2 = System.Diagnostics.Stopwatch.StartNew();
@@ -235,8 +240,8 @@ namespace ExceLintUI
 
                 System.Windows.Forms.MessageBox.Show("FBMET time ms: " + sw2.ElapsedMilliseconds);
 
-                var same = CommonFunctions.SameClustering(clusters, clusters2);
-                System.Windows.Forms.MessageBox.Show("Clustering is same: " + same);
+                //var same = CommonFunctions.SameClustering(clusters, clusters2);
+                //System.Windows.Forms.MessageBox.Show("Clustering is same: " + same);
 
                 // remove progress bar
                 pb.Close();
