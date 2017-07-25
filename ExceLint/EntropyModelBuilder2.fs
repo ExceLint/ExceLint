@@ -337,7 +337,7 @@
 
             member self.Scores : ScoreTable = ROInvertedHistogramToScoreTable ih
 
-            member self.ScoreTimeMs = stats.FeatureTimeMS + stats.ScaleTimeMS + stats.InvertTimeMS
+            member self.ScoreTimeMs = stats.FeatureTimeMS + stats.ScaleTimeMS + stats.InvertTimeMS + stats.FastSheetCounterMS
 
             // compute the cutoff based on a percentage of the number of formulas,
             // by default PCT_TO_FLAG %
