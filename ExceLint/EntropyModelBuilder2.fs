@@ -7,10 +7,9 @@
     open CommonFunctions
     open Distances
 
-    type ImmDistanceFMaker = ROInvertedHistogram -> ImmDistanceF
-
-    module EntropyModelBuilder =
+    module EntropyModelBuilder2 =
         let PCT_TO_FLAG = 5
+
 
         [<Struct>]
         type ProposedFix(source: ImmutableHashSet<AST.Address>, target: ImmutableHashSet<AST.Address>, entropyDelta: double, weighted_dp: double, distance: double) =
@@ -23,10 +22,11 @@
             member self.Score = (self.E * self.WeightedDotProduct) / self.Distance
 
         [<Struct>]
-        type Stats(feat_ms: int64, scale_ms: int64, invert_ms: int64) =
+        type Stats(feat_ms: int64, scale_ms: int64, invert_ms: int64, fsc_ms: int64) =
             member self.FeatureTimeMS = feat_ms
             member self.ScaleTimeMS = scale_ms
             member self.InvertTimeMS = invert_ms
+            member self.FastSheetCounterMS = fsc_ms
 
         let ScoreForCell(addr: AST.Address)(ih: ROInvertedHistogram) : Countable =
             let (_,_,v) = ih.[addr]
@@ -76,10 +76,10 @@
             let (lt,rb) = Utils.BoundingRegion c1 0
             Vector(double (rb.X - lt.X), double (rb.Y - lt.Y), 0.0)
 
-        type EntropyModel(graph: Depends.DAG, ih: ROInvertedHistogram, d: ImmDistanceFMaker, indivisibles: ImmutableClustering, stats: Stats) =
+        type EntropyModel2(graph: Depends.DAG, ih: ROInvertedHistogram, fsc: FastSheetCounter, z: int, d: ImmDistanceFMaker, indivisibles: ImmutableClustering, stats: Stats) =
             // do region inference
-            let tree = BinaryMinEntropyTree.Infer ih
-            let regions = BinaryMinEntropyTree.Clustering tree ih indivisibles
+            let tree = FasterBinaryMinEntropyTree.Infer fsc z ih
+            let regions = FasterBinaryMinEntropyTree.Clustering tree ih indivisibles
 
             // save the reverse lookup for later use
             let revLookup = ReverseClusterLookup regions
@@ -88,7 +88,7 @@
 
             member self.Clustering : ImmutableClustering = regions
 
-            member self.Tree : BinaryMinEntropyTree = tree
+            member self.Tree : FasterBinaryMinEntropyTree = tree
 
             member private self.UpdateHistogram(source: ImmutableHashSet<AST.Address>)(target: ImmutableHashSet<AST.Address>) : ROInvertedHistogram =
                 // get representative score from target
@@ -104,15 +104,25 @@
                         acc'.Add(addr, bin)
                     ) ih
 
-            member private self.MergeCluster(source: ImmutableHashSet<AST.Address>)(target: ImmutableHashSet<AST.Address>) : EntropyModel =
+            member private self.MergeCluster(source: ImmutableHashSet<AST.Address>)(target: ImmutableHashSet<AST.Address>) : EntropyModel2 =
+                // update histogram
                 let ih' = self.UpdateHistogram source target
 
                 // update indivisibles
                 let indivisibles' = indivisibles.Add (source.ToImmutableHashSet())
 
-                new EntropyModel(graph, ih', d, indivisibles', stats)
+                // update fsc
+                let fsc' =
+                    source
+                    |> Seq.fold (fun (accfsc: FastSheetCounter)(saddr: AST.Address) ->
+                           let oldc = ScoreForCell saddr ih
+                           let newc = ScoreForCell saddr ih'
+                           accfsc.Fix saddr oldc newc
+                       ) fsc
+
+                new EntropyModel2(graph, ih', fsc', z, d, indivisibles', stats)
                 
-            member self.MergeCell(source: AST.Address)(target: AST.Address) : EntropyModel =
+            member self.MergeCell(source: AST.Address)(target: AST.Address) : EntropyModel2 =
                 // find the cluster of the target cell
                 let target' = revLookup.[target]
 
@@ -126,7 +136,7 @@
                     let source' = (new HashSet<AST.Address>([| source |])).ToImmutableHashSet()
                     self.MergeCluster source' target'
 
-            member self.EntropyDiff(target: EntropyModel) : double =
+            member self.EntropyDiff(target: EntropyModel2) : double =
                 let c1 = self.Clustering
                 let c2 = target.Clustering
                 BinaryMinEntropyTree.ClusteringEntropyDiff c1 c2
@@ -308,9 +318,9 @@
             static member runClusterModel(input: Input)(use_f: bool) : AnalysisOutcome =
                 try
                     if (analysisBase input.config input.dag).Length <> 0 then
-                        let m = EntropyModel.Initialize input use_f
+                        let m = EntropyModel2.Initialize input use_f
                         let fixes = m.Fixes
-                        let (rtime,ranking) = EntropyModel.Ranking fixes
+                        let (rtime,ranking) = EntropyModel2.Ranking fixes
 
                         Success(Cluster
                             {
@@ -322,8 +332,8 @@
                                 ranking_time = rtime;
                                 sig_threshold_idx = 0;
                                 cutoff_idx = m.Cutoff;
-                                weights = EntropyModel.Weights fixes;    // this just returns entropy delta for now
-                                clustering = CommonFunctions.ToMutableClustering (EntropyModel.RankingToClusters fixes);
+                                weights = EntropyModel2.Weights fixes;    // this just returns entropy delta for now
+                                clustering = CommonFunctions.ToMutableClustering (EntropyModel2.RankingToClusters fixes);
                             }
                         )
                     else
@@ -331,7 +341,7 @@
                 with
                 | AnalysisCancelled -> Cancellation
 
-            static member Initialize(input: Input)(use_f: bool) : EntropyModel =
+            static member Initialize(input: Input)(use_f: bool) : EntropyModel2 =
                 // determine the set of cells to be analyzed
                 let cells = analysisBase input.config input.dag
 
@@ -350,8 +360,14 @@
                 let _runhisto = fun () -> invertedHistogram nlfrs input.dag input.config
                 let (ih: ROInvertedHistogram,invert_time: int64) = PerfUtils.runMillis _runhisto ()
 
+                // make fsc
+                let _runfsc = fun () -> FastSheetCounter.Initialize ih
+                let (fsc: FastSheetCounter, fsc_time: int64) = PerfUtils.runMillis _runfsc ()
+
+                let z = fsc.ZForWorksheet sheets.[0]
+
                 // collate stats
-                let times = Stats(feat_time, scale_time, invert_time)
+                let times = Stats(feat_time, scale_time, invert_time, fsc_time)
 
                 // define distance function
                 let distance_f(invertedHistogram: ROInvertedHistogram) =
@@ -360,4 +376,4 @@
                     | DistanceMetric.EarthMover -> earth_movers_dist_ro invertedHistogram
                     | DistanceMetric.MeanCentroid -> cent_dist_ro invertedHistogram
 
-                new EntropyModel(input.dag, ih, distance_f, ToImmutableClustering (new Clustering()), times)
+                new EntropyModel2(input.dag, ih, fsc, z, distance_f, ToImmutableClustering (new Clustering()), times)

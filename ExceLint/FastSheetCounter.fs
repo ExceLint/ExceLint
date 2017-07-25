@@ -11,6 +11,51 @@
     type FastSheetCounter(grids: Grids, dimensions: Dimensions, zNum: Dict<string,int>, countableMap: Dict<Countable,int>, valueMap: Values) = 
         let numCountables = grids.Length
 
+        static member MinUpdateGrids(grids: Grids)(x: int)(y: int)(z: int)(old_cn: int)(new_cn: int) : Grids =
+            // do the minimum amount of array cloning to
+            // update old countable and new countable counts
+            let new_grid = Array.copy grids
+            // old
+            let new_grid_c = Array.copy new_grid.[old_cn]
+            new_grid.[old_cn] <- new_grid_c
+            let new_grid_z = Array.copy new_grid_c.[z]
+            new_grid_c.[z] <- new_grid_z
+            let new_grid_x = Array.copy new_grid_z.[x]
+            new_grid_z.[x] <- new_grid_x
+            // new
+            let new_grid_c2 = Array.copy new_grid.[new_cn]
+            new_grid.[new_cn] <- new_grid_c2
+            let new_grid_z2 = Array.copy new_grid_c2.[z]
+            new_grid_c2.[z] <- new_grid_z2
+            let new_grid_x2 = Array.copy new_grid_z2.[x]
+            new_grid_z2.[x] <- new_grid_x2
+
+            // change old count to 0
+            new_grid_x.[y] <- 0
+
+            // change new count to 1
+            new_grid_x2.[y] <- 1
+
+            new_grid
+
+        member self.Fix(addr: AST.Address)(oldc: Countable)(c: Countable) : FastSheetCounter =
+            let z = self.ZForWorksheet addr.WorksheetName
+            let x = addr.X - dimensions.[z].[0] 
+            let y = addr.Y - dimensions.[z].[1]
+
+            // get countable num
+            let old_cn = countableMap.[oldc]
+            let new_cn = countableMap.[c]
+
+            // update grids
+            let grids' = FastSheetCounter.MinUpdateGrids grids x y z old_cn new_cn
+
+            // update value map
+            let valueMap' = new Values(valueMap)
+            valueMap'.[(x,y,z)] <- c
+
+            new FastSheetCounter(grids', dimensions, zNum, countableMap, valueMap')
+
         // all coordinates are inclusive
         member self.CountsForZ(z: int)(x_lo: int)(x_hi: int)(y_lo: int)(y_hi: int) : int[] =
             // adjust indices
