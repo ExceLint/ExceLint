@@ -177,7 +177,7 @@
 
                        let adj' =
                            adj
-                           // if the cluster is strongly linear, exclude adjacencies in other directions
+                           // exclude adjacencies if cluster is not strongly linear
                            |> Seq.filter (fun addr ->
                                   if sameX && sameY then
                                       // target is a singleton; all adjacencies OK
@@ -189,7 +189,8 @@
                                       // target is strongly horizontal; only adjacencies that share y
                                       addr.Y = y
                                   else
-                                      true
+                                      // cluster changes in both x and y directions-- not strongly linear
+                                      false
                               )
                            // do not include adjacencies that are not in our histogram
                            |> Seq.filter (fun addr -> ih.ContainsKey addr)
@@ -220,11 +221,10 @@
                            
                            source, source_class, target
                        )
-                    // no duplicates or converse fixes
+                    // no duplicates
                     |> Array.distinctBy (fun (s,sc,t) -> s,t)
 
-                // no converse fixes
-                let fhs = new HashSet<ImmutableHashSet<AST.Address>*ImmutableHashSet<AST.Address>>(fixes |> Array.map (fun (s,_,t) -> s,t))
+                // sort so that smal fixes are favored when deduping
                 let fixes' =
                     fixes
                     |> Array.map (fun (s,sc,t) ->
@@ -247,8 +247,22 @@
                        )
                     |> Array.distinctBy (fun (s,_,t) -> s,t)
 
-                let fixes'' =
-                    fixes'
+                // no converse fixes
+                let fhs = new HashSet<ImmutableHashSet<AST.Address>*ImmutableHashSet<AST.Address>>()
+                let mutable keep = []
+                for fix in fixes' do
+                    let (s,sc,t) = fix
+                    let key1 = (s,t)
+                    let key2 = (t,s)
+                    if not (fhs.Contains(key1)) && not (fhs.Contains key2) then
+                        fhs.Add(key1) |> ignore
+                        fhs.Add(key2) |> ignore
+                        keep <- (s,sc,t) :: keep
+                
+                let fixes'' = List.toArray keep
+
+                let fixes''' =
+                    fixes''
                     // don't propose fixes where source and target have the same resultant
                     |> Array.filter (fun (s,_,t) ->
                         let s_co = ScoreForCell (Seq.head s) ih
@@ -257,7 +271,7 @@
                     )
 
                 let dps =
-                    fixes''
+                    fixes'''
                     |> Array.map (fun (s,sc,t) ->
                            // compute dot product
                            // we always use the prevailing direction of
@@ -279,33 +293,36 @@
 
                        )
                     // keep only fixes with a similar "prevailing direction"
-                    |> Array.filter (fun (_,_,dp) -> dp > 0.0)
+                    |> Array.filter (fun (_,_,dp) -> dp > 0.0 && not (System.Double.IsNaN dp))
                     |> Array.sortByDescending (fun (_,_,dp) -> dp)
+
+                // merge must be rectangular
+                let dps' =
+                    dps
+                    |> Array.filter (fun (s,t,_) ->
+                           BinaryMinEntropyTree.ImmMergeIsRectangular s t
+                       )
 
                 // produce one model for each adjacency;
                 // this is somewhat expensive to compute
                 let models = 
-                    dps
+                    dps'
                     |> Array.Parallel.map (fun (source, target, wdotproduct) ->
-                            // is the potential merge rectangular?
-                            if not (BinaryMinEntropyTree.ImmMergeIsRectangular source target) then
+                            // produce a new model for each adjacency
+                            let numodel = self.MergeCluster source target
+
+                            // compute entropy difference
+                            let entropyDelta = self.EntropyDiff numodel
+
+                            // compute inverse cluster distance
+                            let dist = (d ih) source target
+
+                            // eliminate all zero or negative-scored fixes
+                            let pf = ProposedFix(source, target, entropyDelta, wdotproduct, dist)
+                            if pf.Score <= 0.0 then
                                 None
                             else
-                                // produce a new model for each adjacency
-                                let numodel = self.MergeCluster source target
-
-                                // compute entropy difference
-                                let entropyDelta = self.EntropyDiff numodel
-
-                                // compute inverse cluster distance
-                                let dist = (d ih) source target
-
-                                // eliminate all zero or negative-scored fixes
-                                let pf = ProposedFix(source, target, entropyDelta, wdotproduct, dist)
-                                if pf.Score <= 0.0 then
-                                    None
-                                else
-                                    Some (pf)
+                                Some (pf)
                        )
                     |> Array.choose id
                     // no duplicates (happens for whole-cluster merges)
