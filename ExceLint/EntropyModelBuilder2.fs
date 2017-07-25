@@ -224,7 +224,7 @@
                     // no duplicates
                     |> Array.distinctBy (fun (s,sc,t) -> s,t)
 
-                // sort so that smal fixes are favored when deduping
+                // sort so that small fixes are favored when deduping
                 let fixes' =
                     fixes
                     |> Array.map (fun (s,sc,t) ->
