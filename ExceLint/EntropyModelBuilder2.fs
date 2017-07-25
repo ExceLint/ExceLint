@@ -159,10 +159,52 @@
                 |> Seq.concat
                 |> Seq.toArray
 
+            member private self.PrevailingDirectionAdjacencies(onlyFormulaTargets: bool) : (ImmutableHashSet<AST.Address>*AST.Address)[] =
+                self.Clustering
+                |> Seq.filter (fun c -> if onlyFormulaTargets then ClusterIsFormulaValued c ih graph else true)
+                |> Seq.map (fun target ->
+                       // get prevailing direction of target cluster
+                       let dir = ClusterDirectionVector target
+                       let sameX = dir.X = 0.0
+                       let sameY = dir.Y = 0.0
+
+                       // get representative X and Y
+                       let x = (Seq.head target).X
+                       let y = (Seq.head target).Y
+
+                       // get adjacencies
+                       let adj = HSAdjacentCellsImm target
+
+                       let adj' =
+                           adj
+                           // if the cluster is strongly linear, exclude adjacencies in other directions
+                           |> Seq.filter (fun addr ->
+                                  if sameX && sameY then
+                                      // target is a singleton; all adjacencies OK
+                                      true
+                                  else if sameX then
+                                      // target is strongly vertical; only adjacencies that share x
+                                      addr.X = x
+                                  else if sameY then
+                                      // target is strongly horizontal; only adjacencies that share y
+                                      addr.Y = y
+                                  else
+                                      true
+                              )
+                           // do not include adjacencies that are not in our histogram
+                           |> Seq.filter (fun addr -> ih.ContainsKey addr)
+
+                       // flatten
+                       adj'
+                       |> Seq.map (fun a -> target, a)
+                   )
+                |> Seq.concat
+                |> Seq.toArray
+
             member self.Fixes : ProposedFix[] =
                 // get models & prune
                 let fixes =
-                    self.Adjacencies true
+                    self.PrevailingDirectionAdjacencies true
                     |> Array.map (fun (target, addr) ->
                            let source_class = revLookup.[addr]
                            // Fix equivalence class?
@@ -178,8 +220,10 @@
                            
                            source, source_class, target
                        )
+                    // no duplicates or converse fixes
+                    |> Array.distinctBy (fun (s,sc,t) -> s,t)
 
-                // no converse fixes or duplicates
+                // no converse fixes
                 let fhs = new HashSet<ImmutableHashSet<AST.Address>*ImmutableHashSet<AST.Address>>(fixes |> Array.map (fun (s,_,t) -> s,t))
                 let fixes' =
                     fixes
@@ -202,6 +246,18 @@
                             t,sc,s
                        )
                     |> Array.distinctBy (fun (s,_,t) -> s,t)
+
+                let fixes'' =
+                    fixes'
+                    // don't propose fixes where source and target have the same resultant
+                    |> Array.filter (fun (s,_,t) ->
+                        let s_co = ScoreForCell (Seq.head s) ih
+                        let t_co = ScoreForCell (Seq.head t) ih
+                        s_co <> t_co
+                    )
+
+                let dps =
+                    fixes''
                     |> Array.map (fun (s,sc,t) ->
                            // compute dot product
                            // we always use the prevailing direction of
@@ -220,14 +276,16 @@
                                    else
                                        dp_weight * (source_v.DotProduct target_v)
                            (s,t,wdotproduct)
+
                        )
                     // keep only fixes with a similar "prevailing direction"
                     |> Array.filter (fun (_,_,dp) -> dp > 0.0)
+                    |> Array.sortByDescending (fun (_,_,dp) -> dp)
 
                 // produce one model for each adjacency;
                 // this is somewhat expensive to compute
                 let models = 
-                    fixes'
+                    dps
                     |> Array.Parallel.map (fun (source, target, wdotproduct) ->
                             // is the potential merge rectangular?
                             if not (BinaryMinEntropyTree.ImmMergeIsRectangular source target) then

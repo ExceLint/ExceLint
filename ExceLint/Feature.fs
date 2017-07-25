@@ -24,6 +24,14 @@ namespace ExceLint
                 "<" + x.ToString() + "," + y.ToString() + "," + z.ToString() + "," + c.ToString() + ">"
             | FullCVectorResultant(x,y,z,dx,dy,dz,dc) ->
                 "<" + x.ToString() + "," + y.ToString() + "," + z.ToString() + "," + dx.ToString() + "," + dy.ToString() + "," + dz.ToString() + "," + dc.ToString() + ">"
+        member self.X : double =
+            match self with
+            | Vector(x,_,_) -> x
+            | _ -> failwith "Unsupported operation."
+        member self.Y : double =
+            match self with
+            | Vector(_,y,_) -> y
+            | _ -> failwith "Unsupported operation."
         member self.LocationFree : Countable =
             match self with
             | FullCVectorResultant(x,y,z,dx,dy,dz,dc) -> CVectorResultant(dx,dy,dz,dc)
