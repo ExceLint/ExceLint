@@ -816,7 +816,7 @@ namespace ExceLintUI
         }
 
         public ExceLint.EntropyModelBuilder.EntropyModel NewEntropyModelForWorksheet(Worksheet w,
-            ExceLint.FeatureConf conf, Boolean forceDAGBuild, ProgBar pb, Boolean use_f)
+            ExceLint.FeatureConf conf, Boolean forceDAGBuild, ProgBar pb)
         {
             ExceLint.EntropyModelBuilder.EntropyModel m = null;
 
@@ -825,7 +825,28 @@ namespace ExceLintUI
                 Excel.Application app = Globals.ThisAddIn.Application;
 
                 // create
-                m = ExceLint.ModelBuilder.initEntropyModel(app, conf, _dag, p, use_f);
+                m = ExceLint.ModelBuilder.initEntropyModel(app, conf, _dag, p);
+
+                return null;
+            };
+
+            // update DAG if necessary
+            buildDAGAndDoStuff(forceDAGBuild, f, 3, pb);
+
+            return m;
+        }
+
+        public ExceLint.EntropyModelBuilder2.EntropyModel2 NewEntropyModelForWorksheet2(Worksheet w,
+            ExceLint.FeatureConf conf, Boolean forceDAGBuild, ProgBar pb)
+        {
+            ExceLint.EntropyModelBuilder2.EntropyModel2 m = null;
+
+            Func<Depends.Progress, Unit> f = (p) =>
+            {
+                Excel.Application app = Globals.ThisAddIn.Application;
+
+                // create
+                m = ExceLint.ModelBuilder.initEntropyModel2(app, conf, _dag, p);
 
                 return null;
             };

@@ -3,8 +3,8 @@
     open CommonTypes
     open Utils
 
-    type InitGrids = Dict<Countable,int[][][]>
-    type Grids = int[][][][]    // c, z, x, y; i.e., countable num, worksheet num, adjusted x coord, adjusted y coord
+    type InitGrids = Dict<Countable,bool[][][]>
+    type Grids = bool[][][][]    // c, z, x, y; i.e., countable num, worksheet num, adjusted x coord, adjusted y coord
     type Dimensions = int[][]
     type Values = Dict<int*int*int, Countable>
 
@@ -31,10 +31,10 @@
             new_grid_z2.[x] <- new_grid_x2
 
             // change old count to 0
-            new_grid_x.[y] <- 0
+            new_grid_x.[y] <- false
 
             // change new count to 1
-            new_grid_x2.[y] <- 1
+            new_grid_x2.[y] <- true
 
             new_grid
 
@@ -75,7 +75,7 @@
                 for x in [| x_lo' .. x_hi' |] do
                     for y in [| y_lo' .. y_hi' |] do
                         // each grid element stores either a 0 or a 1
-                        if grid2d.[x].[y] = 1 then
+                        if grid2d.[x].[y] then
                             i <- i + 1
 //                        counts.[cNum] <- counts.[cNum] + grid2d.[x].[y]
                 counts.[cNum] <- i
@@ -113,7 +113,7 @@
         member self.ValueFor(x: int)(y: int)(z: int) = valueMap.[x,y,z]
 
         // layout of grid is [x][y]
-        static member NewZeroGrid(width: int)(height: int) : int[][] =
+        static member NewFalseGrid(width: int)(height: int) : bool[][] =
             [| 1 .. width |]
             |> Array.map (fun x ->
                 Array.zeroCreate height
@@ -195,27 +195,28 @@
                     // make all the grids for every z
                     let gs = Array.init zMax (fun iz ->
                                 let (width,height) = widthAndHeight.[iz]
-                                FastSheetCounter.NewZeroGrid width height
+                                FastSheetCounter.NewFalseGrid width height
                              )
 
                     // add to dictionary
                     initgrids.Add(res, gs)
 
                 // add count to grid
-                initgrids.[res].[z].[x].[y] <- 1
+                initgrids.[res].[z].[x].[y] <- true
 
             // assign numbers to countables
-            let (cMax,cTups) =
+            let (_,cTups) =
                 initgrids
                 |> Seq.fold (fun (i,xs) kvp ->
                        i + 1, (kvp.Key,i) :: xs
                    ) (0,[])
             let countableMap = cTups |> adict
             let invCountableMap = cTups |> Seq.map (fun (c,i) -> (i,c)) |> adict
+            let cMax = snd (cTups |> List.maxBy (fun (_,i) -> i))
 
             // convert initgrids into grids
             let grids =
-                Array.init (cMax - 1) (fun cNum ->
+                Array.init (cMax + 1) (fun cNum ->
                     let c = invCountableMap.[cNum]
                     let gs = initgrids.[c]
                     gs

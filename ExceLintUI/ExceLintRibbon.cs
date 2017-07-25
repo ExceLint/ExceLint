@@ -29,11 +29,11 @@ namespace ExceLintUI
         private ExceLintGroundTruth annotations;
         private string custodesPath = null;
         private AST.Address fixAddress = null; 
-        private EntropyModelBuilder.EntropyModel fixClusterModel = null;
+        private EntropyModelBuilder2.EntropyModel2 fixClusterModel = null;
 
         #region BUTTON_HANDLERS
 
-        private string ProposedFixesToString(EntropyModelBuilder.ProposedFix[] fixes)
+        private string ProposedFixesToString(EntropyModelBuilder2.ProposedFix[] fixes)
         {
             // produce output string
             var sb = new StringBuilder();
@@ -106,7 +106,7 @@ namespace ExceLintUI
 
             // build the model
             Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-            var model = currentWorkbook.NewEntropyModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb, false);
+            var model = currentWorkbook.NewEntropyModelForWorksheet2(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
 
             // remove progress bar
             pb.Close();
@@ -115,10 +115,10 @@ namespace ExceLintUI
             var fixes = model.Fixes;
 
             // get ranking
-            var ranking = EntropyModelBuilder.EntropyModel.Ranking(fixes);
+            var ranking = EntropyModelBuilder2.EntropyModel2.Ranking(fixes);
 
             // extract clusters
-            var clusters = EntropyModelBuilder.EntropyModel.RankingToClusters(fixes);
+            var clusters = EntropyModelBuilder2.EntropyModel2.RankingToClusters(fixes);
 
             // draw
             currentWorkbook.DrawImmutableClusters(clusters);
@@ -207,11 +207,11 @@ namespace ExceLintUI
                 // build the first model
                 Worksheet activeWs = (Worksheet) Globals.ThisAddIn.Application.ActiveSheet;
                 var sw = System.Diagnostics.Stopwatch.StartNew();
-                fixClusterModel = currentWorkbook.NewEntropyModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb, false);
+                var fcm = currentWorkbook.NewEntropyModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
 
                 // do visualization
-                var histo = fixClusterModel.InvertedHistogram;
-                var clusters = fixClusterModel.Clustering;
+                var histo = fcm.InvertedHistogram;
+                var clusters = fcm.Clustering;
                 sw.Stop();
 
                 var cl_filt = PrettyClusters(clusters, histo, graph);
@@ -222,7 +222,7 @@ namespace ExceLintUI
 
                 // build the second model
                 var sw2 = System.Diagnostics.Stopwatch.StartNew();
-                fixClusterModel = currentWorkbook.NewEntropyModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb, true);
+                fixClusterModel = currentWorkbook.NewEntropyModelForWorksheet2(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
 
                 // do visualization
                 var histo2 = fixClusterModel.InvertedHistogram;
@@ -308,7 +308,7 @@ namespace ExceLintUI
 
             // build the model
             Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-            var model = currentWorkbook.NewEntropyModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb, false);
+            var model = currentWorkbook.NewEntropyModelForWorksheet2(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
 
             // get inverse lookup for clustering
             var addr2Cl = CommonFunctions.ReverseClusterLookup(model.Clustering);

@@ -8,6 +8,7 @@
     open CommonFunctions
     open ClusterModelBuilder
     open EntropyModelBuilder
+    open EntropyModelBuilder2
     open COFModelBuilder
     open SpectralModelBuilder
 
@@ -22,10 +23,15 @@
                 let input : Input = { app = app; config = config'; dag = dag; alpha = alpha; progress = progress; }
                 ClusterModel input
 
-            let initEntropyModel(app: Microsoft.Office.Interop.Excel.Application)(config: FeatureConf)(dag: Depends.DAG)(progress: Depends.Progress)(use_f: bool) : EntropyModel =
+            let initEntropyModel(app: Microsoft.Office.Interop.Excel.Application)(config: FeatureConf)(dag: Depends.DAG)(progress: Depends.Progress) : EntropyModel =
                 let config' = config.validate
                 let input : Input = { app = app; config = config'; dag = dag; alpha = 0.00; progress = progress; }
-                EntropyModel.Initialize input use_f
+                EntropyModel.Initialize input
+
+            let initEntropyModel2(app: Microsoft.Office.Interop.Excel.Application)(config: FeatureConf)(dag: Depends.DAG)(progress: Depends.Progress) : EntropyModel2 =
+                let config' = config.validate
+                let input : Input = { app = app; config = config'; dag = dag; alpha = 0.00; progress = progress; }
+                EntropyModel2.Initialize input
 
             let analyze(app: Microsoft.Office.Interop.Excel.Application)(config: FeatureConf)(dag: Depends.DAG)(alpha: double)(progress: Depends.Progress) =
                 let config' = config.validate
@@ -56,7 +62,7 @@
                             OldClusterModel.runClusterModel input
                         // entropy clustering
                         elif input.config.Cluster then
-                            EntropyModel.runClusterModel input true
+                            EntropyModel2.runClusterModel input
                         else
                         // spectral clustering
                             let pipeline = runSpectralModel         // produce initial (unsorted) ranking

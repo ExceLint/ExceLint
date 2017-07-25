@@ -188,7 +188,7 @@ namespace ExceLintTests
                     var p = Depends.Progress.NOPProgress();
                     var graph = wb.buildDependenceGraph();
                     var conf = (new FeatureConf()).enableShallowInputVectorMixedFullCVectorResultantOSI(true);
-                    var m = ModelBuilder.initEntropyModel(app.XLApplication(), conf, graph, p, false);
+                    var m = ModelBuilder.initEntropyModel(app.XLApplication(), conf, graph, p);
                     var ih = m.InvertedHistogram;
 
                     var wbname = graph.getWorkbookName();
@@ -237,7 +237,7 @@ namespace ExceLintTests
                     var p = Depends.Progress.NOPProgress();
                     var graph = wb.buildDependenceGraph();
                     var conf = (new FeatureConf()).enableShallowInputVectorMixedFullCVectorResultantOSI(true);
-                    var m = ModelBuilder.initEntropyModel(app.XLApplication(), conf, graph, p, false);
+                    var m = ModelBuilder.initEntropyModel(app.XLApplication(), conf, graph, p);
                     var ih = m.InvertedHistogram;
 
                     var wbname = graph.getWorkbookName();
@@ -286,7 +286,7 @@ namespace ExceLintTests
                     var p = Depends.Progress.NOPProgress();
                     var graph = wb.buildDependenceGraph();
                     var conf = (new FeatureConf()).enableShallowInputVectorMixedFullCVectorResultantOSI(true);
-                    var m = ModelBuilder.initEntropyModel(app.XLApplication(), conf, graph, p, false);
+                    var m = ModelBuilder.initEntropyModel(app.XLApplication(), conf, graph, p);
                     var ih = m.InvertedHistogram;
 
                     var wbname = graph.getWorkbookName();
@@ -335,7 +335,7 @@ namespace ExceLintTests
                     var p = Depends.Progress.NOPProgress();
                     var graph = wb.buildDependenceGraph();
                     var conf = (new FeatureConf()).enableShallowInputVectorMixedFullCVectorResultantOSI(true);
-                    var m = ModelBuilder.initEntropyModel(app.XLApplication(), conf, graph, p, false);
+                    var m = ModelBuilder.initEntropyModel(app.XLApplication(), conf, graph, p);
                     var ih = m.InvertedHistogram;
 
                     var wbname = graph.getWorkbookName();

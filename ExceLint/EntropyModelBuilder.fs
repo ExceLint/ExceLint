@@ -305,10 +305,10 @@
                    )
                 |> (fun arr -> CommonTypes.makeImmutableGenericClustering arr)
                 
-            static member runClusterModel(input: Input)(use_f: bool) : AnalysisOutcome =
+            static member runClusterModel(input: Input) : AnalysisOutcome =
                 try
                     if (analysisBase input.config input.dag).Length <> 0 then
-                        let m = EntropyModel.Initialize input use_f
+                        let m = EntropyModel.Initialize input
                         let fixes = m.Fixes
                         let (rtime,ranking) = EntropyModel.Ranking fixes
 
@@ -331,7 +331,7 @@
                 with
                 | AnalysisCancelled -> Cancellation
 
-            static member Initialize(input: Input)(use_f: bool) : EntropyModel =
+            static member Initialize(input: Input) : EntropyModel =
                 // determine the set of cells to be analyzed
                 let cells = analysisBase input.config input.dag
 
