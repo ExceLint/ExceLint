@@ -11,29 +11,16 @@
         let numCountables = grids.Length
 
         static member MinUpdateGrids(grids: SheetVectors)(x: int)(y: int)(z: int)(old_cn: int)(new_cn: int) : SheetVectors =
-            // do the minimum amount of array cloning to
-            // update old countable and new countable counts
+            // copy array
             let new_grid = Array.copy grids
-            // old
-            let new_grid_c = Array.copy new_grid.[old_cn]
-            new_grid.[old_cn] <- new_grid_c
-            let new_grid_z = Array.copy new_grid_c.[z]
-            new_grid_c.[z] <- new_grid_z
-            let new_grid_x = Array.copy new_grid_z.[x]
-            new_grid_z.[x] <- new_grid_x
-            // new
-            let new_grid_c2 = Array.copy new_grid.[new_cn]
-            new_grid.[new_cn] <- new_grid_c2
-            let new_grid_z2 = Array.copy new_grid_c2.[z]
-            new_grid_c2.[z] <- new_grid_z2
-            let new_grid_x2 = Array.copy new_grid_z2.[x]
-            new_grid_z2.[x] <- new_grid_x2
+            let svs = Array.copy new_grid.[z]
+            new_grid.[z] <- svs
 
-            // change old count to 0
-            new_grid_x.[y] <- false
+            // unset value for old cn
+            new_grid.[z].[old_cn].Unset(x,y)
 
-            // change new count to 1
-            new_grid_x2.[y] <- true
+            // set value for new cn
+            new_grid.[z].[new_cn].Set(x,y)
 
             new_grid
 
