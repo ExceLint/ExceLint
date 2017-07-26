@@ -78,8 +78,7 @@
 
         type EntropyModel2(graph: Depends.DAG, ih: ROInvertedHistogram, fsc: FastSheetCounter, z: int, d: ImmDistanceFMaker, indivisibles: ImmutableClustering, stats: Stats) =
             // do region inference
-            let tree = FasterBinaryMinEntropyTree.Infer fsc z ih
-            let regions = FasterBinaryMinEntropyTree.Clustering tree ih indivisibles
+            let (tree, regions, time_ms) = EntropyModel2.Setup ih fsc z indivisibles
 
             // save the reverse lookup for later use
             let revLookup = ReverseClusterLookup regions
@@ -338,6 +337,7 @@
             member self.Scores : ScoreTable = ROInvertedHistogramToScoreTable ih
 
             member self.ScoreTimeMs = stats.FeatureTimeMS + stats.ScaleTimeMS + stats.InvertTimeMS + stats.FastSheetCounterMS
+            member self.EntropyDecompositionTimeMs = time_ms
 
             // compute the cutoff based on a percentage of the number of formulas,
             // by default PCT_TO_FLAG %
@@ -345,6 +345,14 @@
                 let num_formulas = graph.getAllFormulaAddrs().Length
                 let frac = (double PCT_TO_FLAG) / 100.0
                 int (Math.Floor((double num_formulas) * frac))
+
+            static member Setup(ih: ROInvertedHistogram)(fsc: FastSheetCounter)(z: int)(indivisibles: ImmutableClustering) : FasterBinaryMinEntropyTree*ImmutableClustering*int64 =
+                let sw = System.Diagnostics.Stopwatch.StartNew()
+                let tree = FasterBinaryMinEntropyTree.Infer fsc z ih
+                let regions = FasterBinaryMinEntropyTree.Clustering tree ih indivisibles
+                sw.Stop()
+                let time_ms = sw.ElapsedMilliseconds
+                tree, regions, time_ms
 
             static member Ranking(fixes: ProposedFix[]) : int64*Ranking =
                 let sw = new System.Diagnostics.Stopwatch()
@@ -404,7 +412,7 @@
                                 scores = m.Scores;
                                 ranking = ranking
                                 score_time = m.ScoreTimeMs;
-                                ranking_time = rtime;
+                                ranking_time = rtime + m.EntropyDecompositionTimeMs;
                                 sig_threshold_idx = 0;
                                 cutoff_idx = m.Cutoff;
                                 weights = EntropyModel2.Weights fixes;    // this just returns entropy delta for now
