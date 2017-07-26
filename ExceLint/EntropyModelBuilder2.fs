@@ -85,9 +85,12 @@
 
             member self.InvertedHistogram : ROInvertedHistogram = ih
 
-            member self.Clustering : ImmutableClustering = regions
+            member self.Clustering : ImmutableClustering =
+                regions
+                |> Seq.concat
+                |> (fun s -> CommonTypes.makeImmutableGenericClustering s)
 
-            member self.Tree : FasterBinaryMinEntropyTree = tree
+            member self.Trees : FasterBinaryMinEntropyTree[] = trees
 
             member private self.UpdateHistogram(source: ImmutableHashSet<AST.Address>)(target: ImmutableHashSet<AST.Address>) : ROInvertedHistogram =
                 // get representative score from target
@@ -119,16 +122,22 @@
                            accfsc.Fix saddr oldc newc
                        ) fsc
 
-                new EntropyModel2(graph, ih', fsc', z, d, indivisibles', stats)
+                new EntropyModel2(graph, ih', fsc', d, indivisibles', stats)
                 
             member self.MergeCell(source: AST.Address)(target: AST.Address) : EntropyModel2 =
+                // get z for s and t worksheet
+                let z = fsc.ZForWorksheet source.WorksheetName
+
+                // ensure that source and target are on the same sheet
+                assert (z = fsc.ZForWorksheet target.WorksheetName)
+
                 // find the cluster of the target cell
-                let target' = revLookup.[target]
+                let target' = revLookups.[z].[target]
 
                 // is the cell a formula?
                 if AddressIsFormulaValued source ih graph then
                     // find the equivalence class
-                    let source' = revLookup.[source]
+                    let source' = revLookups.[z].[source]
                     self.MergeCluster source' target'
                 else
                     // otherwise, this is an ad-hoc fix
@@ -206,7 +215,13 @@
                 let fixes =
                     self.PrevailingDirectionAdjacencies true
                     |> Array.map (fun (target, addr) ->
-                           let source_class = revLookup.[addr]
+                           // get z for s and t worksheet
+                           let z = fsc.ZForWorksheet addr.WorksheetName
+
+                           // ensure that source and target are on the same sheet
+                           assert (z = fsc.ZForWorksheet (Seq.head target).WorksheetName)
+
+                           let source_class = revLookups.[z].[addr]
                            // Fix equivalence class?
                            // Formuals and strings must all be fixed as a cluster together;
                            // Whitespace and numbers may be 'borrowed' from parent cluster
