@@ -39,6 +39,8 @@
             // this is the AND mask for that bit
             let and_mask = BigInteger.op_OnesComplement(BigInteger.op_LeftShift(BigInteger.One, SheetVector.Index(xy, self.Width)))
             _cells <- BigInteger.op_BitwiseAnd(_cells, and_mask)
+        member self.Copy : SheetVector =
+            SheetVector(Some(_cells), topleft, bottomright)
         member self.BitwiseAnd(c: SheetVector) : SheetVector = SheetVector(Some(BigInteger.op_BitwiseAnd(_cells, c.Bitmap)), topleft, bottomright)
         member self.BitwiseOr(c: SheetVector) : SheetVector = SheetVector(Some(BigInteger.op_BitwiseOr(_cells, c.Bitmap)), topleft, bottomright)
         member self.BitwiseXOr(c: SheetVector) : SheetVector = SheetVector(Some(BigInteger.op_ExclusiveOr(_cells, c.Bitmap)), topleft, bottomright)

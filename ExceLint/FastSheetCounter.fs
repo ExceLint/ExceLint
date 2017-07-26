@@ -16,10 +16,12 @@
             let svs = Array.copy new_grid.[z]
             new_grid.[z] <- svs
 
-            // unset value for old cn
+            // copy value & unset
+            new_grid.[z].[old_cn] <- new_grid.[z].[old_cn].Copy
             new_grid.[z].[old_cn].Unset(x,y)
 
-            // set value for new cn
+            // copy value & set
+            new_grid.[z].[new_cn] <- new_grid.[z].[new_cn].Copy
             new_grid.[z].[new_cn].Set(x,y)
 
             new_grid
