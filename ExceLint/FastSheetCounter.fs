@@ -3,15 +3,14 @@
     open CommonTypes
     open Utils
 
-    type InitGrids = Dict<Countable,bool[][][]>
-    type Grids = bool[][][][]    // c, z, x, y; i.e., countable num, worksheet num, adjusted x coord, adjusted y coord
-    type Dimensions = int[][]
+    type SheetVectors = SheetVector[][]  // SheetVector[z][c]: c = countable num, z = worksheet num
     type Values = Dict<int*int*int, Countable>
+    type Dimensions = Dict<int,int[]>
 
-    type FastSheetCounter(grids: Grids, dimensions: Dimensions, zNum: Dict<string,int>, countableMap: Dict<Countable,int>, valueMap: Values) = 
+    type FastSheetCounter(grids: SheetVectors, dimensions: Dimensions, zNum: Dict<string,int>, countableMap: Dict<Countable,int>, valueMap: Values) = 
         let numCountables = grids.Length
 
-        static member MinUpdateGrids(grids: Grids)(x: int)(y: int)(z: int)(old_cn: int)(new_cn: int) : Grids =
+        static member MinUpdateGrids(grids: SheetVectors)(x: int)(y: int)(z: int)(old_cn: int)(new_cn: int) : SheetVectors =
             // do the minimum amount of array cloning to
             // update old countable and new countable counts
             let new_grid = Array.copy grids
@@ -58,29 +57,21 @@
 
         // all coordinates are inclusive
         member self.CountsForZ(z: int)(x_lo: int)(x_hi: int)(y_lo: int)(y_hi: int) : int[] =
-            // adjust indices
-            let ltX = dimensions.[z].[0]
-            let ltY = dimensions.[z].[1]
+            let svs = grids.[z]
+            svs
+            |> Array.map (fun sv ->
+                // create bitmask for range of interest
+                let mask = SheetVector.Empty(sv.TopLeft, sv.BottomRight)
+                for x = x_lo to x_hi do
+                    for y = y_lo to y_hi do
+                        mask.Set(x,y)
 
-            let x_lo' = x_lo - ltX
-            let x_hi' = x_hi - ltX
-            let y_lo' = y_lo - ltY
-            let y_hi' = y_hi - ltY
+                // AND sheetvector and mask
+                let sv_in_rng = sv.BitwiseAnd mask
 
-            // count
-            let counts : int[] = Array.zeroCreate numCountables
-            for cNum in [| 0 .. grids.Length - 1 |] do
-                let grid2d = grids.[cNum].[z]
-                let mutable i = 0
-                for x in [| x_lo' .. x_hi' |] do
-                    for y in [| y_lo' .. y_hi' |] do
-                        // each grid element stores either a 0 or a 1
-                        if grid2d.[x].[y] then
-                            i <- i + 1
-//                        counts.[cNum] <- counts.[cNum] + grid2d.[x].[y]
-                counts.[cNum] <- i
-
-            counts
+                // count
+                sv_in_rng.countBits
+            )
 
         member self.EntropyFor(z: int)(x_lo: int)(x_hi: int)(y_lo: int)(y_hi: int) : double =
             if x_lo > x_hi || y_lo > y_hi then
@@ -122,11 +113,10 @@
         static member Initialize(ih: ROInvertedHistogram) : FastSheetCounter =
             let mutable zMax = 0
             let zNum = new Dict<string,int>()
-            let initdim = new Dict<int,int[]>()
+            let dimensions = new Dict<int,int[]>()
             let values = new Values()
-
-            // init grid dict
-            let initgrids = new InitGrids()
+            let mutable cMax = 0
+            let cnums = new Dict<Countable,int>()
 
             // iterate through all elements in the inverted histogram
             for kvp in ih do
@@ -140,86 +130,56 @@
                             zMax <- zMax + 1
                             zn
 
+                // save location-independent resultant vector
+                let (_,_,c) = kvp.Value
+                let cvr = c.ToCVectorResultant
+                values.Add((x,y,z), cvr)
+
+                // assign number to all distinct countables
+                if not (cnums.ContainsKey cvr) then
+                    cnums.Add(cvr, cMax)
+                    cMax <- cMax + 1
+
                 // initialize dimensions, if necessary
-                if not (initdim.ContainsKey z) then
-                    initdim.Add(z,[| x; y; x; y; |])
+                if not (dimensions.ContainsKey z) then
+                    dimensions.Add(z,[| x; y; x; y; |])
 
                 // min x
-                if x < initdim.[z].[0] then
-                    initdim.[z].[0] <- x
+                if x < dimensions.[z].[0] then
+                    dimensions.[z].[0] <- x
                 // min y
-                if y < initdim.[z].[1] then
-                    initdim.[z].[1] <- y
+                if y < dimensions.[z].[1] then
+                    dimensions.[z].[1] <- y
                 // max x
-                if x > initdim.[z].[2] then
-                    initdim.[z].[2] <- x
+                if x > dimensions.[z].[2] then
+                    dimensions.[z].[2] <- x
                 // max y
-                if y > initdim.[z].[3] then
-                    initdim.[z].[3] <- y
+                if y > dimensions.[z].[3] then
+                    dimensions.[z].[3] <- y
 
-            // compute width and height and index by z
-            let widthAndHeight =
-                Array.init zMax (fun z ->
-                    // add one because min and max are both inclusive
-                    let width = initdim.[z].[2] - initdim.[z].[0] + 1
-                    let height = initdim.[z].[3] - initdim.[z].[1] + 1
-                    width, height
-                )
+            // get distinct countables
+            let cDistinct = cnums.Keys |> Seq.toArray
 
-            // convert initdim to jagged array
-            let dimensions =
-                Array.init zMax (fun z ->
-                    Array.init 4 (fun i ->
-                        initdim.[z].[i]
-                    )
-                )
+            // make quick-counting data-structure
+            let sheetvects =
+                Array.map (fun z ->
+                    // get dimensions
+                    let (ltX,ltY) = dimensions.[z].[0], dimensions.[z].[1]
+                    let (rbX,rbY) = dimensions.[z].[2], dimensions.[z].[3]
 
-            // go through a second time to populate grids
-            for kvp in ih do
-                let z = zNum.[kvp.Key.WorksheetName]
+                    Array.mapi (fun cNum c ->
+                        
 
-                // adjust x and y for array dimensions
-                let x = kvp.Key.X - initdim.[z].[0] 
-                let y = kvp.Key.Y - initdim.[z].[1]
+                        // init empty sheet vector
+                        let sv = SheetVector.Empty((ltX,ltY), (rbX,rbY))
 
-                // get countable
-                let (_,_,c) = kvp.Value
-                let res = c.ToCVectorResultant
+                        // set all relevant bits
+                        for x = ltX to rbX do
+                            for y = ltY to rbY do
+                                if values.ContainsKey (x,y,z) && values.[(x,y,z)] = c then
+                                    sv.Set(x,y)
+                        sv
+                    ) cDistinct
+                ) [| 0 .. zMax - 1 |]
 
-                // store x,y,z -> Countable map
-                // use the real x, y, and z here; not adjusted values
-                values.Add((kvp.Key.X,kvp.Key.Y,z), res)
-                
-                // create grids, if necessary
-                if not (initgrids.ContainsKey res) then
-                    // make all the grids for every z
-                    let gs = Array.init zMax (fun iz ->
-                                let (width,height) = widthAndHeight.[iz]
-                                FastSheetCounter.NewFalseGrid width height
-                             )
-
-                    // add to dictionary
-                    initgrids.Add(res, gs)
-
-                // add count to grid
-                initgrids.[res].[z].[x].[y] <- true
-
-            // assign numbers to countables
-            let (_,cTups) =
-                initgrids
-                |> Seq.fold (fun (i,xs) kvp ->
-                       i + 1, (kvp.Key,i) :: xs
-                   ) (0,[])
-            let countableMap = cTups |> adict
-            let invCountableMap = cTups |> Seq.map (fun (c,i) -> (i,c)) |> adict
-            let cMax = snd (cTups |> List.maxBy (fun (_,i) -> i))
-
-            // convert initgrids into grids
-            let grids =
-                Array.init (cMax + 1) (fun cNum ->
-                    let c = invCountableMap.[cNum]
-                    let gs = initgrids.[c]
-                    gs
-                )
-
-            FastSheetCounter(grids, dimensions, zNum, countableMap, values)
+            FastSheetCounter(sheetvects, dimensions, zNum, cnums, values)
