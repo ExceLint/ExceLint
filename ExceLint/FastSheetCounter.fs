@@ -62,6 +62,8 @@
                 sv_in_rng.countBits
             )
 
+        member self.NumWorksheets = zNum.Count
+
         member self.EntropyFor(z: int)(x_lo: int)(x_hi: int)(y_lo: int)(y_hi: int) : double =
             if x_lo > x_hi || y_lo > y_hi then
                 System.Double.PositiveInfinity

@@ -76,12 +76,12 @@
             let (lt,rb) = Utils.BoundingRegion c1 0
             Vector(double (rb.X - lt.X), double (rb.Y - lt.Y), 0.0)
 
-        type EntropyModel2(graph: Depends.DAG, ih: ROInvertedHistogram, fsc: FastSheetCounter, z: int, d: ImmDistanceFMaker, indivisibles: ImmutableClustering, stats: Stats) =
+        type EntropyModel2(graph: Depends.DAG, ih: ROInvertedHistogram, fsc: FastSheetCounter, d: ImmDistanceFMaker, indivisibles: ImmutableClustering, stats: Stats) =
             // do region inference
-            let (tree, regions, time_ms) = EntropyModel2.Setup ih fsc z indivisibles
+            let (trees, regions, time_ms) = EntropyModel2.Setup ih fsc indivisibles
 
             // save the reverse lookup for later use
-            let revLookup = ReverseClusterLookup regions
+            let revLookups = Array.map (fun r -> ReverseClusterLookup r) regions
 
             member self.InvertedHistogram : ROInvertedHistogram = ih
 
@@ -346,13 +346,15 @@
                 let frac = (double PCT_TO_FLAG) / 100.0
                 int (Math.Floor((double num_formulas) * frac))
 
-            static member Setup(ih: ROInvertedHistogram)(fsc: FastSheetCounter)(z: int)(indivisibles: ImmutableClustering) : FasterBinaryMinEntropyTree*ImmutableClustering*int64 =
+            static member Setup(ih: ROInvertedHistogram)(fsc: FastSheetCounter)(indivisibles: ImmutableClustering) : FasterBinaryMinEntropyTree[]*ImmutableClustering[]*int64 =
                 let sw = System.Diagnostics.Stopwatch.StartNew()
-                let tree = FasterBinaryMinEntropyTree.Infer fsc z ih
-                let regions = FasterBinaryMinEntropyTree.Clustering tree ih indivisibles
+                let sheets = fsc.NumWorksheets
+
+                let trees = Array.map (fun z -> FasterBinaryMinEntropyTree.Infer fsc z ih) [| 0 .. sheets - 1 |]
+                let regions = Array.map (fun tree -> FasterBinaryMinEntropyTree.Clustering tree ih indivisibles) trees
                 sw.Stop()
                 let time_ms = sw.ElapsedMilliseconds
-                tree, regions, time_ms
+                trees, regions, time_ms
 
             static member Ranking(fixes: ProposedFix[]) : int64*Ranking =
                 let sw = new System.Diagnostics.Stopwatch()
@@ -429,7 +431,6 @@
                 let cells = analysisBase input.config input.dag
 
                 let sheets = cells |> Array.map (fun a -> a.WorksheetName) |> Array.distinct
-                assert (sheets.Length = 1)
 
                 // get all NLFRs for every formula cell
                 let _runf = fun () -> runEnabledFeatures cells input.dag input.config input.progress
@@ -447,8 +448,6 @@
                 let _runfsc = fun () -> FastSheetCounter.Initialize ih
                 let (fsc: FastSheetCounter, fsc_time: int64) = PerfUtils.runMillis _runfsc ()
 
-                let z = fsc.ZForWorksheet sheets.[0]
-
                 // collate stats
                 let times = Stats(feat_time, scale_time, invert_time, fsc_time)
 
@@ -459,4 +458,4 @@
                     | DistanceMetric.EarthMover -> earth_movers_dist_ro invertedHistogram
                     | DistanceMetric.MeanCentroid -> cent_dist_ro invertedHistogram
 
-                new EntropyModel2(input.dag, ih, fsc, z, distance_f, ToImmutableClustering (new Clustering()), times)
+                new EntropyModel2(input.dag, ih, fsc, distance_f, ToImmutableClustering (new Clustering()), times)
