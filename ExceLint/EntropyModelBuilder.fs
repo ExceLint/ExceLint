@@ -67,7 +67,7 @@
             let nn = not (AddressIsNumericValued a ih graph)
             let nf = not (AddressIsFormulaValued a ih graph)
             let nws = not (AddressIsWhitespaceValued a ih graph)
-            nn & nf & nws
+            nn && nf && nws
 
         let ClusterIsFormulaValued(c: ImmutableHashSet<AST.Address>)(ih: ROInvertedHistogram)(graph: Depends.DAG) : bool =
             c |> Seq.forall (fun addr -> AddressIsFormulaValued addr ih graph)

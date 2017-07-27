@@ -67,7 +67,7 @@
             let nn = not (AddressIsNumericValued a ih graph)
             let nf = not (AddressIsFormulaValued a ih graph)
             let nws = not (AddressIsWhitespaceValued a ih graph)
-            nn & nf & nws
+            nn && nf && nws
 
         let ClusterIsFormulaValued(c: ImmutableHashSet<AST.Address>)(ih: ROInvertedHistogram)(graph: Depends.DAG) : bool =
             c |> Seq.forall (fun addr -> AddressIsFormulaValued addr ih graph)
@@ -76,21 +76,19 @@
             let (lt,rb) = Utils.BoundingRegion c1 0
             Vector(double (rb.X - lt.X), double (rb.Y - lt.Y), 0.0)
 
-        type EntropyModel2(graph: Depends.DAG, ih: ROInvertedHistogram, fsc: FastSheetCounter, d: ImmDistanceFMaker, indivisibles: ImmutableClustering[], stats: Stats) =
-            // do region inference
-            let (trees, regions, time_ms) = EntropyModel2.Setup ih fsc indivisibles
-
+        type EntropyModel2(graph: Depends.DAG, trees: FasterBinaryMinEntropyTree[], regions: ImmutableClustering[], time_ms: int64, ih: ROInvertedHistogram, fsc: FastSheetCounter, d: ImmDistanceFMaker, indivisibles: ImmutableClustering[], stats: Stats) =
             // save the reverse lookup for later use
             let revLookups = Array.map (fun r -> ReverseClusterLookup r) regions
 
             member self.InvertedHistogram : ROInvertedHistogram = ih
 
-            member self.Clustering : ImmutableClustering =
-                regions
-                |> Seq.concat
+            member self.Clustering(z: int) : ImmutableClustering =
+                regions.[z]
                 |> (fun s -> CommonTypes.makeImmutableGenericClustering s)
 
             member self.Trees : FasterBinaryMinEntropyTree[] = trees
+
+            member self.ZForWorksheet(sheet: string) : int = fsc.ZForWorksheet sheet
 
             member private self.UpdateHistogram(source: ImmutableHashSet<AST.Address>)(target: ImmutableHashSet<AST.Address>) : ROInvertedHistogram =
                 // get representative score from target
@@ -127,7 +125,16 @@
                            accfsc.Fix saddr oldc newc
                        ) fsc
 
-                new EntropyModel2(graph, ih', fsc', d, indivisibles', stats)
+                // run region inference for sheet that changed
+                let (tree',region',time_ms) = EntropyModel2.Setup z ih' fsc' indivisibles
+
+                // update tree and region in question
+                let trees' = Array.copy trees
+                let regions' = Array.copy regions
+                trees'.[z] <- tree'
+                regions'.[z] <- region'
+
+                new EntropyModel2(graph, trees', regions', time_ms, ih', fsc', d, indivisibles', stats)
                 
             member self.MergeCell(source: AST.Address)(target: AST.Address) : EntropyModel2 =
                 // get z for s and t worksheet
@@ -148,32 +155,32 @@
                     // otherwise, this is an ad-hoc fix
                     let source' = (new HashSet<AST.Address>([| source |])).ToImmutableHashSet()
                     self.MergeCluster source' target'
-
-            member self.EntropyDiff(target: EntropyModel2) : double =
-                let c1 = self.Clustering
-                let c2 = target.Clustering
+                     
+            member self.EntropyDiff(z: int)(target: EntropyModel2) : double =
+                let c1 = self.Clustering z
+                let c2 = target.Clustering z
                 BinaryMinEntropyTree.ClusteringEntropyDiff c1 c2
 
-            member private self.Adjacencies(onlyFormulaTargets: bool) : (ImmutableHashSet<AST.Address>*AST.Address)[] =
-                // get adjacencies
-                self.Clustering
-                |> Seq.filter (fun c -> if onlyFormulaTargets then ClusterIsFormulaValued c ih graph else true)
-                |> Seq.map (fun target ->
-                        // get adjacencies
-                        let adj = HSAdjacentCellsImm target
+//            member private self.Adjacencies(onlyFormulaTargets: bool) : (ImmutableHashSet<AST.Address>*AST.Address)[] =
+//                // get adjacencies
+//                self.Clustering
+//                |> Seq.filter (fun c -> if onlyFormulaTargets then ClusterIsFormulaValued c ih graph else true)
+//                |> Seq.map (fun target ->
+//                        // get adjacencies
+//                        let adj = HSAdjacentCellsImm target
+//
+//                        // do not include adjacencies that are not in our histogram
+//                        let adj' = adj |> Seq.filter (fun addr -> ih.ContainsKey addr)
+//
+//                        // flatten
+//                        adj'
+//                        |> Seq.map (fun a -> target, a)
+//                    )
+//                |> Seq.concat
+//                |> Seq.toArray
 
-                        // do not include adjacencies that are not in our histogram
-                        let adj' = adj |> Seq.filter (fun addr -> ih.ContainsKey addr)
-
-                        // flatten
-                        adj'
-                        |> Seq.map (fun a -> target, a)
-                    )
-                |> Seq.concat
-                |> Seq.toArray
-
-            member private self.PrevailingDirectionAdjacencies(onlyFormulaTargets: bool) : (ImmutableHashSet<AST.Address>*AST.Address)[] =
-                self.Clustering
+            member private self.PrevailingDirectionAdjacencies(z: int)(onlyFormulaTargets: bool) : (ImmutableHashSet<AST.Address>*AST.Address)[] =
+                self.Clustering z
                 |> Seq.filter (fun c -> if onlyFormulaTargets then ClusterIsFormulaValued c ih graph else true)
                 |> Seq.map (fun target ->
                        // get prevailing direction of target cluster
@@ -215,10 +222,10 @@
                 |> Seq.concat
                 |> Seq.toArray
 
-            member self.Fixes : ProposedFix[] =
+            member self.Fixes(z: int) : ProposedFix[] =
                 // get models & prune
                 let fixes =
-                    self.PrevailingDirectionAdjacencies true
+                    self.PrevailingDirectionAdjacencies z true
                     |> Array.map (fun (target, addr) ->
                            // get z for s and t worksheet
                            let z = fsc.ZForWorksheet addr.WorksheetName
@@ -331,7 +338,7 @@
                             let numodel = self.MergeCluster source target
 
                             // compute entropy difference
-                            let entropyDelta = self.EntropyDiff numodel
+                            let entropyDelta = self.EntropyDiff z numodel
 
                             // compute inverse cluster distance
                             let dist = (d ih) source target
@@ -347,7 +354,7 @@
                     // no duplicates (happens for whole-cluster merges)
                     |> Array.distinctBy (fun fix -> fix.Source, fix.Target)
 
-                // convert to ranking and sort from highest score to highest
+                // sort from highest score to highest
                 let ranking =
                     models
                     |> Array.sortByDescending (fun f -> f.Score)
@@ -362,32 +369,36 @@
             // compute the cutoff based on a percentage of the number of formulas,
             // by default PCT_TO_FLAG %
             member self.Cutoff : int =
+                // this is a workbook-wide cutoff
                 let num_formulas = graph.getAllFormulaAddrs().Length
                 let frac = (double PCT_TO_FLAG) / 100.0
                 int (Math.Floor((double num_formulas) * frac))
 
-            static member Setup(ih: ROInvertedHistogram)(fsc: FastSheetCounter)(indivisibles: ImmutableClustering[]) : FasterBinaryMinEntropyTree[]*ImmutableClustering[]*int64 =
+            static member Setup(z: int)(ih: ROInvertedHistogram)(fsc: FastSheetCounter)(indivisibles: ImmutableClustering[]) : FasterBinaryMinEntropyTree*ImmutableClustering*int64 =
                 let sw = System.Diagnostics.Stopwatch.StartNew()
                 let sheets = fsc.NumWorksheets
 
-                let trees = Array.map (fun z -> FasterBinaryMinEntropyTree.Infer fsc z ih) [| 0 .. sheets - 1 |]
-                let regions = Array.mapi (fun z tree -> FasterBinaryMinEntropyTree.Clustering tree ih indivisibles.[z]) trees
+                // update just the sheet requested by the user
+                let tree' = FasterBinaryMinEntropyTree.Infer fsc z ih
+                let region' = FasterBinaryMinEntropyTree.Clustering tree' ih indivisibles.[z]
+
                 sw.Stop()
                 let time_ms = sw.ElapsedMilliseconds
 
-                // DEBUG: one of the clusters must contain each of the indivisible addrs
-                indivisibles
-                |> Array.iteri (fun z i ->
-                      i
-                      |> Seq.iter (fun s ->
-                          s
-                          |> Seq.iter (fun a ->
-                                 assert(regions.[z] |> Seq.exists (fun set -> set.Contains a))
-                             )
-                      )
-                   )
+                tree', region', time_ms
 
-                trees, regions, time_ms
+            static member CombineFxes(fixeses: ProposedFix[][]) : int64*ProposedFix[] =
+                let sw = System.Diagnostics.Stopwatch.StartNew()
+
+                // combine
+                let fixes = fixeses |> Array.concat
+
+                // sort
+                let fixes' = fixes |> Array.sortByDescending (fun pf -> pf.Score)
+
+                sw.Stop()
+
+                sw.ElapsedMilliseconds, fixes'
 
             static member Ranking(fixes: ProposedFix[]) : int64*Ranking =
                 let sw = new System.Diagnostics.Stopwatch()
@@ -395,6 +406,7 @@
 
                 // convert proposed fixes to ordinary 'cell flags'
                 let rs = fixes
+                         // combine all fixes across sheets
                          |> Array.map (fun pf ->
                                 pf.Source
                                 |> Seq.map (fun addr ->
@@ -412,9 +424,10 @@
 
                 ranking_time_ms,rs'
 
-            static member Weights(fixes: ProposedFix[]) : Dict<AST.Address,double> =
+            static member Weights(fixeses: ProposedFix[][]) : Dict<AST.Address,double> =
                 let d = new Dict<AST.Address,double>()
-                fixes
+                fixeses
+                |> Seq.concat
                 |> Seq.iter (fun pf ->
                        pf.Source
                        |> Seq.iter (fun addr ->
@@ -436,8 +449,10 @@
             static member runClusterModel(input: Input) : AnalysisOutcome =
                 try
                     if (analysisBase input.config input.dag).Length <> 0 then
+                        let numSheets = input.dag.getWorksheetNames().Length
                         let m = EntropyModel2.Initialize input
-                        let fixes = m.Fixes
+                        let fixeses = [| 0 .. numSheets - 1|] |> Array.map m.Fixes
+                        let (combtime,fixes) = EntropyModel2.CombineFxes fixeses
                         let (rtime,ranking) = EntropyModel2.Ranking fixes
 
                         Success(Cluster
@@ -447,10 +462,10 @@
                                 scores = m.Scores;
                                 ranking = ranking
                                 score_time = m.ScoreTimeMs;
-                                ranking_time = rtime + m.EntropyDecompositionTimeMs;
+                                ranking_time = combtime + rtime + m.EntropyDecompositionTimeMs;
                                 sig_threshold_idx = 0;
                                 cutoff_idx = m.Cutoff;
-                                weights = EntropyModel2.Weights fixes;    // this just returns entropy delta for now
+                                weights = EntropyModel2.Weights fixeses;    // this just returns entropy delta for now
                                 clustering = CommonFunctions.ToMutableClustering (EntropyModel2.RankingToClusters fixes);
                             }
                         )
@@ -497,4 +512,10 @@
                 // initialize indivisible set
                 let indivisibles = EntropyModel2.InitIndivisibles sheets.Length
 
-                new EntropyModel2(input.dag, ih, fsc, distance_f, indivisibles, times)
+                // init all sheets
+                let output = [| 0 .. (fsc.NumWorksheets - 1) |] |> Array.map (fun z -> EntropyModel2.Setup z ih fsc indivisibles)
+                let trees = output |> Array.map (fun (tree,_,_) -> tree)
+                let regions = output |> Array.map (fun (_,region,_) -> region)
+                let time_ms = output |> Array.sumBy (fun (_,_,t) -> t)
+
+                new EntropyModel2(input.dag, trees, regions, time_ms, ih, fsc, distance_f, indivisibles, times)

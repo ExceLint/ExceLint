@@ -110,8 +110,11 @@ namespace ExceLintUI
             // remove progress bar
             pb.Close();
 
+            // get z for this worksheet
+            var z = model.ZForWorksheet(activeWs.Name);
+
             // get fixes
-            var fixes = model.Fixes;
+            var fixes = model.Fixes(z);
 
             // get ranking
             var ranking = EntropyModelBuilder2.EntropyModel2.Ranking(fixes);
@@ -202,46 +205,30 @@ namespace ExceLintUI
             // get dependence graph
             var graph = currentWorkbook.getDependenceGraph(false);
 
+            // get active sheet
+            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+
             if (fixClusterModel == null)
             {
                 // create progbar in main thread;
                 // worker thread will call Dispose
                 var pb = new ProgBar();
 
-                Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-
-                //// build the first model
-                //var sw = System.Diagnostics.Stopwatch.StartNew();
-                //var fcm = currentWorkbook.NewEntropyModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
-
-                // do visualization
-                //var histo = fcm.InvertedHistogram;
-                //var clusters = fcm.Clustering;
-                //sw.Stop();
-
-                //var cl_filt = PrettyClusters(clusters, histo, graph);
-                //currentWorkbook.restoreOutputColors();
-                //currentWorkbook.DrawImmutableClusters(cl_filt);
-
-                //System.Windows.Forms.MessageBox.Show("BMET time ms: " + sw.ElapsedMilliseconds);
-
-                // build the second model
+                // build the model
                 var sw2 = System.Diagnostics.Stopwatch.StartNew();
                 fixClusterModel = currentWorkbook.NewEntropyModelForWorksheet2(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
 
+                // get z for worksheet
+                var z = fixClusterModel.ZForWorksheet(activeWs.Name);
+
                 // do visualization
                 var histo2 = fixClusterModel.InvertedHistogram;
-                var clusters2 = fixClusterModel.Clustering;
+                var clusters2 = fixClusterModel.Clustering(z);
                 sw2.Stop();
 
                 var cl_filt2 = PrettyClusters(clusters2, histo2, graph);
                 currentWorkbook.restoreOutputColors();
                 currentWorkbook.DrawImmutableClusters(cl_filt2);
-
-                System.Windows.Forms.MessageBox.Show("FBMET time ms: " + sw2.ElapsedMilliseconds);
-
-                //var same = CommonFunctions.SameClustering(clusters, clusters2);
-                //System.Windows.Forms.MessageBox.Show("Clustering is same: " + same);
 
                 // remove progress bar
                 pb.Close();
@@ -260,6 +247,9 @@ namespace ExceLintUI
                 AST.Address cursorAddr =
                     ParcelCOMShim.Address.AddressFromCOMObject(cursor, Globals.ThisAddIn.Application.ActiveWorkbook);
 
+                // get z for worksheet
+                var z = fixClusterModel.ZForWorksheet(activeWs.Name);
+
                 if (fixAddress == null)
                 {
                     fixAddress = cursorAddr;
@@ -273,13 +263,13 @@ namespace ExceLintUI
                     var newModel = fixClusterModel.MergeCell(fixAddress, cursorAddr);
 
                     // compute change in entropy
-                    var deltaE = fixClusterModel.EntropyDiff(newModel);
+                    var deltaE = fixClusterModel.EntropyDiff(z, newModel);
 
                     // save new model
                     fixClusterModel = newModel;
 
                     // redisplay visualiztion
-                    var cl_filt = PrettyClusters(newModel.Clustering, newModel.InvertedHistogram, graph);
+                    var cl_filt = PrettyClusters(newModel.Clustering(z), newModel.InvertedHistogram, graph);
                     currentWorkbook.restoreOutputColors();
                     currentWorkbook.DrawImmutableClusters(cl_filt);
 
@@ -297,7 +287,7 @@ namespace ExceLintUI
 
         private void clusterForCell_Click(object sender, RibbonControlEventArgs e)
         {
-            var w = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+            var ws = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
 
             var app = Globals.ThisAddIn.Application;
 
@@ -315,8 +305,11 @@ namespace ExceLintUI
             Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
             var model = currentWorkbook.NewEntropyModelForWorksheet2(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
 
+            // get z for worksheet
+            var z = model.ZForWorksheet(ws.Name);
+
             // get inverse lookup for clustering
-            var addr2Cl = CommonFunctions.ReverseClusterLookup(model.Clustering);
+            var addr2Cl = CommonFunctions.ReverseClusterLookup(model.Clustering(z));
 
             // get cluster for address
             var cluster = addr2Cl[cursorAddr];
