@@ -22,11 +22,12 @@
             member self.Score = (self.E * self.WeightedDotProduct) / self.Distance
 
         [<Struct>]
-        type Stats(feat_ms: int64, scale_ms: int64, invert_ms: int64, fsc_ms: int64) =
+        type Stats(feat_ms: int64, scale_ms: int64, invert_ms: int64, fsc_ms: int64, infer_ms: int64) =
             member self.FeatureTimeMS = feat_ms
             member self.ScaleTimeMS = scale_ms
             member self.InvertTimeMS = invert_ms
             member self.FastSheetCounterMS = fsc_ms
+            member self.InferTimeMS = infer_ms
 
         let ScoreForCell(addr: AST.Address)(ih: ROInvertedHistogram) : Countable =
             let (_,_,v) = ih.[addr]
@@ -76,7 +77,7 @@
             let (lt,rb) = Utils.BoundingRegion c1 0
             Vector(double (rb.X - lt.X), double (rb.Y - lt.Y), 0.0)
 
-        type EntropyModel2(graph: Depends.DAG, trees: FasterBinaryMinEntropyTree[], regions: ImmutableClustering[], time_ms: int64, ih: ROInvertedHistogram, fsc: FastSheetCounter, d: ImmDistanceFMaker, indivisibles: ImmutableClustering[], stats: Stats) =
+        type EntropyModel2(graph: Depends.DAG, trees: FasterBinaryMinEntropyTree[], regions: ImmutableClustering[], ih: ROInvertedHistogram, fsc: FastSheetCounter, d: ImmDistanceFMaker, indivisibles: ImmutableClustering[], stats: Stats) =
             // save the reverse lookup for later use
             let revLookups = Array.map (fun r -> ReverseClusterLookup r) regions
 
@@ -126,7 +127,7 @@
                        ) fsc
 
                 // run region inference for sheet that changed
-                let (tree',region',time_ms) = EntropyModel2.Setup z ih' fsc' indivisibles
+                let (tree',region') = EntropyModel2.Setup z ih' fsc' indivisibles
 
                 // update tree and region in question
                 let trees' = Array.copy trees
@@ -134,7 +135,7 @@
                 trees'.[z] <- tree'
                 regions'.[z] <- region'
 
-                new EntropyModel2(graph, trees', regions', time_ms, ih', fsc', d, indivisibles', stats)
+                new EntropyModel2(graph, trees', regions', ih', fsc', d, indivisibles', stats)
                 
             member self.MergeCell(source: AST.Address)(target: AST.Address) : EntropyModel2 =
                 // get z for s and t worksheet
@@ -363,8 +364,11 @@
 
             member self.Scores : ScoreTable = ROInvertedHistogramToScoreTable ih
 
-            member self.ScoreTimeMs = stats.FeatureTimeMS + stats.ScaleTimeMS + stats.InvertTimeMS + stats.FastSheetCounterMS
-            member self.EntropyDecompositionTimeMs = time_ms
+            member self.ScoreTimeMs = stats.FeatureTimeMS + stats.ScaleTimeMS + stats.InvertTimeMS + stats.FastSheetCounterMS + stats.InferTimeMS
+
+            member self.CacheHits = fsc.Hits
+
+            member self.CacheLookups = fsc.Lookups
 
             // compute the cutoff based on a percentage of the number of formulas,
             // by default PCT_TO_FLAG %
@@ -374,17 +378,12 @@
                 let frac = (double PCT_TO_FLAG) / 100.0
                 int (Math.Floor((double num_formulas) * frac))
 
-            static member Setup(z: int)(ih: ROInvertedHistogram)(fsc: FastSheetCounter)(indivisibles: ImmutableClustering[]) : FasterBinaryMinEntropyTree*ImmutableClustering*int64 =
-                let sw = System.Diagnostics.Stopwatch.StartNew()
-
+            static member Setup(z: int)(ih: ROInvertedHistogram)(fsc: FastSheetCounter)(indivisibles: ImmutableClustering[]) : FasterBinaryMinEntropyTree*ImmutableClustering =
                 // update just the sheet requested by the user
                 let tree' = FasterBinaryMinEntropyTree.Infer fsc z ih
                 let region' = FasterBinaryMinEntropyTree.Clustering tree' ih indivisibles.[z] fsc
 
-                sw.Stop()
-                let time_ms = sw.ElapsedMilliseconds
-
-                tree', region', time_ms
+                tree', region'
 
             static member CombineFxes(fixeses: ProposedFix[][]) : int64*ProposedFix[] =
                 let sw = System.Diagnostics.Stopwatch.StartNew()
@@ -450,7 +449,10 @@
                     if (analysisBase input.config input.dag).Length <> 0 then
                         let numSheets = input.dag.getWorksheetNames().Length
                         let m = EntropyModel2.Initialize input
+                        let sw = System.Diagnostics.Stopwatch.StartNew()
                         let fixeses = [| 0 .. numSheets - 1|] |> Array.map m.Fixes
+                        sw.Stop()
+                        let fixtime = sw.ElapsedMilliseconds
                         let (combtime,fixes) = EntropyModel2.CombineFxes fixeses
                         let (rtime,ranking) = EntropyModel2.Ranking fixes
 
@@ -461,7 +463,7 @@
                                 scores = m.Scores;
                                 ranking = ranking
                                 score_time = m.ScoreTimeMs;
-                                ranking_time = combtime + rtime + m.EntropyDecompositionTimeMs;
+                                ranking_time = fixtime + combtime + rtime;
                                 sig_threshold_idx = 0;
                                 cutoff_idx = m.Cutoff;
                                 weights = EntropyModel2.Weights fixeses;    // this just returns entropy delta for now
@@ -498,9 +500,6 @@
                 let _runfsc = fun () -> FastSheetCounter.Initialize ih
                 let (fsc: FastSheetCounter, fsc_time: int64) = PerfUtils.runMillis _runfsc ()
 
-                // collate stats
-                let times = Stats(feat_time, scale_time, invert_time, fsc_time)
-
                 // define distance function
                 let distance_f(invertedHistogram: ROInvertedHistogram) =
                     match input.config.DistanceMetric with
@@ -512,10 +511,14 @@
                 let indivisibles = EntropyModel2.InitIndivisibles sheets.Length
 
                 // init all sheets
+                let sw = System.Diagnostics.Stopwatch.StartNew()
                 let output = [| 0 .. (fsc.NumWorksheets - 1) |] |> Array.map (fun z -> EntropyModel2.Setup z ih fsc indivisibles)
-                let trees = output |> Array.map (fun (tree,_,_) -> tree)
-                let regions = output |> Array.map (fun (_,region,_) -> region)
+                let trees = output |> Array.map (fun (tree,_) -> tree)
+                let regions = output |> Array.map (fun (_,region) -> region)
+                sw.Stop()
                 assert (FasterBinaryMinEntropyTree.SheetAnalysesAreDistinct regions)
-                let time_ms = output |> Array.sumBy (fun (_,_,t) -> t)
 
-                new EntropyModel2(input.dag, trees, regions, time_ms, ih, fsc, distance_f, indivisibles, times)
+                // collate stats
+                let times = Stats(feat_time, scale_time, invert_time, fsc_time, sw.ElapsedMilliseconds)
+
+                new EntropyModel2(input.dag, trees, regions, ih, fsc, distance_f, indivisibles, times)

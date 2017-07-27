@@ -148,7 +148,7 @@
 
             // which axis we use depends on whether we are
             // decomposing vertically or horizontally
-            let parts = Array.Parallel.map (fun i ->
+            let parts = Array.map (fun i ->
                             i, e vert minX maxX minY maxY i
                         ) indices
 
@@ -203,10 +203,13 @@
                     let (top,bottom) = FasterBinaryMinEntropyTree.MinEntropyPartition lefttop rightbottom z fsc false
 
                     // compute entropies again
-                    let e_vert = fsc.EntropyFor z (RUtil.XLo left) (RUtil.XHi left) (RUtil.YLo left) (RUtil.YHi left) +
-                                 fsc.EntropyFor z (RUtil.XLo right) (RUtil.XHi right) (RUtil.YLo right) (RUtil.YHi right)
-                    let e_horz = fsc.EntropyFor z (RUtil.XLo top) (RUtil.XHi top) (RUtil.YLo top) (RUtil.YHi top) +
-                                 fsc.EntropyFor z (RUtil.XLo bottom) (RUtil.XHi bottom) (RUtil.YLo bottom) (RUtil.YHi bottom)
+                    let e_vert_left = fsc.EntropyFor z (RUtil.XLo left) (RUtil.XHi left) (RUtil.YLo left) (RUtil.YHi left) 
+                    let e_vert_right = fsc.EntropyFor z (RUtil.XLo right) (RUtil.XHi right) (RUtil.YLo right) (RUtil.YHi right)
+                    let e_horz_top = fsc.EntropyFor z (RUtil.XLo top) (RUtil.XHi top) (RUtil.YLo top) (RUtil.YHi top)
+                    let e_horz_bottom = fsc.EntropyFor z (RUtil.XLo bottom) (RUtil.XHi bottom) (RUtil.YLo bottom) (RUtil.YHi bottom)
+
+                    let e_vert = e_vert_left + e_vert_right
+                    let e_horz = e_horz_top + e_horz_bottom
 
                     // split vertically or horizontally (favor vert for ties)
                     let (entropy,p1,p2) =
@@ -276,15 +279,6 @@
         static member MergeIndivisibles(ic: ImmutableClustering)(indivisibles: ImmutableClustering) : ImmutableClustering =
             let cs = ToMutableClustering ic
 
-            // DEBUG: one of the clusters must contain each of the indivisible addrs
-            indivisibles
-            |> Seq.iter (fun s ->
-                    s
-                    |> Seq.iter (fun a ->
-                            assert(ic|> Seq.exists (fun set -> set.Contains a))
-                        )
-                )
-
             // get rmap
             let reverseLookup = ReverseClusterLookupMutable cs
 
@@ -311,28 +305,8 @@
             // coalesce rectangular regions
             let cs = FasterBinaryMinEntropyTree.RectangularClustering tree ih fsc
 
-            // DEBUG: one of the clusters must contain each of the indivisible addrs
-            indivisibles
-            |> Seq.iter (fun s ->
-                    s
-                    |> Seq.iter (fun a ->
-                            assert(cs |> Seq.exists (fun set -> set.Contains a))
-                        )
-                )
-
             // merge indivisible clusters
             let cs' = FasterBinaryMinEntropyTree.MergeIndivisibles cs indivisibles
-
-            // DEBUG: one of the clusters must contain each of the indivisible addrs
-            indivisibles
-            |> Seq.iter (fun s ->
-                    s
-                    |> Seq.iter (fun a ->
-                            assert(cs' |> Seq.exists (fun set -> set.Contains a))
-                        )
-                )
-
-            cs'
 
         static member ClusterIsRectangular(c: HashSet<AST.Address>) : bool =
             let boundingbox = Utils.BoundingBoxHS c 0
@@ -413,7 +387,6 @@
             // ensuring that all merged clusters remain rectangular
             let regs = FasterBinaryMinEntropyTree.Regions tree
             let clusters = regs |> Array.map (fun leaf -> leaf.Cells hb_inv fsc) |> makeImmutableGenericClustering
-            // DEBUG
             assert (FasterBinaryMinEntropyTree.SheetAnalysesAreDistinct [| clusters |])
             FasterBinaryMinEntropyTree.RectangularCoalesce clusters hb_inv
 

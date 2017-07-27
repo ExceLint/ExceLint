@@ -9,6 +9,9 @@
 
     type FastSheetCounter(grids: SheetVectors, dimensions: Dimensions, zNum: Dict<string,int>, countableMap: Dict<Countable,int>, valueMap: Values) = 
         let numCountables = grids.Length
+        let ecache = new Dict<(int*int*int*int*int),double>()
+        let mutable lookups = 0
+        let mutable hits = 0
 
         static member MinUpdateGrids(grids: SheetVectors)(x: int)(y: int)(z: int)(old_cn: int)(new_cn: int) : SheetVectors =
             // copy array
@@ -44,9 +47,14 @@
 
             new FastSheetCounter(grids', dimensions, zNum, countableMap, valueMap')
 
+        member self.Hits = hits
+
+        member self.Lookups = lookups
+
         // all coordinates are inclusive
         member self.CountsForZ(z: int)(x_lo: int)(x_hi: int)(y_lo: int)(y_hi: int) : int[] =
             let svs = grids.[z]
+
             svs
             |> Array.map (fun sv ->
                 // create bitmask for range of interest
@@ -65,18 +73,29 @@
         member self.NumWorksheets = zNum.Count
 
         member self.EntropyFor(z: int)(x_lo: int)(x_hi: int)(y_lo: int)(y_hi: int) : double =
-            if x_lo > x_hi || y_lo > y_hi then
-                System.Double.PositiveInfinity
+            lookups <- lookups + 1
+            let key = (x_lo,y_lo,x_hi,y_hi,z)
+            if ecache.ContainsKey key then
+                hits <- hits + 1
+                ecache.[key]
             else
-                // get counts, omitting zeroes
-                let cs = self.CountsForZ z x_lo x_hi y_lo y_hi
-                         |> Array.filter (fun i -> i > 0)
+                if x_lo > x_hi || y_lo > y_hi then
+                    System.Double.PositiveInfinity
+                else
+                    // get counts, omitting zeroes
+                    let cs = self.CountsForZ z x_lo x_hi y_lo y_hi
+                             |> Array.filter (fun i -> i > 0)
 
-                // compute probability vector
-                let ps = BasicStats.empiricalProbabilities cs
+                    // compute probability vector
+                    let ps = BasicStats.empiricalProbabilities cs
 
-                // compute entropy
-                BasicStats.entropy ps
+                    // compute entropy
+                    let e = BasicStats.entropy ps
+
+                    // cache
+                    ecache.Add(key, e)
+
+                    e
 
         member self.ZForWorksheet(ws: string) = zNum.[ws]
 
