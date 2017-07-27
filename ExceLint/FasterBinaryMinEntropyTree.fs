@@ -306,7 +306,7 @@
             let cs = FasterBinaryMinEntropyTree.RectangularClustering tree ih fsc
 
             // merge indivisible clusters
-            let cs' = FasterBinaryMinEntropyTree.MergeIndivisibles cs indivisibles
+            FasterBinaryMinEntropyTree.MergeIndivisibles cs indivisibles
 
         static member ClusterIsRectangular(c: HashSet<AST.Address>) : bool =
             let boundingbox = Utils.BoundingBoxHS c 0
