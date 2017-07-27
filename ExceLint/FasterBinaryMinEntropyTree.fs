@@ -29,12 +29,14 @@
             y_hi
 
     [<AbstractClass>]
-    type FasterBinaryMinEntropyTree(lefttop: int*int, rightbottom: int*int, parentRel: ParentRelation) =
+    type FasterBinaryMinEntropyTree(lefttop: int*int, rightbottom: int*int, z: int, parentRel: ParentRelation) =
         abstract member Region : string
         default self.Region : string = lefttop.ToString() + ":" + rightbottom.ToString()
         abstract member ToGraphViz : int -> int*string
         abstract member ParentRelation : ParentRelation
         default self.ParentRelation = parentRel
+        abstract member Z : int
+        default self.Z : int = z
 
         static member GraphViz(t: FasterBinaryMinEntropyTree) : string =
             let (_,graph) = t.ToGraphViz 0
@@ -187,7 +189,7 @@
 
                 // base case 1: there's only 1 cell
                 if lefttop = rightbottom then
-                    let leaf = FLeaf(lefttop, rightbottom, parentRelation) :> FasterBinaryMinEntropyTree
+                    let leaf = FLeaf(lefttop, rightbottom, z, parentRelation) :> FasterBinaryMinEntropyTree
                     // add leaf to link-up list
                     linkUp <- leaf :: linkUp
 
@@ -218,7 +220,7 @@
                     let rep_p2 = fsc.ValueFor (RUtil.XLo p2) (RUtil.YLo p2) z
                     if entropy = 0.0 && rep_p1 = rep_p2
                     then
-                        let leaf = FLeaf(lefttop, rightbottom, parentRelation) :> FasterBinaryMinEntropyTree
+                        let leaf = FLeaf(lefttop, rightbottom, z, parentRelation) :> FasterBinaryMinEntropyTree
 
                         // is this leaf the root?
                         match parentRelation with
@@ -229,7 +231,7 @@
                         linkUp <- leaf :: linkUp
                     else
                         // "recursive" case
-                        let node = FInner(lefttop, rightbottom, parentRelation)
+                        let node = FInner(lefttop, rightbottom, z, parentRelation)
 
                         // is this node the root?
                         match parentRelation with
@@ -305,9 +307,9 @@
             // restore immutability
             ToImmutableClustering cs
 
-        static member Clustering(tree: FasterBinaryMinEntropyTree)(ih: ROInvertedHistogram)(indivisibles: ImmutableClustering) : ImmutableClustering =
+        static member Clustering(tree: FasterBinaryMinEntropyTree)(ih: ROInvertedHistogram)(indivisibles: ImmutableClustering)(fsc: FastSheetCounter) : ImmutableClustering =
             // coalesce rectangular regions
-            let cs = FasterBinaryMinEntropyTree.RectangularClustering tree ih
+            let cs = FasterBinaryMinEntropyTree.RectangularClustering tree ih fsc
 
             // DEBUG: one of the clusters must contain each of the indivisible addrs
             indivisibles
@@ -406,12 +408,13 @@
 
             ToImmutableClustering clusters'
 
-        static member RectangularClustering(tree: FasterBinaryMinEntropyTree)(hb_inv: ROInvertedHistogram) : ImmutableClustering =
+        static member RectangularClustering(tree: FasterBinaryMinEntropyTree)(hb_inv: ROInvertedHistogram)(fsc: FastSheetCounter) : ImmutableClustering =
             // coalesce all cells that have the same cvector,
             // ensuring that all merged clusters remain rectangular
             let regs = FasterBinaryMinEntropyTree.Regions tree
-            let clusters = regs |> Array.map (fun leaf -> leaf.Cells hb_inv) |> makeImmutableGenericClustering
-
+            let clusters = regs |> Array.map (fun leaf -> leaf.Cells hb_inv fsc) |> makeImmutableGenericClustering
+            // DEBUG
+            assert (FasterBinaryMinEntropyTree.SheetAnalysesAreDistinct [| clusters |])
             FasterBinaryMinEntropyTree.RectangularCoalesce clusters hb_inv
 
         static member RectangularCoalesce(cs: ImmutableClustering)(hb_inv: ROInvertedHistogram) : ImmutableClustering =
@@ -441,8 +444,25 @@
             // return clustering
             clusters
 
-    and FInner(lefttop: int*int, rightbottom: int*int, parentRel: ParentRelation) =
-        inherit FasterBinaryMinEntropyTree(lefttop, rightbottom, parentRel)
+        static member SheetAnalysesAreDistinct(regions: ImmutableClustering[]) : bool =
+            let mutable ok = true
+            let mutable i = 0
+            while ok && i < regions.Length do
+                let region = regions.[i]
+                let addrs = region |> Seq.concat |> Seq.toArray
+                let sheet = addrs.[0].WorksheetName // just grab the first one
+                let oks = addrs |> Array.map (fun a -> a, a.WorksheetName = sheet)
+                ok <- oks |> Array.forall (fun (_,ok') -> ok')
+                let blerp =
+                    if not ok then
+                        "merp"
+                    else
+                        "blerp"
+                i <- i + 1
+            ok
+
+    and FInner(lefttop: int*int, rightbottom: int*int, z: int, parentRel: ParentRelation) =
+        inherit FasterBinaryMinEntropyTree(lefttop, rightbottom, z, parentRel)
         let mutable left = None
         let mutable right = None
         member self.AddLeft(n: FasterBinaryMinEntropyTree) : unit =
@@ -472,16 +492,17 @@
                             | None -> j,""
             k,start_node + ledge + redge
 
-    and FLeaf(lefttop: int*int, rightbottom: int*int, parentRel: ParentRelation) =
-        inherit FasterBinaryMinEntropyTree(lefttop, rightbottom, parentRel)
-        member self.Cells(ih: ROInvertedHistogram) : ImmutableHashSet<AST.Address> =
+    and FLeaf(lefttop: int*int, rightbottom: int*int, z: int, parentRel: ParentRelation) =
+        inherit FasterBinaryMinEntropyTree(lefttop, rightbottom, z, parentRel)
+        member self.Cells(ih: ROInvertedHistogram)(fsc: FastSheetCounter) : ImmutableHashSet<AST.Address> =
             let (ltX,ltY) = lefttop
             let (rbX,rbY) = rightbottom
             ih
             |> Seq.filter (fun kvp ->
                    let addr = kvp.Key
                    addr.X >= ltX && addr.X <= rbX &&
-                   addr.Y >= ltY && addr.Y <= rbY
+                   addr.Y >= ltY && addr.Y <= rbY &&
+                   (fsc.ZForWorksheet addr.WorksheetName) = z
                )
             |> Seq.map (fun kvp -> kvp.Key)
             |> (fun xs -> xs.ToImmutableHashSet<AST.Address>())

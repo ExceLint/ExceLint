@@ -376,11 +376,10 @@
 
             static member Setup(z: int)(ih: ROInvertedHistogram)(fsc: FastSheetCounter)(indivisibles: ImmutableClustering[]) : FasterBinaryMinEntropyTree*ImmutableClustering*int64 =
                 let sw = System.Diagnostics.Stopwatch.StartNew()
-                let sheets = fsc.NumWorksheets
 
                 // update just the sheet requested by the user
                 let tree' = FasterBinaryMinEntropyTree.Infer fsc z ih
-                let region' = FasterBinaryMinEntropyTree.Clustering tree' ih indivisibles.[z]
+                let region' = FasterBinaryMinEntropyTree.Clustering tree' ih indivisibles.[z] fsc
 
                 sw.Stop()
                 let time_ms = sw.ElapsedMilliseconds
@@ -516,6 +515,7 @@
                 let output = [| 0 .. (fsc.NumWorksheets - 1) |] |> Array.map (fun z -> EntropyModel2.Setup z ih fsc indivisibles)
                 let trees = output |> Array.map (fun (tree,_,_) -> tree)
                 let regions = output |> Array.map (fun (_,region,_) -> region)
+                assert (FasterBinaryMinEntropyTree.SheetAnalysesAreDistinct regions)
                 let time_ms = output |> Array.sumBy (fun (_,_,t) -> t)
 
                 new EntropyModel2(input.dag, trees, regions, time_ms, ih, fsc, distance_f, indivisibles, times)
