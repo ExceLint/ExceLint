@@ -76,7 +76,7 @@
             let (lt,rb) = Utils.BoundingRegion c1 0
             Vector(double (rb.X - lt.X), double (rb.Y - lt.Y), 0.0)
 
-        type EntropyModel2(graph: Depends.DAG, ih: ROInvertedHistogram, fsc: FastSheetCounter, d: ImmDistanceFMaker, indivisibles: ImmutableClustering, stats: Stats) =
+        type EntropyModel2(graph: Depends.DAG, ih: ROInvertedHistogram, fsc: FastSheetCounter, d: ImmDistanceFMaker, indivisibles: ImmutableClustering[], stats: Stats) =
             // do region inference
             let (trees, regions, time_ms) = EntropyModel2.Setup ih fsc indivisibles
 
@@ -107,11 +107,16 @@
                     ) ih
 
             member private self.MergeCluster(source: ImmutableHashSet<AST.Address>)(target: ImmutableHashSet<AST.Address>) : EntropyModel2 =
+                // sanity check
+                let z = fsc.ZForWorksheet (Seq.head source).WorksheetName
+                assert (z = fsc.ZForWorksheet (Seq.head target).WorksheetName)
+                
                 // update histogram
                 let ih' = self.UpdateHistogram source target
 
-                // update indivisibles
-                let indivisibles' = indivisibles.Add (source.ToImmutableHashSet())
+                // copy indivisibles & update
+                let indivisibles' = Array.copy indivisibles
+                indivisibles'.[z] <- indivisibles'.[z].Add (source.ToImmutableHashSet())
 
                 // update fsc
                 let fsc' =
@@ -361,14 +366,27 @@
                 let frac = (double PCT_TO_FLAG) / 100.0
                 int (Math.Floor((double num_formulas) * frac))
 
-            static member Setup(ih: ROInvertedHistogram)(fsc: FastSheetCounter)(indivisibles: ImmutableClustering) : FasterBinaryMinEntropyTree[]*ImmutableClustering[]*int64 =
+            static member Setup(ih: ROInvertedHistogram)(fsc: FastSheetCounter)(indivisibles: ImmutableClustering[]) : FasterBinaryMinEntropyTree[]*ImmutableClustering[]*int64 =
                 let sw = System.Diagnostics.Stopwatch.StartNew()
                 let sheets = fsc.NumWorksheets
 
                 let trees = Array.map (fun z -> FasterBinaryMinEntropyTree.Infer fsc z ih) [| 0 .. sheets - 1 |]
-                let regions = Array.map (fun tree -> FasterBinaryMinEntropyTree.Clustering tree ih indivisibles) trees
+                let regions = Array.mapi (fun z tree -> FasterBinaryMinEntropyTree.Clustering tree ih indivisibles.[z]) trees
                 sw.Stop()
                 let time_ms = sw.ElapsedMilliseconds
+
+                // DEBUG: one of the clusters must contain each of the indivisible addrs
+                indivisibles
+                |> Array.iteri (fun z i ->
+                      i
+                      |> Seq.iter (fun s ->
+                          s
+                          |> Seq.iter (fun a ->
+                                 assert(regions.[z] |> Seq.exists (fun set -> set.Contains a))
+                             )
+                      )
+                   )
+
                 trees, regions, time_ms
 
             static member Ranking(fixes: ProposedFix[]) : int64*Ranking =
@@ -441,6 +459,9 @@
                 with
                 | AnalysisCancelled -> Cancellation
 
+            static member private InitIndivisibles(numSheets: int) : ImmutableClustering[] =
+                Array.init numSheets (fun i -> ToImmutableClustering (new Clustering()))
+
             static member Initialize(input: Input) : EntropyModel2 =
                 // determine the set of cells to be analyzed
                 let cells = analysisBase input.config input.dag
@@ -473,4 +494,7 @@
                     | DistanceMetric.EarthMover -> earth_movers_dist_ro invertedHistogram
                     | DistanceMetric.MeanCentroid -> cent_dist_ro invertedHistogram
 
-                new EntropyModel2(input.dag, ih, fsc, distance_f, ToImmutableClustering (new Clustering()), times)
+                // initialize indivisible set
+                let indivisibles = EntropyModel2.InitIndivisibles sheets.Length
+
+                new EntropyModel2(input.dag, ih, fsc, distance_f, indivisibles, times)

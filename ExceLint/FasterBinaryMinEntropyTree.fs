@@ -274,6 +274,15 @@
         static member MergeIndivisibles(ic: ImmutableClustering)(indivisibles: ImmutableClustering) : ImmutableClustering =
             let cs = ToMutableClustering ic
 
+            // DEBUG: one of the clusters must contain each of the indivisible addrs
+            indivisibles
+            |> Seq.iter (fun s ->
+                    s
+                    |> Seq.iter (fun a ->
+                            assert(ic|> Seq.exists (fun set -> set.Contains a))
+                        )
+                )
+
             // get rmap
             let reverseLookup = ReverseClusterLookupMutable cs
 
@@ -300,8 +309,26 @@
             // coalesce rectangular regions
             let cs = FasterBinaryMinEntropyTree.RectangularClustering tree ih
 
+            // DEBUG: one of the clusters must contain each of the indivisible addrs
+            indivisibles
+            |> Seq.iter (fun s ->
+                    s
+                    |> Seq.iter (fun a ->
+                            assert(cs |> Seq.exists (fun set -> set.Contains a))
+                        )
+                )
+
             // merge indivisible clusters
             let cs' = FasterBinaryMinEntropyTree.MergeIndivisibles cs indivisibles
+
+            // DEBUG: one of the clusters must contain each of the indivisible addrs
+            indivisibles
+            |> Seq.iter (fun s ->
+                    s
+                    |> Seq.iter (fun a ->
+                            assert(cs' |> Seq.exists (fun set -> set.Contains a))
+                        )
+                )
 
             cs'
 
