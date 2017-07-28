@@ -297,16 +297,26 @@
 
                             // remove c from clustering
                             cs.Remove c |> ignore
-
+                            
             // restore immutability
             ToImmutableClustering cs
 
-        static member Clustering(tree: FasterBinaryMinEntropyTree)(ih: ROInvertedHistogram)(indivisibles: ImmutableClustering)(fsc: FastSheetCounter) : ImmutableClustering =
+        static member Coalesce(cs: ImmutableClustering)(ih: ROInvertedHistogram)(indivisibles: ImmutableClustering) : ImmutableClustering =
             // coalesce rectangular regions
-            let cs = FasterBinaryMinEntropyTree.RectangularClustering tree ih fsc
+            let cs = 
+                try
+                    FasterBinaryMinEntropyTree.RectangularCoalesce cs ih
+                with
+                | _ -> failwith "ugh"
 
             // merge indivisible clusters
-            FasterBinaryMinEntropyTree.MergeIndivisibles cs indivisibles
+            let cs' =
+                try
+                    FasterBinaryMinEntropyTree.MergeIndivisibles cs indivisibles
+                with
+                | _ -> failwith "ugh"
+
+            cs'
 
         static member ClusterIsRectangular(c: HashSet<AST.Address>) : bool =
             let boundingbox = Utils.BoundingBoxHS c 0
@@ -382,19 +392,17 @@
 
             ToImmutableClustering clusters'
 
-        static member RectangularClustering(tree: FasterBinaryMinEntropyTree)(hb_inv: ROInvertedHistogram)(fsc: FastSheetCounter) : ImmutableClustering =
-            // coalesce all cells that have the same cvector,
-            // ensuring that all merged clusters remain rectangular
-            let regs = FasterBinaryMinEntropyTree.Regions tree
-            let clusters = regs |> Array.map (fun leaf -> leaf.Cells hb_inv fsc) |> makeImmutableGenericClustering
-            assert (FasterBinaryMinEntropyTree.SheetAnalysesAreDistinct [| clusters |])
-            FasterBinaryMinEntropyTree.RectangularCoalesce clusters hb_inv
-
         static member RectangularCoalesce(cs: ImmutableClustering)(hb_inv: ROInvertedHistogram) : ImmutableClustering =
             let mutable clusters = cs
             let mutable changed = true
 
             let mutable timesAround = 1
+
+            // DEBUG
+            try
+                CommonFunctions.ReverseClusterLookup cs
+            with
+            | e -> failwith "bad cluster"
 
             while changed do
                 // coalesce vertical ordering horizontally

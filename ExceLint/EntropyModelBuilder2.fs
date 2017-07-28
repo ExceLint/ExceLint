@@ -77,7 +77,7 @@
             let (lt,rb) = Utils.BoundingRegion c1 0
             Vector(double (rb.X - lt.X), double (rb.Y - lt.Y), 0.0)
 
-        type EntropyModel2(graph: Depends.DAG, trees: FasterBinaryMinEntropyTree[], regions: ImmutableClustering[], ih: ROInvertedHistogram, fsc: FastSheetCounter, d: ImmDistanceFMaker, indivisibles: ImmutableClustering[], stats: Stats) =
+        type EntropyModel2(graph: Depends.DAG, regions: ImmutableClustering[], ih: ROInvertedHistogram, fsc: FastSheetCounter, d: ImmDistanceFMaker, indivisibles: ImmutableClustering[], stats: Stats) =
             // save the reverse lookup for later use
             let revLookups = Array.map (fun r -> ReverseClusterLookup r) regions
 
@@ -87,7 +87,7 @@
                 regions.[z]
                 |> (fun s -> CommonTypes.makeImmutableGenericClustering s)
 
-            member self.Trees : FasterBinaryMinEntropyTree[] = trees
+//            member self.Trees : FasterBinaryMinEntropyTree[] = trees
 
             member self.ZForWorksheet(sheet: string) : int = fsc.ZForWorksheet sheet
 
@@ -113,6 +113,7 @@
                 // update histogram
                 let ih' = self.UpdateHistogram source target
 
+
                 // copy indivisibles & update
                 let indivisibles' = Array.copy indivisibles
                 indivisibles'.[z] <- indivisibles'.[z].Add (source.ToImmutableHashSet())
@@ -121,21 +122,52 @@
                 let fsc' =
                     source
                     |> Seq.fold (fun (accfsc: FastSheetCounter)(saddr: AST.Address) ->
-                           let oldc = (ScoreForCell saddr ih).ToCVectorResultant
-                           let newc = (ScoreForCell saddr ih').ToCVectorResultant
-                           accfsc.Fix saddr oldc newc
-                       ) fsc
+                            let oldc = (ScoreForCell saddr ih).ToCVectorResultant
+                            let newc = (ScoreForCell saddr ih').ToCVectorResultant
+                            accfsc.Fix saddr oldc newc
+                        ) fsc
 
-                // run region inference for sheet that changed
-                let (tree',region') = EntropyModel2.Setup z ih' fsc' indivisibles
 
-                // update tree and region in question
-                let trees' = Array.copy trees
+                // update clustering
+                let merged = source |> Seq.fold (fun (acc: ImmutableHashSet<AST.Address>)(a: AST.Address) -> acc.Add a) target
+
+                // get source cluster for each source address
+                let source_clusters = source |> Seq.map (fun a -> revLookups.[z].[a]) |> Seq.distinct
+
+                // remove source addresses from source clusters
+                let source_clusters' =
+                    source_clusters
+                    |> Seq.map (fun cs ->
+                           source
+                           |> Seq.fold (fun (acc: ImmutableHashSet<AST.Address>)(a: AST.Address) ->
+                                  if acc.Contains a then
+                                      acc.Remove a
+                                  else
+                                      acc
+                              ) cs
+                       )
+                    |> Seq.filter (fun cs -> cs.Count > 0)
+
+                // remove sources
+                let a = source_clusters |> Seq.fold (fun (acc: ImmutableClustering)(sc: ImmutableHashSet<AST.Address>) -> acc.Remove sc) regions.[z]
+
+                // add modified sources
+                let b = source_clusters' |> Seq.fold (fun (acc: ImmutableClustering)(sc: ImmutableHashSet<AST.Address>) -> acc.Add sc) a
+
+                // remove target
+                let c = b.Remove target
+
+                // add merged
+                let cs' = c.Add merged
+
+                // re-coalesce the sheet that changed
+                let region' = FasterBinaryMinEntropyTree.Coalesce cs' ih' indivisibles'.[z]
+
+                // update region in question
                 let regions' = Array.copy regions
-                trees'.[z] <- tree'
                 regions'.[z] <- region'
 
-                new EntropyModel2(graph, trees', regions', ih', fsc', d, indivisibles', stats)
+                new EntropyModel2(graph, regions', ih', fsc', d, indivisibles', stats)
                 
             member self.MergeCell(source: AST.Address)(target: AST.Address) : EntropyModel2 =
                 // get z for s and t worksheet
@@ -334,7 +366,8 @@
                 // this is somewhat expensive to compute
                 let models = 
                     dps'
-                    |> Array.Parallel.map (fun (source, target, wdotproduct) ->
+                    // TODO PUT PARALLEL BACK
+                    |> Array.map (fun (source, target, wdotproduct) ->
                             // produce a new model for each adjacency
                             let numodel = self.MergeCluster source target
 
@@ -350,7 +383,7 @@
                                 None
                             else
                                 Some (pf)
-                       )
+                        )
                     |> Array.choose id
                     // no duplicates (happens for whole-cluster merges)
                     |> Array.distinctBy (fun fix -> fix.Source, fix.Target)
@@ -378,12 +411,19 @@
                 let frac = (double PCT_TO_FLAG) / 100.0
                 int (Math.Floor((double num_formulas) * frac))
 
-            static member Setup(z: int)(ih: ROInvertedHistogram)(fsc: FastSheetCounter)(indivisibles: ImmutableClustering[]) : FasterBinaryMinEntropyTree*ImmutableClustering =
-                // update just the sheet requested by the user
-                let tree' = FasterBinaryMinEntropyTree.Infer fsc z ih
-                let region' = FasterBinaryMinEntropyTree.Clustering tree' ih indivisibles.[z] fsc
+            static member InitialSetup(z: int)(ih: ROInvertedHistogram)(fsc: FastSheetCounter)(indivisibles: ImmutableClustering[]) : ImmutableClustering =
+                // get the initial tree
+                let tree = FasterBinaryMinEntropyTree.Infer fsc z ih
 
-                tree', region'
+                // get clusters
+                let regs = FasterBinaryMinEntropyTree.Regions tree
+                let clusters = regs |> Array.map (fun leaf -> leaf.Cells ih fsc) |> makeImmutableGenericClustering
+                
+                // coalesce all cells that have the same cvector,
+                // ensuring that all merged clusters remain rectangular
+                let clusters' = FasterBinaryMinEntropyTree.Coalesce clusters ih indivisibles.[z]
+                
+                clusters'
 
             static member CombineFxes(fixeses: ProposedFix[][]) : int64*ProposedFix[] =
                 let sw = System.Diagnostics.Stopwatch.StartNew()
@@ -512,13 +552,11 @@
 
                 // init all sheets
                 let sw = System.Diagnostics.Stopwatch.StartNew()
-                let output = [| 0 .. (fsc.NumWorksheets - 1) |] |> Array.map (fun z -> EntropyModel2.Setup z ih fsc indivisibles)
-                let trees = output |> Array.map (fun (tree,_) -> tree)
-                let regions = output |> Array.map (fun (_,region) -> region)
+                let regions = [| 0 .. (fsc.NumWorksheets - 1) |] |> Array.map (fun z -> EntropyModel2.InitialSetup z ih fsc indivisibles)
                 sw.Stop()
                 assert (FasterBinaryMinEntropyTree.SheetAnalysesAreDistinct regions)
 
                 // collate stats
                 let times = Stats(feat_time, scale_time, invert_time, fsc_time, sw.ElapsedMilliseconds)
 
-                new EntropyModel2(input.dag, trees, regions, ih, fsc, distance_f, indivisibles, times)
+                new EntropyModel2(input.dag, regions, ih, fsc, distance_f, indivisibles, times)

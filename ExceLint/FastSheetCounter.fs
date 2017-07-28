@@ -9,7 +9,7 @@
 
     type FastSheetCounter(grids: SheetVectors, dimensions: Dimensions, zNum: Dict<string,int>, countableMap: Dict<Countable,int>, valueMap: Values) = 
         let numCountables = grids.Length
-        let ecache = new Dict<(int*int*int*int*int),double>()
+//        let ecache = new Dict<(int*int*int*int*int),double>()
         let mutable lookups = 0
         let mutable hits = 0
 
@@ -73,12 +73,12 @@
         member self.NumWorksheets = zNum.Count
 
         member self.EntropyFor(z: int)(x_lo: int)(x_hi: int)(y_lo: int)(y_hi: int) : double =
-            lookups <- lookups + 1
-            let key = (x_lo,y_lo,x_hi,y_hi,z)
-            if ecache.ContainsKey key then
-                hits <- hits + 1
-                ecache.[key]
-            else
+//            lookups <- lookups + 1
+//            let key = (x_lo,y_lo,x_hi,y_hi,z)
+//            if ecache.ContainsKey key then
+//                hits <- hits + 1
+//                ecache.[key]
+//            else
                 if x_lo > x_hi || y_lo > y_hi then
                     System.Double.PositiveInfinity
                 else
@@ -93,7 +93,7 @@
                     let e = BasicStats.entropy ps
 
                     // cache
-                    ecache.Add(key, e)
+//                    ecache.Add(key, e)
 
                     e
 
