@@ -89,6 +89,8 @@
 
             member self.ZForWorksheet(sheet: string) : int = fsc.ZForWorksheet sheet
 
+            member self.DependenceGraph = graph
+
             member private self.UpdateHistogram(source: ImmutableHashSet<AST.Address>)(target: ImmutableHashSet<AST.Address>) : ROInvertedHistogram =
                 // get representative score from target
                 let rep_score = target |> Seq.head |> (fun a -> ScoreForCell a ih)

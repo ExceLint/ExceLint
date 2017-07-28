@@ -56,6 +56,7 @@
             this.getLSH = this.Factory.CreateRibbonButton();
             this.readClusterDump = this.Factory.CreateRibbonButton();
             this.VectorForCell = this.Factory.CreateRibbonButton();
+            this.drawAllClusters = this.Factory.CreateRibbonCheckBox();
             this.distanceCombo = this.Factory.CreateRibbonComboBox();
             this.ClusterBox = this.Factory.CreateRibbonCheckBox();
             this.useResultant = this.Factory.CreateRibbonCheckBox();
@@ -79,7 +80,7 @@
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
             this.button1 = this.Factory.CreateRibbonButton();
-            this.drawAllClusters = this.Factory.CreateRibbonCheckBox();
+            this.cellIsFormula = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -228,6 +229,7 @@
             this.box2.Items.Add(this.getLSH);
             this.box2.Items.Add(this.readClusterDump);
             this.box2.Items.Add(this.VectorForCell);
+            this.box2.Items.Add(this.cellIsFormula);
             this.box2.Items.Add(this.drawAllClusters);
             this.box2.Name = "box2";
             this.box2.Visible = false;
@@ -258,6 +260,12 @@
             this.VectorForCell.Label = "Vector for Cell";
             this.VectorForCell.Name = "VectorForCell";
             this.VectorForCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.VectorForCell_Click);
+            // 
+            // drawAllClusters
+            // 
+            this.drawAllClusters.Checked = true;
+            this.drawAllClusters.Label = "Draw all Clusters";
+            this.drawAllClusters.Name = "drawAllClusters";
             // 
             // distanceCombo
             // 
@@ -433,11 +441,11 @@
             this.button1.Name = "button1";
             this.button1.ShowImage = true;
             // 
-            // drawAllClusters
+            // cellIsFormula
             // 
-            this.drawAllClusters.Checked = true;
-            this.drawAllClusters.Label = "Draw all Clusters";
-            this.drawAllClusters.Name = "drawAllClusters";
+            this.cellIsFormula.Label = "Is Formula?";
+            this.cellIsFormula.Name = "cellIsFormula";
+            this.cellIsFormula.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.cellIsFormula_Click);
             // 
             // ExceLintRibbon
             // 
@@ -504,6 +512,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton clusterForCell;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton EntropyRanking;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox drawAllClusters;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton cellIsFormula;
     }
 
     partial class ThisRibbonCollection

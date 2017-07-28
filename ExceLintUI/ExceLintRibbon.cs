@@ -32,6 +32,30 @@ namespace ExceLintUI
 
         #region BUTTON_HANDLERS
 
+        private void cellIsFormula_Click(object sender, RibbonControlEventArgs e)
+        {
+            // get cursor location
+            var cursor = (Excel.Range)Globals.ThisAddIn.Application.Selection;
+            AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, Globals.ThisAddIn.Application.ActiveWorkbook);
+
+            // get config
+            var conf = getConfig();
+
+            // create progbar in main thread;
+            // worker thread will call Dispose
+            var pb = new ProgBar();
+
+            // build the model
+            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+            var model = currentWorkbook.NewEntropyModelForWorksheet2(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
+
+            // remove progress bar
+            pb.Close();
+
+            // display
+            System.Windows.Forms.MessageBox.Show(cursorAddr.A1Local() + " = " + EntropyModelBuilder2.AddressIsFormulaValued(cursorAddr, model.InvertedHistogram, model.DependenceGraph).ToString());
+        }
+
         private string ProposedFixesToString(EntropyModelBuilder2.ProposedFix[] fixes)
         {
             // produce output string
