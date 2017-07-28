@@ -174,9 +174,7 @@
                 co = rep
             )
 
-        static member private Decompose (fsc: FastSheetCounter)(z: int)(ih: ROInvertedHistogram) : FasterBinaryMinEntropyTree =
-            let initial_lt = (fsc.MinXForWorksheet z, fsc.MinYForWorksheet z)
-            let initial_rb = (fsc.MaxXForWorksheet z, fsc.MaxYForWorksheet z)
+        static member DecomposeAt(fsc: FastSheetCounter)(z: int)(ih: ROInvertedHistogram)(initial_lt: int*int)(initial_rb: int*int) : FasterBinaryMinEntropyTree =
             let mutable todos = [ (Root, (initial_lt, initial_rb)) ]
             let mutable linkUp = []
             let mutable root_opt = None
@@ -269,6 +267,11 @@
             | Some root -> root
             | None -> failwith "this should never happen"
 
+        static member Decompose(fsc: FastSheetCounter)(z: int)(ih: ROInvertedHistogram) : FasterBinaryMinEntropyTree =
+            let initial_lt = (fsc.MinXForWorksheet z, fsc.MinYForWorksheet z)
+            let initial_rb = (fsc.MaxXForWorksheet z, fsc.MaxYForWorksheet z)
+            FasterBinaryMinEntropyTree.DecomposeAt fsc z ih initial_lt initial_rb
+
         /// <summary>return the leaves of the tree, in order of smallest to largest region</summary>
         static member Regions(tree: FasterBinaryMinEntropyTree) : FLeaf[] =
             match tree with
@@ -319,6 +322,13 @@
             cs'
 
         static member ClusterIsRectangular(c: HashSet<AST.Address>) : bool =
+            let boundingbox = Utils.BoundingBoxHS c 0
+            let diff = HashSetUtils.difference boundingbox c
+            let isRect = diff.Count = 0
+            isRect
+
+        static member ImmClusterIsRectangular(c': ImmutableHashSet<AST.Address>) : bool =
+            let c = new HashSet<AST.Address>(c')
             let boundingbox = Utils.BoundingBoxHS c 0
             let diff = HashSetUtils.difference boundingbox c
             let isRect = diff.Count = 0

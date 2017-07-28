@@ -237,8 +237,7 @@ namespace ExceLintUI
                 //var gv = FasterBinaryMinEntropyTree.GraphViz(fixClusterModel.Trees[z]);
                 //System.Windows.Forms.Clipboard.SetText(gv);
                 //System.Windows.Forms.MessageBox.Show("graph in clipboard");
-                System.Windows.Forms.MessageBox.Show("score time ms: " + fixClusterModel.ScoreTimeMs);
-                System.Windows.Forms.MessageBox.Show("cache hits: " + fixClusterModel.CacheHits + "\nof cache lookups: " + fixClusterModel.CacheLookups);
+                //System.Windows.Forms.MessageBox.Show("score time ms: " + fixClusterModel.ScoreTimeMs);
 
                 // change button name
                 FixClusterButton.Label = "Select Source";

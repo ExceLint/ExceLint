@@ -113,7 +113,6 @@
                 // update histogram
                 let ih' = self.UpdateHistogram source target
 
-
                 // copy indivisibles & update
                 let indivisibles' = Array.copy indivisibles
                 indivisibles'.[z] <- indivisibles'.[z].Add (source.ToImmutableHashSet())
@@ -148,11 +147,40 @@
                        )
                     |> Seq.filter (fun cs -> cs.Count > 0)
 
+                // split source clusters if necessary
+                let source_clusters'' =
+                    source_clusters'
+                    |> Seq.map (fun cs ->
+                           let isRect = FasterBinaryMinEntropyTree.ImmClusterIsRectangular cs
+                           if isRect then
+                               [| cs |]
+                           else
+                               let z = fsc'.ZForWorksheet ((Seq.head cs).WorksheetName)
+
+                               // get bounding box for cluster
+                               let (lt,rb) = Utils.BoundingRegion cs 0
+                               let lt_xy = (lt.X, lt.Y)
+                               let rb_xy = (rb.X, rb.Y)
+
+                               // run tree analysis again on subtree
+                               let tree = FasterBinaryMinEntropyTree.DecomposeAt fsc' z ih' lt_xy rb_xy
+
+                               // get clusters
+                               let regs = FasterBinaryMinEntropyTree.Regions tree
+                               let clusters = regs |> Array.map (fun leaf -> leaf.Cells ih fsc)
+                               clusters
+                       )
+                    |> Seq.concat
+                    // make sure that new clusters do not contain any of the removed sources
+                    |> Seq.filter (fun cs ->
+                           (cs.Intersect source).Count = 0
+                       )
+
                 // remove sources
                 let a = source_clusters |> Seq.fold (fun (acc: ImmutableClustering)(sc: ImmutableHashSet<AST.Address>) -> acc.Remove sc) regions.[z]
 
                 // add modified sources
-                let b = source_clusters' |> Seq.fold (fun (acc: ImmutableClustering)(sc: ImmutableHashSet<AST.Address>) -> acc.Add sc) a
+                let b = source_clusters'' |> Seq.fold (fun (acc: ImmutableClustering)(sc: ImmutableHashSet<AST.Address>) -> acc.Add sc) a
 
                 // remove target
                 let c = b.Remove target
