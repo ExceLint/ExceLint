@@ -38,7 +38,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DocumentationFile>bin\Release\ExceLintRunner.XML</DocumentationFile>
     <Prefer32Bit>true</Prefer32Bit>
-    <StartArguments>"C:\Users\dbarowy\Documents\Visual Studio 2015\Projects\ExceLint\data\spreadsheets\custodes" "C:\Users\dbarowy\Desktop\excelint-entropy" "C:\Users\dbarowy\Documents\Visual Studio 2015\Projects\ExceLint\data\analyses\ExceLint\ground_truth.csv" "C:\Users\dbarowy\Documents\Visual Studio 2015\Projects\ExceLint\data\analyses\CUSTODES\smell_detection_result.csv" "C:\ProgramData\Oracle\Java\javapath\java.exe" "C:\Users\dbarowy\Documents\Visual Studio 2015\Projects\ExceLint\data\analyses\CUSTODES2\cc2.jar" -verbose -cluster</StartArguments>
+    <StartArguments>"C:\Users\dbarowy\Documents\Visual Studio 2015\Projects\ExceLint\data\spreadsheets\custodes" "E:\excelint-entropy" "C:\Users\dbarowy\Documents\Visual Studio 2015\Projects\ExceLint\data\analyses\ExceLint\ground_truth.csv" "C:\Users\dbarowy\Documents\Visual Studio 2015\Projects\ExceLint\data\analyses\CUSTODES\smell_detection_result.csv" "C:\ProgramData\Oracle\Java\javapath\java.exe" "C:\Users\dbarowy\Documents\Visual Studio 2015\Projects\ExceLint\data\analyses\CUSTODES2\cc2.jar" -verbose -cluster</StartArguments>
   </PropertyGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>

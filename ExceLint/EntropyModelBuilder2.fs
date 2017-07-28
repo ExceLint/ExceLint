@@ -366,8 +366,7 @@
                 // this is somewhat expensive to compute
                 let models = 
                     dps'
-                    // TODO PUT PARALLEL BACK
-                    |> Array.map (fun (source, target, wdotproduct) ->
+                    |> Array.Parallel.map (fun (source, target, wdotproduct) ->
                             // produce a new model for each adjacency
                             let numodel = self.MergeCluster source target
 
