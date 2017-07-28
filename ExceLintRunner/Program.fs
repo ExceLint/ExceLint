@@ -5,6 +5,7 @@ open System.Collections.Generic
 open ExceLint
 open ExceLint.Utils
 open ExceLintFileFormats
+open System.Threading
 
     type Stats = {
         shortname: string;
@@ -334,6 +335,7 @@ open ExceLintFileFormats
         let graph = wb.buildDependenceGraph()
 
         printfn "Running ExceLint analysis: %A" shortf
+        
         let model_opt = ExceLint.ModelBuilder.analyze (app.XLApplication()) config.FeatureConf graph (config.alpha) (Depends.Progress.NOPProgress())
 
         let (jdist,delta_k) =
@@ -443,6 +445,16 @@ open ExceLintFileFormats
         | None ->
             printfn "Analysis failed: %A" shortf
 
+    let fyshuffle(a: 'a[]) : 'a[] =
+        let n = a.Length
+        let r = new System.Random()
+        for i = 0 to n - 1 do
+            let j = r.Next(i,n)
+            let tmp = a.[i]
+            a.[i] <- a.[j]
+            a.[j] <- tmp
+        a
+
     [<EntryPoint>]
     let main argv = 
         let config =
@@ -475,7 +487,7 @@ open ExceLintFileFormats
             let custodes_gt = new CUSTODES.GroundTruth(workbook_paths, config.CustodesGroundTruthCSV)
             let excelint_gt = ExceLintGroundTruth.Load(config.ExceLintGroundTruthCSV)
 
-            for file in config.files do
+            for file in fyshuffle(config.files) do
                         
                 let shortf = (System.IO.Path.GetFileName file)
 
