@@ -410,7 +410,7 @@
 
             // DEBUG
             try
-                CommonFunctions.ReverseClusterLookup cs
+                CommonFunctions.ReverseClusterLookup cs |> ignore
             with
             | e -> failwith "bad cluster"
 

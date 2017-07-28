@@ -547,7 +547,12 @@
                 let revLookup = new Dict<AST.Address,HashSet<AST.Address>>()
                 for c in clusters do
                     for a in c do
-                        builder.Add(a,c)
+                        try
+                            builder.Add(a,c)
+                        with
+                        | e ->
+                            let other = builder.[a]
+                            failwith "badness"
                 builder.ToImmutable()
 
             let ReverseClusterLookupMutable(clusters: Clustering) : Dictionary<AST.Address,HashSet<AST.Address>> =

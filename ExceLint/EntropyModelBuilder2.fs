@@ -87,8 +87,6 @@
                 regions.[z]
                 |> (fun s -> CommonTypes.makeImmutableGenericClustering s)
 
-//            member self.Trees : FasterBinaryMinEntropyTree[] = trees
-
             member self.ZForWorksheet(sheet: string) : int = fsc.ZForWorksheet sheet
 
             member private self.UpdateHistogram(source: ImmutableHashSet<AST.Address>)(target: ImmutableHashSet<AST.Address>) : ROInvertedHistogram =
@@ -183,7 +181,7 @@
                 let b = source_clusters'' |> Seq.fold (fun (acc: ImmutableClustering)(sc: ImmutableHashSet<AST.Address>) -> acc.Add sc) a
 
                 // remove target
-                let c = b.Remove target
+                let c = b |> Seq.filter (fun cl -> (cl.Intersect target).Count = 0) |> fun xs -> CommonTypes.makeImmutableGenericClustering xs
 
                 // add merged
                 let cs' = c.Add merged
@@ -221,24 +219,6 @@
                 let c1 = self.Clustering z
                 let c2 = target.Clustering z
                 BinaryMinEntropyTree.ClusteringEntropyDiff c1 c2
-
-//            member private self.Adjacencies(onlyFormulaTargets: bool) : (ImmutableHashSet<AST.Address>*AST.Address)[] =
-//                // get adjacencies
-//                self.Clustering
-//                |> Seq.filter (fun c -> if onlyFormulaTargets then ClusterIsFormulaValued c ih graph else true)
-//                |> Seq.map (fun target ->
-//                        // get adjacencies
-//                        let adj = HSAdjacentCellsImm target
-//
-//                        // do not include adjacencies that are not in our histogram
-//                        let adj' = adj |> Seq.filter (fun addr -> ih.ContainsKey addr)
-//
-//                        // flatten
-//                        adj'
-//                        |> Seq.map (fun a -> target, a)
-//                    )
-//                |> Seq.concat
-//                |> Seq.toArray
 
             member private self.PrevailingDirectionAdjacencies(z: int)(onlyFormulaTargets: bool) : (ImmutableHashSet<AST.Address>*AST.Address)[] =
                 self.Clustering z
