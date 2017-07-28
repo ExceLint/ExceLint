@@ -306,19 +306,11 @@
 
         static member Coalesce(cs: ImmutableClustering)(ih: ROInvertedHistogram)(indivisibles: ImmutableClustering) : ImmutableClustering =
             // coalesce rectangular regions
-            let cs = 
-                try
-                    FasterBinaryMinEntropyTree.RectangularCoalesce cs ih
-                with
-                | _ -> failwith "ugh"
+            let cs = FasterBinaryMinEntropyTree.RectangularCoalesce cs ih
 
             // merge indivisible clusters
-            let cs' =
-                try
-                    FasterBinaryMinEntropyTree.MergeIndivisibles cs indivisibles
-                with
-                | _ -> failwith "ugh"
-
+            let cs' = FasterBinaryMinEntropyTree.MergeIndivisibles cs indivisibles
+            
             cs'
 
         static member ClusterIsRectangular(c: HashSet<AST.Address>) : bool =
@@ -407,12 +399,6 @@
             let mutable changed = true
 
             let mutable timesAround = 1
-
-            // DEBUG
-            try
-                CommonFunctions.ReverseClusterLookup cs |> ignore
-            with
-            | e -> failwith "bad cluster"
 
             while changed do
                 // coalesce vertical ordering horizontally
