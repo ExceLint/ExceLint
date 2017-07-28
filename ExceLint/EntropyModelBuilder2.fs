@@ -409,10 +409,6 @@
 
             member self.ScoreTimeMs = stats.FeatureTimeMS + stats.ScaleTimeMS + stats.InvertTimeMS + stats.FastSheetCounterMS + stats.InferTimeMS
 
-            member self.CacheHits = fsc.Hits
-
-            member self.CacheLookups = fsc.Lookups
-
             member self.NumWorksheets = fsc.NumWorksheets
 
             // compute the cutoff based on a percentage of the number of formulas,
