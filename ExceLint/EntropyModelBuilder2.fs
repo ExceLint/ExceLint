@@ -84,11 +84,8 @@
             member self.InvertedHistogram : ROInvertedHistogram = ih
 
             member self.Clustering(z: int) : ImmutableClustering =
-                try
-                    regions.[z]
-                    |> (fun s -> CommonTypes.makeImmutableGenericClustering s)
-                with
-                | e -> failwith "odd"
+                regions.[z]
+                |> (fun s -> CommonTypes.makeImmutableGenericClustering s)
 
             member self.ZForWorksheet(sheet: string) : int = fsc.ZForWorksheet sheet
 
@@ -267,7 +264,7 @@
                 |> Seq.toArray
 
             member self.Fixes(z: int) : ProposedFix[] =
-                // get models & prune
+                // get models & prune potential fixes
                 let fixes =
                     self.PrevailingDirectionAdjacencies z true
                     |> Array.map (fun (target, addr) ->
@@ -279,7 +276,7 @@
 
                            let source_class = revLookups.[z].[addr]
                            // Fix equivalence class?
-                           // Formuals and strings must all be fixed as a cluster together;
+                           // Formulas and strings must all be fixed as a cluster together;
                            // Whitespace and numbers may be 'borrowed' from parent cluster
                            let source = if AddressIsFormulaValued addr ih graph
                                            || AddressIsStringValued addr ih graph then
@@ -293,8 +290,12 @@
                        )
                     // no duplicates
                     |> Array.distinctBy (fun (s,sc,t) -> s,t)
+                    // all targets must be formulas
+                    |> Array.filter (fun (_,_,t) -> ClusterIsFormulaValued t ih graph)
+                    // no whitespace sources, for now
+                    |> Array.filter (fun (s,_,_) -> s |> Seq.forall (fun a -> not (AddressIsWhitespaceValued a ih graph)))
 
-                // sort so that small fixes are favored when deduping
+                // sort so that small fixes are favored when deduping converse fixes
                 let fixes' =
                     fixes
                     |> Array.map (fun (s,sc,t) ->
@@ -373,8 +374,7 @@
                            BinaryMinEntropyTree.ImmMergeIsRectangular s t
                        )
 
-                // produce one model for each adjacency;
-                // this is somewhat expensive to compute
+                // produce one model for each adjacency
                 let models = 
                     dps'
                     |> Array.Parallel.map (fun (source, target, wdotproduct) ->
@@ -558,7 +558,7 @@
 
                 // init all sheets
                 let sw = System.Diagnostics.Stopwatch.StartNew()
-                let regions = [| 0 .. (fsc.NumWorksheets - 1) |] |> Array.map (fun z -> EntropyModel2.InitialSetup z ih fsc indivisibles)
+                let regions = [| 0 .. (fsc.NumWorksheets - 1) |] |> Array.Parallel.map (fun z -> EntropyModel2.InitialSetup z ih fsc indivisibles)
                 sw.Stop()
                 assert (FasterBinaryMinEntropyTree.SheetAnalysesAreDistinct regions)
 
