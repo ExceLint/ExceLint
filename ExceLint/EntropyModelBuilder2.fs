@@ -84,8 +84,11 @@
             member self.InvertedHistogram : ROInvertedHistogram = ih
 
             member self.Clustering(z: int) : ImmutableClustering =
-                regions.[z]
-                |> (fun s -> CommonTypes.makeImmutableGenericClustering s)
+                try
+                    regions.[z]
+                    |> (fun s -> CommonTypes.makeImmutableGenericClustering s)
+                with
+                | e -> failwith "odd"
 
             member self.ZForWorksheet(sheet: string) : int = fsc.ZForWorksheet sheet
 
@@ -410,6 +413,8 @@
 
             member self.CacheLookups = fsc.Lookups
 
+            member self.NumWorksheets = fsc.NumWorksheets
+
             // compute the cutoff based on a percentage of the number of formulas,
             // by default PCT_TO_FLAG %
             member self.Cutoff : int =
@@ -494,8 +499,8 @@
             static member runClusterModel(input: Input) : AnalysisOutcome =
                 try
                     if (analysisBase input.config input.dag).Length <> 0 then
-                        let numSheets = input.dag.getWorksheetNames().Length
                         let m = EntropyModel2.Initialize input
+                        let numSheets = m.NumWorksheets
                         let sw = System.Diagnostics.Stopwatch.StartNew()
                         let fixeses = [| 0 .. numSheets - 1|] |> Array.map m.Fixes
                         sw.Stop()
@@ -529,8 +534,6 @@
                 // determine the set of cells to be analyzed
                 let cells = analysisBase input.config input.dag
 
-                let sheets = cells |> Array.map (fun a -> a.WorksheetName) |> Array.distinct
-
                 // get all NLFRs for every formula cell
                 let _runf = fun () -> runEnabledFeatures cells input.dag input.config input.progress
                 let (ns: ScoreTable,feat_time: int64) = PerfUtils.runMillis _runf ()
@@ -555,7 +558,7 @@
                     | DistanceMetric.MeanCentroid -> cent_dist_ro invertedHistogram
 
                 // initialize indivisible set
-                let indivisibles = EntropyModel2.InitIndivisibles sheets.Length
+                let indivisibles = EntropyModel2.InitIndivisibles fsc.NumWorksheets
 
                 // init all sheets
                 let sw = System.Diagnostics.Stopwatch.StartNew()
