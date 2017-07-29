@@ -322,6 +322,8 @@
                     |> Array.filter (fun (_,_,t) -> ClusterIsFormulaValued t ih graph)
                     // no whitespace sources, for now
                     |> Array.filter (fun (s,_,_) -> s |> Seq.forall (fun a -> not (AddressIsWhitespaceValued a ih graph)))
+                    // no string sources, for now
+                    |> Array.filter (fun (s,_,_) -> s |> Seq.forall (fun a -> not (AddressIsStringValued a ih graph)))
 
                 // no converse fixes
                 let fhs = new HashSet<ImmutableHashSet<AST.Address>*ImmutableHashSet<AST.Address>>()
