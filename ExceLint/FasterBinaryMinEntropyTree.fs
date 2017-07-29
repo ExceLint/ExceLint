@@ -163,9 +163,6 @@
 
             decomp vert minX maxX minY maxY part
 
-        static member Infer(fsc: FastSheetCounter)(z: int)(hb_inv: ROInvertedHistogram) : FasterBinaryMinEntropyTree =
-            FasterBinaryMinEntropyTree.Decompose fsc z hb_inv
-
         static member private IsHomogeneous(c: AST.Address[])(ih: ROInvertedHistogram) : bool =
             let (_,_,rep) = ih.[c.[0]]
             c |>
@@ -267,10 +264,77 @@
             | Some root -> root
             | None -> failwith "this should never happen"
 
-        static member Decompose(fsc: FastSheetCounter)(z: int)(ih: ROInvertedHistogram) : FasterBinaryMinEntropyTree =
-            let initial_lt = (fsc.MinXForWorksheet z, fsc.MinYForWorksheet z)
-            let initial_rb = (fsc.MaxXForWorksheet z, fsc.MaxYForWorksheet z)
-            FasterBinaryMinEntropyTree.DecomposeAt fsc z ih initial_lt initial_rb
+        static member Decompose(fsc: FastSheetCounter)(z: int)(ih: ROInvertedHistogram) : ImmutableClustering =
+            let regions = FasterBinaryMinEntropyTree.MaxSplitter fsc z ih
+            let trees =
+                regions
+                |> Array.map (fun (lt,rb) ->
+                       FasterBinaryMinEntropyTree.DecomposeAt fsc z ih lt rb
+                   )
+
+            // get clusters
+            let regs = trees |> Array.map (fun tree -> FasterBinaryMinEntropyTree.Regions tree) |> Array.concat
+            let clusters = regs |> Array.map (fun leaf -> leaf.Cells ih fsc) |> makeImmutableGenericClustering
+
+            clusters
+
+        /// <summary>
+        /// Find as many through-splits as possible and split the spreadsheet into distinct regions.
+        /// </summary>
+        /// <param name="fsc"></param>
+        /// <param name="z"></param>
+        /// <param name="ih"></param>
+        static member MaxSplitter(fsc: FastSheetCounter)(z: int)(ih: ROInvertedHistogram) : Rgn[] =
+            let (left,top) = (fsc.MinXForWorksheet z, fsc.MinYForWorksheet z)
+            let (right,bottom) = (fsc.MaxXForWorksheet z, fsc.MaxYForWorksheet z)
+
+            let mutable xsplits = []
+            for x = left to right do
+                // get the first value
+                let v = fsc.ValueFor x top z
+                let mutable same = true
+                let mutable y = top
+                while y <= bottom && same do
+                    let v' = fsc.ValueFor x y z
+                    if v <> v' then
+                        same <- false
+                    y <- y + 1
+                if same then
+                    xsplits <- x :: xsplits
+            xsplits <- List.rev xsplits
+
+            let mutable ysplits = []
+            for y = top to bottom do
+                // get the first value
+                let v = fsc.ValueFor left y z
+                let mutable same = true
+                let mutable x = left
+                while x <= right && same do
+                    let v' = fsc.ValueFor x y z
+                    if v <> v' then
+                        same <- false
+                    x <- x + 1
+                if same then
+                    ysplits <- y :: ysplits
+            ysplits <- List.rev ysplits
+            
+            // get x pairs
+            let xpairs = List.zip (List.rev(List.tail(List.rev(xsplits)))) (List.tail xsplits) |> List.toArray
+            // get y pairs
+            let ypairs = List.zip (List.rev(List.tail(List.rev(ysplits)))) (List.tail ysplits) |> List.toArray
+
+            let mutable regions = []
+
+            // make regions from the splits
+            for i = 0 to ypairs.Length - 1 do
+                for j = 0 to xpairs.Length - 1 do
+                    let (x1,x2) = xpairs.[j]
+                    let (y1,y2) = ypairs.[i]
+                    regions <- ((x1,y1),(x2,y2)) :: regions
+
+            // TODO: one or more of the x/y splits can be empty!
+
+            regions |> List.rev |> List.toArray
 
         /// <summary>return the leaves of the tree, in order of smallest to largest region</summary>
         static member Regions(tree: FasterBinaryMinEntropyTree) : FLeaf[] =

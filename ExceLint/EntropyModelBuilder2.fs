@@ -292,10 +292,7 @@
                        )
                     // no duplicates
                     |> Array.distinctBy (fun (s,sc,t) -> s,t)
-                    // all targets must be formulas
-                    |> Array.filter (fun (_,_,t) -> ClusterIsFormulaValued t ih graph)
-                    // no whitespace sources, for now
-                    |> Array.filter (fun (s,_,_) -> s |> Seq.forall (fun a -> not (AddressIsWhitespaceValued a ih graph)))
+                    
 
                 // sort so that small fixes are favored when deduping converse fixes
                 let fixes' =
@@ -319,6 +316,12 @@
                             t,sc,s
                        )
                     |> Array.distinctBy (fun (s,_,t) -> s,t)
+                    // filtering of targets and sources must happen here because
+                    // we may have swapped them above.
+                    // all targets must be formulas
+                    |> Array.filter (fun (_,_,t) -> ClusterIsFormulaValued t ih graph)
+                    // no whitespace sources, for now
+                    |> Array.filter (fun (s,_,_) -> s |> Seq.forall (fun a -> not (AddressIsWhitespaceValued a ih graph)))
 
                 // no converse fixes
                 let fhs = new HashSet<ImmutableHashSet<AST.Address>*ImmutableHashSet<AST.Address>>()
@@ -423,11 +426,7 @@
 
             static member InitialSetup(z: int)(ih: ROInvertedHistogram)(fsc: FastSheetCounter)(indivisibles: ImmutableClustering[]) : ImmutableClustering =
                 // get the initial tree
-                let tree = FasterBinaryMinEntropyTree.Infer fsc z ih
-
-                // get clusters
-                let regs = FasterBinaryMinEntropyTree.Regions tree
-                let clusters = regs |> Array.map (fun leaf -> leaf.Cells ih fsc) |> makeImmutableGenericClustering
+                let clusters = FasterBinaryMinEntropyTree.Decompose fsc z ih
                 
                 // coalesce all cells that have the same cvector,
                 // ensuring that all merged clusters remain rectangular
@@ -560,7 +559,7 @@
 
                 // init all sheets
                 let sw = System.Diagnostics.Stopwatch.StartNew()
-                let regions = [| 0 .. (fsc.NumWorksheets - 1) |] |> Array.Parallel.map (fun z -> EntropyModel2.InitialSetup z ih fsc indivisibles)
+                let regions = [| 0 .. (fsc.NumWorksheets - 1) |] |> Array.map (fun z -> EntropyModel2.InitialSetup z ih fsc indivisibles)
                 sw.Stop()
                 assert (FasterBinaryMinEntropyTree.SheetAnalysesAreDistinct regions)
 
