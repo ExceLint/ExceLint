@@ -288,7 +288,7 @@
             let (left,top) = (fsc.MinXForWorksheet z, fsc.MinYForWorksheet z)
             let (right,bottom) = (fsc.MaxXForWorksheet z, fsc.MaxYForWorksheet z)
 
-            let mutable xsplits = []
+            let mutable xsplits = [left]
             for x = left to right do
                 // get the first value
                 let v = fsc.ValueFor x top z
@@ -301,9 +301,10 @@
                     y <- y + 1
                 if same then
                     xsplits <- x :: xsplits
+            xsplits <- right :: xsplits
             xsplits <- List.rev xsplits
 
-            let mutable ysplits = []
+            let mutable ysplits = [top]
             for y = top to bottom do
                 // get the first value
                 let v = fsc.ValueFor left y z
@@ -316,12 +317,32 @@
                     x <- x + 1
                 if same then
                     ysplits <- y :: ysplits
+            ysplits <- bottom :: ysplits
             ysplits <- List.rev ysplits
             
             // get x pairs
-            let xpairs = List.zip (List.rev(List.tail(List.rev(xsplits)))) (List.tail xsplits) |> List.toArray
+            let xpairs =
+                List.zip (List.rev(List.tail(List.rev(xsplits)))) (List.tail xsplits)
+                |> List.fold (fun (isFirst,xs) (a,b) ->
+                       if isFirst then
+                           (false, (a,b) :: xs)
+                       else
+                           (false, (a+1,b) :: xs)
+                   ) (true,[])
+                |> fun (_,xpairs) -> xpairs
+                |> List.rev
+
             // get y pairs
-            let ypairs = List.zip (List.rev(List.tail(List.rev(ysplits)))) (List.tail ysplits) |> List.toArray
+            let ypairs =
+                List.zip (List.rev(List.tail(List.rev(ysplits)))) (List.tail ysplits)
+                |> List.fold (fun (isFirst,xs) (a,b) ->
+                       if isFirst then
+                           (false, (a,b) :: xs)
+                       else
+                           (false, (a+1,b) :: xs)
+                   ) (true,[])
+                |> fun (_,xpairs) -> xpairs
+                |> List.rev
 
             let mutable regions = []
 
@@ -331,8 +352,6 @@
                     let (x1,x2) = xpairs.[j]
                     let (y1,y2) = ypairs.[i]
                     regions <- ((x1,y1),(x2,y2)) :: regions
-
-            // TODO: one or more of the x/y splits can be empty!
 
             regions |> List.rev |> List.toArray
 
