@@ -14,6 +14,7 @@ using System.Threading;
 using Worksheet = Microsoft.Office.Interop.Excel.Worksheet;
 using Workbook = Microsoft.Office.Interop.Excel.Workbook;
 using Clusters = System.Collections.Immutable.ImmutableHashSet<System.Collections.Immutable.ImmutableHashSet<AST.Address>>;
+using ROInvertedHistogram = System.Collections.Immutable.ImmutableDictionary<AST.Address, System.Tuple<string, ExceLint.Scope.SelectID, ExceLint.Countable>>;
 
 namespace ExceLintUI
 {
@@ -927,7 +928,7 @@ namespace ExceLintUI
             DrawClusters(clustering);
         }
 
-        public void DrawImmutableClusters(Clusters clusters)
+        public void DrawImmutableClusters(Clusters clusters, ROInvertedHistogram ih)
         {
             var hs = new HashSet<HashSet<AST.Address>>();
             foreach (var c in clusters)
@@ -935,7 +936,7 @@ namespace ExceLintUI
                 var c2 = new HashSet<AST.Address>(c);
                 hs.Add(c2);
             }
-            DrawClusters(hs);
+            DrawClustersWithHistogram(hs, ih);
         }
 
         public void DrawClusters(HashSet<HashSet<AST.Address>> clusters)
@@ -951,6 +952,45 @@ namespace ExceLintUI
             foreach (var cluster in clusters)
             {
                 var c = clusterColors.GetColor(cluster);
+                foreach (AST.Address addr in cluster)
+                {
+                    paintColor(addr, c);
+                }
+            }
+
+            // Enable screen updating
+            _app.ScreenUpdating = true;
+        }
+
+        public void DrawClustersWithHistogram(HashSet<HashSet<AST.Address>> clusters, ROInvertedHistogram ih)
+        {
+
+            // init cluster color map
+            ClusterColorer clusterColors = new ClusterColorer(clusters, 0, 360, 0);
+
+            // use the same color for clusters that have the same resultant
+            var cdict = new Dictionary<ExceLint.Countable, System.Drawing.Color>();
+
+            // Disable screen updating
+            _app.ScreenUpdating = false;
+
+            // paint
+            foreach (var cluster in clusters)
+            {
+                // get countable
+                var histobin = ih[cluster.First()];
+                var co = histobin.Item3.ToCVectorResultant;
+
+                System.Drawing.Color c = System.Drawing.Color.Transparent;
+                if (cdict.ContainsKey(co))
+                {
+                    c = cdict[co];
+                } else
+                {
+                    c = clusterColors.GetColor(cluster);
+                    cdict.Add(co, c);
+                }
+
                 foreach (AST.Address addr in cluster)
                 {
                     paintColor(addr, c);

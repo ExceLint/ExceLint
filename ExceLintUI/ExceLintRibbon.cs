@@ -147,7 +147,7 @@ namespace ExceLintUI
             var clusters = EntropyModelBuilder2.EntropyModel2.RankingToClusters(fixes);
 
             // draw
-            currentWorkbook.DrawImmutableClusters(clusters);
+            currentWorkbook.DrawImmutableClusters(clusters, model.InvertedHistogram);
 
             // show message boxes
             System.Windows.Forms.MessageBox.Show(ProposedFixesToString(fixes));
@@ -252,7 +252,7 @@ namespace ExceLintUI
 
                 var cl_filt2 = PrettyClusters(clusters2, histo2, graph);
                 currentWorkbook.restoreOutputColors();
-                currentWorkbook.DrawImmutableClusters(cl_filt2);
+                currentWorkbook.DrawImmutableClusters(cl_filt2, fixClusterModel.InvertedHistogram);
 
                 // remove progress bar
                 pb.Close();
@@ -301,7 +301,7 @@ namespace ExceLintUI
                     // redisplay visualiztion
                     var cl_filt = PrettyClusters(newModel.Clustering(z), newModel.InvertedHistogram, graph);
                     currentWorkbook.restoreOutputColors();
-                    currentWorkbook.DrawImmutableClusters(cl_filt);
+                    currentWorkbook.DrawImmutableClusters(cl_filt, fixClusterModel.InvertedHistogram);
 
                     // display output
                     System.Windows.Forms.MessageBox.Show("Change in entropy: " + deltaE);
