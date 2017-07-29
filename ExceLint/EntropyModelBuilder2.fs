@@ -84,13 +84,12 @@
             member self.InvertedHistogram : ROInvertedHistogram = ih
 
             member self.Clustering(z: int) : ImmutableClustering =
-                try
-                    regions.[z]
-                    |> (fun s -> CommonTypes.makeImmutableGenericClustering s)
-                with
-                | e -> failwith "odd"
+                regions.[z]
+                |> (fun s -> CommonTypes.makeImmutableGenericClustering s)
 
             member self.ZForWorksheet(sheet: string) : int = fsc.ZForWorksheet sheet
+
+            member self.DependenceGraph = graph
 
             member private self.UpdateHistogram(source: ImmutableHashSet<AST.Address>)(target: ImmutableHashSet<AST.Address>) : ROInvertedHistogram =
                 // get representative score from target
@@ -267,7 +266,7 @@
                 |> Seq.toArray
 
             member self.Fixes(z: int) : ProposedFix[] =
-                // get models & prune
+                // get models & prune potential fixes
                 let fixes =
                     self.PrevailingDirectionAdjacencies z true
                     |> Array.map (fun (target, addr) ->
@@ -279,7 +278,7 @@
 
                            let source_class = revLookups.[z].[addr]
                            // Fix equivalence class?
-                           // Formuals and strings must all be fixed as a cluster together;
+                           // Formulas and strings must all be fixed as a cluster together;
                            // Whitespace and numbers may be 'borrowed' from parent cluster
                            let source = if AddressIsFormulaValued addr ih graph
                                            || AddressIsStringValued addr ih graph then
@@ -293,8 +292,9 @@
                        )
                     // no duplicates
                     |> Array.distinctBy (fun (s,sc,t) -> s,t)
+                    
 
-                // sort so that small fixes are favored when deduping
+                // sort so that small fixes are favored when deduping converse fixes
                 let fixes' =
                     fixes
                     |> Array.map (fun (s,sc,t) ->
@@ -316,6 +316,12 @@
                             t,sc,s
                        )
                     |> Array.distinctBy (fun (s,_,t) -> s,t)
+                    // filtering of targets and sources must happen here because
+                    // we may have swapped them above.
+                    // all targets must be formulas
+                    |> Array.filter (fun (_,_,t) -> ClusterIsFormulaValued t ih graph)
+                    // no whitespace sources, for now
+                    |> Array.filter (fun (s,_,_) -> s |> Seq.forall (fun a -> not (AddressIsWhitespaceValued a ih graph)))
 
                 // no converse fixes
                 let fhs = new HashSet<ImmutableHashSet<AST.Address>*ImmutableHashSet<AST.Address>>()
@@ -373,8 +379,7 @@
                            BinaryMinEntropyTree.ImmMergeIsRectangular s t
                        )
 
-                // produce one model for each adjacency;
-                // this is somewhat expensive to compute
+                // produce one model for each adjacency
                 let models = 
                     dps'
                     |> Array.Parallel.map (fun (source, target, wdotproduct) ->
@@ -409,10 +414,6 @@
 
             member self.ScoreTimeMs = stats.FeatureTimeMS + stats.ScaleTimeMS + stats.InvertTimeMS + stats.FastSheetCounterMS + stats.InferTimeMS
 
-            member self.CacheHits = fsc.Hits
-
-            member self.CacheLookups = fsc.Lookups
-
             member self.NumWorksheets = fsc.NumWorksheets
 
             // compute the cutoff based on a percentage of the number of formulas,
@@ -425,11 +426,7 @@
 
             static member InitialSetup(z: int)(ih: ROInvertedHistogram)(fsc: FastSheetCounter)(indivisibles: ImmutableClustering[]) : ImmutableClustering =
                 // get the initial tree
-                let tree = FasterBinaryMinEntropyTree.Infer fsc z ih
-
-                // get clusters
-                let regs = FasterBinaryMinEntropyTree.Regions tree
-                let clusters = regs |> Array.map (fun leaf -> leaf.Cells ih fsc) |> makeImmutableGenericClustering
+                let clusters = FasterBinaryMinEntropyTree.Decompose fsc z ih
                 
                 // coalesce all cells that have the same cvector,
                 // ensuring that all merged clusters remain rectangular
@@ -562,7 +559,7 @@
 
                 // init all sheets
                 let sw = System.Diagnostics.Stopwatch.StartNew()
-                let regions = [| 0 .. (fsc.NumWorksheets - 1) |] |> Array.map (fun z -> EntropyModel2.InitialSetup z ih fsc indivisibles)
+                let regions = [| 0 .. (fsc.NumWorksheets - 1) |] |> Array.Parallel.map (fun z -> EntropyModel2.InitialSetup z ih fsc indivisibles)
                 sw.Stop()
                 assert (FasterBinaryMinEntropyTree.SheetAnalysesAreDistinct regions)
 
