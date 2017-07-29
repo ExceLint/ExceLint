@@ -235,7 +235,7 @@
                         match parentRelation with
                         | Root -> root_opt <- Some (node :> FasterBinaryMinEntropyTree)
                         | _ -> ()
-
+                        
                         // add next nodes to work list
                         todos <- (LeftOf node, p1) :: (RightOf node, p2) :: todos
 
@@ -302,7 +302,7 @@
                 if same then
                     xsplits <- x :: xsplits
             xsplits <- right :: xsplits
-            xsplits <- List.rev xsplits
+            xsplits <- (List.rev xsplits) |> List.distinct
 
             let mutable ysplits = [top]
             for y = top to bottom do
@@ -318,7 +318,7 @@
                 if same then
                     ysplits <- y :: ysplits
             ysplits <- bottom :: ysplits
-            ysplits <- List.rev ysplits
+            ysplits <- (List.rev ysplits) |> List.distinct
             
             // get x pairs
             let xpairs =
