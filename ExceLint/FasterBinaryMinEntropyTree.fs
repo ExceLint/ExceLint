@@ -268,7 +268,7 @@
             let regions = FasterBinaryMinEntropyTree.MaxSplitter fsc z ih
             let trees =
                 regions
-                |> Array.map (fun (lt,rb) ->
+                |> Array.Parallel.map (fun (lt,rb) ->
                        FasterBinaryMinEntropyTree.DecomposeAt fsc z ih lt rb
                    )
 
