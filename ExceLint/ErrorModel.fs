@@ -88,11 +88,11 @@
 
         member self.Features : string[] = config.EnabledFeatures
 
-        member self.Fixes : HypothesizedFixes option =
+        member self.Fixes : ProposedFix[] option =
             match analysis with 
-            | Histogram h -> h.fixes
-            | COF c -> failwith "Not valid for COF analysis."
-            | Cluster c -> failwith "Not valid for cluster analysis."
+            | Histogram h -> None
+            | COF c -> None
+            | Cluster c -> Some (c.fixes)
 
         member self.COFFixes : Dictionary<AST.Address,HashSet<AST.Address>> =
             match analysis with

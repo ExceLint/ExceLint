@@ -10,17 +10,6 @@
     module EntropyModelBuilder2 =
         let PCT_TO_FLAG = 5
 
-
-        [<Struct>]
-        type ProposedFix(source: ImmutableHashSet<AST.Address>, target: ImmutableHashSet<AST.Address>, entropyDelta: double, weighted_dp: double, distance: double) =
-            member self.Source = source
-            member self.Target = target
-            member self.EntropyDelta = entropyDelta
-            member self.E = 1.0 / -self.EntropyDelta
-            member self.Distance = distance
-            member self.WeightedDotProduct = weighted_dp
-            member self.Score = (self.E * self.WeightedDotProduct) / self.Distance
-
         [<Struct>]
         type Stats(feat_ms: int64, scale_ms: int64, invert_ms: int64, fsc_ms: int64, infer_ms: int64) =
             member self.FeatureTimeMS = feat_ms
@@ -512,7 +501,8 @@
                                 numcells = input.dag.allCells().Length;
                                 numformulas = input.dag.getAllFormulaAddrs().Length;
                                 scores = m.Scores;
-                                ranking = ranking
+                                ranking = ranking;
+                                fixes = fixes;
                                 score_time = m.ScoreTimeMs;
                                 ranking_time = fixtime + combtime + rtime;
                                 sig_threshold_idx = 0;

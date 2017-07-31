@@ -56,6 +56,7 @@
             this.getLSH = this.Factory.CreateRibbonButton();
             this.readClusterDump = this.Factory.CreateRibbonButton();
             this.VectorForCell = this.Factory.CreateRibbonButton();
+            this.cellIsFormula = this.Factory.CreateRibbonButton();
             this.drawAllClusters = this.Factory.CreateRibbonCheckBox();
             this.distanceCombo = this.Factory.CreateRibbonComboBox();
             this.ClusterBox = this.Factory.CreateRibbonCheckBox();
@@ -80,7 +81,6 @@
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
             this.button1 = this.Factory.CreateRibbonButton();
-            this.cellIsFormula = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -261,6 +261,12 @@
             this.VectorForCell.Name = "VectorForCell";
             this.VectorForCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.VectorForCell_Click);
             // 
+            // cellIsFormula
+            // 
+            this.cellIsFormula.Label = "Is Formula?";
+            this.cellIsFormula.Name = "cellIsFormula";
+            this.cellIsFormula.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.cellIsFormula_Click);
+            // 
             // drawAllClusters
             // 
             this.drawAllClusters.Checked = true;
@@ -440,12 +446,6 @@
             this.button1.Label = "Start Fix";
             this.button1.Name = "button1";
             this.button1.ShowImage = true;
-            // 
-            // cellIsFormula
-            // 
-            this.cellIsFormula.Label = "Is Formula?";
-            this.cellIsFormula.Name = "cellIsFormula";
-            this.cellIsFormula.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.cellIsFormula_Click);
             // 
             // ExceLintRibbon
             // 

@@ -11,6 +11,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Collections.Immutable;
 using Worksheet = Microsoft.Office.Interop.Excel.Worksheet;
 using Workbook = Microsoft.Office.Interop.Excel.Workbook;
 using Clusters = System.Collections.Immutable.ImmutableHashSet<System.Collections.Immutable.ImmutableHashSet<AST.Address>>;
@@ -72,6 +73,8 @@ namespace ExceLintUI
         private Object _dagLock = new Object();
         private DateTime _dagBuilt = DateTime.MinValue;
         private CancellationTokenSource _cts = new CancellationTokenSource();
+
+        private int currentFlag = 0;
 
         #endregion DATASTRUCTURES
 
@@ -1011,6 +1014,40 @@ namespace ExceLintUI
             return buildDAGAndDoStuff(forceDAGBuild, f, 3, pb);
         }
 
+        public void flagNext()
+        {
+            if (FSharpOption<ExceLint.CommonTypes.ProposedFix[]>.get_IsSome(_analysis.model.Fixes))
+            {
+                var fixes = _analysis.model.Fixes.Value;
+                if (currentFlag + 1 < fixes.Length)
+                {
+                    currentFlag++;
+
+                    // get fix
+                    var fix = fixes[currentFlag];
+
+                    // paint source
+                    foreach(AST.Address a in fix.Source)
+                    {
+                        paintRed(a, 1.0);
+                    }
+
+                    // paint target
+                    foreach(AST.Address a in fix.Target)
+                    {
+                        paintColor(a, System.Drawing.Color.Green);
+                    }
+                } else
+                {
+                    restoreOutputColors();
+                    setTool(false);
+                    currentFlag = 0;
+                }
+            }
+            
+            
+        }
+
         public void analyze(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean forceDAGBuild, ProgBar pb)
         {
             var sw = new System.Diagnostics.Stopwatch();
@@ -1028,18 +1065,17 @@ namespace ExceLintUI
             {
                 _analysis = rawAnalysis(max_duration_in_ms, config, forceDAGBuild, pb);
 
-                
-
                 if (!_analysis.ranOK)
                 {
                     System.Windows.Forms.MessageBox.Show("This spreadsheet contains no formulas.");
                     return;
-                } else
-                {
-                    var output = String.Join("\n", _analysis.model.ranking());
-                    System.Windows.Forms.Clipboard.SetText(output);
-                    System.Windows.Forms.MessageBox.Show("look in clipboard");
                 }
+                //else
+                //{
+                //    var output = String.Join("\n", _analysis.model.ranking());
+                //    System.Windows.Forms.Clipboard.SetText(output);
+                //    System.Windows.Forms.MessageBox.Show("look in clipboard");
+                //}
             }
             catch (AST.ParseException e)
             {
@@ -1133,141 +1169,142 @@ namespace ExceLintUI
             app.ScreenUpdating = true;
         }
 
-        public static AST.Address[] hypothesizedFixes(AST.Address cell, ExceLint.ErrorModel model)
-        {
-            if (FSharpOption<HypothesizedFixes>.get_IsSome(model.Fixes))
-            {
-                var fixes = model.Fixes.Value[cell];
-                return fixes.SelectMany(pair =>
-                           model.Scores[pair.Key].Where(tup => tup.Item2 == pair.Value)
-                       ).Select(tup => tup.Item1).ToArray();
-            } else
-            {
-                return new AST.Address[] { };
-            }
-        }
+        //public static AST.Address[] hypothesizedFixes(AST.Address cell, ExceLint.ErrorModel model)
+        //{
+        //    if (FSharpOption<ExceLint.CommonTypes.ProposedFix[]>.get_IsSome(model.Fixes))
+        //    {
+        //        var fixes = model.Fixes.Value[cell];
+        //        return fixes.SelectMany(pair =>
+        //                   model.Scores[pair.Key].Where(tup => tup.Item2 == pair.Value)
+        //               ).Select(tup => tup.Item1).ToArray();
+        //    }
+        //    else
+        //    {
+        //        return new AST.Address[] { };
+        //    }
+        //}
 
-        public void flag(bool showFixes)
-        {
-            // filter known_good & cut by cutoff index
-            var flaggable = _analysis.scores
-                                .Take(_analysis.cutoff + 1)
-                                .Where(kvp => !_audited.Contains(kvp.Key)).ToArray();
+        //public void flag(bool showFixes)
+        //{
+        //    // filter known_good & cut by cutoff index
+        //    var flaggable = _analysis.scores
+        //                        .Take(_analysis.cutoff + 1)
+        //                        .Where(kvp => !_audited.Contains(kvp.Key)).ToArray();
 
-            if (flaggable.Count() == 0)
-            {
-                System.Windows.Forms.MessageBox.Show("No remaining anomalies.");
-                resetTool();
-            }
-            else
-            {
-                // get Score corresponding to most unusual score
-                _flagged_cell = flaggable.First().Key;
+        //    if (flaggable.Count() == 0)
+        //    {
+        //        System.Windows.Forms.MessageBox.Show("No remaining anomalies.");
+        //        resetTool();
+        //    }
+        //    else
+        //    {
+        //        // get Score corresponding to most unusual score
+        //        _flagged_cell = flaggable.First().Key;
 
-                // ensure that cell is unprotected or fail
-                if (unProtect(_flagged_cell) != ProtectionLevel.None)
-                {
-                    System.Windows.Forms.MessageBox.Show("Cannot highlight cell " + _flagged_cell.A1Local() + ". Cell is protected.");
-                    return;
-                } 
+        //        // ensure that cell is unprotected or fail
+        //        if (unProtect(_flagged_cell) != ProtectionLevel.None)
+        //        {
+        //            System.Windows.Forms.MessageBox.Show("Cannot highlight cell " + _flagged_cell.A1Local() + ". Cell is protected.");
+        //            return;
+        //        } 
 
-                // get cell COM object
-                var com = ParcelCOMShim.Address.GetCOMObject(_flagged_cell, _app);
+        //        // get cell COM object
+        //        var com = ParcelCOMShim.Address.GetCOMObject(_flagged_cell, _app);
 
-                // save old color
-                _colors.saveColorAt(
-                    _flagged_cell,
-                    new CellColor { ColorIndex = (int)com.Interior.ColorIndex, Color = (double)com.Interior.Color }
-                );
+        //        // save old color
+        //        _colors.saveColorAt(
+        //            _flagged_cell,
+        //            new CellColor { ColorIndex = (int)com.Interior.ColorIndex, Color = (double)com.Interior.Color }
+        //        );
 
-                // highlight cell
-                com.Interior.Color = System.Drawing.Color.Red;
+        //        // highlight cell
+        //        com.Interior.Color = System.Drawing.Color.Red;
 
-                // go to highlighted cell
-                activateAndCenterOn(_flagged_cell, _app);
+        //        // go to highlighted cell
+        //        activateAndCenterOn(_flagged_cell, _app);
 
-                // enable auditing buttons
-                setTool(active: true);
+        //        // enable auditing buttons
+        //        setTool(active: true);
 
-                // if this is COF, always show fixes
-                if (_analysis.model.IsCOF)
-                {
-                    var fixes = _analysis.model.COFFixes[_flagged_cell].ToArray();
+        //        // if this is COF, always show fixes
+        //        if (_analysis.model.IsCOF)
+        //        {
+        //            var fixes = _analysis.model.COFFixes[_flagged_cell].ToArray();
 
-                    if (fixes.Length > 0)
-                    {
-                        var sb = new StringBuilder();
+        //            if (fixes.Length > 0)
+        //            {
+        //                var sb = new StringBuilder();
 
-                        sb.AppendLine("ExceLint thinks that");
-                        sb.AppendLine(_dag.getFormulaAtAddress(_flagged_cell));
-                        sb.AppendLine("should look more like");
+        //                sb.AppendLine("ExceLint thinks that");
+        //                sb.AppendLine(_dag.getFormulaAtAddress(_flagged_cell));
+        //                sb.AppendLine("should look more like");
 
-                        for (int i = 0; i < fixes.Length; i++)
-                        {
-                            // get formula at fix address
-                            var f = _dag.getFormulaAtAddress(fixes[i]);
-                            if (i > 0)
-                            {
-                                sb.Append("or ");
-                            }
-                            sb.AppendLine("address: " + fixes[i].A1Local().ToString() + ", formula: " + f);
+        //                for (int i = 0; i < fixes.Length; i++)
+        //                {
+        //                    // get formula at fix address
+        //                    var f = _dag.getFormulaAtAddress(fixes[i]);
+        //                    if (i > 0)
+        //                    {
+        //                        sb.Append("or ");
+        //                    }
+        //                    sb.AppendLine("address: " + fixes[i].A1Local().ToString() + ", formula: " + f);
 
-                            // get cell COM object
-                            var fix_com = ParcelCOMShim.Address.GetCOMObject(fixes[i], _app);
+        //                    // get cell COM object
+        //                    var fix_com = ParcelCOMShim.Address.GetCOMObject(fixes[i], _app);
 
-                            // save old color
-                            _colors.saveColorAt(
-                                fixes[i],
-                                new CellColor { ColorIndex = (int)fix_com.Interior.ColorIndex, Color = (double)fix_com.Interior.Color }
-                            );
+        //                    // save old color
+        //                    _colors.saveColorAt(
+        //                        fixes[i],
+        //                        new CellColor { ColorIndex = (int)fix_com.Interior.ColorIndex, Color = (double)fix_com.Interior.Color }
+        //                    );
 
-                            // set color
-                            fix_com.Interior.Color = System.Drawing.Color.Green;
-                        }
+        //                    // set color
+        //                    fix_com.Interior.Color = System.Drawing.Color.Green;
+        //                }
 
-                        System.Windows.Forms.MessageBox.Show(sb.ToString());
-                    }
-                }
-                // if the user wants to see fixes, show them now
-                else if (showFixes)
-                {
-                    var fixes = hypothesizedFixes(_flagged_cell, _analysis.model);
-                    if (fixes.Length > 0)
-                    {
-                        var sb = new StringBuilder();
+        //                System.Windows.Forms.MessageBox.Show(sb.ToString());
+        //            }
+        //        }
+        //        // if the user wants to see fixes, show them now
+        //        else if (showFixes)
+        //        {
+        //            var fixes = hypothesizedFixes(_flagged_cell, _analysis.model);
+        //            if (fixes.Length > 0)
+        //            {
+        //                var sb = new StringBuilder();
 
-                        sb.AppendLine("ExceLint thinks that");
-                        sb.AppendLine(_dag.getFormulaAtAddress(_flagged_cell));
-                        sb.AppendLine("should look more like");
+        //                sb.AppendLine("ExceLint thinks that");
+        //                sb.AppendLine(_dag.getFormulaAtAddress(_flagged_cell));
+        //                sb.AppendLine("should look more like");
 
-                        for (int i = 0; i < fixes.Length; i++)
-                        {
-                            // get formula at fix address
-                            var f = _dag.getFormulaAtAddress(fixes[i]);
-                            if (i > 0)
-                            {
-                                sb.Append("or ");
-                            }
-                            sb.AppendLine("address: " + fixes[i].A1Local().ToString() + ", formula: " + f);
+        //                for (int i = 0; i < fixes.Length; i++)
+        //                {
+        //                    // get formula at fix address
+        //                    var f = _dag.getFormulaAtAddress(fixes[i]);
+        //                    if (i > 0)
+        //                    {
+        //                        sb.Append("or ");
+        //                    }
+        //                    sb.AppendLine("address: " + fixes[i].A1Local().ToString() + ", formula: " + f);
 
-                            // get cell COM object
-                            var fix_com = ParcelCOMShim.Address.GetCOMObject(fixes[i], _app);
+        //                    // get cell COM object
+        //                    var fix_com = ParcelCOMShim.Address.GetCOMObject(fixes[i], _app);
 
-                            // save old color
-                            _colors.saveColorAt(
-                                fixes[i],
-                                new CellColor { ColorIndex = (int)fix_com.Interior.ColorIndex, Color = (double)fix_com.Interior.Color }
-                            );
+        //                    // save old color
+        //                    _colors.saveColorAt(
+        //                        fixes[i],
+        //                        new CellColor { ColorIndex = (int)fix_com.Interior.ColorIndex, Color = (double)fix_com.Interior.Color }
+        //                    );
 
-                            // set color
-                            fix_com.Interior.Color = System.Drawing.Color.Green;
-                        }
+        //                    // set color
+        //                    fix_com.Interior.Color = System.Drawing.Color.Green;
+        //                }
 
-                        System.Windows.Forms.MessageBox.Show(sb.ToString());
-                    }
-                }
-            }
-        }
+        //                System.Windows.Forms.MessageBox.Show(sb.ToString());
+        //            }
+        //        }
+        //    }
+        //}
 
         private enum ProtectionLevel
         {
@@ -1432,14 +1469,15 @@ namespace ExceLintUI
             _audited.Add(_flagged_cell);
 
             // set the color of the cell to green
-            var cell = ParcelCOMShim.Address.GetCOMObject(_flagged_cell, _app);
-            cell.Interior.Color = GREEN;
+            //var cell = ParcelCOMShim.Address.GetCOMObject(_flagged_cell, _app);
+            //cell.Interior.Color = GREEN;
 
             // restore output colors
             restoreOutputColors();
 
             // flag another value
-            flag(showFixes);
+            //flag(showFixes);
+            flagNext();
         }
 
         public string ToDOT()

@@ -56,7 +56,7 @@ namespace ExceLintUI
             System.Windows.Forms.MessageBox.Show(cursorAddr.A1Local() + " = " + EntropyModelBuilder2.AddressIsFormulaValued(cursorAddr, model.InvertedHistogram, model.DependenceGraph).ToString());
         }
 
-        private string ProposedFixesToString(EntropyModelBuilder2.ProposedFix[] fixes)
+        private string ProposedFixesToString(CommonTypes.ProposedFix[] fixes)
         {
             // produce output string
             var sb = new StringBuilder();
@@ -500,7 +500,9 @@ namespace ExceLintUI
                 try
                 {
                     wbs.analyze(WorkbookState.MAX_DURATION_IN_MS, conf, forceBuildDAG, pb);
-                    wbs.flag(showFixes);
+                    wbs.MarkAsOK_Enabled = true;
+                    wbs.flagNext();
+                    //wbs.flag(showFixes);
                     updateState(wbs);
 
                     // debug output

@@ -47,6 +47,15 @@
                 let (x,y) = self.tupled
                 x.ToString() + " -> " + y.ToString()
 
+        [<Struct>]
+        type ProposedFix(source: ImmutableHashSet<AST.Address>, target: ImmutableHashSet<AST.Address>, entropyDelta: double, weighted_dp: double, distance: double) =
+            member self.Source = source
+            member self.Target = target
+            member self.EntropyDelta = entropyDelta
+            member self.E = 1.0 / -self.EntropyDelta
+            member self.Distance = distance
+            member self.WeightedDotProduct = weighted_dp
+            member self.Score = (self.E * self.WeightedDotProduct) / self.Distance
 
         type DistanceF = HashSet<AST.Address> -> HashSet<AST.Address> -> double
         type ImmDistanceF = ImmutableHashSet<AST.Address> -> ImmutableHashSet<AST.Address> -> double
@@ -140,6 +149,7 @@
             cutoff_idx: int;
             weights: Weights;
             clustering: Clustering;
+            fixes: ProposedFix[];
         }
 
         type Analysis =

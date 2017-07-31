@@ -324,6 +324,7 @@
                                 cutoff_idx = m.Cutoff;
                                 weights = EntropyModel.Weights fixes;    // this just returns entropy delta for now
                                 clustering = CommonFunctions.ToMutableClustering (EntropyModel.RankingToClusters fixes);
+                                fixes = [||];
                             }
                         )
                     else

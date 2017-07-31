@@ -372,6 +372,7 @@
                             cutoff_idx = m.Cutoff;
                             weights = new Dictionary<AST.Address,double>();
                             clustering = m.ClusteringAtKnee;
+                            fixes = [||];
                         }
                     )
                 else
