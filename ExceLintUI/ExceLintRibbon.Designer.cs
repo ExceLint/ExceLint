@@ -263,12 +263,14 @@
             // 
             this.VectorForCell.Label = "Vector for Cell";
             this.VectorForCell.Name = "VectorForCell";
+            this.VectorForCell.Visible = false;
             this.VectorForCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.VectorForCell_Click);
             // 
             // cellIsFormula
             // 
             this.cellIsFormula.Label = "Is Formula?";
             this.cellIsFormula.Name = "cellIsFormula";
+            this.cellIsFormula.Visible = false;
             this.cellIsFormula.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.cellIsFormula_Click);
             // 
             // drawAllClusters
@@ -276,6 +278,7 @@
             this.drawAllClusters.Checked = true;
             this.drawAllClusters.Label = "Draw all Clusters";
             this.drawAllClusters.Name = "drawAllClusters";
+            this.drawAllClusters.Visible = false;
             // 
             // distanceCombo
             // 
@@ -381,6 +384,7 @@
             // 
             this.DebugOutput.Label = "Show Debug Output";
             this.DebugOutput.Name = "DebugOutput";
+            this.DebugOutput.Visible = false;
             this.DebugOutput.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.DebugOutput_Click);
             // 
             // forceBuildDAG
@@ -431,6 +435,7 @@
             this.annotate.Label = "Annotate";
             this.annotate.Name = "annotate";
             this.annotate.ShowImage = true;
+            this.annotate.Visible = false;
             this.annotate.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotate_Click);
             // 
             // annotateThisCell
