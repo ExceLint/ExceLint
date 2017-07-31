@@ -175,6 +175,7 @@
             this.showHeatmap.Label = "Show Formula Similarity";
             this.showHeatmap.Name = "showHeatmap";
             this.showHeatmap.ShowImage = true;
+            this.showHeatmap.Visible = false;
             this.showHeatmap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.showHeatmap_Click);
             // 
             // clusterForCell
@@ -184,13 +185,14 @@
             this.clusterForCell.Label = "Cluster for Cell";
             this.clusterForCell.Name = "clusterForCell";
             this.clusterForCell.ShowImage = true;
+            this.clusterForCell.Visible = false;
             this.clusterForCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.clusterForCell_Click);
             // 
             // FixClusterButton
             // 
             this.FixClusterButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
             this.FixClusterButton.Image = global::ExceLintUI.Properties.Resources.graph;
-            this.FixClusterButton.Label = "Start Fix";
+            this.FixClusterButton.Label = "Regularity Map";
             this.FixClusterButton.Name = "FixClusterButton";
             this.FixClusterButton.ShowImage = true;
             this.FixClusterButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.FixClusterButton_Click);
@@ -199,7 +201,7 @@
             // 
             this.resetFixesButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
             this.resetFixesButton.Image = global::ExceLintUI.Properties.Resources.graph;
-            this.resetFixesButton.Label = "Reset Fixes";
+            this.resetFixesButton.Label = "Clear Map";
             this.resetFixesButton.Name = "resetFixesButton";
             this.resetFixesButton.ShowImage = true;
             this.resetFixesButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.resetFixesButton_Click);
@@ -211,6 +213,7 @@
             this.EntropyRanking.Label = "Entropy Ranking";
             this.EntropyRanking.Name = "EntropyRanking";
             this.EntropyRanking.ShowImage = true;
+            this.EntropyRanking.Visible = false;
             this.EntropyRanking.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.EntropyRanking_Click);
             // 
             // RunCUSTODES
@@ -220,6 +223,7 @@
             this.RunCUSTODES.Label = "Run CUSTODES";
             this.RunCUSTODES.Name = "RunCUSTODES";
             this.RunCUSTODES.ShowImage = true;
+            this.RunCUSTODES.Visible = false;
             this.RunCUSTODES.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.RunCUSTODES_Click);
             // 
             // box2

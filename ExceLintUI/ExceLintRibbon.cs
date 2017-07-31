@@ -150,7 +150,7 @@ namespace ExceLintUI
             currentWorkbook.DrawImmutableClusters(clusters, model.InvertedHistogram);
 
             // show message boxes
-            System.Windows.Forms.MessageBox.Show(ProposedFixesToString(fixes));
+            System.Windows.Forms.MessageBox.Show("cutoff = " + model.Cutoff + "\n\nproposed fixes:\n" + ProposedFixesToString(fixes));
         }
 
         private void resetFixesButton_Click(object sender, RibbonControlEventArgs e)
