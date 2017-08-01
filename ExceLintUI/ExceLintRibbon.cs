@@ -35,12 +35,53 @@ namespace ExceLintUI
 
         #region BUTTON_HANDLERS
 
+        private void LoadTrueSmells_Click(object sender, RibbonControlEventArgs e)
+        {
+            if (String.IsNullOrWhiteSpace(true_smells_csv))
+            {
+                var ofd = new System.Windows.Forms.OpenFileDialog();
+                ofd.Title = "Where is the True Smells CSV?";
+                ofd.ShowDialog();
+                true_smells_csv = ofd.FileName;
+                Properties.Settings.Default.CUSTODESTrueSmellsCSVPath = true_smells_csv;
+                Properties.Settings.Default.Save();
+            }
+
+            if (String.IsNullOrWhiteSpace(custodes_wbs_path))
+            {
+                var odd = new System.Windows.Forms.FolderBrowserDialog();
+                odd.Description = "Where are all the workbooks stored?";
+                odd.ShowDialog();
+                custodes_wbs_path = odd.SelectedPath;
+                Properties.Settings.Default.CUSTODESWorkbooksPath = custodes_wbs_path;
+                Properties.Settings.Default.Save();
+            }
+
+            // open & parse
+            if (System.IO.Directory.Exists(custodes_wbs_path) && System.IO.File.Exists(true_smells_csv))
+            {
+                var allsmells = CUSTODES.GroundTruth.Load(custodes_wbs_path, true_smells_csv);
+
+                // get true smells for this workbook
+                var truesmells = allsmells.TrueSmellsbyWorkbook(Globals.ThisAddIn.Application.ActiveWorkbook.Name);
+                var clustering = new HashSet<HashSet<AST.Address>>();
+                clustering.Add(truesmells);
+
+                // display
+                currentWorkbook.DrawClusters(clustering);
+            }
+            else
+            {
+                System.Windows.Forms.MessageBox.Show("Can't find true smells CSV or workbook directory");
+            }
+        }
+
         private void ClearEverything_Click(object sender, RibbonControlEventArgs e)
         {
             currentWorkbook.restoreOutputColors();
         }
-
-        private void LoadTrueSmells_Click(object sender, RibbonControlEventArgs e)
+        
+        private void ExceLintVsTrueSmells_Click(object sender, RibbonControlEventArgs e)
         {
             if (String.IsNullOrWhiteSpace(true_smells_csv))
             {
@@ -72,12 +113,53 @@ namespace ExceLintUI
                 var clustering = new HashSet<HashSet<AST.Address>>();
                 clustering.Add(truesmells);
 
-                // display
-                currentWorkbook.DrawClusters(clustering);
+                // get excelint clusterings
+                Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+                var model = ModelInit(activeWs);
+                var eclusters = GetEntropyClustering(model, activeWs);
+
+                // get clustering diff
+                var diff = clusteringDiff(eclusters, clustering);
+
+                // draw all the ExceLint flags blue
+                foreach(var addr in diff.Item1)
+                {
+                    currentWorkbook.paintColor(addr, System.Drawing.Color.Blue);
+                }
+
+                // draw all the intersecting cells purple
+                foreach (var addr in diff.Item2)
+                {
+                    currentWorkbook.paintColor(addr, System.Drawing.Color.Purple);
+                }
+
+                // draw all the true smells blredue
+                foreach (var addr in diff.Item3)
+                {
+                    currentWorkbook.paintColor(addr, System.Drawing.Color.Red);
+                }
             } else
             {
                 System.Windows.Forms.MessageBox.Show("Can't find true smells CSV or workbook directory");
             }
+        }
+
+        private Tuple<HashSet<AST.Address>, HashSet<AST.Address>, HashSet<AST.Address>> clusteringDiff(IEnumerable<IEnumerable<AST.Address>> eclusters, IEnumerable<IEnumerable<AST.Address>> otherclusters)
+        {
+            // flatten both
+            var ecells = new HashSet<AST.Address>(eclusters.SelectMany(i => i));
+            var ocells = new HashSet<AST.Address>(otherclusters.SelectMany(i => i));
+
+            // find the set in e but not in o
+            var eonly = new HashSet<AST.Address>(ecells.Except(ocells));
+
+            // find the set in o but not in e
+            var oonly = new HashSet<AST.Address>(ocells.Except(ecells));
+
+            // find the set in both
+            var both = new HashSet<AST.Address>(ecells.Intersect(ocells));
+
+            return new Tuple<HashSet<AST.Address>, HashSet<AST.Address>, HashSet<AST.Address>>(eonly, both, oonly);
         }
 
         private void cellIsFormula_Click(object sender, RibbonControlEventArgs e)
@@ -166,24 +248,10 @@ namespace ExceLintUI
             return sb.ToString();
         }
 
-        private void EntropyRanking_Click(object sender, RibbonControlEventArgs e)
+        private Clusters GetEntropyClustering(EntropyModelBuilder2.EntropyModel2 model, Worksheet w)
         {
-            // get dependence graph
-            var graph = currentWorkbook.getDependenceGraph(false);
-
-            // create progbar in main thread;
-            // worker thread will call Dispose
-            var pb = new ProgBar();
-
-            // build the model
-            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-            var model = currentWorkbook.NewEntropyModelForWorksheet2(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
-
-            // remove progress bar
-            pb.Close();
-
             // get z for this worksheet
-            var z = model.ZForWorksheet(activeWs.Name);
+            var z = model.ZForWorksheet(w.Name);
 
             // get fixes
             var fixes = model.Fixes(z);
@@ -194,8 +262,40 @@ namespace ExceLintUI
             // extract clusters
             var clusters = EntropyModelBuilder2.EntropyModel2.RankingToClusters(fixes);
 
+            return clusters;
+        }
+
+        private EntropyModelBuilder2.EntropyModel2 ModelInit(Worksheet activeWs)
+        {
+            // create progbar in main thread;
+            // worker thread will call Dispose
+            var pb = new ProgBar();
+
+            // build the model
+            
+            var model = currentWorkbook.NewEntropyModelForWorksheet2(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
+
+            // remove progress bar
+            pb.Close();
+
+            return model;
+        }
+
+        private void EntropyRanking_Click(object sender, RibbonControlEventArgs e)
+        {
+            // get clustering
+            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+            var model = ModelInit(activeWs);
+            var clusters = GetEntropyClustering(model, activeWs);
+
             // draw
             currentWorkbook.DrawImmutableClusters(clusters, model.InvertedHistogram);
+
+            // get z for this worksheet
+            var z = model.ZForWorksheet(activeWs.Name);
+
+            // get fixes
+            var fixes = model.Fixes(z);
 
             // show message boxes
             System.Windows.Forms.MessageBox.Show("cutoff = " + model.Cutoff + "\n\nproposed fixes:\n" + ProposedFixesToString(fixes));

@@ -83,6 +83,7 @@
             this.button1 = this.Factory.CreateRibbonButton();
             this.LoadTrueSmells = this.Factory.CreateRibbonButton();
             this.ClearEverything = this.Factory.CreateRibbonButton();
+            this.ExceLintVsTrueSmells = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -216,7 +217,6 @@
             this.EntropyRanking.Label = "Entropy Ranking";
             this.EntropyRanking.Name = "EntropyRanking";
             this.EntropyRanking.ShowImage = true;
-            this.EntropyRanking.Visible = false;
             this.EntropyRanking.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.EntropyRanking_Click);
             // 
             // RunCUSTODES
@@ -238,6 +238,7 @@
             this.box2.Items.Add(this.cellIsFormula);
             this.box2.Items.Add(this.drawAllClusters);
             this.box2.Items.Add(this.LoadTrueSmells);
+            this.box2.Items.Add(this.ExceLintVsTrueSmells);
             this.box2.Name = "box2";
             this.box2.Visible = false;
             // 
@@ -470,6 +471,12 @@
             this.ClearEverything.ShowImage = true;
             this.ClearEverything.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ClearEverything_Click);
             // 
+            // ExceLintVsTrueSmells
+            // 
+            this.ExceLintVsTrueSmells.Label = "ExceLint vs True Smells";
+            this.ExceLintVsTrueSmells.Name = "ExceLintVsTrueSmells";
+            this.ExceLintVsTrueSmells.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ExceLintVsTrueSmells_Click);
+            // 
             // ExceLintRibbon
             // 
             this.Name = "ExceLintRibbon";
@@ -538,6 +545,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton cellIsFormula;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton LoadTrueSmells;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton ClearEverything;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton ExceLintVsTrueSmells;
     }
 
     partial class ThisRibbonCollection

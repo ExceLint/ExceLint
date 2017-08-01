@@ -1368,7 +1368,7 @@ namespace ExceLintUI
             }
         }
 
-        private void paintColor(AST.Address cell, System.Drawing.Color c)
+        public void paintColor(AST.Address cell, System.Drawing.Color c)
         {
             // get cell COM object
             var com = ParcelCOMShim.Address.GetCOMObject(cell, _app);
@@ -1383,7 +1383,7 @@ namespace ExceLintUI
             com.Interior.Color = c;
         }
 
-        private void paintRed(AST.Address cell, double intensity)
+        public void paintRed(AST.Address cell, double intensity)
         {
             // generate color
             byte A = System.Drawing.Color.Red.A;
