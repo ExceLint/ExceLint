@@ -30,7 +30,55 @@ namespace ExceLintUI
         private AST.Address fixAddress = null; 
         private EntropyModelBuilder2.EntropyModel2 fixClusterModel = null;
 
+        private string true_smells_csv = Properties.Settings.Default.CUSTODESTrueSmellsCSVPath;
+        private string custodes_wbs_path = Properties.Settings.Default.CUSTODESWorkbooksPath;
+
         #region BUTTON_HANDLERS
+
+        private void ClearEverything_Click(object sender, RibbonControlEventArgs e)
+        {
+            currentWorkbook.restoreOutputColors();
+        }
+
+        private void LoadTrueSmells_Click(object sender, RibbonControlEventArgs e)
+        {
+            if (String.IsNullOrWhiteSpace(true_smells_csv))
+            {
+                var ofd = new System.Windows.Forms.OpenFileDialog();
+                ofd.Title = "Where is the True Smells CSV?";
+                ofd.ShowDialog();
+                true_smells_csv = ofd.FileName;
+                Properties.Settings.Default.CUSTODESTrueSmellsCSVPath = true_smells_csv;
+                Properties.Settings.Default.Save();
+            }
+            
+            if (String.IsNullOrWhiteSpace(custodes_wbs_path))
+            {
+                var odd = new System.Windows.Forms.FolderBrowserDialog();
+                odd.Description = "Where are all the workbooks stored?";
+                odd.ShowDialog();
+                custodes_wbs_path = odd.SelectedPath;
+                Properties.Settings.Default.CUSTODESWorkbooksPath = custodes_wbs_path;
+                Properties.Settings.Default.Save();
+            }
+
+            // open & parse
+            if (System.IO.Directory.Exists(custodes_wbs_path) && System.IO.File.Exists(true_smells_csv))
+            {
+                var allsmells = CUSTODES.GroundTruth.Load(custodes_wbs_path, true_smells_csv);
+
+                // get true smells for this workbook
+                var truesmells = allsmells.TrueSmellsbyWorkbook(Globals.ThisAddIn.Application.ActiveWorkbook.Name);
+                var clustering = new HashSet<HashSet<AST.Address>>();
+                clustering.Add(truesmells);
+
+                // display
+                currentWorkbook.DrawClusters(clustering);
+            } else
+            {
+                System.Windows.Forms.MessageBox.Show("Can't find true smells CSV or workbook directory");
+            }
+        }
 
         private void cellIsFormula_Click(object sender, RibbonControlEventArgs e)
         {

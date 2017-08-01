@@ -34,5 +34,29 @@ namespace ExceLintUI.Properties {
                 this["ExceLintGroundTruthPath"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string CUSTODESTrueSmellsCSVPath {
+            get {
+                return ((string)(this["CUSTODESTrueSmellsCSVPath"]));
+            }
+            set {
+                this["CUSTODESTrueSmellsCSVPath"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string CUSTODESWorkbooksPath {
+            get {
+                return ((string)(this["CUSTODESWorkbooksPath"]));
+            }
+            set {
+                this["CUSTODESWorkbooksPath"] = value;
+            }
+        }
     }
 }

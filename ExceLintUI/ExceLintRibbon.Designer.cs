@@ -81,6 +81,8 @@
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
             this.button1 = this.Factory.CreateRibbonButton();
+            this.LoadTrueSmells = this.Factory.CreateRibbonButton();
+            this.ClearEverything = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -137,6 +139,7 @@
             this.box1.Items.Add(this.resetFixesButton);
             this.box1.Items.Add(this.EntropyRanking);
             this.box1.Items.Add(this.RunCUSTODES);
+            this.box1.Items.Add(this.ClearEverything);
             this.box1.Items.Add(this.box2);
             this.box1.Items.Add(this.distanceCombo);
             this.box1.Name = "box1";
@@ -223,7 +226,6 @@
             this.RunCUSTODES.Label = "Run CUSTODES";
             this.RunCUSTODES.Name = "RunCUSTODES";
             this.RunCUSTODES.ShowImage = true;
-            this.RunCUSTODES.Visible = false;
             this.RunCUSTODES.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.RunCUSTODES_Click);
             // 
             // box2
@@ -235,6 +237,7 @@
             this.box2.Items.Add(this.VectorForCell);
             this.box2.Items.Add(this.cellIsFormula);
             this.box2.Items.Add(this.drawAllClusters);
+            this.box2.Items.Add(this.LoadTrueSmells);
             this.box2.Name = "box2";
             this.box2.Visible = false;
             // 
@@ -275,10 +278,8 @@
             // 
             // drawAllClusters
             // 
-            this.drawAllClusters.Checked = true;
             this.drawAllClusters.Label = "Draw all Clusters";
             this.drawAllClusters.Name = "drawAllClusters";
-            this.drawAllClusters.Visible = false;
             // 
             // distanceCombo
             // 
@@ -435,7 +436,6 @@
             this.annotate.Label = "Annotate";
             this.annotate.Name = "annotate";
             this.annotate.ShowImage = true;
-            this.annotate.Visible = false;
             this.annotate.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotate_Click);
             // 
             // annotateThisCell
@@ -445,7 +445,6 @@
             this.annotateThisCell.Label = "Annotate Current Cell";
             this.annotateThisCell.Name = "annotateThisCell";
             this.annotateThisCell.ShowImage = true;
-            this.annotateThisCell.Visible = false;
             this.annotateThisCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotateThisCell_Click);
             // 
             // button1
@@ -455,6 +454,21 @@
             this.button1.Label = "Start Fix";
             this.button1.Name = "button1";
             this.button1.ShowImage = true;
+            // 
+            // LoadTrueSmells
+            // 
+            this.LoadTrueSmells.Label = "Load True Smells";
+            this.LoadTrueSmells.Name = "LoadTrueSmells";
+            this.LoadTrueSmells.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.LoadTrueSmells_Click);
+            // 
+            // ClearEverything
+            // 
+            this.ClearEverything.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.ClearEverything.Image = global::ExceLintUI.Properties.Resources.clear_small;
+            this.ClearEverything.Label = "Clear Everything";
+            this.ClearEverything.Name = "ClearEverything";
+            this.ClearEverything.ShowImage = true;
+            this.ClearEverything.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ClearEverything_Click);
             // 
             // ExceLintRibbon
             // 
@@ -522,6 +536,8 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton EntropyRanking;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox drawAllClusters;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton cellIsFormula;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton LoadTrueSmells;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton ClearEverything;
     }
 
     partial class ThisRibbonCollection
