@@ -320,25 +320,29 @@
 
             and tfVect_b(tail: AST.Address)(nextDepth: int option)(vlist: RichVector list) : RichVector list =
                 if (dag.isFormula tail) then
-                    // find all of the inputs for source
-                    let heads_single = dag.getFormulaSingleCellInputs tail |> List.ofSeq
-                    let heads_vector = dag.getFormulaInputVectors tail |>
-                                            List.ofSeq |>
-                                            List.map (fun rng -> rng.Addresses() |> Array.toList) |>
-                                            List.concat
+                    try
+                        // parse again, because the DAG treats repeated
+                        // references to the same cell but with different
+                        // address modes as the same reference; they are not.
 
-                    // find all constant inputs for source
-                    let cvects =
                         // Sometimes idiots denote comments with '='.
-                        try 
-                            let fexpr = Parcel.parseFormulaAtAddress tail (dag.getFormulaAtAddress tail)
-                            cvector_f tail fexpr
-                        with
-                        | e -> []
+                        let fexpr = Parcel.parseFormulaAtAddress tail (dag.getFormulaAtAddress tail)
 
-                    let heads = heads_single @ heads_vector
-                    // recursively call this function
-                    vlist @ cvects @ (List.map (fun head -> tfVect (Some tail) head nextDepth) heads |> List.concat)
+                        // find all of the inputs for source
+                        let heads_single = Parcel.addrReferencesFromExpr fexpr |> List.ofArray
+                        let heads_vector = Parcel.rangeReferencesFromExpr fexpr |>
+                                                List.ofArray |>
+                                                List.map (fun rng -> rng.Addresses() |> Array.toList) |>
+                                                List.concat
+
+                        // find all constant inputs for source
+                        let cvects = cvector_f tail fexpr
+
+                        let heads = heads_single @ heads_vector
+                        // recursively call this function
+                        vlist @ cvects @ (List.map (fun head -> tfVect (Some tail) head nextDepth) heads |> List.concat)
+                    with
+                    | e -> vlist  // I guess we give up
                 else
                     let value = dag.readCOMValueAtAddress(tail)
                     let mutable num = 0.0

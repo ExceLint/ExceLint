@@ -276,7 +276,6 @@
             // 
             this.VectorForCell.Label = "Vector for Cell";
             this.VectorForCell.Name = "VectorForCell";
-            this.VectorForCell.Visible = false;
             this.VectorForCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.VectorForCell_Click);
             // 
             // cellIsFormula

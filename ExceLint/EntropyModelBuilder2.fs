@@ -292,9 +292,6 @@
                            
                            source, source_class, target
                        )
-                    // no duplicates
-                    |> Array.distinctBy (fun (s,sc,t) -> s,t)
-                    
 
                 // sort so that small fixes are favored when deduping converse fixes
                 let fixes' =
@@ -317,15 +314,19 @@
                         else
                             t,sc,s
                        )
+                    // no duplicates
                     |> Array.distinctBy (fun (s,_,t) -> s,t)
                     // filtering of targets and sources must happen here because
                     // we may have swapped them above.
                     // all targets must be formulas
                     |> Array.filter (fun (_,_,t) -> ClusterIsFormulaValued t ih graph)
+                    // UNGLORIOUS HACKS
                     // no whitespace sources, for now
                     |> Array.filter (fun (s,_,_) -> s |> Seq.forall (fun a -> not (AddressIsWhitespaceValued a ih graph)))
                     // no string sources, for now
                     |> Array.filter (fun (s,_,_) -> s |> Seq.forall (fun a -> not (AddressIsStringValued a ih graph)))
+                    // no single-cell targets
+                    |> Array.filter (fun (_,_,t) -> t.Count > 1)
 
                 // no converse fixes
                 let fhs = new HashSet<ImmutableHashSet<AST.Address>*ImmutableHashSet<AST.Address>>()
@@ -411,6 +412,8 @@
                 let ranking =
                     models
                     |> Array.sortByDescending (fun f -> f.Score)
+                    // no duplicate sources (this keeps the one sorted first)
+                    |> Array.distinctBy (fun f -> f.Source)
 
                 ranking
 
