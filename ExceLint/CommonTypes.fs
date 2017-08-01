@@ -52,10 +52,10 @@
             member self.Source = source
             member self.Target = target
             member self.EntropyDelta = entropyDelta
-            member self.E = 1.0 / -self.EntropyDelta
             member self.Distance = distance
             member self.WeightedDotProduct = weighted_dp
-            member self.Score = (self.E * self.WeightedDotProduct) / self.Distance
+            member self.TargetSize = double (Seq.length target)
+            member self.Score = - self.TargetSize / (self.EntropyDelta * self.Distance)
 
         type DistanceF = HashSet<AST.Address> -> HashSet<AST.Address> -> double
         type ImmDistanceF = ImmutableHashSet<AST.Address> -> ImmutableHashSet<AST.Address> -> double

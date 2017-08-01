@@ -195,13 +195,13 @@ namespace ExceLintUI
             sb.Append(" -> ");
             sb.Append("TARGET");
             sb.Append(" = ");
-            sb.Append("(");
-            sb.Append(" NEG_INV_ENTROPY_DELTA ");
-            sb.Append(" * ");
-            sb.Append(" DOTPRODUCT ");
-            sb.Append(")");
+            sb.Append("- TARGET DISTANCE");
             sb.Append(" / ");
+            sb.Append("(");
+            sb.Append(" ENTROPY_DELTA ");
+            sb.Append(" * ");
             sb.Append(" DISTANCE ");
+            sb.Append(")");
             sb.Append(" = ");
             sb.Append(" RESULT ");
             sb.AppendLine();
@@ -231,13 +231,14 @@ namespace ExceLintUI
                 sb.Append(" = ");
 
                 // entropy * dp weight * inv_distance
-                sb.Append("(");
-                sb.Append(fix.E.ToString());
-                sb.Append(" * ");
-                sb.Append(fix.WeightedDotProduct.ToString());
-                sb.Append(")");
+                sb.Append("-");
+                sb.Append(fix.TargetSize.ToString());
                 sb.Append(" / ");
+                sb.Append("(");
+                sb.Append(fix.EntropyDelta.ToString());
+                sb.Append(" * ");
                 sb.Append(fix.Distance.ToString());
+                sb.Append(")");                
                 sb.Append(" = ");
                 sb.Append(fix.Score.ToString());
 
@@ -304,7 +305,7 @@ namespace ExceLintUI
         private void resetFixesButton_Click(object sender, RibbonControlEventArgs e)
         {
             // change button name
-            FixClusterButton.Label = "Start Fix";
+            FixClusterButton.Label = "Regularity Map";
 
             // toss everything so that the user can do this again
             fixClusterModel = null;

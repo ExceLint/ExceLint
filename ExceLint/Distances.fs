@@ -71,14 +71,10 @@
         // no idea what that means in terms of spreadsheet formula fixes
         let earth_movers_dist_ro(hb_inv: ROInvertedHistogram) : ImmDistanceF =
             (fun (source: ImmutableHashSet<AST.Address>)(target: ImmutableHashSet<AST.Address>) ->
-                let compute = (fun (a,b) ->
-                                let (_,_,ac) = hb_inv.[a]
-                                let (_,_,bc) = hb_inv.[b]
-                                ac.EuclideanDistance bc
-                                )
-
                 let f = (fun (a,b) ->
-                            compute (a,b)
+                            let (_,_,ac) = hb_inv.[a]
+                            let (_,_,bc) = hb_inv.[b]
+                            ac.EuclideanDistance bc
                         )
 
                 // for every point in source, find the closest point in target

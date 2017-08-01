@@ -51,6 +51,7 @@
             this.resetFixesButton = this.Factory.CreateRibbonButton();
             this.EntropyRanking = this.Factory.CreateRibbonButton();
             this.RunCUSTODES = this.Factory.CreateRibbonButton();
+            this.ClearEverything = this.Factory.CreateRibbonButton();
             this.box2 = this.Factory.CreateRibbonBox();
             this.LSHTest = this.Factory.CreateRibbonButton();
             this.getLSH = this.Factory.CreateRibbonButton();
@@ -58,6 +59,8 @@
             this.VectorForCell = this.Factory.CreateRibbonButton();
             this.cellIsFormula = this.Factory.CreateRibbonButton();
             this.drawAllClusters = this.Factory.CreateRibbonCheckBox();
+            this.LoadTrueSmells = this.Factory.CreateRibbonButton();
+            this.ExceLintVsTrueSmells = this.Factory.CreateRibbonButton();
             this.distanceCombo = this.Factory.CreateRibbonComboBox();
             this.ClusterBox = this.Factory.CreateRibbonCheckBox();
             this.useResultant = this.Factory.CreateRibbonCheckBox();
@@ -81,9 +84,6 @@
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
             this.button1 = this.Factory.CreateRibbonButton();
-            this.LoadTrueSmells = this.Factory.CreateRibbonButton();
-            this.ClearEverything = this.Factory.CreateRibbonButton();
-            this.ExceLintVsTrueSmells = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -228,6 +228,15 @@
             this.RunCUSTODES.ShowImage = true;
             this.RunCUSTODES.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.RunCUSTODES_Click);
             // 
+            // ClearEverything
+            // 
+            this.ClearEverything.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.ClearEverything.Image = global::ExceLintUI.Properties.Resources.clear_small;
+            this.ClearEverything.Label = "Clear Everything";
+            this.ClearEverything.Name = "ClearEverything";
+            this.ClearEverything.ShowImage = true;
+            this.ClearEverything.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ClearEverything_Click);
+            // 
             // box2
             // 
             this.box2.BoxStyle = Microsoft.Office.Tools.Ribbon.RibbonBoxStyle.Vertical;
@@ -282,6 +291,18 @@
             this.drawAllClusters.Label = "Draw all Clusters";
             this.drawAllClusters.Name = "drawAllClusters";
             // 
+            // LoadTrueSmells
+            // 
+            this.LoadTrueSmells.Label = "Load True Smells";
+            this.LoadTrueSmells.Name = "LoadTrueSmells";
+            this.LoadTrueSmells.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.LoadTrueSmells_Click);
+            // 
+            // ExceLintVsTrueSmells
+            // 
+            this.ExceLintVsTrueSmells.Label = "ExceLint vs True Smells";
+            this.ExceLintVsTrueSmells.Name = "ExceLintVsTrueSmells";
+            this.ExceLintVsTrueSmells.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ExceLintVsTrueSmells_Click);
+            // 
             // distanceCombo
             // 
             ribbonDropDownItemImpl1.Label = "Earth Mover";
@@ -292,8 +313,7 @@
             this.distanceCombo.Items.Add(ribbonDropDownItemImpl3);
             this.distanceCombo.Label = "Distance:";
             this.distanceCombo.Name = "distanceCombo";
-            this.distanceCombo.Text = "Nearest Neighbor";
-            this.distanceCombo.Visible = false;
+            this.distanceCombo.Text = "Earth Mover";
             // 
             // ClusterBox
             // 
@@ -455,27 +475,6 @@
             this.button1.Label = "Start Fix";
             this.button1.Name = "button1";
             this.button1.ShowImage = true;
-            // 
-            // LoadTrueSmells
-            // 
-            this.LoadTrueSmells.Label = "Load True Smells";
-            this.LoadTrueSmells.Name = "LoadTrueSmells";
-            this.LoadTrueSmells.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.LoadTrueSmells_Click);
-            // 
-            // ClearEverything
-            // 
-            this.ClearEverything.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.ClearEverything.Image = global::ExceLintUI.Properties.Resources.clear_small;
-            this.ClearEverything.Label = "Clear Everything";
-            this.ClearEverything.Name = "ClearEverything";
-            this.ClearEverything.ShowImage = true;
-            this.ClearEverything.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ClearEverything_Click);
-            // 
-            // ExceLintVsTrueSmells
-            // 
-            this.ExceLintVsTrueSmells.Label = "ExceLint vs True Smells";
-            this.ExceLintVsTrueSmells.Name = "ExceLintVsTrueSmells";
-            this.ExceLintVsTrueSmells.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ExceLintVsTrueSmells_Click);
             // 
             // ExceLintRibbon
             // 

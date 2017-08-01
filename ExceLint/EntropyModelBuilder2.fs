@@ -18,6 +18,19 @@
             member self.FastSheetCounterMS = fsc_ms
             member self.InferTimeMS = infer_ms
 
+        // computes kinda-sorta-EMD for a simulated "fix" of the source, s
+        let FixDistance(s: ImmutableHashSet<AST.Address>)(t: ImmutableHashSet<AST.Address>)(ih: ROInvertedHistogram) : double =
+            let (_,_,rep_co) = ih.[(Seq.head t)]
+
+            // we know that the distance between t and t is 0, so we
+            // just need to know the distance between s and s'
+            // because t' = s' union t
+            s |> Seq.sumBy (fun a ->
+                     let (_,_,co) = ih.[a]
+                     let fixed_co = co.UpdateResultant rep_co
+                     co.EuclideanDistance fixed_co
+                 )
+
         let ScoreForCell(addr: AST.Address)(ih: ROInvertedHistogram) : Countable =
             let (_,_,v) = ih.[addr]
             v
@@ -380,8 +393,8 @@
                             // compute entropy difference
                             let entropyDelta = self.EntropyDiff z numodel
 
-                            // compute inverse cluster distance
-                            let dist = (d ih) source target
+                            // compute fix distance
+                            let dist = FixDistance source target ih
 
                             // eliminate all zero or negative-scored fixes
                             let pf = ProposedFix(source, target, entropyDelta, wdotproduct, dist)
@@ -394,7 +407,7 @@
                     // no duplicates (happens for whole-cluster merges)
                     |> Array.distinctBy (fun fix -> fix.Source, fix.Target)
 
-                // sort from highest score to highest
+                // sort from highest score to lowest
                 let ranking =
                     models
                     |> Array.sortByDescending (fun f -> f.Score)
