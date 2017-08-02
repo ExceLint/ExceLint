@@ -216,7 +216,7 @@ open System.Threading
         row.RankingTimeMs <- model.RankingTimeInMilliseconds
         row.CausesTimeMs <- model.CausesTimeInMilliseconds
         row.ConditioningSetSzTimeMs <- model.ConditioningSetSizeTimeInMilliseconds
-        row.ExceLintFlags <- model.Cutoff + 1
+        row.ExceLintFlags <- if model.ranking().Length > model.Cutoff + 1 then model.Cutoff + 1 else model.ranking().Length
         row.ExceLintPrecisionVsCustodesGT <- precision (stats.excelint_true_smells.Count) (row.ExceLintFlags - stats.excelint_true_smells.Count)
         row.ExceLintRecallVsCustodesGT <- recall (stats.excelint_true_smells.Count) (stats.true_smells_this_wb.Count - stats.excelint_true_smells.Count)
         row.CUSTODESPrecisionVsCustodesGT <- precision (stats.custodes_true_smells.Count) (stats.custodes_flagged.Count - stats.custodes_true_smells.Count)
