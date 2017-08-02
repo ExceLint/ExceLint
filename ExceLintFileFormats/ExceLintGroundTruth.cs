@@ -54,9 +54,12 @@ namespace ExceLintFileFormats
 
             foreach (var row in rows)
             {
-                AST.Address addr = Address(row.Address, row.Worksheet, row.Workbook);
-                _bugs.Add(addr, BugKind.ToKind(row.BugKind));
-                _notes.Add(addr, row.Notes);
+                if (row.Address != "Address")
+                {
+                    AST.Address addr = Address(row.Address, row.Worksheet, row.Workbook);
+                    _bugs.Add(addr, BugKind.ToKind(row.BugKind));
+                    _notes.Add(addr, row.Notes);
+                }
             }
         }
 
