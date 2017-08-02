@@ -410,9 +410,7 @@
                 // make vectors
                 let cf = match k with
                          | Yes -> (fun (rc: AST.ReferenceConstant) -> rc.Value)
-//                         | No -> (fun (rc: AST.ReferenceConstant) -> if rc.Value <> 0.0 then 1.0 else 0.0)
                          | No -> (fun (rc: AST.ReferenceConstant) -> if rc.Value = 0.0 then 0.0 else if rc.Value = -1.0 then -1.0 else 1.0)
-
 
                 let vs = Array.map (fun (c: AST.ReferenceConstant) ->
                              RichVector.MixedFQVectorWithConstant(tailXYP, (cvc, cvc, path, cf c))
