@@ -139,6 +139,20 @@ namespace ExceLint
             match self with
             | FullCVectorResultant(x,y,z,dx,dy,dz,dc) -> CVectorResultant(dx,dy,dz,dc)
             | _ -> failwith "Unsupported conversion."
+        member self.ToLocationVector : Countable =
+            match self with
+            | Num n -> failwith "Unsupported conversion."
+            | Vector(x,y,z) -> self
+            | SquareVector(dx,dy,dz,x,y,z) -> Vector(x,y,z)
+            | CVectorResultant(x,y,z,c) -> Vector(x,y,z)
+            | FullCVectorResultant(x,y,z,dx,dy,dz,dc) -> Vector(x,y,z)
+        member self.RelativeToLocationVector : Countable =
+            match self with
+            | Num n -> failwith "Unsupported conversion."
+            | Vector(x,y,z) -> failwith "Unsupported conversion."
+            | SquareVector(dx,dy,dz,x,y,z) -> Vector(x + dx, y + dy, z + dz)
+            | CVectorResultant(x,y,z,c) -> failwith "Unsupported conversion."
+            | FullCVectorResultant(x,y,z,dx,dy,dz,dc) -> Vector(x + dx, y + dy, z + dz)
         member self.ElementwiseMin(co: Countable) : Countable =
             self.ElementwiseOp co (fun x1 x2 -> if x1 < x2 then x1 else x2)
         member self.ElementwiseMax(co: Countable) : Countable =

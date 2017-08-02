@@ -79,6 +79,48 @@
             let (lt,rb) = Utils.BoundingRegion c1 0
             Vector(double (rb.X - lt.X), double (rb.Y - lt.Y), 0.0)
 
+        let IsComputationChain(s: ImmutableHashSet<AST.Address>)(t: ImmutableHashSet<AST.Address>)(ih: ROInvertedHistogram) : bool =
+            if s.Count > 1 then
+                false
+            else
+                // get countable for first element
+                let (_,_,sco) = ih.[Seq.head s]
+                let sloc = sco.ToLocationVector
+
+                // sort target by location-only distance from source
+                let ts = 
+                    t
+                    |> Seq.sortBy (fun a -> 
+                           let (_,_,aco) = ih.[a]
+                           let aloc = aco.ToLocationVector
+                           sloc.EuclideanDistance aloc
+                       )
+                    |> Seq.toList
+                let furthest = ts |> List.rev |> List.head
+                let ts' = ts |> List.rev |> List.tail |> List.rev
+                let ts'' = (Seq.head s) :: ts'
+                // list must be in order from furthest to closest
+                let xs = List.rev ts''
+
+                let rec isChain(xs: AST.Address list)(x: AST.Address) : bool =
+                    match xs with
+                    | x' :: xs' ->
+                        // get relative vector for x
+                        let (_,_,xco) = ih.[x]
+                        let xrloc = xco.RelativeToLocationVector
+
+                        // does it point at x'?
+                        // yes, recurse; no, fail here
+                        let (_,_,x'co) = ih.[x']
+                        let x'coloc = x'co.ToLocationVector
+                        if xrloc = x'coloc then
+                            isChain xs' x'
+                        else
+                            false
+                    | [] -> true
+
+                isChain xs furthest
+
         type EntropyModel2(graph: Depends.DAG, regions: ImmutableClustering[], ih: ROInvertedHistogram, fsc: FastSheetCounter, d: ImmDistanceFMaker, indivisibles: ImmutableClustering[], stats: Stats) =
             // save the reverse lookup for later use
             let revLookups = Array.map (fun r -> ReverseClusterLookup r) regions
@@ -320,13 +362,15 @@
                     // we may have swapped them above.
                     // all targets must be formulas
                     |> Array.filter (fun (_,_,t) -> ClusterIsFormulaValued t ih graph)
-                    // UNGLORIOUS HACKS
+                    // ALL DOMAIN KNOWLEDGE GOES HERE
                     // no whitespace sources, for now
                     |> Array.filter (fun (s,_,_) -> s |> Seq.forall (fun a -> not (AddressIsWhitespaceValued a ih graph)))
                     // no string sources, for now
                     |> Array.filter (fun (s,_,_) -> s |> Seq.forall (fun a -> not (AddressIsStringValued a ih graph)))
                     // no single-cell targets
                     |> Array.filter (fun (_,_,t) -> t.Count > 1)
+                    // computation chains do not need fixing
+                    |> Array.filter (fun (s,_,t) -> not (IsComputationChain s t ih))
 
                 // no converse fixes
                 let fhs = new HashSet<ImmutableHashSet<AST.Address>*ImmutableHashSet<AST.Address>>()
@@ -544,11 +588,13 @@
                 let (ns: ScoreTable,feat_time: int64) = PerfUtils.runMillis _runf ()
 
                 // scale
-                let _runscale = fun () -> ScaleBySheet ns
-                let (nlfrs: ScoreTable,scale_time: int64) = PerfUtils.runMillis _runscale () 
+//                let _runscale = fun () -> ScaleBySheet ns
+//                let (nlfrs: ScoreTable,scale_time: int64) = PerfUtils.runMillis _runscale () 
+                let scale_time = 0L
 
                 // make HistoBin lookup by address
-                let _runhisto = fun () -> invertedHistogram nlfrs input.dag input.config
+//                let _runhisto = fun () -> invertedHistogram nlfrs input.dag input.config
+                let _runhisto = fun () -> invertedHistogram ns input.dag input.config
                 let (ih: ROInvertedHistogram,invert_time: int64) = PerfUtils.runMillis _runhisto ()
 
                 // make fsc
@@ -569,7 +615,7 @@
                 let sw = System.Diagnostics.Stopwatch.StartNew()
                 let regions = [| 0 .. (fsc.NumWorksheets - 1) |] |> Array.Parallel.map (fun z -> EntropyModel2.InitialSetup z ih fsc indivisibles)
                 sw.Stop()
-                assert (FasterBinaryMinEntropyTree.SheetAnalysesAreDistinct regions)
+//                assert (FasterBinaryMinEntropyTree.SheetAnalysesAreDistinct regions)
 
                 // collate stats
                 let times = Stats(feat_time, scale_time, invert_time, fsc_time, sw.ElapsedMilliseconds)
