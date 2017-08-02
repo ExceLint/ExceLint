@@ -411,7 +411,6 @@
             // 
             this.forceBuildDAG.Label = "Force DAG Rebuild";
             this.forceBuildDAG.Name = "forceBuildDAG";
-            this.forceBuildDAG.Visible = false;
             this.forceBuildDAG.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.forceBuildDAG_Click);
             // 
             // inferAddrModes
