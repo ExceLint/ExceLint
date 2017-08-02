@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using CsvHelper;
 
 namespace ExceLintFileFormats
@@ -80,6 +81,33 @@ namespace ExceLintFileFormats
             var rows = clusteringToRows(clustering, ids);
 
             using(var csv = new Clustering(filename))
+            {
+                foreach (var row in rows)
+                {
+                    csv.WriteRow(row);
+                }
+            }
+        }
+
+        public static void writeClustering(ImmutableHashSet<ImmutableHashSet<AST.Address>> clustering, string filename)
+        {
+            var mclustering = new HashSet<HashSet<AST.Address>>(clustering.Select(cl => new HashSet<AST.Address>(cl)));
+            writeClustering(mclustering, filename);
+        }
+
+        public static void writeClustering(HashSet<HashSet<AST.Address>> clustering, string filename)
+        {
+            int i = 0;
+            var ids = new Dictionary<HashSet<AST.Address>, int>();
+            foreach(var cl in clustering)
+            {
+                ids.Add(cl, i);
+                i++;
+            }
+
+            var rows = clusteringToRows(clustering, ids);
+
+            using (var csv = new Clustering(filename))
             {
                 foreach (var row in rows)
                 {

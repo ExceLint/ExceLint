@@ -403,6 +403,14 @@ namespace ExceLintUI
                 currentWorkbook.restoreOutputColors();
                 currentWorkbook.DrawImmutableClusters(cl_filt2, fixClusterModel.InvertedHistogram);
 
+                // if debug mode, write out clusters
+                if (this.DebugOutput.Checked)
+                {
+                    var desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                    var debug_file = System.IO.Path.Combine(desktop, "excelint_clustering_dump.csv");
+                    Clustering.writeClustering(clusters2, debug_file);
+                }
+
                 // remove progress bar
                 pb.Close();
 

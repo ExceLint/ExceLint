@@ -410,7 +410,9 @@
                 // make vectors
                 let cf = match k with
                          | Yes -> (fun (rc: AST.ReferenceConstant) -> rc.Value)
-                         | No -> (fun (rc: AST.ReferenceConstant) -> if rc.Value <> 0.0 then 1.0 else 0.0)
+//                         | No -> (fun (rc: AST.ReferenceConstant) -> if rc.Value <> 0.0 then 1.0 else 0.0)
+                         | No -> (fun (rc: AST.ReferenceConstant) -> if rc.Value = 0.0 then 0.0 else if rc.Value = -1.0 then -1.0 else 1.0)
+
 
                 let vs = Array.map (fun (c: AST.ReferenceConstant) ->
                              RichVector.MixedFQVectorWithConstant(tailXYP, (cvc, cvc, path, cf c))
@@ -855,8 +857,9 @@
                 let isOffSheetInsensitive = true
                 let includeConstant = true
                 let includeLoc = true
+                let keepConstantValues = KeepConstantValue.No
                 let rebase_f = relativeToTail
-                let constant_f = makeConstantVectorsFromConstants KeepConstantValue.Yes  // note that we want to set constant values explicitly here
+                let constant_f = makeConstantVectorsFromConstants keepConstantValues
                 ResultantMaker cell dag isMixed includeConstant includeLoc isTransitive isFormula isOffSheetInsensitive constant_f rebase_f 
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorMixedFullCVectorResultantOSI>.Name,
