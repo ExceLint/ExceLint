@@ -269,7 +269,6 @@
             // 
             this.readClusterDump.Label = "Read Cluster Dump";
             this.readClusterDump.Name = "readClusterDump";
-            this.readClusterDump.Visible = false;
             this.readClusterDump.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.readClusterDump_Click);
             // 
             // VectorForCell

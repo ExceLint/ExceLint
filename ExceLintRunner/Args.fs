@@ -39,6 +39,7 @@ open System.Text.RegularExpressions
         member self.CustodesPath = cpath
         member self.JavaPath = jpath
         member self.InputDirectory = dpath
+        member self.OutputDirectory = opath
         member self.DebugPath = Path.Combine(opath, "debug.csv")
         member self.DontExitWithoutKeystroke = knobs.dont_exit
         member self.CustodesGroundTruthCSV = gpath

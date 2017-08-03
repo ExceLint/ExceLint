@@ -325,6 +325,10 @@ open System.Threading
         with
         | _ -> 0.0,0
 
+    let write_flags(cells: HashSet<HashSet<AST.Address>>)(config: Args.Config)(name: string) : unit =
+        let path = System.IO.Path.Combine(config.OutputDirectory, name)
+        Clustering.writeClustering(cells, path)
+
     let analyze (file: String)(app: Application)(config: Args.Config)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(csv: ExceLintStats)(debug_csv: DebugInfo) =
         let shortf = (System.IO.Path.GetFileName file)
 
@@ -433,6 +437,14 @@ open System.Threading
 
                 // write overall stats to CSV
                 append_stats stats csv model custodes_o config
+
+                // write set of flagged excelint cells, custodes cells, and true smells to external CSV dump
+                let eflags = new HashSet<HashSet<AST.Address>>([excelint_flags])
+                let cflags = new HashSet<HashSet<AST.Address>>([custodes_flags])
+                let smells = new HashSet<HashSet<AST.Address>>([true_smells_this_wb])
+                write_flags eflags config ("excelint_flags-"+this_wb+".csv")
+                write_flags cflags config ("custodes_flags-"+this_wb+".csv")
+                write_flags smells config ("true_smells-"+this_wb+".csv")
 
                 // sanity checks
                 assert ((hs_intersection excelint_analyzed custodes_not_in_ranking).Count = 0)
