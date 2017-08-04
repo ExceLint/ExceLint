@@ -121,6 +121,41 @@
 
                 isChain xs furthest
 
+        // does s *exclusively* reference t?  If so, it's an aggregate.
+        // off-by-one references and aggregates with extra constant
+        // will return false;
+        let IsAggregation(s: ImmutableHashSet<AST.Address>)(t: ImmutableHashSet<AST.Address>)(ih: ROInvertedHistogram) : bool =
+            if s.Count > 1 then
+                false
+            else
+                // get countable for first element
+                let (_,_,sco) = ih.[Seq.head s]
+                let sloc = sco.ToLocationVector
+
+                // gin up fingerprint for a reference that points to all of t
+                let vs =
+                    t
+                    |> Seq.map (fun a ->
+                         let (_,_,tco) = ih.[a]
+                         let tloc = tco.ToLocationVector
+
+                         // compute address offset relative to sloc
+                         let rel = tloc.Sub sloc
+
+                         rel
+                       )
+
+                // make new source resultant
+                let res =
+                    vs
+                    |> Seq.fold (fun (accv: Countable)(v: Countable) -> accv.Add v) ((Seq.head vs).Zero)
+
+                // update resultant
+                let sco' = sco.UpdateResultant res
+
+                // if they're the same, return true
+                sco = sco'
+
         type EntropyModel2(graph: Depends.DAG, regions: ImmutableClustering[], ih: ROInvertedHistogram, fsc: FastSheetCounter, d: ImmDistanceFMaker, indivisibles: ImmutableClustering[], stats: Stats) =
             // save the reverse lookup for later use
             let revLookups = Array.map (fun r -> ReverseClusterLookup r) regions
@@ -356,13 +391,16 @@
                         else
                             t,sc,s
                        )
-                    // no duplicates
-                    |> Array.distinctBy (fun (s,_,t) -> s,t)
                     // filtering of targets and sources must happen here because
                     // we may have swapped them above.
+                    // ALL DOMAIN KNOWLEDGE GOES HERE
+
+                    // no duplicates
+                    |> Array.distinctBy (fun (s,_,t) -> s,t)
+                    // no self fixes
+                    |> Array.filter (fun (s,_,t) -> s <> t)
                     // all targets must be formulas
                     |> Array.filter (fun (_,_,t) -> ClusterIsFormulaValued t ih graph)
-                    // ALL DOMAIN KNOWLEDGE GOES HERE
                     // no whitespace sources, for now
                     |> Array.filter (fun (s,_,_) -> s |> Seq.forall (fun a -> not (AddressIsWhitespaceValued a ih graph)))
                     // no string sources, for now
@@ -371,6 +409,8 @@
                     |> Array.filter (fun (_,_,t) -> t.Count > 1)
                     // computation chains do not need fixing
                     |> Array.filter (fun (s,_,t) -> not (IsComputationChain s t ih))
+                    // nor do aggregatess
+                    |> Array.filter (fun (s,_,t) -> not (IsAggregation s t ih))
 
                 // no converse fixes
                 let fhs = new HashSet<ImmutableHashSet<AST.Address>*ImmutableHashSet<AST.Address>>()

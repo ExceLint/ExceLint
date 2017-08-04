@@ -101,8 +101,9 @@ namespace ExceLint
         // copy the non-location part of the resultant from co to self
         member self.UpdateResultant(co: Countable) : Countable =
             match (self,co) with
-            | FullCVectorResultant(x,y,z,dx,dy,dz,dc),CVectorResultant(dx2,dy2,dz2,dc2) -> FullCVectorResultant(x,y,z,dx2,dy2,dz2,dc2)
+            | FullCVectorResultant(x,y,z,_,_,_,_),CVectorResultant(dx2,dy2,dz2,dc2) -> FullCVectorResultant(x,y,z,dx2,dy2,dz2,dc2)
             | FullCVectorResultant(x,y,z,_,_,_,_),FullCVectorResultant(_,_,_,dx2,dy2,dz2,dc2) -> FullCVectorResultant(x,y,z,dx2,dy2,dz2,dc2)
+            | FullCVectorResultant(x,y,z,_,_,_,_),Vector(x2,y2,z2) -> FullCVectorResultant(x,y,z,x2,y2,z2,0.0)
             | _ -> failwith "Operation not supported."
         member self.VectorMultiply(co: Countable) : double =
             match (self,co) with
