@@ -375,6 +375,9 @@ namespace ExceLintUI
 
         private void FixClusterButton_Click(object sender, RibbonControlEventArgs e)
         {
+            // disable annoying OLE warnings
+            Globals.ThisAddIn.Application.DisplayAlerts = false;
+
             // get dependence graph
             var graph = currentWorkbook.getDependenceGraph(false);
 
@@ -470,6 +473,9 @@ namespace ExceLintUI
                     FixClusterButton.Label = "Select Source";
                 }
             }
+
+            // re-enable annoying OLE warnings
+            Globals.ThisAddIn.Application.DisplayAlerts = true;
         }
 
         private void clusterForCell_Click(object sender, RibbonControlEventArgs e)
