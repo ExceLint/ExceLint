@@ -386,7 +386,9 @@ open System.Threading
                 let custodes_flags = new HashSet<AST.Address>(custodes_total_order)
 
                 // find true ref bugs
-                let true_ref_bugs_this_wb = etruth.TrueRefBugsByWorkbook this_wb
+                // TODOFIX
+//                let true_ref_bugs_this_wb = etruth.TrueRefBugsByWorkbook this_wb
+                let true_ref_bugs_this_wb = new HashSet<AST.Address>()
                 let excelint_true_ref_bugs = hs_intersection excelint_flags true_ref_bugs_this_wb
                 let custodes_true_ref_bugs = hs_intersection custodes_flags true_ref_bugs_this_wb
 
