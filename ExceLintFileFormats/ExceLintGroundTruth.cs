@@ -235,13 +235,36 @@ namespace ExceLintFileFormats
                 }
             }
 
-            // sanity check
+            // sanity checks
+
+            // every bug mentioned in notes has an entry in the lookup table
             foreach (var kvp in _bugclass_lookup)
             {
                 var addr = kvp.Key;
                 if (!_bugs.ContainsKey(addr))
                 {
                     Console.WriteLine("WARNING: Address " + addr.A1FullyQualified() + " referenced in bug notes but not annotated.");
+                }
+            }
+
+            // all duals are mutually exclusive
+            foreach (var kvp in _bugclass_dual_lookup)
+            {
+                BugClass bc1 = kvp.Key;
+                BugClass bc2 = kvp.Value;
+
+                if (bc1.Intersect(bc2).Count() > 0)
+                {
+                    string bc1str = String.Join(",", bc1.Select(a => a.A1Local()));
+                    string bc2str = String.Join(",", bc2.Select(a => a.A1Local()));
+                    string wb = bc1.First().A1Workbook();
+                    string ws = bc1.First().A1Worksheet();
+                    Console.WriteLine(
+                        "WARNING: bug class\n\t" +
+                        bc1str +
+                        "\n\tis not mutually exclusive with bug class\n\t" +
+                        bc2str +
+                        "\n\tin workbook " + wb + " on worksheet " + ws);
                 }
             }
 
