@@ -7,15 +7,16 @@ open ExceLint.Utils
 open ExceLintFileFormats
 open System.Threading
 
+    type BugClass = HashSet<AST.Address>
     type Stats = {
         shortname: string;
         threshold: double;
         custodes_flagged: HashSet<AST.Address>;
         excelint_not_custodes: HashSet<AST.Address>;
         custodes_not_excelint: HashSet<AST.Address>;
-        true_ref_bugs_this_wb: HashSet<AST.Address>;
-        excelint_true_ref_bugs: HashSet<AST.Address>;
-        custodes_true_ref_bugs: HashSet<AST.Address>;
+        num_true_ref_bugs_this_wb: int;
+        excelint_num_true_ref_bugs: int;
+        custodes_num_true_ref_bugs: int;
         true_smells_this_wb : HashSet<AST.Address>;
         true_smells_not_found_by_excelint: HashSet<AST.Address>;
         true_smells_not_found_by_custodes: HashSet<AST.Address>;
@@ -225,8 +226,8 @@ open System.Threading
         row.CUSTODESTimeMs <- stats.custodes_time
         row.CUSTODESFailed <- match custodes_o with | Some custodes -> (match custodes with | CUSTODES.BadOutput _ -> true | _ -> false) | None -> true
         row.CUSTODESFailureMsg <- match custodes_o with | Some custodes -> (match custodes with | CUSTODES.BadOutput(msg,_) -> msg | _ -> "") | None -> "did not run CUSTODES"
-        row.NumExceLintTrueRefBugsFound <- stats.excelint_true_ref_bugs.Count
-        row.NumCUSTODESTrueRefBugsFound <- stats.custodes_true_ref_bugs.Count
+        row.NumExceLintTrueRefBugsFound <- stats.excelint_num_true_ref_bugs
+        row.NumCUSTODESTrueRefBugsFound <- stats.custodes_num_true_ref_bugs
         row.NumCUSTODESSmells <- stats.custodes_flagged.Count
         row.NumTrueSmells <- stats.true_smells_this_wb.Count
         row.NumExceLintTrueSmellsFound <- stats.excelint_true_smells.Count
@@ -329,6 +330,21 @@ open System.Threading
         let path = System.IO.Path.Combine(config.OutputDirectory, name)
         Clustering.writeClustering(cells, path)
 
+    let count_true_ref_bugs(etruth: ExceLintFileFormats.ExceLintGroundTruth)(this_wb: string)(flags: HashSet<AST.Address>) : int =
+        let num_true_ref_bugs_this_wb = etruth.NumTrueRefBugsForWorkbook this_wb
+        let trueref = new Dict<BugClass*BugClass,int>()
+        
+        for addr in flags do
+            if etruth.IsATrueRefBug addr then
+                let duals = etruth.DualsForAddress addr
+                if not (trueref.ContainsKey duals) then
+                    trueref.Add(duals, 1)
+                else
+                    if trueref.[duals] < (etruth.NumBugsForBugClass (fst duals)) then
+                        trueref.[duals] <- trueref.[duals] + 1
+
+        Seq.sum trueref.Values
+
     let analyze (file: String)(app: Application)(config: Args.Config)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(csv: ExceLintStats)(debug_csv: DebugInfo) =
         let shortf = (System.IO.Path.GetFileName file)
 
@@ -387,11 +403,10 @@ open System.Threading
 
                 // find true ref bugs
                 // TODOFIX
-//                let true_ref_bugs_this_wb = etruth.TrueRefBugsByWorkbook this_wb
-                let true_ref_bugs_this_wb = new HashSet<AST.Address>()
-                let excelint_true_ref_bugs = hs_intersection excelint_flags true_ref_bugs_this_wb
-                let custodes_true_ref_bugs = hs_intersection custodes_flags true_ref_bugs_this_wb
-
+                let num_true_ref_bugs_this_wb = etruth.NumTrueRefBugsForWorkbook this_wb
+                let excelint_num_true_ref_bugs = count_true_ref_bugs etruth this_wb excelint_flags
+                let custodes_num_true_ref_bugs = count_true_ref_bugs etruth this_wb custodes_flags
+                
                 // find true smells found by neither tool
                 let true_smells_this_wb = ctruth.TrueSmellsbyWorkbook this_wb
                 let true_smells_not_found_by_excelint = hs_difference true_smells_this_wb excelint_flags
@@ -413,9 +428,9 @@ open System.Threading
                     custodes_flagged = custodes_flags;
                     excelint_not_custodes = hs_difference excelint_flags custodes_flags;
                     custodes_not_excelint = hs_difference custodes_flags excelint_flags;
-                    true_ref_bugs_this_wb = true_ref_bugs_this_wb;
-                    excelint_true_ref_bugs = excelint_true_ref_bugs;
-                    custodes_true_ref_bugs = custodes_true_ref_bugs;
+                    num_true_ref_bugs_this_wb = num_true_ref_bugs_this_wb;
+                    excelint_num_true_ref_bugs = excelint_num_true_ref_bugs;
+                    custodes_num_true_ref_bugs = custodes_num_true_ref_bugs;
                     true_smells_this_wb = true_smells_this_wb;
                     true_smells_not_found_by_excelint = true_smells_not_found_by_excelint;
                     true_smells_not_found_by_custodes = true_smells_not_found_by_custodes;

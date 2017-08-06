@@ -9,6 +9,29 @@ using Microsoft.FSharp.Core;
 
 namespace ExceLintFileFormats
 {
+    public class AddressComparer : IComparer<AST.Address>
+    {
+        public int Compare(AST.Address a1, AST.Address a2)
+        {
+            if (a1.Y < a2.Y)
+            {
+                return -1;
+            }
+            else if (a1.Y == a2.Y && a1.X < a2.X)
+            {
+                return -1;
+            }
+            else if (a1.Y == a2.Y && a1.X == a2.X)
+            {
+                return 0;
+            }
+            else
+            {
+                return 1;
+            }
+        }
+    }
+
     public struct BugAnnotation
     {
         public BugKind BugKind;
@@ -26,7 +49,7 @@ namespace ExceLintFileFormats
         }
     };
 
-    public class ExceLintGroundTruth: IDisposable
+    public class ExceLintGroundTruth : IDisposable
     {
         private string _dbpath;
         private Dictionary<AST.Address, BugKind> _bugs = new Dictionary<AST.Address, BugKind>();
@@ -52,7 +75,7 @@ namespace ExceLintFileFormats
                 workbookName,
                 ""  // we don't care about paths
             );
-        } 
+        }
 
         private FSharpOption<BugClass> DualsFor(AST.Address addr)
         {
@@ -95,7 +118,7 @@ namespace ExceLintFileFormats
                         Console.Out.WriteLine(msg);
                         throw new Exception(msg);
                     }
-                    
+
                     // figure out the reference type
                     if (xlref.Type == AST.ReferenceType.ReferenceRange)
                     {
@@ -134,7 +157,7 @@ namespace ExceLintFileFormats
             }
 
             // find all bugclasses
-            foreach (KeyValuePair<AST.Address,BugKind> kvp in _bugs)
+            foreach (KeyValuePair<AST.Address, BugKind> kvp in _bugs)
             {
                 // get address
                 var addr = kvp.Key;
@@ -282,7 +305,7 @@ namespace ExceLintFileFormats
             }
         }
 
-        public List<Tuple<AST.Address,BugAnnotation>> AnnotationsFor(string workbookname)
+        public List<Tuple<AST.Address, BugAnnotation>> AnnotationsFor(string workbookname)
         {
             var output = new List<Tuple<AST.Address, BugAnnotation>>();
 
@@ -421,9 +444,28 @@ namespace ExceLintFileFormats
                 b == BugKind.SuspiciousCell;
         }
 
+        private AST.Address LeftTopForBugClass(BugClass bc)
+        {
+            var ordered = bc.OrderBy(a => a, new AddressComparer());
+            return ordered.First();
+        }
+
+
         public Tuple<BugClass,BugClass> DualsForAddress(AST.Address addr)
         {
             var bugclass = _bugclass_lookup[addr];
+            var bugclass_dual = _bugclass_dual_lookup[bugclass];
+
+            // which bugclass comes first? order by class with the topleftmost topleft corner
+            var bc_lt = LeftTopForBugClass(bugclass);
+            var bd_lt = LeftTopForBugClass(bugclass_dual);
+
+            var cmp = new AddressComparer();
+
+            var tup = cmp.Compare(bc_lt, bd_lt) < 0 ? 
+                      new Tuple<BugClass, BugClass>(bugclass, bugclass_dual) :
+                      new Tuple<BugClass, BugClass>(bugclass_dual, bugclass);
+
             return new Tuple<BugClass,BugClass>(bugclass,_bugclass_dual_lookup[bugclass]);
         }
 
@@ -480,7 +522,7 @@ namespace ExceLintFileFormats
             return bugs;
         }
 
-        private int NumBugsForBugClass(BugClass bc)
+        public int NumBugsForBugClass(BugClass bc)
         {
             var dualbc = _bugclass_dual_lookup[bc];
             return Math.Min(bc.Count, dualbc.Count);
