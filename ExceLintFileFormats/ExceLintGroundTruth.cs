@@ -83,13 +83,13 @@ namespace ExceLintFileFormats
             var env = new AST.Env(addr.Path, addr.WorkbookName, addr.WorksheetName);
 
             // duals regexp
-            var r = new Regex(@".*dual\s*=\s*((?<AddrOrRange>[A-Z]+[0-9]+(:[A-Z]+[0-9]+)?)(\s?,\s?)?)+", RegexOptions.Compiled);
+            var r = new Regex(@".*dual\s*=\s*((?<AddrOrRange>[A-Z]+[0-9]+(:?:[A-Z]+[0-9]+)?)(:?\s*,\s*)?)+", RegexOptions.Compiled);
 
             // get note for this address
             var note = _notes[addr];
 
-            MatchCollection ms = r.Matches(note);
-            if (ms.Count == 0)
+            Match m = r.Match(note);
+            if (!m.Success)
             {
                 if (note.Contains("dual"))
                 {
@@ -101,10 +101,12 @@ namespace ExceLintFileFormats
                 // init duals list
                 var duals = new List<AST.Address>();
 
-                foreach (Match m in ms)
+                var cs = m.Groups["AddrOrRange"].Captures;
+
+                foreach (Capture c in cs)
                 {
-                    // get group
-                    string addrOrRange = m.Groups["AddrOrRange"].Value;
+                    // get string value
+                    string addrOrRange = c.Value;
 
                     AST.Reference xlref = null;
 
@@ -181,7 +183,7 @@ namespace ExceLintFileFormats
                     }
 
                     // get all the addresses in dual and saved bugclasses
-                    var classaddrs = duals.SelectMany(caddr => _bugclass_lookup[caddr]);
+                    var classaddrs = duals.SelectMany(caddr => _bugclass_lookup[caddr]).Distinct();
 
                     // get an arbitrary bugclass
                     var fstbugclass = _bugclass_lookup[classaddrs.First()];
@@ -512,7 +514,7 @@ namespace ExceLintFileFormats
 
             // now count for duals
             int bugs = 0;
-            foreach (var kvp in duals)
+            foreach (var kvp in duals_nodupes)
             {
                 bugs += NumBugsForBugClass(kvp.Key);
             }
