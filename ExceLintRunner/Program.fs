@@ -343,13 +343,24 @@ open System.Threading
         let trueref = new Dict<BugClass*BugClass,int>()
         
         for addr in flags do
+            // is it a bug
             if etruth.IsATrueRefBug addr then
-                let duals = etruth.DualsForAddress addr
-                if not (trueref.ContainsKey duals) then
-                    trueref.Add(duals, 1)
+                // does it have a dual?
+                if etruth.AddressHasADual addr then
+                    // get duals
+                    let duals = etruth.DualsForAddress addr
+                    // count
+                    if not (trueref.ContainsKey duals) then
+                        trueref.Add(duals, 1)
+                    else
+                        // add one if we have not exceeded our max count for this dual
+                        if trueref.[duals] < (etruth.NumBugsForBugClass (fst duals)) then
+                            trueref.[duals] <- trueref.[duals] + 1
                 else
-                    if trueref.[duals] < (etruth.NumBugsForBugClass (fst duals)) then
-                        trueref.[duals] <- trueref.[duals] + 1
+                // make a singleton bugclass and count it
+                    let bugclass = new HashSet<AST.Address>([addr])
+                    let duals = (bugclass,bugclass)
+                    trueref.Add(duals, 1)
 
         Seq.sum trueref.Values
 

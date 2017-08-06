@@ -453,6 +453,17 @@ namespace ExceLintFileFormats
             return ordered.First();
         }
 
+        public bool AddressHasADual(AST.Address addr)
+        {
+            if (_bugclass_lookup.ContainsKey(addr))
+            {
+                var bugclass = _bugclass_lookup[addr];
+                return _bugclass_dual_lookup.ContainsKey(bugclass);
+            } else
+            {
+                return false;
+            }
+        }
 
         public Tuple<BugClass,BugClass> DualsForAddress(AST.Address addr)
         {
