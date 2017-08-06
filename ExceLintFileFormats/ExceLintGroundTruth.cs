@@ -395,6 +395,16 @@ namespace ExceLintFileFormats
             return _bugs.ContainsKey(addr) && _bugs[addr] != BugKind.NotABug;
         }
 
+        public bool IsATrueRefBug(AST.Address addr)
+        {
+            return _bugs.ContainsKey(addr) && IsTrueRefBug(_bugs[addr]);
+        }
+
+        public bool IsATrueRefBugOrSuspicious(AST.Address addr)
+        {
+            return _bugs.ContainsKey(addr) && IsTrueRefBugOrSuspicious(_bugs[addr]);
+        }
+
         private bool IsTrueRefBug(BugKind b)
         {
             return
@@ -409,6 +419,71 @@ namespace ExceLintFileFormats
             return
                 IsTrueRefBug(b) ||
                 b == BugKind.SuspiciousCell;
+        }
+
+        public Tuple<BugClass,BugClass> DualsForAddress(AST.Address addr)
+        {
+            var bugclass = _bugclass_lookup[addr];
+            return new Tuple<BugClass,BugClass>(bugclass,_bugclass_dual_lookup[bugclass]);
+        }
+
+        public int NumTrueRefBugsForWorkbook(string wbname)
+        {
+            // get the set of duals relevant for this workbook
+            var duals =
+                _bugclass_dual_lookup
+                .Where(kvp =>
+                    kvp.Key.First().WorkbookName == wbname &&   // where the workbook name is the same
+                    IsTrueRefBug(_bugs[kvp.Key.First()]));      // and it's actually a reference bug
+
+            // eliminate converse duals
+            var duals_nodupes = new Dictionary<BugClass,BugClass>();
+            foreach (var kvp in duals)
+            {
+                var bc = kvp.Key;
+                var dualbc = kvp.Value;
+                if (!duals_nodupes.ContainsKey(bc) && !duals_nodupes.ContainsKey(dualbc))
+                {
+                    duals_nodupes.Add(bc, dualbc);
+                }
+            }
+
+            // flatten
+            var duals_addrs = new HashSet<AST.Address>();
+            foreach (var kvp in duals_nodupes)
+            {
+                foreach (var addr in kvp.Key)
+                {
+                    duals_addrs.Add(addr);
+                }
+                foreach (var addr in kvp.Value)
+                {
+                    duals_addrs.Add(addr);
+                }
+            }
+
+            // now get all bugs that don't have duals
+            var nodual_bugs = _bugs.Where(kvp =>
+                kvp.Key.WorkbookName == wbname &&       // where the workbook name matches
+                !duals_addrs.Contains(kvp.Key));        // and the bug has no dual
+
+            // now count for duals
+            int bugs = 0;
+            foreach (var kvp in duals)
+            {
+                bugs += NumBugsForBugClass(kvp.Key);
+            }
+
+            // and count non-dual bugs
+            bugs += nodual_bugs.Count();
+
+            return bugs;
+        }
+
+        private int NumBugsForBugClass(BugClass bc)
+        {
+            var dualbc = _bugclass_dual_lookup[bc];
+            return Math.Min(bc.Count, dualbc.Count);
         }
 
         //public HashSet<AST.Address> TrueRefBugsByWorkbook(string wbname)
