@@ -434,7 +434,8 @@ namespace ExceLintFileFormats
                 b == BugKind.FormulaWhereConstantExpected ||
                 b == BugKind.ConstantWhereFormulaExpected ||
                 b == BugKind.ReferenceBug ||
-                b == BugKind.ReferenceBugInverse;
+                b == BugKind.ReferenceBugInverse ||
+                b == BugKind.CalculationError;
         }
 
         private bool IsTrueRefBugOrSuspicious(BugKind b)
@@ -527,24 +528,6 @@ namespace ExceLintFileFormats
             var dualbc = _bugclass_dual_lookup[bc];
             return Math.Min(bc.Count, dualbc.Count);
         }
-
-        //public HashSet<AST.Address> TrueRefBugsByWorkbook(string wbname)
-        //{
-        //    return new HashSet<AST.Address>(
-        //        _bugs
-        //            .Where(pair => pair.Key.A1Workbook() == wbname && IsTrueRefBug(pair.Value))
-        //            .Select(pair => pair.Key)
-        //        );
-        //}
-
-        //public HashSet<AST.Address> TrueRefBugsOrSuspiciousByWorkbook(string wbname)
-        //{
-        //    return new HashSet<AST.Address>(
-        //        _bugs
-        //            .Where(pair => pair.Key.A1Workbook() == wbname && IsTrueRefBugOrSuspicious(pair.Value))
-        //            .Select(pair => pair.Key)
-        //        );
-        //}
 
         public static ExceLintGroundTruth Load(string path)
         {

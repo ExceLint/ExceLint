@@ -15,8 +15,10 @@ open System.Threading
         excelint_not_custodes: HashSet<AST.Address>;
         custodes_not_excelint: HashSet<AST.Address>;
         num_true_ref_bugs_this_wb: int;
-        excelint_num_true_ref_bugs: int;
-        custodes_num_true_ref_bugs: int;
+        excelint_true_ref_TP: int;
+        excelint_true_ref_FP: int;
+        custodes_true_ref_TP: int;
+        custodes_true_ref_FP: int;
         true_smells_this_wb : HashSet<AST.Address>;
         true_smells_not_found_by_excelint: HashSet<AST.Address>;
         true_smells_not_found_by_custodes: HashSet<AST.Address>;
@@ -226,8 +228,15 @@ open System.Threading
         row.CUSTODESTimeMs <- stats.custodes_time
         row.CUSTODESFailed <- match custodes_o with | Some custodes -> (match custodes with | CUSTODES.BadOutput _ -> true | _ -> false) | None -> true
         row.CUSTODESFailureMsg <- match custodes_o with | Some custodes -> (match custodes with | CUSTODES.BadOutput(msg,_) -> msg | _ -> "") | None -> "did not run CUSTODES"
-        row.NumExceLintTrueRefBugsFound <- stats.excelint_num_true_ref_bugs
-        row.NumCUSTODESTrueRefBugsFound <- stats.custodes_num_true_ref_bugs
+        row.NumTrueRefBugs <- stats.num_true_ref_bugs_this_wb
+        row.ExceLintTrueRefTruePositives <- stats.excelint_true_ref_TP
+        row.ExceLintTrueRefFalsePositives <- stats.excelint_true_ref_FP
+        row.CUSTODESTrueRefTruePositives <- stats.custodes_true_ref_TP
+        row.CUSTODESTrueRefFalsePositives <- stats.custodes_true_ref_FP
+        row.ExceLintPrecisionVsTrueRefBugs <- precision stats.excelint_true_ref_TP stats.excelint_true_ref_FP
+        row.ExceLintRecallVsTrueRefBugs <- recall stats.excelint_true_ref_TP (stats.num_true_ref_bugs_this_wb - stats.excelint_true_ref_TP)
+        row.CUSTODESPrecisionVsTrueRefBugs <- precision stats.custodes_true_ref_TP stats.custodes_true_ref_FP
+        row.CUSTODESRecallVsTrueRefBugs <- recall stats.custodes_true_ref_TP (stats.num_true_ref_bugs_this_wb - stats.custodes_true_ref_TP)
         row.NumCUSTODESSmells <- stats.custodes_flagged.Count
         row.NumTrueSmells <- stats.true_smells_this_wb.Count
         row.NumExceLintTrueSmellsFound <- stats.excelint_true_smells.Count
@@ -330,8 +339,7 @@ open System.Threading
         let path = System.IO.Path.Combine(config.OutputDirectory, name)
         Clustering.writeClustering(cells, path)
 
-    let count_true_ref_bugs(etruth: ExceLintFileFormats.ExceLintGroundTruth)(this_wb: string)(flags: HashSet<AST.Address>) : int =
-        let num_true_ref_bugs_this_wb = etruth.NumTrueRefBugsForWorkbook this_wb
+    let count_true_ref_TP(etruth: ExceLintFileFormats.ExceLintGroundTruth)(flags: HashSet<AST.Address>) : int =
         let trueref = new Dict<BugClass*BugClass,int>()
         
         for addr in flags do
@@ -344,6 +352,13 @@ open System.Threading
                         trueref.[duals] <- trueref.[duals] + 1
 
         Seq.sum trueref.Values
+
+    let count_true_ref_FP(etruth: ExceLintFileFormats.ExceLintGroundTruth)(flags: HashSet<AST.Address>) : int =
+        let mutable i = 0
+        for addr in flags do
+            if not (etruth.IsATrueRefBug addr) then
+                i <- i + 1
+        i
 
     let analyze (file: String)(app: Application)(config: Args.Config)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(csv: ExceLintStats)(debug_csv: DebugInfo) =
         let shortf = (System.IO.Path.GetFileName file)
@@ -402,10 +417,11 @@ open System.Threading
                 let custodes_flags = new HashSet<AST.Address>(custodes_total_order)
 
                 // find true ref bugs
-                // TODOFIX
                 let num_true_ref_bugs_this_wb = etruth.NumTrueRefBugsForWorkbook this_wb
-                let excelint_num_true_ref_bugs = count_true_ref_bugs etruth this_wb excelint_flags
-                let custodes_num_true_ref_bugs = count_true_ref_bugs etruth this_wb custodes_flags
+                let excelint_true_ref_TP = count_true_ref_TP etruth excelint_flags
+                let excelint_true_ref_FP = count_true_ref_FP etruth excelint_flags
+                let custodes_true_ref_TP = count_true_ref_TP etruth custodes_flags
+                let custodes_true_ref_FP = count_true_ref_FP etruth custodes_flags
                 
                 // find true smells found by neither tool
                 let true_smells_this_wb = ctruth.TrueSmellsbyWorkbook this_wb
@@ -429,8 +445,10 @@ open System.Threading
                     excelint_not_custodes = hs_difference excelint_flags custodes_flags;
                     custodes_not_excelint = hs_difference custodes_flags excelint_flags;
                     num_true_ref_bugs_this_wb = num_true_ref_bugs_this_wb;
-                    excelint_num_true_ref_bugs = excelint_num_true_ref_bugs;
-                    custodes_num_true_ref_bugs = custodes_num_true_ref_bugs;
+                    excelint_true_ref_TP = excelint_true_ref_TP;
+                    excelint_true_ref_FP = excelint_true_ref_FP;
+                    custodes_true_ref_TP = custodes_true_ref_TP;
+                    custodes_true_ref_FP = custodes_true_ref_FP;
                     true_smells_this_wb = true_smells_this_wb;
                     true_smells_not_found_by_excelint = true_smells_not_found_by_excelint;
                     true_smells_not_found_by_custodes = true_smells_not_found_by_custodes;

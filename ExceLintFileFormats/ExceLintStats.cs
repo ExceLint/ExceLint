@@ -73,16 +73,23 @@ namespace ExceLintFileFormats
         public double ExceLintRecallVsCustodesGT { get; set; }
         public double CUSTODESPrecisionVsCustodesGT { get; set; }
         public double CUSTODESRecallVsCustodesGT { get; set; }
-        public double MinAnomScore { get; set; }
-        public long CUSTODESTimeMs { get; set; }
-        public bool CUSTODESFailed { get; set; }
-        public string CUSTODESFailureMsg { get; set; }
-        public int NumExceLintTrueRefBugsFound { get; set; }
-        public int NumCUSTODESTrueRefBugsFound { get; set; }
         public int NumCUSTODESSmells { get; set; }
         public int NumTrueSmells { get; set; }
         public int NumExceLintTrueSmellsFound { get; set; }
         public int NumCUSTODESTrueSmellsFound { get; set; }
+        public double MinAnomScore { get; set; }
+        public long CUSTODESTimeMs { get; set; }
+        public bool CUSTODESFailed { get; set; }
+        public string CUSTODESFailureMsg { get; set; }
+        public int NumTrueRefBugs { get; set; }
+        public int ExceLintTrueRefTruePositives { get; set; }
+        public int ExceLintTrueRefFalsePositives { get; set; }
+        public double ExceLintPrecisionVsTrueRefBugs { get; set; }
+        public double ExceLintRecallVsTrueRefBugs { get; set; }
+        public int CUSTODESTrueRefTruePositives { get; set; }
+        public int CUSTODESTrueRefFalsePositives { get; set; }
+        public double CUSTODESPrecisionVsTrueRefBugs { get; set; }
+        public double CUSTODESRecallVsTrueRefBugs { get; set; }
         public int NumExceLintCUSTODESTrueSmellsIntersect { get; set; }
         public int NumTrueSmellsMissedByBoth { get; set; }
         public int NumExcelFlags { get; set; }
