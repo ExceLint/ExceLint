@@ -492,6 +492,25 @@ namespace ExceLintFileFormats
             return _has_annotations_for_workbook.Contains(wbname);
         }
 
+        public string[] WorkbooksAnnotated
+        {
+            get { return _bugs.Keys.Select(a => a.WorkbookName).Distinct().ToArray(); }
+        }
+
+        public int TotalNumTrueRefBugs
+        {
+            get
+            {
+                var wbs = WorkbooksAnnotated;
+                int count = 0;
+                foreach (var wb in wbs)
+                {
+                    count += NumTrueRefBugsForWorkbook(wb);
+                }
+                return count;
+            }
+        }
+
         public int NumTrueRefBugsForWorkbook(string wbname)
         {
             // get the set of duals relevant for this workbook
@@ -549,6 +568,11 @@ namespace ExceLintFileFormats
         {
             var dualbc = _bugclass_dual_lookup[bc];
             return Math.Min(bc.Count, dualbc.Count);
+        }
+
+        public HashSet<AST.Address> Flags
+        {
+            get { return new HashSet<AST.Address>(_bugs.Keys); }
         }
 
         public static ExceLintGroundTruth Load(string path)

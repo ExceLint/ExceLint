@@ -203,6 +203,7 @@
         member self.UCheckbyWorkbook(workbookname: string) = new HashSet<AST.Address>(Seq.filter (fun (addr: AST.Address) -> addr.WorkbookName = workbookname) (self.Table.[Tool.UCheck]))
         member self.DimensionbyWorkbook(workbookname: string) = new HashSet<AST.Address>(Seq.filter (fun (addr: AST.Address) -> addr.WorkbookName = workbookname) (self.Table.[Tool.Dimension]))
         member self.ExcelbyWorkbook(workbookname: string) = new HashSet<AST.Address>(Seq.filter (fun (addr: AST.Address) -> addr.WorkbookName = workbookname) (self.Table.[Tool.Excel]))
+        member self.AllGroundTruth: HashSet<AST.Address> = d.[Tool.GroundTruth]
         static member Load(wbdir: string, gtcsv: string) : GroundTruth =
             let wbfiles = System.IO.Directory.EnumerateFiles(wbdir, "*.xls?", System.IO.SearchOption.AllDirectories) |> Seq.toArray
             let workbook_paths = Array.map (fun fname ->
