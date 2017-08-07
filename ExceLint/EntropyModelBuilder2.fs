@@ -6,6 +6,7 @@
     open CommonTypes
     open CommonFunctions
     open Distances
+    open MathNet.Numerics.Distributions
 
     module EntropyModelBuilder2 =
         let PCT_TO_FLAG = 5
@@ -17,6 +18,43 @@
             member self.InvertTimeMS = invert_ms
             member self.FastSheetCounterMS = fsc_ms
             member self.InferTimeMS = infer_ms
+
+        let fix_probability(fixes: (ImmutableHashSet<AST.Address>*ImmutableHashSet<AST.Address>)[])(ih: ROInvertedHistogram) =
+            // compute fix frequency
+            let fix_freq = new Dict<Countable*Countable,int>()
+
+            for (s,t) in fixes do
+                let (_,_,sco) = ih.[Seq.head s]
+                let (_,_,tco) = ih.[Seq.head t]
+                let sco_res = sco.ToCVectorResultant
+                let tco_res = tco.ToCVectorResultant
+                let fix = sco_res, tco_res
+
+                // count fixes
+                if not (fix_freq.ContainsKey fix) then
+                    fix_freq.Add(fix, 1)
+                else
+                    fix_freq.[fix] <- fix_freq.[fix] + 1
+
+            fix_freq
+
+        let prob_at_least_height_n(n: int)(dist: int[][])(trials: int) : double =
+            let max_heights: int[] = Array.zeroCreate (trials + 1)
+            for d in dist do
+                let max_height = Array.max d
+                max_heights.[max_height] <- max_heights.[max_height] + 1
+
+            // compute CDF
+            let mutable prop = 0
+            let mutable total = 0
+            for height = 0 to trials do
+                total <- total + max_heights.[height]
+                if height >= n then
+                    prop <- prop + max_heights.[height]
+
+            let prob = double prop / double total
+
+            prob
 
         // computes kinda-sorta-EMD for a simulated "fix" of the source, s
         let FixDistance(s: ImmutableHashSet<AST.Address>)(t: ImmutableHashSet<AST.Address>)(ih: ROInvertedHistogram) : double =
@@ -345,6 +383,11 @@
                 |> Seq.toArray
 
             member self.Fixes(z: int) : ProposedFix[] =
+                let rng = new Random()
+                let wsname = fsc.WorksheetForZ z
+                let fcount = graph.getAllFormulaAddrs() |> Array.filter (fun addr -> addr.WorksheetName = wsname) |> Array.length
+                let thresh = 0.5
+
                 // get models & prune potential fixes
                 let fixes =
                     self.PrevailingDirectionAdjacencies z true
@@ -409,7 +452,7 @@
                     |> Array.filter (fun (_,_,t) -> t.Count > 1)
                     // computation chains do not need fixing
                     |> Array.filter (fun (s,_,t) -> not (IsComputationChain s t ih))
-                    // nor do aggregatess
+                    // nor do aggregates
                     |> Array.filter (fun (s,_,t) -> not (IsAggregation s t ih))
 
                 // no converse fixes
@@ -434,6 +477,10 @@
                         let t_co = ScoreForCell (Seq.head t) ih
                         s_co <> t_co
                     )
+
+                // compute fix frequency & gin up null hypothesis
+                let fix_freq = fix_probability (fixes''' |> Array.map (fun (s,_,t) -> s,t)) ih
+                let uniform_prior = Array.init (fix_freq.Count) (fun _ -> 1.0 / double (fix_freq.Count))
 
                 let dps =
                     fixes'''
@@ -468,10 +515,37 @@
                            BinaryMinEntropyTree.ImmMergeIsRectangular s t
                        )
 
+                // count again
+                let chosen_fix_freq = fix_probability (dps' |> Array.map (fun (s,t,_) -> s,t )) ih
+
+                let probable_fixes =
+                    dps'
+                    // don't propose fixes where the # source fingerprints / # target fingerprints is common;
+                    // let's say more than 95% for now
+                    |> Array.map (fun (s,t,dp) ->
+                           let (_,_,sco) = ih.[Seq.head s]
+                           let (_,_,tco) = ih.[Seq.head t]
+                           let sco_res = sco.ToCVectorResultant
+                           let tco_res = tco.ToCVectorResultant
+                           let fix = sco_res, tco_res
+
+                           // get the count for this fix
+                           let count = chosen_fix_freq.[fix]
+                           let trials = (self.Cutoff + 1)
+
+                           // hypothesis test: is this fix overrepresented given uniform distribution of bugs over targets?
+                           let X = Multinomial.Samples(rng, uniform_prior, trials) |> Seq.take 10000 |> Seq.toArray
+                           let p = prob_at_least_height_n count X trials
+                           
+                           s, t, dp, p
+                       )
+                    // keep if we can't rule out the null hypothesis
+                    |> Array.filter (fun (_,_,_,p) -> p > 0.05)
+
                 // produce one model for each adjacency
                 let models = 
-                    dps'
-                    |> Array.Parallel.map (fun (source, target, wdotproduct) ->
+                    probable_fixes
+                    |> Array.Parallel.map (fun (source, target, wdotproduct, prob) ->
                             // produce a new model for each adjacency
                             let numodel = self.MergeCluster source target
 
@@ -481,8 +555,17 @@
                             // compute fix distance
                             let dist = FixDistance source target ih
 
+                            // compute fix frequency
+                            let (_,_,sco) = ih.[Seq.head source]
+                            let (_,_,tco) = ih.[Seq.head target]
+                            let sco_res = sco.ToCVectorResultant
+                            let tco_res = tco.ToCVectorResultant
+                            let fix = sco_res, tco_res
+                            let SiT = double fix_freq.[fix]  // | S intersect T |
+                            let freq = SiT / double (fix_freq |> Seq.sumBy (fun kvp -> kvp.Value))
+
                             // eliminate all zero or negative-scored fixes
-                            let pf = ProposedFix(source, target, entropyDelta, wdotproduct, dist)
+                            let pf = ProposedFix(source, target, entropyDelta, wdotproduct, dist, freq, prob)
                             if pf.Score <= 0.0 then
                                 None
                             else

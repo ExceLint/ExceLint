@@ -204,6 +204,7 @@ namespace ExceLintUI
             sb.Append(")");
             sb.Append(" = ");
             sb.Append(" RESULT ");
+            sb.Append(", FIX FREQ ");
             sb.AppendLine();
 
             foreach (var fix in fixes)
@@ -241,6 +242,12 @@ namespace ExceLintUI
                 sb.Append(")");                
                 sb.Append(" = ");
                 sb.Append(fix.Score.ToString());
+
+                // fix freq
+                sb.Append(" , ");
+                sb.Append(fix.FixFrequency.ToString());
+                sb.Append(" ,");
+                sb.Append(fix.FixFrequencyScore.ToString());
 
                 // EOL
                 sb.AppendLine();

@@ -83,6 +83,8 @@
 
         member self.ZForWorksheet(ws: string) = zNum.[ws]
 
+        member self.WorksheetForZ(z: int) : string = zNum |> Seq.filter (fun kvp -> kvp.Value = z) |> Seq.head |> fun kvp -> kvp.Key
+
         member self.MinXForWorksheet(z: int) =
             dimensions.[z].[0]
 

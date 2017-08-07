@@ -48,7 +48,7 @@
                 x.ToString() + " -> " + y.ToString()
 
         [<Struct>]
-        type ProposedFix(source: ImmutableHashSet<AST.Address>, target: ImmutableHashSet<AST.Address>, entropyDelta: double, weighted_dp: double, distance: double) =
+        type ProposedFix(source: ImmutableHashSet<AST.Address>, target: ImmutableHashSet<AST.Address>, entropyDelta: double, weighted_dp: double, distance: double, fix_freq: double, ff_score: double) =
             member self.Source = source
             member self.Target = target
             member self.EntropyDelta = entropyDelta
@@ -56,6 +56,8 @@
             member self.WeightedDotProduct = weighted_dp
             member self.TargetSize = double (Seq.length target)
             member self.Score = - self.TargetSize / (self.EntropyDelta * self.Distance)
+            member self.FixFrequency = fix_freq
+            member self.FixFrequencyScore = ff_score
 
         type DistanceF = HashSet<AST.Address> -> HashSet<AST.Address> -> double
         type ImmDistanceF = ImmutableHashSet<AST.Address> -> ImmutableHashSet<AST.Address> -> double
