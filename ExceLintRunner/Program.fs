@@ -59,9 +59,19 @@ open MathNet.Numerics.Distributions
         |> Array.map (fun (i,e) -> e)
         |> (fun arr -> new HashSet<AST.Address>(arr))
 
-    let expectedNumTrueBugs(numcells: int)(numbugs: int)(numdraws: int) : double =
-        (double (numbugs * numdraws)) /
-        (double numcells)
+    /// <summary>
+    /// Computes the expected number of true positives obtained
+    /// by flagging cells at random.
+    /// </summary>
+    /// <param name="m">population size</param>
+    /// <param name="r">number of true bugs in population</param>
+    /// <param name="n">sample size</param>
+    let expectedNumRandomCorrectFlags(m: int)(r: int)(n: int) : double =
+        // n * (r/m)
+        // where n: sample size
+        //       r: # of true bugs in population
+        //       m: population size
+        (double n) * ((double r) / (double m))
 
     let PValue(numcells: int)(numbugs: int)(numtp: int)(numflags: int) : double =
         Hypergeometric.PMF(numcells, numbugs, numflags, numtp)
@@ -465,6 +475,12 @@ open MathNet.Numerics.Distributions
                 let excelint_excel_intersect = hs_intersection excelint_flags excel_this_wb
                 let custodes_excel_intersect = hs_intersection custodes_flags excel_this_wb
 
+                // sample sizes
+                let esz = Math.Min(excelint_flags.Count, model.Cutoff + 1)
+                assert (esz = excelint_true_ref_TP + excelint_true_ref_FP)
+                let csz = custodes_flags.Count
+                assert (csz = custodes_true_ref_TP + custodes_true_ref_FP)
+
                 let stats = {
                     shortname = shortf;
                     threshold = config.alpha;
@@ -474,12 +490,12 @@ open MathNet.Numerics.Distributions
                     num_true_ref_bugs_this_wb = num_true_ref_bugs_this_wb;
                     excelint_true_ref_TP = excelint_true_ref_TP;
                     excelint_true_ref_FP = excelint_true_ref_FP;
-                    excelint_random_baseline = expectedNumTrueBugs (model.AllCells.Count) (num_true_ref_bugs_this_wb) (excelint_true_ref_TP + excelint_true_ref_FP);
-                    excelint_pvalue = PValue (model.AllCells.Count) (num_true_ref_bugs_this_wb) (excelint_true_ref_TP) (excelint_true_ref_TP + excelint_true_ref_FP);
+                    excelint_random_baseline = expectedNumRandomCorrectFlags model.AllCells.Count num_true_ref_bugs_this_wb esz;
+                    excelint_pvalue = PValue model.AllCells.Count num_true_ref_bugs_this_wb excelint_true_ref_TP esz;
                     custodes_true_ref_TP = custodes_true_ref_TP;
                     custodes_true_ref_FP = custodes_true_ref_FP;
-                    custodes_random_baseline = expectedNumTrueBugs (model.AllCells.Count) (num_true_ref_bugs_this_wb) (custodes_true_ref_TP + custodes_true_ref_FP);
-                    custodes_pvalue = PValue (model.AllCells.Count) (num_true_ref_bugs_this_wb) (custodes_true_ref_TP) (custodes_true_ref_TP + custodes_true_ref_FP);
+                    custodes_random_baseline = expectedNumRandomCorrectFlags model.AllCells.Count num_true_ref_bugs_this_wb csz;
+                    custodes_pvalue = PValue model.AllCells.Count num_true_ref_bugs_this_wb custodes_true_ref_TP csz;
                     true_smells_this_wb = true_smells_this_wb;
                     true_smells_not_found_by_excelint = true_smells_not_found_by_excelint;
                     true_smells_not_found_by_custodes = true_smells_not_found_by_custodes;
