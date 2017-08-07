@@ -2,7 +2,7 @@
 
 open System.IO
 open System.Text.RegularExpressions
-    type Knobs = { verbose: bool; dont_exit: bool; alpha: double; oldNNjaccard: bool; kmedioidjaccard: bool; nocustodes: bool; }
+    type Knobs = { verbose: bool; dont_exit: bool; alpha: double; oldNNjaccard: bool; kmedioidjaccard: bool; nocustodes: bool; tronly: bool;}
 
     type Config(dpath: string, opath: string, jpath: string, cpath: string, egpath: string, gpath: string, knobs: Knobs, csv: string, fc: ExceLint.FeatureConf) =
         do
@@ -13,6 +13,8 @@ open System.Text.RegularExpressions
             printfn "Output directory: %s" opath
             printfn "Output stats CSV: %s" csv
             printfn "ExceLint ground truth CSV: %s" egpath
+            if knobs.tronly then
+                printfn "ONLY RUNNING BENCHMARKS WITH TRUE REF ANNOTATIONS"
             if knobs.nocustodes then
                 printfn "NOT RUNNING CUSTODES."
             else
@@ -48,6 +50,7 @@ open System.Text.RegularExpressions
         member self.CompareAgainstOldNN = knobs.oldNNjaccard
         member self.CompareAgainstKMedioid = knobs.kmedioidjaccard
         member self.DontRunCUSTODES = knobs.nocustodes
+        member self.TrueRefOnly = knobs.tronly
 
     let usage() : unit =
         printfn "ExceLintRunner.exe <input directory> <output directory> <ExceLint ground truth CSV> <CUSTODES ground truth CSV> <java path> <CUSTODES JAR> [flags]"
@@ -68,6 +71,7 @@ open System.Text.RegularExpressions
         printfn "present and FALSE when omitted:"
         printfn "\n"
         printfn "-verbose    log per-spreadsheet flagged cells as separate CSVs"
+        printfn "-tronly     only run those benchmarks that have true ref annotations"
         printfn "-noexit     prompt user to press a key before exiting"
         printfn "-nocustodes don't do a comparison against CUSTODES"
         printfn "-resultant  bin by resultant vector, otherwise bin by L2 norm sum"
@@ -124,6 +128,7 @@ open System.Text.RegularExpressions
                                | "-oldcluster" :: rest -> optParse rest { knobs with oldNNjaccard = true } conf
                                | "-kmedioid"   :: rest -> optParse rest { knobs with kmedioidjaccard = true } conf
                                | "-nocustodes" :: rest -> optParse rest { knobs with nocustodes = true } conf
+                               | "-tronly"     :: rest -> optParse rest { knobs with tronly = true } conf
                                // FEATURECONF
                                | "-resultant"  :: rest -> optParse rest knobs (conf.enableShallowInputVectorMixedResultant true)
                                | "-spectral"   :: rest -> optParse rest knobs (conf.spectralRanking true)
@@ -151,7 +156,8 @@ open System.Text.RegularExpressions
                                | s :: rest -> failwith ("Unrecognized option: " + s)
                            )
 
-        let (knobs,fConf) = optParse flags { verbose = false; dont_exit = false; alpha = 0.05; oldNNjaccard = false; kmedioidjaccard = false; nocustodes = false; } (new ExceLint.FeatureConf())
+        // init with defaults
+        let (knobs,fConf) = optParse flags { verbose = false; dont_exit = false; alpha = 0.05; oldNNjaccard = false; kmedioidjaccard = false; nocustodes = false; tronly = false;} (new ExceLint.FeatureConf())
 
         let fConf' = fConf.validate
 

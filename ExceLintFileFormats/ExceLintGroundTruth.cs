@@ -59,6 +59,7 @@ namespace ExceLintFileFormats
         private Dictionary<AST.Address, BugClass> _bugclass_lookup = new Dictionary<AST.Address, BugClass>();
         private Dictionary<AST.Address, BugClass> _dual_lookup = new Dictionary<AST.Address, BugClass>();
         private Dictionary<BugClass, BugClass> _bugclass_dual_lookup = new Dictionary<BugClass, BugClass>();
+        private HashSet<string> _has_annotations_for_workbook = new HashSet<string>();
 
         /// <summary>
         /// Get the AST.Address for a row.
@@ -157,6 +158,9 @@ namespace ExceLintFileFormats
                     _notes.Add(addr, row.Notes);
                 }
             }
+
+            // index workbooks
+            _has_annotations_for_workbook = new HashSet<string>(_bugs.Keys.Select(a => a.WorkbookName).Distinct());
 
             // find all bugclasses
             foreach (KeyValuePair<AST.Address, BugKind> kvp in _bugs)
@@ -481,6 +485,11 @@ namespace ExceLintFileFormats
                       new Tuple<BugClass, BugClass>(bugclass_dual, bugclass);
 
             return new Tuple<BugClass,BugClass>(bugclass,_bugclass_dual_lookup[bugclass]);
+        }
+
+        public bool HasTrueRefAnnotations(string wbname)
+        {
+            return _has_annotations_for_workbook.Contains(wbname);
         }
 
         public int NumTrueRefBugsForWorkbook(string wbname)

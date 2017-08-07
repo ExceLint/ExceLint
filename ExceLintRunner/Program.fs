@@ -6,6 +6,7 @@ open ExceLint
 open ExceLint.Utils
 open ExceLintFileFormats
 open System.Threading
+open MathNet.Numerics.Distributions
 
     type BugClass = HashSet<AST.Address>
     type Stats = {
@@ -17,8 +18,12 @@ open System.Threading
         num_true_ref_bugs_this_wb: int;
         excelint_true_ref_TP: int;
         excelint_true_ref_FP: int;
+        excelint_random_baseline: double;
+        excelint_pvalue: double;
         custodes_true_ref_TP: int;
         custodes_true_ref_FP: int;
+        custodes_random_baseline: double;
+        custodes_pvalue: double;
         true_smells_this_wb : HashSet<AST.Address>;
         true_smells_not_found_by_excelint: HashSet<AST.Address>;
         true_smells_not_found_by_custodes: HashSet<AST.Address>;
@@ -53,6 +58,13 @@ open System.Threading
         |> Array.filter (fun (i,e) -> i <= cutoff)
         |> Array.map (fun (i,e) -> e)
         |> (fun arr -> new HashSet<AST.Address>(arr))
+
+    let expectedNumTrueBugs(numcells: int)(numbugs: int)(numdraws: int) : double =
+        (double (numbugs * numdraws)) /
+        (double numcells)
+
+    let PValue(numcells: int)(numbugs: int)(numtp: int)(numflags: int) : double =
+        Hypergeometric.PMF(numcells, numbugs, numflags, numtp)
 
     let per_append_excelint(csv: WorkbookStats)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes_o: CUSTODES.OutputResult option)(model: ErrorModel)(ranking: CommonTypes.Ranking)(dag: Depends.DAG) : unit =
         let output =
@@ -231,8 +243,12 @@ open System.Threading
         row.NumTrueRefBugs <- stats.num_true_ref_bugs_this_wb
         row.ExceLintTrueRefTruePositives <- stats.excelint_true_ref_TP
         row.ExceLintTrueRefFalsePositives <- stats.excelint_true_ref_FP
+        row.ExceLintRandomTPBaseline <- stats.excelint_random_baseline
+        row.ExceLintTrueRefPValue <- stats.excelint_pvalue
         row.CUSTODESTrueRefTruePositives <- stats.custodes_true_ref_TP
         row.CUSTODESTrueRefFalsePositives <- stats.custodes_true_ref_FP
+        row.CUSTODESRandomTPBaseline <- stats.custodes_random_baseline
+        row.CUSTODESTrueRefPValue <- stats.custodes_pvalue
         row.ExceLintPrecisionVsTrueRefBugs <- precision stats.excelint_true_ref_TP stats.excelint_true_ref_FP
         row.ExceLintRecallVsTrueRefBugs <- recall stats.excelint_true_ref_TP (stats.num_true_ref_bugs_this_wb - stats.excelint_true_ref_TP)
         row.CUSTODESPrecisionVsTrueRefBugs <- precision stats.custodes_true_ref_TP stats.custodes_true_ref_FP
@@ -458,8 +474,12 @@ open System.Threading
                     num_true_ref_bugs_this_wb = num_true_ref_bugs_this_wb;
                     excelint_true_ref_TP = excelint_true_ref_TP;
                     excelint_true_ref_FP = excelint_true_ref_FP;
+                    excelint_random_baseline = expectedNumTrueBugs (model.AllCells.Count) (num_true_ref_bugs_this_wb) (excelint_true_ref_TP + excelint_true_ref_FP);
+                    excelint_pvalue = PValue (model.AllCells.Count) (num_true_ref_bugs_this_wb) (excelint_true_ref_TP) (excelint_true_ref_TP + excelint_true_ref_FP);
                     custodes_true_ref_TP = custodes_true_ref_TP;
                     custodes_true_ref_FP = custodes_true_ref_FP;
+                    custodes_random_baseline = expectedNumTrueBugs (model.AllCells.Count) (num_true_ref_bugs_this_wb) (custodes_true_ref_TP + custodes_true_ref_FP);
+                    custodes_pvalue = PValue (model.AllCells.Count) (num_true_ref_bugs_this_wb) (custodes_true_ref_TP) (custodes_true_ref_TP + custodes_true_ref_FP);
                     true_smells_this_wb = true_smells_this_wb;
                     true_smells_not_found_by_excelint = true_smells_not_found_by_excelint;
                     true_smells_not_found_by_custodes = true_smells_not_found_by_custodes;
@@ -549,12 +569,13 @@ open System.Threading
                         
                 let shortf = (System.IO.Path.GetFileName file)
 
-                try
-                    analyze file app config excelint_gt custodes_gt csv debug_csv
-                with
-                | e ->
-                    printfn "Cannot analyze workbook %A because:\n%A" shortf e.Message
-                    printfn "Stacktrace:\n%A" e.StackTrace
+                if not config.TrueRefOnly || (config.TrueRefOnly && excelint_gt.HasTrueRefAnnotations shortf) then
+                    try
+                        analyze file app config excelint_gt custodes_gt csv debug_csv
+                    with
+                    | e ->
+                        printfn "Cannot analyze workbook %A because:\n%A" shortf e.Message
+                        printfn "Stacktrace:\n%A" e.StackTrace
         )
 
         if config.DontExitWithoutKeystroke then
