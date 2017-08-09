@@ -351,6 +351,7 @@
 		<row><td>FParsec.Primary_Output</td><td>{1220C08E-1112-4B3B-ADEC-4D8A28DAF6D8}</td><td>INSTALLDIR</td><td>2</td><td/><td>fparsec.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>FParsecCS.Primary_output</td><td>{297D5171-0EB7-4FC0-9B9E-F480D2E652AB}</td><td>INSTALLDIR</td><td>2</td><td/><td>fparseccs.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ISX_DEFAULTCOMPONENT</td><td>{79DB6CB0-95C3-47CD-983E-E760B4E3C6D9}</td><td>INSTALLDIR</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>MathNet.Numerics.dll</td><td>{05A48894-3F8D-4761-B2CC-AF1B5DEA6222}</td><td>INSTALLDIR</td><td>2</td><td/><td>mathnet.numerics.dll</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ParcelCOMShim.Primary_Output</td><td>{0ED9ACA4-549B-4D07-909F-792A0AEAFB1B}</td><td>INSTALLDIR</td><td>2</td><td/><td>parcelcomshim.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>StatsGatherer.Primary_Output</td><td>{F97D8F5A-E6D3-4748-8968-EABE3D5AD3B7}</td><td>INSTALLDIR</td><td>2</td><td/><td>statsgatherer.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 	</table>
@@ -1073,6 +1074,7 @@
 		<row><td>INSTALLDIR</td><td>FParsec.Primary_Output</td></row>
 		<row><td>INSTALLDIR</td><td>FParsecCS.Primary_output</td></row>
 		<row><td>INSTALLDIR</td><td>ISX_DEFAULTCOMPONENT</td></row>
+		<row><td>INSTALLDIR</td><td>MathNet.Numerics.dll</td></row>
 		<row><td>INSTALLDIR</td><td>ParcelCOMShim.Primary_Output</td></row>
 		<row><td>INSTALLDIR</td><td>StatsGatherer.Primary_Output</td></row>
 	</table>
@@ -1902,6 +1904,7 @@
 		<row><td>AlwaysInstall</td><td>FParsec.Primary_Output</td></row>
 		<row><td>AlwaysInstall</td><td>FParsecCS.Primary_output</td></row>
 		<row><td>AlwaysInstall</td><td>ISX_DEFAULTCOMPONENT</td></row>
+		<row><td>AlwaysInstall</td><td>MathNet.Numerics.dll</td></row>
 		<row><td>AlwaysInstall</td><td>ParcelCOMShim.Primary_Output</td></row>
 		<row><td>AlwaysInstall</td><td>StatsGatherer.Primary_Output</td></row>
 	</table>
@@ -1931,6 +1934,7 @@
 		<row><td>excelparser.primary_output</td><td>ExcelParser.Primary_Output</td><td>ExcelParser.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExcelParser&gt;|Built</td><td>3</td><td/></row>
 		<row><td>fparsec.primary_output</td><td>FParsec.Primary_Output</td><td>FParsec.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;FParsec&gt;|Built</td><td>3</td><td/></row>
 		<row><td>fparseccs.primary_output</td><td>FParsecCS.Primary_output</td><td>FParsecCS.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;FParsecCS&gt;|Built</td><td>3</td><td/></row>
+		<row><td>mathnet.numerics.dll</td><td>MathNet.Numerics.dll</td><td>MATHNE~1.DLL|MathNet.Numerics.dll</td><td>0</td><td/><td/><td/><td>1</td><td>C:\Users\Dan Barowy\Documents\Visual Studio 2015\Projects\ExceLint\code\ExceLintUI\bin\Release\MathNet.Numerics.dll</td><td>1</td><td/></row>
 		<row><td>parcelcomshim.primary_output</td><td>ParcelCOMShim.Primary_Output</td><td>ParcelCOMShim.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ParcelCOMShim&gt;|Built</td><td>3</td><td/></row>
 		<row><td>statsgatherer.primary_output</td><td>StatsGatherer.Primary_Output</td><td>StatsGatherer.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;StatsGatherer&gt;|Built</td><td>3</td><td/></row>
 	</table>
@@ -2088,6 +2092,7 @@
 		<row><td>FParsec.Primary_Output</td><td/><td/><td>_CCFEB7EC_DAC1_4DFE_8193_C50B6F14785A_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>FParsecCS.Primary_output</td><td/><td/><td>_F096BB03_F32A_40BD_A20F_60B4765FB967_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ISX_DEFAULTCOMPONENT</td><td/><td/><td>_B6EE9F24_5BDB_4CFA_B769_AC93C53BBBEA_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>MathNet.Numerics.dll</td><td/><td/><td>_E85C0C4E_36B1_46DA_AD4E_9DD41F4F2E77_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ParcelCOMShim.Primary_Output</td><td/><td/><td>_947F6C5A_02C7_4C88_AD7C_650884E157A0_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>StatsGatherer.Primary_Output</td><td/><td/><td>_91A84B3A_C52E_44EF_B1D3_58A506C760D4_FILTER</td><td/><td/><td/><td/></row>
 	</table>
@@ -4419,7 +4424,7 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS</td><td>##IDS_PROGMSG_IIS_ROLLBACKWEBSERVICEEXTENSIONS##</td><td/></row>
 		<row><td>ProductCode</td><td>{B8BEBB5F-5B76-4914-BF50-B723E4F21F38}</td><td/></row>
 		<row><td>ProductName</td><td>ExceLint</td><td/></row>
-		<row><td>ProductVersion</td><td>1.00.0023</td><td/></row>
+		<row><td>ProductVersion</td><td>1.00.0024</td><td/></row>
 		<row><td>ProgressType0</td><td>install</td><td/></row>
 		<row><td>ProgressType1</td><td>Installing</td><td/></row>
 		<row><td>ProgressType2</td><td>installed</td><td/></row>
