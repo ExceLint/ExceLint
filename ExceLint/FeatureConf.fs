@@ -12,7 +12,7 @@
     | MeanCentroid
 
     // a C#-friendly configuration object that is also pure/fluent
-    type FeatureConf private (userConf: Map<string,Capability>, limitToSheet: string option) =
+    type FeatureConf private (userConf: Map<string,Capability>, limitToSheet: string option, alpha: double) =
         let nop(cell: AST.Address)(dag: Depends.DAG) : Countable = Countable.Num 0.0
 
         // this function adds a feature and its capabilities to the configuration map,
@@ -22,13 +22,15 @@
             if on then
                 FeatureConf(
                     config.Add(name, { enabled = true; kind = cap.kind; runner = cap.runner }),
-                    limitToSheet
+                    limitToSheet,
+                    alpha
                 )
             else
                 if config.ContainsKey(name) then
                     FeatureConf(
                         config.Remove(name),
-                        limitToSheet
+                        limitToSheet,
+                        alpha
                     )
                 else
                     self
@@ -72,7 +74,11 @@
 
         let _features : ConfUtils.RunnerMap = Map.map (fun (fname: string)(cap: Capability) -> cap.runner) _config
 
-        new() = FeatureConf(Map.empty, None)
+        new() = FeatureConf(Map.empty, None, 0.05)
+
+        // set significance threshold
+        member self.setThresh(alphanew: double) : FeatureConf =
+            new FeatureConf(userConf, limitToSheet, alphanew)
 
         // fluent constructors
         member self.enableInDegree(on: bool) : FeatureConf =
@@ -183,7 +189,8 @@
             let cap : Capability = { enabled = true; kind = ConfigKind.Misc; runner = nop }
             FeatureConf(
                 _config.Add(name, cap),
-                Some wsname
+                Some wsname,
+                alpha
             )
         member self.enableDebugMode(on: bool) : FeatureConf =
             let name = "DebugMode"
@@ -191,6 +198,7 @@
             capabilityConstructorHelper (name,cap) self on _config
 
         // getters
+        member self.Threshold = alpha
         member self.FeatureByName
             with get(name) = _features.[name]
         member self.EnabledFeatures

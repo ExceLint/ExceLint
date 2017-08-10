@@ -1019,10 +1019,8 @@ namespace ExceLintUI
             if (FSharpOption<ExceLint.CommonTypes.ProposedFix[]>.get_IsSome(_analysis.model.Fixes))
             {
                 var fixes = _analysis.model.Fixes.Value;
-                if (currentFlag + 1 < fixes.Length)
+                if (currentFlag <= _analysis.model.Cutoff && currentFlag < fixes.Length)
                 {
-                    currentFlag++;
-
                     // get fix
                     var fix = fixes[currentFlag];
 
@@ -1037,8 +1035,16 @@ namespace ExceLintUI
                     {
                         paintColor(a, System.Drawing.Color.Green);
                     }
-                } else
+
+                    // activate and center
+                    activateAndCenterOn(fix.Source.First(), _app);
+
+                    currentFlag++;
+                }
+                else
                 {
+                    System.Windows.Forms.MessageBox.Show("No fixes remain.");
+
                     restoreOutputColors();
                     setTool(false);
                     currentFlag = 0;

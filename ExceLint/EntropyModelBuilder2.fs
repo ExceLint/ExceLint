@@ -9,8 +9,6 @@
     open MathNet.Numerics.Distributions
 
     module EntropyModelBuilder2 =
-        let PCT_TO_FLAG = 5
-
         [<Struct>]
         type Stats(feat_ms: int64, scale_ms: int64, invert_ms: int64, fsc_ms: int64, infer_ms: int64) =
             member self.FeatureTimeMS = feat_ms
@@ -194,7 +192,7 @@
                 // if they're the same, return true
                 sco = sco'
 
-        type EntropyModel2(graph: Depends.DAG, regions: ImmutableClustering[], ih: ROInvertedHistogram, fsc: FastSheetCounter, d: ImmDistanceFMaker, indivisibles: ImmutableClustering[], stats: Stats) =
+        type EntropyModel2(alpha: double, graph: Depends.DAG, regions: ImmutableClustering[], ih: ROInvertedHistogram, fsc: FastSheetCounter, d: ImmDistanceFMaker, indivisibles: ImmutableClustering[], stats: Stats) =
             // save the reverse lookup for later use
             let revLookups = Array.map (fun r -> ReverseClusterLookup r) regions
 
@@ -312,7 +310,7 @@
                 let regions' = Array.copy regions
                 regions'.[z] <- region'
 
-                new EntropyModel2(graph, regions', ih', fsc', d, indivisibles', stats)
+                new EntropyModel2(alpha, graph, regions', ih', fsc', d, indivisibles', stats)
                 
             member self.MergeCell(source: AST.Address)(target: AST.Address) : EntropyModel2 =
                 // get z for s and t worksheet
@@ -595,8 +593,7 @@
             member self.Cutoff : int =
                 // this is a workbook-wide cutoff
                 let num_formulas = graph.getAllFormulaAddrs().Length
-                let frac = (double PCT_TO_FLAG) / 100.0
-                int (Math.Floor((double num_formulas) * frac))
+                int (Math.Floor((double num_formulas) * alpha))
 
             static member InitialSetup(z: int)(ih: ROInvertedHistogram)(fsc: FastSheetCounter)(indivisibles: ImmutableClustering[]) : ImmutableClustering =
                 // get the initial tree
@@ -743,4 +740,4 @@
                 // collate stats
                 let times = Stats(feat_time, scale_time, invert_time, fsc_time, sw.ElapsedMilliseconds)
 
-                new EntropyModel2(input.dag, regions, ih, fsc, distance_f, indivisibles, times)
+                new EntropyModel2(input.alpha, input.dag, regions, ih, fsc, distance_f, indivisibles, times)

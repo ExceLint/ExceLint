@@ -35,6 +35,55 @@ namespace ExceLintUI
 
         #region BUTTON_HANDLERS
 
+        private void RegularityMap_Click(object sender, RibbonControlEventArgs e)
+        {
+            // disable annoying OLE warnings
+            Globals.ThisAddIn.Application.DisplayAlerts = false;
+
+            // get dependence graph
+            var graph = currentWorkbook.getDependenceGraph(false);
+
+            // get active sheet
+            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+
+            if (fixClusterModel == null)
+            {
+                // create progbar in main thread;
+                // worker thread will call Dispose
+                var pb = new ProgBar();
+
+                // build the model
+                var sw2 = System.Diagnostics.Stopwatch.StartNew();
+                fixClusterModel = currentWorkbook.NewEntropyModelForWorksheet2(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
+
+                // get z for worksheet
+                var z = fixClusterModel.ZForWorksheet(activeWs.Name);
+
+                // do visualization
+                var histo2 = fixClusterModel.InvertedHistogram;
+                var clusters2 = fixClusterModel.Clustering(z);
+                sw2.Stop();
+                var cl_filt2 = PrettyClusters(clusters2, histo2, graph);
+                currentWorkbook.restoreOutputColors();
+                currentWorkbook.DrawImmutableClusters(cl_filt2, fixClusterModel.InvertedHistogram);
+
+                // remove progress bar
+                pb.Close();
+
+                // change button name
+                RegularityMap.Label = "Hide Regularity Map";
+            } else
+            {
+                currentWorkbook.restoreOutputColors();
+
+                // change button name
+                RegularityMap.Label = "Show Regularity Map";
+
+                // reset model
+                fixClusterModel = null;
+            }
+        }
+
         private void LoadTrueSmells_Click(object sender, RibbonControlEventArgs e)
         {
             if (String.IsNullOrWhiteSpace(true_smells_csv))
@@ -275,13 +324,19 @@ namespace ExceLintUI
 
         private EntropyModelBuilder2.EntropyModel2 ModelInit(Worksheet activeWs)
         {
+            // get config
+            var conf = getConfig();
+
+            // get significance threshold
+            var sig = getPercent(this.significanceTextBox.Text, this.significanceTextBox.Label);
+            conf = conf.setThresh(sig.Value);
+
             // create progbar in main thread;
             // worker thread will call Dispose
             var pb = new ProgBar();
 
             // build the model
-            
-            var model = currentWorkbook.NewEntropyModelForWorksheet2(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
+            var model = currentWorkbook.NewEntropyModelForWorksheet2(activeWs, conf, this.forceBuildDAG.Checked, pb);
 
             // remove progress bar
             pb.Close();
@@ -667,6 +722,7 @@ namespace ExceLintUI
             else
             {
                 wbs.toolSignificance = sigThresh.Value;
+                conf = conf.setThresh(sigThresh.Value);
                 try
                 {
                     wbs.analyze(WorkbookState.MAX_DURATION_IN_MS, conf, forceBuildDAG, pb);

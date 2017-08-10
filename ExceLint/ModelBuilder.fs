@@ -25,12 +25,12 @@
 
             let initEntropyModel(app: Microsoft.Office.Interop.Excel.Application)(config: FeatureConf)(dag: Depends.DAG)(progress: Depends.Progress) : EntropyModel =
                 let config' = config.validate
-                let input : Input = { app = app; config = config'; dag = dag; alpha = 0.00; progress = progress; }
+                let input : Input = { app = app; config = config'; dag = dag; alpha = config.Threshold; progress = progress; }
                 EntropyModel.Initialize input
 
             let initEntropyModel2(app: Microsoft.Office.Interop.Excel.Application)(config: FeatureConf)(dag: Depends.DAG)(progress: Depends.Progress) : EntropyModel2 =
                 let config' = config.validate
-                let input : Input = { app = app; config = config'; dag = dag; alpha = 0.00; progress = progress; }
+                let input : Input = { app = app; config = config'; dag = dag; alpha = config.Threshold; progress = progress; }
                 EntropyModel2.Initialize input
 
             let analyze(app: Microsoft.Office.Interop.Excel.Application)(config: FeatureConf)(dag: Depends.DAG)(alpha: double)(progress: Depends.Progress) =
