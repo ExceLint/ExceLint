@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<SetupPrereq>
+  <conditions>
+    <condition Type="2" Comparison="2" Path="HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" FileName="Release" ReturnValue="394254"/>
+  </conditions>
+  <operatingsystemconditions>
+    <operatingsystemcondition MajorVersion="6" MinorVersion="1" PlatformId="2" CSDVersion="" ServicePackMajorMin="1"/>
+    <operatingsystemcondition MajorVersion="6" MinorVersion="2" PlatformId="2" CSDVersion=""/>
+    <operatingsystemcondition MajorVersion="6" MinorVersion="3" PlatformId="2" CSDVersion=""/>
+    <operatingsystemcondition MajorVersion="10" MinorVersion="0" PlatformId="2" CSDVersion=""/>
+  </operatingsystemconditions>
+  <files>
+    <file LocalFile=".\Microsoft.net\4.6\Full\NDP461-KB3102436-x86-x64-AllOS-ENU.exe" URL="https://download.microsoft.com/download/E/4/1/E4173890-A24A-4936-9FC9-AF930FE3FA40/NDP461-KB3102436-x86-x64-AllOS-ENU.exe" CheckSum="864056903748706E251FEC9F5D887EF9" FileSize="0,67681000"/>
+  </files>
+  <execute file="NDP461-KB3102436-x86-x64-AllOS-ENU.exe" cmdline="/showrmui /passive " cmdlinesilent="/q /norestart" returncodetoreboot="1641,3010" requiresmsiengine="1"/>
+  <properties Id="{D88AEC72-8F72-4075-B2EA-1FF6363E0E51}" Description="This prerequisite installs the .NET Framework 4.6.1 full standalone package."/>
+  <behavior Reboot="2"/>
+</SetupPrereq>

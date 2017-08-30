@@ -1,0 +1,252 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="CUSTODESOutput" xml:space="preserve">
+    <value>----procesing worksheet 'Contents'----
+----procesing worksheet 'Box II.1'----
+----procesing worksheet 'Fig II.1'----
+----procesing worksheet 'Table II.1'----
+
+----procesing worksheet 'Table II.2'----
+---- Stage I clustering begined ----
+---- Stage I finished ----
+found 3 clusters
+---- Stage II begined ----
+detected 0 smells:
+---Analysis Finished---
+
+----procesing worksheet 'Table II.3(a)'----
+
+----procesing worksheet 'Table II.3(b)'----
+---- Stage I clustering begined ----
+---- Stage I finished ----
+found 1 clusters
+---- Stage II begined ----
+detected 0 smells:
+---Analysis Finished---
+
+----procesing worksheet 'Table II.3(c)'----
+----procesing worksheet 'Figure II.2'----
+
+----procesing worksheet 'Table II.4'----
+---- Stage I clustering begined ----
+---- Stage I finished ----
+found 2 clusters
+---- Stage II begined ----
+detected 4 smells:
+B8
+F31
+I31
+H31
+---Analysis Finished---
+
+----procesing worksheet 'Figure II.3'----
+----procesing worksheet 'Figure II.4'----
+----procesing worksheet 'Figure II.5'----
+
+----procesing worksheet 'Table II.5'----
+---- Stage I clustering begined ----
+---- Stage I finished ----
+found 4 clusters
+---- Stage II begined ----
+detected 19 smells:
+F17
+E17
+C16
+C15
+A8
+A7
+A10
+A9
+A11
+A16
+D6
+D8
+D12
+D13
+D10
+D7
+D14
+D11
+D9
+---Analysis Finished---
+
+----procesing worksheet 'Table II.6'----
+---- Stage I clustering begined ----
+---- Stage I finished ----
+found 4 clusters
+---- Stage II begined ----
+detected 18 smells:
+D12
+D6
+D11
+D7
+D13
+D9
+D14
+D8
+D15
+D10
+C16
+E17
+F17
+A7
+A8
+A10
+A11
+A9
+---Analysis Finished---
+
+----procesing worksheet 'Table II.7'----
+---- Stage I clustering begined ----
+---- Stage I finished ----
+found 4 clusters
+---- Stage II begined ----
+detected 19 smells:
+D7
+D13
+D15
+D11
+D6
+D10
+D12
+D14
+D9
+D8
+D17
+A9
+A8
+A11
+A7
+A10
+C16
+H17
+G17
+---Analysis Finished---
+
+----procesing worksheet 'Figure II.6a'----
+----procesing worksheet 'Figure II.6b'----
+----procesing worksheet 'Figure II.7a'----
+----procesing worksheet 'Figure II.7b'----
+----procesing worksheet 'Figure II.8(a)'----
+----procesing worksheet 'Figure II.8(b)'----
+----procesing worksheet 'Figure II.9'----
+----procesing worksheet 'Figure II.10'----</value>
+  </data>
+</root>
