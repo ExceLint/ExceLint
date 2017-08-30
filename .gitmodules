@@ -1,0 +1,3 @@
+[submodule "Depends"]
+	path = Depends
+	url = git@github.com:dbarowy/Depends.git
