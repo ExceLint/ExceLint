@@ -1504,9 +1504,17 @@ namespace ExceLintUI
 
         private WorkbookState WorkbookOpenHelper(Excel.Workbook workbook)
         {
-            var wbs = new WorkbookState(Globals.ThisAddIn.Application, workbook);
-            wbstates.Add(workbook, wbs);
-            wbShutdown.AddOrUpdate(workbook, false, (k, v) => v);
+            WorkbookState wbs;
+            if (!wbstates.ContainsKey(workbook))
+            {
+                wbs = new WorkbookState(Globals.ThisAddIn.Application, workbook);
+                wbstates.Add(workbook, wbs);
+                wbShutdown.AddOrUpdate(workbook, false, (k, v) => v);
+            } else
+            {
+                wbs = wbstates[workbook];
+            }
+            
             return wbs;
         }
 
