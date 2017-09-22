@@ -45,6 +45,7 @@
             this.AnalyzeButton = this.Factory.CreateRibbonButton();
             this.MarkAsOKButton = this.Factory.CreateRibbonButton();
             this.StartOverButton = this.Factory.CreateRibbonButton();
+            this.RegularityMap = this.Factory.CreateRibbonButton();
             this.showHeatmap = this.Factory.CreateRibbonButton();
             this.clusterForCell = this.Factory.CreateRibbonButton();
             this.FixClusterButton = this.Factory.CreateRibbonButton();
@@ -84,7 +85,6 @@
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
             this.button1 = this.Factory.CreateRibbonButton();
-            this.RegularityMap = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -175,6 +175,15 @@
             this.StartOverButton.Visible = false;
             this.StartOverButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.StartOverButton_Click);
             // 
+            // RegularityMap
+            // 
+            this.RegularityMap.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.RegularityMap.Image = global::ExceLintUI.Properties.Resources.graph;
+            this.RegularityMap.Label = "Show Regularity Map";
+            this.RegularityMap.Name = "RegularityMap";
+            this.RegularityMap.ShowImage = true;
+            this.RegularityMap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.RegularityMap_Click);
+            // 
             // showHeatmap
             // 
             this.showHeatmap.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
@@ -212,7 +221,6 @@
             this.resetFixesButton.Label = "Clear Map";
             this.resetFixesButton.Name = "resetFixesButton";
             this.resetFixesButton.ShowImage = true;
-            this.resetFixesButton.Visible = false;
             this.resetFixesButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.resetFixesButton_Click);
             // 
             // EntropyRanking
@@ -222,7 +230,6 @@
             this.EntropyRanking.Label = "Entropy Ranking";
             this.EntropyRanking.Name = "EntropyRanking";
             this.EntropyRanking.ShowImage = true;
-            this.EntropyRanking.Visible = false;
             this.EntropyRanking.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.EntropyRanking_Click);
             // 
             // RunCUSTODES
@@ -232,7 +239,6 @@
             this.RunCUSTODES.Label = "Run CUSTODES";
             this.RunCUSTODES.Name = "RunCUSTODES";
             this.RunCUSTODES.ShowImage = true;
-            this.RunCUSTODES.Visible = false;
             this.RunCUSTODES.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.RunCUSTODES_Click);
             // 
             // ClearEverything
@@ -242,7 +248,6 @@
             this.ClearEverything.Label = "Clear Everything";
             this.ClearEverything.Name = "ClearEverything";
             this.ClearEverything.ShowImage = true;
-            this.ClearEverything.Visible = false;
             this.ClearEverything.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ClearEverything_Click);
             // 
             // box2
@@ -284,14 +289,12 @@
             // 
             this.VectorForCell.Label = "Vector for Cell";
             this.VectorForCell.Name = "VectorForCell";
-            this.VectorForCell.Visible = false;
             this.VectorForCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.VectorForCell_Click);
             // 
             // cellIsFormula
             // 
             this.cellIsFormula.Label = "Is Formula?";
             this.cellIsFormula.Name = "cellIsFormula";
-            this.cellIsFormula.Visible = false;
             this.cellIsFormula.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.cellIsFormula_Click);
             // 
             // drawAllClusters
@@ -468,7 +471,6 @@
             this.annotate.Label = "Annotate";
             this.annotate.Name = "annotate";
             this.annotate.ShowImage = true;
-            this.annotate.Visible = false;
             this.annotate.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotate_Click);
             // 
             // annotateThisCell
@@ -478,7 +480,6 @@
             this.annotateThisCell.Label = "Annotate Current Cell";
             this.annotateThisCell.Name = "annotateThisCell";
             this.annotateThisCell.ShowImage = true;
-            this.annotateThisCell.Visible = false;
             this.annotateThisCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotateThisCell_Click);
             // 
             // button1
@@ -488,15 +489,6 @@
             this.button1.Label = "Start Fix";
             this.button1.Name = "button1";
             this.button1.ShowImage = true;
-            // 
-            // RegularityMap
-            // 
-            this.RegularityMap.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.RegularityMap.Image = global::ExceLintUI.Properties.Resources.graph;
-            this.RegularityMap.Label = "Show Regularity Map";
-            this.RegularityMap.Name = "RegularityMap";
-            this.RegularityMap.ShowImage = true;
-            this.RegularityMap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.RegularityMap_Click);
             // 
             // ExceLintRibbon
             // 

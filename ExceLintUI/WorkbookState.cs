@@ -977,6 +977,9 @@ namespace ExceLintUI
             // Disable screen updating
             _app.ScreenUpdating = false;
 
+            // do we stumble across protected cells along the way?
+            var protCells = new List<AST.Address>();
+
             // paint
             foreach (var cluster in clusters)
             {
@@ -996,8 +999,18 @@ namespace ExceLintUI
 
                 foreach (AST.Address addr in cluster)
                 {
-                    paintColor(addr, c);
+                    if (!paintColor(addr, c))
+                    {
+                        protCells.Add(addr);
+                    }
                 }
+            }
+
+            // warn user if we could not highlight something
+            if (protCells.Count > 0)
+            {
+                var names = String.Join(", ", protCells.Select(c => c.A1Local()));
+                System.Windows.Forms.MessageBox.Show("WARNING: This workbook contains the following protected cells that cannot be highlighted:\n\n" + names);
             }
 
             // Enable screen updating
@@ -1374,8 +1387,14 @@ namespace ExceLintUI
             }
         }
 
-        public void paintColor(AST.Address cell, System.Drawing.Color c)
+        public bool paintColor(AST.Address cell, System.Drawing.Color c)
         {
+            // check cell protection
+            if (unProtect(cell) != ProtectionLevel.None)
+            {
+                return false;
+            }
+
             // get cell COM object
             var com = ParcelCOMShim.Address.GetCOMObject(cell, _app);
 
@@ -1387,6 +1406,8 @@ namespace ExceLintUI
 
             // highlight cell
             com.Interior.Color = c;
+
+            return true;
         }
 
         public void paintRed(AST.Address cell, double intensity)
