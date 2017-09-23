@@ -44,18 +44,21 @@
 
             new FastSheetCounter(grids', dimensions, zNum, countableMap, valueMap')
 
-        // all coordinates are inclusive
         member self.CountsForZ(z: int)(x_lo: int)(x_hi: int)(y_lo: int)(y_hi: int) : int[] =
             let svs = grids.[z]
 
+            // all sheetvectors for a given z have the same
+            // dimension; create a single mask for all
+            // subsequent AND operations
+            let (tl,br) = svs |> Array.head |> fun (sv) -> sv.TopLeft, sv.BottomRight
+            // create bitmask for range of interest
+            let mask = SheetVector.Empty(tl, br)
+            for x = x_lo to x_hi do
+                for y = y_lo to y_hi do
+                    mask.Set(x,y)
+
             svs
             |> Array.map (fun sv ->
-                // create bitmask for range of interest
-                let mask = SheetVector.Empty(sv.TopLeft, sv.BottomRight)
-                for x = x_lo to x_hi do
-                    for y = y_lo to y_hi do
-                        mask.Set(x,y)
-
                 // AND sheetvector and mask
                 let sv_in_rng = sv.BitwiseAnd mask
 
