@@ -85,6 +85,7 @@
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
             this.button1 = this.Factory.CreateRibbonButton();
+            this.NukeSettings = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -261,6 +262,7 @@
             this.box2.Items.Add(this.drawAllClusters);
             this.box2.Items.Add(this.LoadTrueSmells);
             this.box2.Items.Add(this.ExceLintVsTrueSmells);
+            this.box2.Items.Add(this.NukeSettings);
             this.box2.Name = "box2";
             this.box2.Visible = false;
             // 
@@ -314,7 +316,6 @@
             // 
             this.ExceLintVsTrueSmells.Label = "ExceLint vs True Smells";
             this.ExceLintVsTrueSmells.Name = "ExceLintVsTrueSmells";
-            this.ExceLintVsTrueSmells.Visible = false;
             this.ExceLintVsTrueSmells.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ExceLintVsTrueSmells_Click);
             // 
             // distanceCombo
@@ -490,6 +491,12 @@
             this.button1.Name = "button1";
             this.button1.ShowImage = true;
             // 
+            // NukeSettings
+            // 
+            this.NukeSettings.Label = "Nuke Settings";
+            this.NukeSettings.Name = "NukeSettings";
+            this.NukeSettings.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.NukeSettings_Click);
+            // 
             // ExceLintRibbon
             // 
             this.Name = "ExceLintRibbon";
@@ -560,6 +567,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton ClearEverything;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton ExceLintVsTrueSmells;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton RegularityMap;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton NukeSettings;
     }
 
     partial class ThisRibbonCollection

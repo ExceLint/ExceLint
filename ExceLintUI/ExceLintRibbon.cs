@@ -132,64 +132,75 @@ namespace ExceLintUI
         
         private void ExceLintVsTrueSmells_Click(object sender, RibbonControlEventArgs e)
         {
-            if (String.IsNullOrWhiteSpace(true_smells_csv))
+            try
             {
-                var ofd = new System.Windows.Forms.OpenFileDialog();
-                ofd.Title = "Where is the True Smells CSV?";
-                ofd.ShowDialog();
-                true_smells_csv = ofd.FileName;
-                Properties.Settings.Default.CUSTODESTrueSmellsCSVPath = true_smells_csv;
-                Properties.Settings.Default.Save();
-            }
-            
-            if (String.IsNullOrWhiteSpace(custodes_wbs_path))
-            {
-                var odd = new System.Windows.Forms.FolderBrowserDialog();
-                odd.Description = "Where are all the workbooks stored?";
-                odd.ShowDialog();
-                custodes_wbs_path = odd.SelectedPath;
-                Properties.Settings.Default.CUSTODESWorkbooksPath = custodes_wbs_path;
-                Properties.Settings.Default.Save();
-            }
-
-            // open & parse
-            if (System.IO.Directory.Exists(custodes_wbs_path) && System.IO.File.Exists(true_smells_csv))
-            {
-                var allsmells = CUSTODES.GroundTruth.Load(custodes_wbs_path, true_smells_csv);
-
-                // get true smells for this workbook
-                var truesmells = allsmells.TrueSmellsbyWorkbook(Globals.ThisAddIn.Application.ActiveWorkbook.Name);
-                var clustering = new HashSet<HashSet<AST.Address>>();
-                clustering.Add(truesmells);
-
-                // get excelint clusterings
-                Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-                var model = ModelInit(activeWs);
-                var eclusters = GetEntropyClustering(model, activeWs);
-
-                // get clustering diff
-                var diff = clusteringDiff(eclusters, clustering);
-
-                // draw all the ExceLint flags blue
-                foreach(var addr in diff.Item1)
+                if (String.IsNullOrWhiteSpace(true_smells_csv))
                 {
-                    currentWorkbook.paintColor(addr, System.Drawing.Color.Blue);
+                    var ofd = new System.Windows.Forms.OpenFileDialog();
+                    ofd.Title = "Where is the True Smells CSV?";
+                    ofd.ShowDialog();
+                    true_smells_csv = ofd.FileName;
+                    Properties.Settings.Default.CUSTODESTrueSmellsCSVPath = true_smells_csv;
+                    Properties.Settings.Default.Save();
                 }
 
-                // draw all the intersecting cells purple
-                foreach (var addr in diff.Item2)
+                if (String.IsNullOrWhiteSpace(custodes_wbs_path))
                 {
-                    currentWorkbook.paintColor(addr, System.Drawing.Color.Purple);
+                    var odd = new System.Windows.Forms.FolderBrowserDialog();
+                    odd.Description = "Where are all the workbooks stored?";
+                    odd.ShowDialog();
+                    custodes_wbs_path = odd.SelectedPath;
+                    Properties.Settings.Default.CUSTODESWorkbooksPath = custodes_wbs_path;
+                    Properties.Settings.Default.Save();
                 }
 
-                // draw all the true smells blredue
-                foreach (var addr in diff.Item3)
+                // open & parse
+                if (System.IO.Directory.Exists(custodes_wbs_path) && System.IO.File.Exists(true_smells_csv))
                 {
-                    currentWorkbook.paintColor(addr, System.Drawing.Color.Red);
+                    var allsmells = CUSTODES.GroundTruth.Load(custodes_wbs_path, true_smells_csv);
+
+                    // get true smells for this workbook
+                    var truesmells = allsmells.TrueSmellsbyWorkbook(Globals.ThisAddIn.Application.ActiveWorkbook.Name);
+                    var clustering = new HashSet<HashSet<AST.Address>>();
+                    clustering.Add(truesmells);
+
+                    // get excelint clusterings
+                    Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+                    var model = ModelInit(activeWs);
+                    var eclusters = GetEntropyClustering(model, activeWs);
+
+                    // get clustering diff
+                    var diff = clusteringDiff(eclusters, clustering);
+
+                    // draw all the ExceLint flags blue
+                    foreach (var addr in diff.Item1)
+                    {
+                        currentWorkbook.paintColor(addr, System.Drawing.Color.Blue);
+                    }
+
+                    // draw all the intersecting cells purple
+                    foreach (var addr in diff.Item2)
+                    {
+                        currentWorkbook.paintColor(addr, System.Drawing.Color.Purple);
+                    }
+
+                    // draw all the true smells blredue
+                    foreach (var addr in diff.Item3)
+                    {
+                        currentWorkbook.paintColor(addr, System.Drawing.Color.Red);
+                    }
+
+                    System.Windows.Forms.MessageBox.Show("excelint-only: blue\nboth: purple\ntrue smell: red");
                 }
-            } else
+                else
+                {
+                    System.Windows.Forms.MessageBox.Show("Can't find true smells CSV or workbook directory");
+                }
+            } catch (Exception)
             {
-                System.Windows.Forms.MessageBox.Show("Can't find true smells CSV or workbook directory");
+                // any exception; clear properties and start over
+                Properties.Settings.Default.Reset();
+                ExceLintVsTrueSmells_Click(sender, e);
             }
         }
 
@@ -1841,6 +1852,11 @@ namespace ExceLintUI
         }
 
         #endregion UTILITY_FUNCTIONS
+
+        private void NukeSettings_Click(object sender, RibbonControlEventArgs e)
+        {
+            Properties.Settings.Default.Reset();
+        }
     }
 }
 
