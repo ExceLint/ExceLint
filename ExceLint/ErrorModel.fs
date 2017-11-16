@@ -112,8 +112,8 @@
 
             Array.map (fun cause ->
                 let (bin,count,beta) = cause
-                let tup = new Tuple<int,double>(count,beta)
-                new KeyValuePair<HistoBin,Tuple<int,double>>(bin,tup)
+                let tup2 = (count,beta)
+                new KeyValuePair<HistoBin,Tuple<int,double>>(bin,tup2)
             ) causes.[addr]
 
         member self.isAnomalous(addr: AST.Address) : bool =
