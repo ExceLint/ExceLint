@@ -2,7 +2,7 @@
 
 open System.IO
 open System.Text.RegularExpressions
-    type Knobs = { verbose: bool; dont_exit: bool; alpha: double; oldNNjaccard: bool; kmedioidjaccard: bool; nocustodes: bool; tronly: bool;}
+    type Knobs = { verbose: bool; dont_exit: bool; alpha: double; oldNNjaccard: bool; kmedioidjaccard: bool; nocustodes: bool; tronly: bool; shuffle: bool; }
 
     type Config(dpath: string, opath: string, jpath: string, cpath: string, egpath: string, gpath: string, knobs: Knobs, csv: string, fc: ExceLint.FeatureConf) =
         do
@@ -23,6 +23,7 @@ open System.Text.RegularExpressions
                 printfn "CUSTODES JAR path: %s" cpath
             printfn "Verbose mode: %b" knobs.verbose
             printfn "No-exit mode: %b" knobs.dont_exit
+            printfn "Shuffle input files: %b" knobs.shuffle
             if knobs.oldNNjaccard then
                 printfn "Comparing against old nearest-neighbor algorithm."
             if knobs.kmedioidjaccard then
@@ -51,6 +52,7 @@ open System.Text.RegularExpressions
         member self.CompareAgainstKMedioid = knobs.kmedioidjaccard
         member self.DontRunCUSTODES = knobs.nocustodes
         member self.TrueRefOnly = knobs.tronly
+        member self.Shuffle = knobs.shuffle
 
     let usage() : unit =
         printfn "ExceLintRunner.exe <input directory> <output directory> <ExceLint ground truth CSV> <CUSTODES ground truth CSV> <java path> <CUSTODES JAR> [flags]"
@@ -73,6 +75,7 @@ open System.Text.RegularExpressions
         printfn "-verbose    log per-spreadsheet flagged cells as separate CSVs"
         printfn "-tronly     only run those benchmarks that have true ref annotations"
         printfn "-noexit     prompt user to press a key before exiting"
+        printfn "-noshuffle  don't shuffle input spreadsheets"
         printfn "-nocustodes don't do a comparison against CUSTODES"
         printfn "-resultant  bin by resultant vector, otherwise bin by L2 norm sum"
         printfn "-spectral   find outliers by earth mover's distance, otherwise use raw frequency;"
@@ -129,6 +132,7 @@ open System.Text.RegularExpressions
                                | "-kmedioid"   :: rest -> optParse rest { knobs with kmedioidjaccard = true } conf
                                | "-nocustodes" :: rest -> optParse rest { knobs with nocustodes = true } conf
                                | "-tronly"     :: rest -> optParse rest { knobs with tronly = true } conf
+                               | "-noshuffle"  :: rest -> optParse rest { knobs with shuffle = false } conf
                                // FEATURECONF
                                | "-resultant"  :: rest -> optParse rest knobs (conf.enableShallowInputVectorMixedResultant true)
                                | "-spectral"   :: rest -> optParse rest knobs (conf.spectralRanking true)
@@ -157,7 +161,7 @@ open System.Text.RegularExpressions
                            )
 
         // init with defaults
-        let (knobs,fConf) = optParse flags { verbose = false; dont_exit = false; alpha = 0.05; oldNNjaccard = false; kmedioidjaccard = false; nocustodes = false; tronly = false;} (new ExceLint.FeatureConf())
+        let (knobs,fConf) = optParse flags { verbose = false; dont_exit = false; alpha = 0.05; oldNNjaccard = false; kmedioidjaccard = false; nocustodes = false; tronly = false; shuffle = true;} (new ExceLint.FeatureConf())
 
         let fConf' = fConf.validate
 

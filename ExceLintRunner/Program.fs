@@ -581,7 +581,8 @@ open MathNet.Numerics.Distributions
             let custodes_gt = new CUSTODES.GroundTruth(workbook_paths, config.CustodesGroundTruthCSV)
             let excelint_gt = ExceLintGroundTruth.Load(config.ExceLintGroundTruthCSV)
 
-            for file in fyshuffle(config.files) do
+            let files = if config.Shuffle then fyshuffle(config.files) else config.files
+            for file in files do
                         
                 let shortf = (System.IO.Path.GetFileName file)
 
