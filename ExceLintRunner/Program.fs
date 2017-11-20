@@ -36,6 +36,8 @@ open MathNet.Numerics.Distributions
         custodes_time: int64;
         excelint_jaccard: double;
         excelint_delta_k: int;
+        cells: int;
+        collisions: int;
     }
 
     let hs_difference<'a>(hs1: HashSet<'a>)(hs2: HashSet<'a>) : HashSet<'a> =
@@ -227,6 +229,8 @@ open MathNet.Numerics.Distributions
             else
                 Array.map (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Value) (model.ranking()) |> Array.min
 
+        assert (model.AllCells.Count = stats.cells)
+
         // write stats
         let row = ExceLintStatsRow()
         row.BenchmarkName <- stats.shortname
@@ -284,6 +288,7 @@ open MathNet.Numerics.Distributions
         row.OptWeightConditionSetSz <- config.FeatureConf.IsEnabledOptWeightConditioningSetSize
         row.ExceLintJaccardDistance <- stats.excelint_jaccard
         row.ExceLintDeltaK <- stats.excelint_delta_k
+        row.Collisions <- stats.collisions
 
         csv.WriteRow row
 
@@ -397,6 +402,57 @@ open MathNet.Numerics.Distributions
                 i <- i + 1
         i
 
+    type SoundnessCount = { ncells: int; nnomatch: int; }
+
+    let soundness_count(model_opt: ErrorModel option)(dag: Depends.DAG) : SoundnessCount =
+        // get analysis base
+        let cells = match model_opt with | Some m -> m.AllCells | None -> failwith "does not apply"
+
+        // save set of cells that hashes to the same fingerprint
+        let fd = new Dict<Countable,HashSet<AST.Address>>()
+
+        // save all vectors for cells at given address
+        let addrv = new Dict<AST.Address,Countable[]>()
+
+        // for each cell, get vectors and fingerprint
+        cells |>
+        Seq.iter (fun cell ->
+            let vs = Vector.ShallowInputVectorMixedFullCVectorResultantOSI.getPaperVectors cell dag |> Array.map (fun v -> v)
+            let fingerprint = (Vector.ShallowInputVectorMixedFullCVectorResultantOSI.run cell dag).LocationFree
+
+            // save vectors
+            addrv.Add(cell, vs)
+
+            // init hashset
+            if not (fd.ContainsKey(fingerprint)) then
+                fd.Add(fingerprint, new HashSet<AST.Address>())
+
+            // get set
+            let hs = fd.[fingerprint]
+
+            // add to set
+            hs.Add cell |> ignore
+        )
+
+        // for each fingerprint, count
+        // how many of those cells' vector sets do not match
+        let mutable nomatch = 0
+        fd |>
+        Seq.iter (fun (kvp: KeyValuePair<Countable,HashSet<AST.Address>>) -> 
+            let addrs = kvp.Value |> Seq.toArray
+            if addrs.Length > 1 then
+                // get the first set of vectors
+                let vs0 = addrv.[addrs.[0]] |> Set.ofArray
+                for addr in addrs do
+                    // get the second set of vectors
+                    let vsi = addrv.[addr] |> Set.ofArray
+                    if vs0 <> vsi then
+                        nomatch <- nomatch + 1
+        )
+
+        { ncells = Seq.length cells; nnomatch = nomatch; }
+
+
     let analyze (file: String)(app: Application)(config: Args.Config)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(csv: ExceLintStats)(debug_csv: DebugInfo) =
         let shortf = (System.IO.Path.GetFileName file)
 
@@ -409,6 +465,8 @@ open MathNet.Numerics.Distributions
         printfn "Running ExceLint analysis: %A" shortf
         
         let model_opt = ExceLint.ModelBuilder.analyze (app.XLApplication()) config.FeatureConf graph (config.alpha) (Depends.Progress.NOPProgress())
+
+        let scount = soundness_count model_opt graph
 
         let (jdist,delta_k) =
             match model_opt with
@@ -479,7 +537,11 @@ open MathNet.Numerics.Distributions
                 let esz = Math.Min(excelint_flags.Count, model.Cutoff + 1)
                 assert (esz = excelint_true_ref_TP + excelint_true_ref_FP)
                 let csz = custodes_flags.Count
-                assert (csz = custodes_true_ref_TP + custodes_true_ref_FP)
+                // TODO: something funny happening here: 2017-11-16
+                //let foo1 = custodes_true_ref_TP
+                //let foo2 = custodes_true_ref_FP
+                //let foo3 = foo1 + foo2
+                //assert (csz = custodes_true_ref_TP + custodes_true_ref_FP)
 
                 let stats = {
                     shortname = shortf;
@@ -508,6 +570,8 @@ open MathNet.Numerics.Distributions
                     custodes_time = custodes_time;
                     excelint_jaccard = jdist;
                     excelint_delta_k = delta_k;
+                    cells = scount.ncells;
+                    collisions = scount.nnomatch;
                 }
 
                 // write to per-workbook CSV

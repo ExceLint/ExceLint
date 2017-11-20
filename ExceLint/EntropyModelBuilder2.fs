@@ -689,6 +689,7 @@
                                 cutoff_idx = m.Cutoff;
                                 weights = EntropyModel2.Weights fixeses;    // this just returns entropy delta for now
                                 clustering = CommonFunctions.ToMutableClustering (EntropyModel2.RankingToClusters fixes);
+                                escapehatch = Some (m :> obj);
                             }
                         )
                     else

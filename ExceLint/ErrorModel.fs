@@ -151,6 +151,8 @@
             | Cluster a -> a.clustering
             | _ -> failwith "Not valid for non-cluster analysis."
 
+        member self.Analysis = analysis
+
         member self.inspectSelectorFor(addr: AST.Address, sel: Scope.Selector, dag: Depends.DAG) : KeyValuePair<AST.Address,(string*Countable)[]>[] =
             let sID = sel.id addr dag
 

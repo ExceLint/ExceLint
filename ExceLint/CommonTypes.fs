@@ -152,6 +152,7 @@
             weights: Weights;
             clustering: Clustering;
             fixes: ProposedFix[];
+            escapehatch: obj option;
         }
 
         type Analysis =

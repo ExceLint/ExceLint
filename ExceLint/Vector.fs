@@ -846,6 +846,7 @@
                 (typeof<ShallowInputVectorMixedFullCVectorResultantNotOSI>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedFullCVectorResultantNotOSI.run } )
 
+        // THIS IS THE IMPORTANT ONE USED IN THE PAPER
         type ShallowInputVectorMixedFullCVectorResultantOSI() =
             inherit BaseFeature()
             static member run(cell: AST.Address)(dag: DAG) : Countable =
@@ -862,6 +863,28 @@
             static member capability : string*Capability =
                 (typeof<ShallowInputVectorMixedFullCVectorResultantOSI>.Name,
                     { enabled = false; kind = ConfigKind.Feature; runner = ShallowInputVectorMixedFullCVectorResultantOSI.run } )
+            // THIS FUNCTION GETS THE VECTOR SET FOR THE ANALYSIS ABOVE
+            static member getPaperVectors(cell: AST.Address)(dag: DAG) : Countable[] =
+                let isMixed = true
+                let isTransitive = false
+                let isFormula = true
+                let isOffSheetInsensitive = true
+                let includeConstant = true
+                let includeLoc = true
+                let keepConstantValues = KeepConstantValue.No
+                let rebase_f = relativeToTail
+                let constant_f = makeConstantVectorsFromConstants keepConstantValues
+                let vs = getVectors cell dag (makeVector isMixed includeConstant) constant_f isTransitive isFormula
+                let rebased_vs = vs |> Array.map (fun v -> rebase_f v dag isOffSheetInsensitive includeLoc)
+                let rvarrs =
+                    rebased_vs |>
+                    Array.map (fun v ->
+                        match v with
+                        | ConstantWithLoc(x,y,z,x',y',z',c) -> Countable.FullCVectorResultant((double x, double y, double z, double x', double y', double z', double c))   
+                        | _ -> failwith "this should never happen"
+                    ) |>
+                    Array.map (fun v -> v.LocationFree)
+                rvarrs
 
         type ShallowOutputVectorMixedL2NormSum() =
             inherit BaseFeature()

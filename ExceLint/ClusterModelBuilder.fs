@@ -448,6 +448,7 @@
                             weights = new Dictionary<AST.Address,double>();
                             clustering = m.ClusteringAtKnee;
                             fixes = [||];
+                            escapehatch = None;
                         }
                     )
                 else

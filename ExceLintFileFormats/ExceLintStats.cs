@@ -115,5 +115,6 @@ namespace ExceLintFileFormats
         public bool OptWeightConditionSetSz { get; set; }
         public double ExceLintJaccardDistance { get; set; }
         public int ExceLintDeltaK { get; set; }
+        public int Collisions { get; set; }
     }
 }
