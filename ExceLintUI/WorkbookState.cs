@@ -967,12 +967,8 @@ namespace ExceLintUI
 
         public void DrawClustersWithHistogram(HashSet<HashSet<AST.Address>> clusters, ROInvertedHistogram ih)
         {
-
             // init cluster color map
-            ClusterColorer clusterColors = new ClusterColorer(clusters, 0, 360, 0);
-
-            // use the same color for clusters that have the same resultant
-            var cdict = new Dictionary<ExceLint.Countable, System.Drawing.Color>();
+            ClusterColorer clusterColors = new ClusterColorer(clusters, 0, 360, 0, ih);
 
             // Disable screen updating
             _app.ScreenUpdating = false;
@@ -983,19 +979,7 @@ namespace ExceLintUI
             // paint
             foreach (var cluster in clusters)
             {
-                // get countable
-                var histobin = ih[cluster.First()];
-                var co = histobin.Item3.ToCVectorResultant;
-
-                System.Drawing.Color c = System.Drawing.Color.Transparent;
-                if (cdict.ContainsKey(co))
-                {
-                    c = cdict[co];
-                } else
-                {
-                    c = clusterColors.GetColor(cluster);
-                    cdict.Add(co, c);
-                }
+                System.Drawing.Color c = clusterColors.GetColor(cluster);
 
                 foreach (AST.Address addr in cluster)
                 {
