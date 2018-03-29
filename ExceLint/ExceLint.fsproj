@@ -98,6 +98,7 @@
       <Project>{bf7683ed-f2e1-42d4-916c-d8dd2e58f389}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <Reference Include="FSharp.Core, Version=4.4.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="MathNet.Numerics">
       <HintPath>..\packages\MathNet.Numerics.3.20.0\lib\net40\MathNet.Numerics.dll</HintPath>
     </Reference>
