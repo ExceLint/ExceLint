@@ -74,7 +74,7 @@ namespace ExceLintUI
         private DateTime _dagBuilt = DateTime.MinValue;
         private CancellationTokenSource _cts = new CancellationTokenSource();
 
-        private int currentFlag = 0;
+        public int currentFlag = 0;
 
         #endregion DATASTRUCTURES
 
@@ -83,6 +83,8 @@ namespace ExceLintUI
         private bool _button_MarkAsOK_enabled = false;
         private bool _button_FixError_enabled = false;
         private bool _button_clearColoringButton_enabled = false;
+        private bool _button_RegularityMap_enabled = true;
+        private bool _button_EntropyRanking_enabled = true;
         private Dictionary<Worksheet, bool> _visualization_shown = new Dictionary<Worksheet, bool>();
         private Dictionary<Worksheet, bool> _custodes_shown = new Dictionary<Worksheet, bool>();
         #endregion BUTTON_STATE
@@ -213,6 +215,17 @@ namespace ExceLintUI
         {
             get { return _button_clearColoringButton_enabled; }
             set { _button_clearColoringButton_enabled = value; }
+        }
+
+        public bool RegularityMapButton_Enabled
+        {
+            get { return _button_RegularityMap_enabled; }
+            set { _button_RegularityMap_enabled = value; }
+        }
+        public bool EntropyRankingButton_Enabled
+        {
+            get { return _button_EntropyRanking_enabled; }
+            set { _button_EntropyRanking_enabled = value; }
         }
 
         public bool Visualization_Hidden(Worksheet w)
@@ -520,9 +533,14 @@ namespace ExceLintUI
                     // Inform user what is about to happen
                     System.Windows.Forms.MessageBox.Show("CUSTODES analysis complete.  Highlighting " + ok_output.Smells.Length + " cells.");
 
-
                     // Disable screen updating 
                     _app.ScreenUpdating = false;
+
+                    // restore colors
+                    restoreOutputColors();
+
+                    // save colors
+                    saveColors(ws);
 
                     // paint cells
                     for (int i = 0; i < ok_output.Smells.Length; i++)
@@ -791,7 +809,7 @@ namespace ExceLintUI
                     var cl2 = new HashSet<HashSet<AST.Address>>(cArr);
 
                     restoreOutputColors();
-                    DrawClusters(cl2);
+                    DrawClusters(cl2, w);
                     System.Windows.Forms.MessageBox.Show(String.Join(", ", cluster.Select(a => a.A1Local())));
                 }
             }
@@ -816,7 +834,7 @@ namespace ExceLintUI
 
 
             // draw
-            DrawClusters(_m[w].CurrentClustering);
+            DrawClusters(_m[w].CurrentClustering, w);
         }
 
         public ExceLint.EntropyModelBuilder.EntropyModel NewEntropyModelForWorksheet(Worksheet w,
@@ -928,10 +946,10 @@ namespace ExceLintUI
             var clustering = _m[w].CurrentClustering;
 
             // draw
-            DrawClusters(clustering);
+            DrawClusters(clustering, w);
         }
 
-        public void DrawImmutableClusters(Clusters clusters, ROInvertedHistogram ih)
+        public void DrawImmutableClusters(Clusters clusters, ROInvertedHistogram ih, Worksheet ws)
         {
             var hs = new HashSet<HashSet<AST.Address>>();
             foreach (var c in clusters)
@@ -939,17 +957,32 @@ namespace ExceLintUI
                 var c2 = new HashSet<AST.Address>(c);
                 hs.Add(c2);
             }
-            DrawClustersWithHistogram(hs, ih);
+            DrawClustersWithHistogram(hs, ih, ws);
         }
 
-        public void DrawClusters(HashSet<HashSet<AST.Address>> clusters)
+        public void ClearAllColors(Worksheet ws)
         {
+            var initial_state = _app.ScreenUpdating;
+            _app.ScreenUpdating = false;
+
+            foreach (Excel.Range cell in ws.UsedRange)
+            {
+                cell.Interior.ColorIndex = 0;
+            }
+            _app.ScreenUpdating = initial_state;
+        }
+
+        public void DrawClusters(HashSet<HashSet<AST.Address>> clusters, Worksheet ws)
+        {
+            // Disable screen updating
+            var initial_state = _app.ScreenUpdating;
+            _app.ScreenUpdating = false;
+
+            // clear colors
+            ClearAllColors(ws);
 
             // init cluster color map
             ClusterColorer clusterColors = new ClusterColorer(clusters, 0, 360, 0);
-
-            // Disable screen updating
-            _app.ScreenUpdating = false;
 
             // paint
             foreach (var cluster in clusters)
@@ -962,16 +995,20 @@ namespace ExceLintUI
             }
 
             // Enable screen updating
-            _app.ScreenUpdating = true;
+            _app.ScreenUpdating = initial_state;
         }
 
-        public void DrawClustersWithHistogram(HashSet<HashSet<AST.Address>> clusters, ROInvertedHistogram ih)
+        public void DrawClustersWithHistogram(HashSet<HashSet<AST.Address>> clusters, ROInvertedHistogram ih, Worksheet ws)
         {
+            // Disable screen updating
+            var initial_state = _app.ScreenUpdating;
+            _app.ScreenUpdating = false;
+
+            // clear colors
+            ClearAllColors(ws);
+
             // init cluster color map
             ClusterColorer clusterColors = new ClusterColorer(clusters, 0, 360, 0, ih);
-
-            // Disable screen updating
-            _app.ScreenUpdating = false;
 
             // do we stumble across protected cells along the way?
             var protCells = new List<AST.Address>();
@@ -998,7 +1035,7 @@ namespace ExceLintUI
             }
 
             // Enable screen updating
-            _app.ScreenUpdating = true;
+            _app.ScreenUpdating = initial_state;
         }
 
         public Analysis rawAnalysis(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean forceDAGBuild, ProgBar pb)
@@ -1011,7 +1048,7 @@ namespace ExceLintUI
             return buildDAGAndDoStuff(forceDAGBuild, f, 3, pb);
         }
 
-        public void flagNext()
+        public void flagNext(Worksheet ws)
         {
             if (FSharpOption<ExceLint.CommonTypes.ProposedFix[]>.get_IsSome(_analysis.model.Fixes))
             {
@@ -1020,6 +1057,13 @@ namespace ExceLintUI
                 {
                     // get fix
                     var fix = fixes[currentFlag];
+
+                    // don't update screen until done
+                    var initial_state = _app.ScreenUpdating;
+                    _app.ScreenUpdating = false;
+
+                    // restore colors
+                    ClearAllColors(ws);
 
                     // paint source
                     foreach(AST.Address a in fix.Source)
@@ -1033,6 +1077,9 @@ namespace ExceLintUI
                         paintColor(a, System.Drawing.Color.Green);
                     }
 
+                    // don't update screen until done
+                    _app.ScreenUpdating = initial_state;
+
                     // activate and center
                     activateAndCenterOn(fix.Source.First(), _app);
 
@@ -1043,7 +1090,7 @@ namespace ExceLintUI
                     System.Windows.Forms.MessageBox.Show("No fixes remain.");
 
                     restoreOutputColors();
-                    setTool(false);
+                    setTool(active: false);
                     currentFlag = 0;
                 }
             }
@@ -1057,6 +1104,7 @@ namespace ExceLintUI
             sw.Start();
 
             // disable screen updating during analysis to speed things up
+            var initial_state = _app.ScreenUpdating;
             _app.ScreenUpdating = false;
 
             // Also disable alerts; e.g., Excel thinks that compute-bound plugins
@@ -1085,7 +1133,7 @@ namespace ExceLintUI
                 // UI cleanup repeated here since the throw
                 // below will cause the finally clause to be skipped
                 _app.DisplayAlerts = true;
-                _app.ScreenUpdating = true;
+                _app.ScreenUpdating = initial_state;
 
                 throw e;
             }
@@ -1095,7 +1143,7 @@ namespace ExceLintUI
                 _app.DisplayAlerts = true;
 
                 // Enable screen updating when we're done
-                _app.ScreenUpdating = true;
+                _app.ScreenUpdating = initial_state;
             }
 
             sw.Stop();
@@ -1172,143 +1220,6 @@ namespace ExceLintUI
             app.ScreenUpdating = true;
         }
 
-        //public static AST.Address[] hypothesizedFixes(AST.Address cell, ExceLint.ErrorModel model)
-        //{
-        //    if (FSharpOption<ExceLint.CommonTypes.ProposedFix[]>.get_IsSome(model.Fixes))
-        //    {
-        //        var fixes = model.Fixes.Value[cell];
-        //        return fixes.SelectMany(pair =>
-        //                   model.Scores[pair.Key].Where(tup => tup.Item2 == pair.Value)
-        //               ).Select(tup => tup.Item1).ToArray();
-        //    }
-        //    else
-        //    {
-        //        return new AST.Address[] { };
-        //    }
-        //}
-
-        //public void flag(bool showFixes)
-        //{
-        //    // filter known_good & cut by cutoff index
-        //    var flaggable = _analysis.scores
-        //                        .Take(_analysis.cutoff + 1)
-        //                        .Where(kvp => !_audited.Contains(kvp.Key)).ToArray();
-
-        //    if (flaggable.Count() == 0)
-        //    {
-        //        System.Windows.Forms.MessageBox.Show("No remaining anomalies.");
-        //        resetTool();
-        //    }
-        //    else
-        //    {
-        //        // get Score corresponding to most unusual score
-        //        _flagged_cell = flaggable.First().Key;
-
-        //        // ensure that cell is unprotected or fail
-        //        if (unProtect(_flagged_cell) != ProtectionLevel.None)
-        //        {
-        //            System.Windows.Forms.MessageBox.Show("Cannot highlight cell " + _flagged_cell.A1Local() + ". Cell is protected.");
-        //            return;
-        //        } 
-
-        //        // get cell COM object
-        //        var com = ParcelCOMShim.Address.GetCOMObject(_flagged_cell, _app);
-
-        //        // save old color
-        //        _colors.saveColorAt(
-        //            _flagged_cell,
-        //            new CellColor { ColorIndex = (int)com.Interior.ColorIndex, Color = (double)com.Interior.Color }
-        //        );
-
-        //        // highlight cell
-        //        com.Interior.Color = System.Drawing.Color.Red;
-
-        //        // go to highlighted cell
-        //        activateAndCenterOn(_flagged_cell, _app);
-
-        //        // enable auditing buttons
-        //        setTool(active: true);
-
-        //        // if this is COF, always show fixes
-        //        if (_analysis.model.IsCOF)
-        //        {
-        //            var fixes = _analysis.model.COFFixes[_flagged_cell].ToArray();
-
-        //            if (fixes.Length > 0)
-        //            {
-        //                var sb = new StringBuilder();
-
-        //                sb.AppendLine("ExceLint thinks that");
-        //                sb.AppendLine(_dag.getFormulaAtAddress(_flagged_cell));
-        //                sb.AppendLine("should look more like");
-
-        //                for (int i = 0; i < fixes.Length; i++)
-        //                {
-        //                    // get formula at fix address
-        //                    var f = _dag.getFormulaAtAddress(fixes[i]);
-        //                    if (i > 0)
-        //                    {
-        //                        sb.Append("or ");
-        //                    }
-        //                    sb.AppendLine("address: " + fixes[i].A1Local().ToString() + ", formula: " + f);
-
-        //                    // get cell COM object
-        //                    var fix_com = ParcelCOMShim.Address.GetCOMObject(fixes[i], _app);
-
-        //                    // save old color
-        //                    _colors.saveColorAt(
-        //                        fixes[i],
-        //                        new CellColor { ColorIndex = (int)fix_com.Interior.ColorIndex, Color = (double)fix_com.Interior.Color }
-        //                    );
-
-        //                    // set color
-        //                    fix_com.Interior.Color = System.Drawing.Color.Green;
-        //                }
-
-        //                System.Windows.Forms.MessageBox.Show(sb.ToString());
-        //            }
-        //        }
-        //        // if the user wants to see fixes, show them now
-        //        else if (showFixes)
-        //        {
-        //            var fixes = hypothesizedFixes(_flagged_cell, _analysis.model);
-        //            if (fixes.Length > 0)
-        //            {
-        //                var sb = new StringBuilder();
-
-        //                sb.AppendLine("ExceLint thinks that");
-        //                sb.AppendLine(_dag.getFormulaAtAddress(_flagged_cell));
-        //                sb.AppendLine("should look more like");
-
-        //                for (int i = 0; i < fixes.Length; i++)
-        //                {
-        //                    // get formula at fix address
-        //                    var f = _dag.getFormulaAtAddress(fixes[i]);
-        //                    if (i > 0)
-        //                    {
-        //                        sb.Append("or ");
-        //                    }
-        //                    sb.AppendLine("address: " + fixes[i].A1Local().ToString() + ", formula: " + f);
-
-        //                    // get cell COM object
-        //                    var fix_com = ParcelCOMShim.Address.GetCOMObject(fixes[i], _app);
-
-        //                    // save old color
-        //                    _colors.saveColorAt(
-        //                        fixes[i],
-        //                        new CellColor { ColorIndex = (int)fix_com.Interior.ColorIndex, Color = (double)fix_com.Interior.Color }
-        //                    );
-
-        //                    // set color
-        //                    fix_com.Interior.Color = System.Drawing.Color.Green;
-        //                }
-
-        //                System.Windows.Forms.MessageBox.Show(sb.ToString());
-        //            }
-        //        }
-        //    }
-        //}
-
         private enum ProtectionLevel
         {
             None,
@@ -1382,12 +1293,6 @@ namespace ExceLintUI
             // get cell COM object
             var com = ParcelCOMShim.Address.GetCOMObject(cell, _app);
 
-            // save old color
-            _colors.saveColorAt(
-                cell,
-                new CellColor { ColorIndex = (int)com.Interior.ColorIndex, Color = (double)com.Interior.Color }
-            );
-
             // highlight cell
             com.Interior.Color = c;
 
@@ -1407,8 +1312,21 @@ namespace ExceLintUI
             paintColor(cell, c);
         }
 
+        public void saveColors(Worksheet ws)
+        {
+            foreach(Excel.Range cell in ws.UsedRange)
+            {
+                var addr = ParcelCOMShim.Address.AddressFromCOMObject(cell, _workbook);
+                _colors.saveColorAt(
+                    addr,
+                    new CellColor { ColorIndex = (int)cell.Interior.ColorIndex, Color = (double)cell.Interior.Color }
+                );
+            }
+        }
+
         public void restoreOutputColors()
         {
+            var initial_state = _app.ScreenUpdating;
             _app.ScreenUpdating = false;
 
             if (_workbook != null)
@@ -1423,7 +1341,7 @@ namespace ExceLintUI
             _output_highlights.Clear();
             _colors.Clear();
 
-            _app.ScreenUpdating = true;
+            _app.ScreenUpdating = initial_state;
         }
 
         public void resetTool()
@@ -1434,12 +1352,14 @@ namespace ExceLintUI
             setTool(active: false);
         }
 
-        private void setTool(bool active)
+        public void setTool(bool active)
         {
             _button_MarkAsOK_enabled = active;
             _button_FixError_enabled = active;
             _button_clearColoringButton_enabled = active;
             _button_Analyze_enabled = !active;
+            _button_RegularityMap_enabled = !active;
+            _button_EntropyRanking_enabled = !active;
         }
 
         private void setClearOnly()
@@ -1474,21 +1394,13 @@ namespace ExceLintUI
             }
         }
 
-        internal void markAsOK(bool showFixes)
+        internal void markAsOK(bool showFixes, Worksheet ws)
         {
             // the user told us that the cell was OK
             _audited.Add(_flagged_cell);
 
-            // set the color of the cell to green
-            //var cell = ParcelCOMShim.Address.GetCOMObject(_flagged_cell, _app);
-            //cell.Interior.Color = GREEN;
-
-            // restore output colors
-            restoreOutputColors();
-
             // flag another value
-            //flag(showFixes);
-            flagNext();
+            flagNext(ws);
         }
 
         public string ToDOT()

@@ -64,8 +64,15 @@ namespace ExceLintUI
                 var clusters2 = fixClusterModel.Clustering(z);
                 sw2.Stop();
                 var cl_filt2 = PrettyClusters(clusters2, histo2, graph);
+
+                // in case we've run something before, restore colors
                 currentWorkbook.restoreOutputColors();
-                currentWorkbook.DrawImmutableClusters(cl_filt2, fixClusterModel.InvertedHistogram);
+
+                // save colors
+                CurrentWorkbook.saveColors(activeWs);
+
+                // paint
+                currentWorkbook.DrawImmutableClusters(cl_filt2, fixClusterModel.InvertedHistogram, activeWs);
 
                 // remove progress bar
                 pb.Close();
@@ -86,6 +93,9 @@ namespace ExceLintUI
 
         private void LoadTrueSmells_Click(object sender, RibbonControlEventArgs e)
         {
+            // get active sheet
+            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+
             if (String.IsNullOrWhiteSpace(true_smells_csv))
             {
                 var ofd = new System.Windows.Forms.OpenFileDialog();
@@ -116,8 +126,14 @@ namespace ExceLintUI
                 var clustering = new HashSet<HashSet<AST.Address>>();
                 clustering.Add(truesmells);
 
+                // in case we've run something before, restore colors
+                currentWorkbook.restoreOutputColors();
+
+                // save colors
+                CurrentWorkbook.saveColors(activeWs);
+
                 // display
-                currentWorkbook.DrawClusters(clustering);
+                currentWorkbook.DrawClusters(clustering, activeWs);
             }
             else
             {
@@ -127,7 +143,8 @@ namespace ExceLintUI
 
         private void ClearEverything_Click(object sender, RibbonControlEventArgs e)
         {
-            currentWorkbook.restoreOutputColors();
+            currentWorkbook.resetTool();
+            setUIState(currentWorkbook);
         }
         
         private void ExceLintVsTrueSmells_Click(object sender, RibbonControlEventArgs e)
@@ -172,6 +189,17 @@ namespace ExceLintUI
                     // get clustering diff
                     var diff = clusteringDiff(eclusters, clustering);
 
+                    Globals.ThisAddIn.Application.ScreenUpdating = false;
+
+                    // restore colors
+                    CurrentWorkbook.restoreOutputColors();
+
+                    // save colors
+                    CurrentWorkbook.saveColors(activeWs);
+
+                    // clear colors
+                    CurrentWorkbook.ClearAllColors(activeWs);
+
                     // draw all the ExceLint flags blue
                     foreach (var addr in diff.Item1)
                     {
@@ -189,6 +217,8 @@ namespace ExceLintUI
                     {
                         currentWorkbook.paintColor(addr, System.Drawing.Color.Red);
                     }
+
+                    Globals.ThisAddIn.Application.ScreenUpdating = true;
 
                     System.Windows.Forms.MessageBox.Show("excelint-only: blue\nboth: purple\ntrue smell: red");
                 }
@@ -362,8 +392,14 @@ namespace ExceLintUI
             var model = ModelInit(activeWs);
             var clusters = GetEntropyClustering(model, activeWs);
 
+            // restore
+            currentWorkbook.restoreOutputColors();
+
+            // save colors
+            currentWorkbook.saveColors(activeWs);
+
             // draw
-            currentWorkbook.DrawImmutableClusters(clusters, model.InvertedHistogram);
+            currentWorkbook.DrawImmutableClusters(clusters, model.InvertedHistogram, activeWs);
 
             // get z for this worksheet
             var z = model.ZForWorksheet(activeWs.Name);
@@ -477,7 +513,7 @@ namespace ExceLintUI
 
                 var cl_filt2 = PrettyClusters(clusters2, histo2, graph);
                 currentWorkbook.restoreOutputColors();
-                currentWorkbook.DrawImmutableClusters(cl_filt2, fixClusterModel.InvertedHistogram);
+                currentWorkbook.DrawImmutableClusters(cl_filt2, fixClusterModel.InvertedHistogram, activeWs);
 
                 // if debug mode, write out clusters
                 if (this.DebugOutput.Checked)
@@ -534,7 +570,7 @@ namespace ExceLintUI
                     // redisplay visualiztion
                     var cl_filt = PrettyClusters(newModel.Clustering(z), newModel.InvertedHistogram, graph);
                     currentWorkbook.restoreOutputColors();
-                    currentWorkbook.DrawImmutableClusters(cl_filt, fixClusterModel.InvertedHistogram);
+                    currentWorkbook.DrawImmutableClusters(cl_filt, fixClusterModel.InvertedHistogram, activeWs);
 
                     // display output
                     System.Windows.Forms.MessageBox.Show("Change in entropy: " + deltaE);
@@ -719,12 +755,11 @@ namespace ExceLintUI
             // worker thread will call Dispose
             var pb = new ProgBar();
 
-            // call task in new thread and do not wait
-            //Task t = Task.Run(() => DoAnalysis(sig, currentWorkbook, getConfig(), this.forceBuildDAG.Checked, updateWorkbook, pb));
-            DoAnalysis(sig, currentWorkbook, getConfig(), this.forceBuildDAG.Checked, updateWorkbook, pb, showFixes.Checked);
+            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+            DoAnalysis(sig, currentWorkbook, getConfig(), this.forceBuildDAG.Checked, updateWorkbook, pb, showFixes.Checked, activeWs);
         }
 
-        public static void DoAnalysis(FSharpOption<double> sigThresh, WorkbookState wbs, ExceLint.FeatureConf conf, bool forceBuildDAG, Action<WorkbookState> updateState, ProgBar pb, bool showFixes)
+        public static void DoAnalysis(FSharpOption<double> sigThresh, WorkbookState wbs, FeatureConf conf, bool forceBuildDAG, Action<WorkbookState> updateState, ProgBar pb, bool showFixes, Worksheet ws)
         {
             if (sigThresh == FSharpOption<double>.None)
             {
@@ -738,8 +773,9 @@ namespace ExceLintUI
                 {
                     wbs.analyze(WorkbookState.MAX_DURATION_IN_MS, conf, forceBuildDAG, pb);
                     wbs.MarkAsOK_Enabled = true;
-                    wbs.flagNext();
-                    //wbs.flag(showFixes);
+                    wbs.setTool(active: true);
+                    wbs.saveColors(ws);
+                    wbs.flagNext(ws);
                     updateState(wbs);
 
                     // debug output
@@ -890,7 +926,8 @@ namespace ExceLintUI
 
         private void MarkAsOKButton_Click(object sender, RibbonControlEventArgs e)
         {
-            currentWorkbook.markAsOK(showFixes.Checked);
+            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+            currentWorkbook.markAsOK(showFixes.Checked, activeWs);
             setUIState(currentWorkbook);
         }
 
@@ -1382,6 +1419,9 @@ namespace ExceLintUI
 
         private void readClusterDump_Click(object sender, RibbonControlEventArgs e)
         {
+            // get active sheet
+            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+
             var ofd = new System.Windows.Forms.OpenFileDialog();
             ofd.ShowDialog();
 
@@ -1389,7 +1429,7 @@ namespace ExceLintUI
             var clustering = Clustering.readClustering(ofd.FileName);
 
             // display
-            currentWorkbook.DrawClusters(clustering);
+            currentWorkbook.DrawClusters(clustering, activeWs);
         }
 
         private void moranForSelectedCells_Click(object sender, RibbonControlEventArgs e)
@@ -1726,6 +1766,8 @@ namespace ExceLintUI
                 // only enable viewing heatmaps if we are not in the middle of an analysis
                 this.showHeatmap.Enabled = wbs.Analyze_Enabled && wbs.CUSTODES_Hidden(w);
                 this.RunCUSTODES.Enabled = wbs.Analyze_Enabled && wbs.Visualization_Hidden(w);
+                this.RegularityMap.Enabled = wbs.Analyze_Enabled && wbs.Visualization_Hidden(w);
+                this.EntropyRanking.Enabled = wbs.Analyze_Enabled && wbs.Visualization_Hidden(w);
 
                 // disable config buttons if we are:
                 // 1. in the middle of an audit, or

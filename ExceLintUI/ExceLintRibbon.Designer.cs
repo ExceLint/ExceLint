@@ -62,6 +62,7 @@
             this.drawAllClusters = this.Factory.CreateRibbonCheckBox();
             this.LoadTrueSmells = this.Factory.CreateRibbonButton();
             this.ExceLintVsTrueSmells = this.Factory.CreateRibbonButton();
+            this.NukeSettings = this.Factory.CreateRibbonButton();
             this.distanceCombo = this.Factory.CreateRibbonComboBox();
             this.ClusterBox = this.Factory.CreateRibbonCheckBox();
             this.useResultant = this.Factory.CreateRibbonCheckBox();
@@ -85,7 +86,6 @@
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
             this.button1 = this.Factory.CreateRibbonButton();
-            this.NukeSettings = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -218,10 +218,12 @@
             // resetFixesButton
             // 
             this.resetFixesButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.resetFixesButton.Enabled = false;
             this.resetFixesButton.Image = global::ExceLintUI.Properties.Resources.graph;
             this.resetFixesButton.Label = "Clear Map";
             this.resetFixesButton.Name = "resetFixesButton";
             this.resetFixesButton.ShowImage = true;
+            this.resetFixesButton.Visible = false;
             this.resetFixesButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.resetFixesButton_Click);
             // 
             // EntropyRanking
@@ -317,6 +319,12 @@
             this.ExceLintVsTrueSmells.Label = "ExceLint vs True Smells";
             this.ExceLintVsTrueSmells.Name = "ExceLintVsTrueSmells";
             this.ExceLintVsTrueSmells.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ExceLintVsTrueSmells_Click);
+            // 
+            // NukeSettings
+            // 
+            this.NukeSettings.Label = "Nuke Settings";
+            this.NukeSettings.Name = "NukeSettings";
+            this.NukeSettings.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.NukeSettings_Click);
             // 
             // distanceCombo
             // 
@@ -490,12 +498,6 @@
             this.button1.Label = "Start Fix";
             this.button1.Name = "button1";
             this.button1.ShowImage = true;
-            // 
-            // NukeSettings
-            // 
-            this.NukeSettings.Label = "Nuke Settings";
-            this.NukeSettings.Name = "NukeSettings";
-            this.NukeSettings.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.NukeSettings_Click);
             // 
             // ExceLintRibbon
             // 
