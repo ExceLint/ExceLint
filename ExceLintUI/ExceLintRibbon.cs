@@ -48,6 +48,9 @@ namespace ExceLintUI
 
             if (fixClusterModel == null)
             {
+                // change button name
+                RegularityMap.Label = "Hide Regularity Map";
+
                 // create progbar in main thread;
                 // worker thread will call Dispose
                 var pb = new ProgBar();
@@ -57,7 +60,15 @@ namespace ExceLintUI
                 fixClusterModel = currentWorkbook.NewEntropyModelForWorksheet2(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
 
                 // get z for worksheet
-                var z = fixClusterModel.ZForWorksheet(activeWs.Name);
+                int z = -1;
+                try
+                {
+                    z = fixClusterModel.ZForWorksheet(activeWs.Name);
+                } catch (KeyNotFoundException)
+                {
+                    pb.Close();
+                    return;
+                }
 
                 // do visualization
                 var histo2 = fixClusterModel.InvertedHistogram;
@@ -76,9 +87,6 @@ namespace ExceLintUI
 
                 // remove progress bar
                 pb.Close();
-
-                // change button name
-                RegularityMap.Label = "Hide Regularity Map";
             } else
             {
                 currentWorkbook.restoreOutputColors();
