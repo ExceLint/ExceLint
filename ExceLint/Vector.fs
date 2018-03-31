@@ -307,6 +307,24 @@
                         ) (0,0)
             (fst xyoff, snd xyoff, x, y)
 
+        let zeroArityXYP(op: string)(tailPath: string*string*string)(cvc: C) : MixedVectorWithConstant option =
+            // TODO optimize
+            try
+                let i = Array.findIndex (fun e -> e = op) Grammar.Arity0Names
+                Some (VectorComponent.Abs -i, VectorComponent.Abs -i, tailPath, cvc)
+            with
+            | :? KeyNotFoundException -> None
+
+        let refsForArityZeroOps(tail: AST.Address)(ops: string list) : RichVector list =
+            if ops.Length = 0 then
+                []
+            else
+                let tailPath = fullPath tail
+                let tailXYP = tail.X, tail.Y, tailPath
+                let c = 0.0    // no constant
+                let heads = ops |> List.map (fun op -> zeroArityXYP op tailPath c) |> List.choose id
+                heads |> List.map (fun head -> MixedFQVectorWithConstant(tailXYP, head))
+
         let transitiveInputVectors(fCell: AST.Address)(dag : DAG)(depth: int option)(vector_f: VectorMaker)(cvector_f: ConstantVectorMaker) : RichVector[] =
             let rec tfVect(tailO: AST.Address option)(head: AST.Address)(depth: int option) : RichVector list =
                 let vlist = match tailO with
@@ -338,9 +356,13 @@
                         // find all constant inputs for source
                         let cvects = cvector_f tail fexpr
 
+                        // Get references for zero-arity functions
+                        let ops = Parcel.operatorNamesFromExpr fexpr
+                        let zvects = refsForArityZeroOps tail ops
+
                         let heads = heads_single @ heads_vector
                         // recursively call this function
-                        vlist @ cvects @ (List.map (fun head -> tfVect (Some tail) head nextDepth) heads |> List.concat)
+                        vlist @ cvects @ zvects @ (List.map (fun head -> tfVect (Some tail) head nextDepth) heads |> List.concat)
                     with
                     | e -> vlist  // I guess we give up
                 else
