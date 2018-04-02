@@ -94,7 +94,7 @@ namespace ExceLintFileFormats
             {
                 if (note.Contains("dual"))
                 {
-                    Console.Out.WriteLine("Malformed dual annotation: " + note);
+                    Console.Out.WriteLine("Malformed dual annotation for cell " + addr.A1FullyQualified() + " : " + note);
                 }
                 return FSharpOption<BugClass>.None;
             } else
@@ -178,7 +178,7 @@ namespace ExceLintFileFormats
                     // store each dual address in a bugclass if it hasn't already been stored
                     foreach (AST.Address caddr in duals)
                     {
-                        // case 1: no bugclass stored for address
+                        // if no bugclass is stored for address
                         if (!_bugclass_lookup.ContainsKey(caddr))
                         {
                             // add it
@@ -187,7 +187,7 @@ namespace ExceLintFileFormats
                     }
 
                     // get all the addresses in dual and saved bugclasses
-                    var classaddrs = duals.SelectMany(caddr => _bugclass_lookup[caddr]).Distinct();
+                    var classaddrs = duals.SelectMany(caddr => _bugclass_lookup[caddr]).Distinct().ToArray();
 
                     // get an arbitrary bugclass
                     var fstbugclass = _bugclass_lookup[classaddrs.First()];
