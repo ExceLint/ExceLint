@@ -14,6 +14,19 @@
         type public Z = int    // i.e., worksheet displacement (0 if same sheet, 1 if different)
         type public C = double // i.e., a constant value
 
+        type ArityZero() =
+            static let idx: Dictionary<string,int> =
+                let mutable i = 1
+                Grammar.Arity0Names |>
+                Array.sort |>
+                Array.fold (fun (acc: Dictionary<string,int>)(n: string) ->
+                    acc.Add(n, -i)
+                    i <- i + 1
+                    acc
+                ) (new Dictionary<string,int>()) 
+            static member isZeroArity n = idx.ContainsKey n
+            static member hasIndex n = idx.[n]
+
         // components for mixed vectors
         type public VectorComponent =
         | Abs of int
@@ -308,12 +321,10 @@
             (fst xyoff, snd xyoff, x, y)
 
         let zeroArityXYP(op: string)(tailPath: string*string*string)(cvc: C) : MixedVectorWithConstant option =
-            // TODO optimize
-            try
-                let i = Array.findIndex (fun e -> e = op) Grammar.Arity0Names
-                Some (VectorComponent.Abs -i, VectorComponent.Abs -i, tailPath, cvc)
-            with
-            | :? KeyNotFoundException -> None
+            if ArityZero.isZeroArity op then
+                Some (VectorComponent.Abs (ArityZero.hasIndex op), VectorComponent.Abs (ArityZero.hasIndex op), tailPath, cvc)
+            else
+                None
 
         let refsForArityZeroOps(tail: AST.Address)(ops: string list) : RichVector list =
             if ops.Length = 0 then
