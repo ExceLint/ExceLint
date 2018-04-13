@@ -1907,6 +1907,22 @@ namespace ExceLintUI
         {
             Properties.Settings.Default.Reset();
         }
+
+        private void RangeForSelection_Click(object sender, RibbonControlEventArgs e)
+        {
+            // get cursor location
+            var cursor = (Excel.Range)Globals.ThisAddIn.Application.Selection;
+
+            // get range
+            var rng = ParcelCOMShim.Range.RangeFromCOMObject(cursor, Globals.ThisAddIn.Application.ActiveWorkbook);
+
+            // get A1 string
+            var a1 = rng.A1Local();
+
+            // print
+            System.Windows.Forms.Clipboard.SetText(a1);
+            System.Windows.Forms.MessageBox.Show(a1);
+        }
     }
 }
 

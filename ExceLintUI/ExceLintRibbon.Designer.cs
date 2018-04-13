@@ -86,6 +86,7 @@
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
             this.button1 = this.Factory.CreateRibbonButton();
+            this.RangeForSelection = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -144,6 +145,7 @@
             this.box1.Items.Add(this.EntropyRanking);
             this.box1.Items.Add(this.RunCUSTODES);
             this.box1.Items.Add(this.ClearEverything);
+            this.box1.Items.Add(this.RangeForSelection);
             this.box1.Items.Add(this.box2);
             this.box1.Items.Add(this.distanceCombo);
             this.box1.Name = "box1";
@@ -499,6 +501,15 @@
             this.button1.Name = "button1";
             this.button1.ShowImage = true;
             // 
+            // RangeForSelection
+            // 
+            this.RangeForSelection.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.RangeForSelection.Image = global::ExceLintUI.Properties.Resources.graph;
+            this.RangeForSelection.Label = "Range for Selection";
+            this.RangeForSelection.Name = "RangeForSelection";
+            this.RangeForSelection.ShowImage = true;
+            this.RangeForSelection.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.RangeForSelection_Click);
+            // 
             // ExceLintRibbon
             // 
             this.Name = "ExceLintRibbon";
@@ -570,6 +581,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton ExceLintVsTrueSmells;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton RegularityMap;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton NukeSettings;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton RangeForSelection;
     }
 
     partial class ThisRibbonCollection
