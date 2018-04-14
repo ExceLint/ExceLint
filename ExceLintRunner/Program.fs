@@ -265,10 +265,18 @@ open MathNet.Numerics.Distributions
         row.NumTrueRefBugs <- stats.num_true_ref_bugs_this_wb
         row.ExceLintTrueRefTruePositives <- stats.excelint_true_ref_TP
         row.ExceLintTrueRefFalsePositives <- stats.excelint_true_ref_FP
+        row.ExceLintMissingFormulaTruePositives <- stats.excelint_missing_formula_TP
+        row.ExceLintMissingFormulaFalsePositives <- stats.excelint_missing_formula_FP
+        row.ExceLintWhitespaceOpTruePositives <- stats.excelint_op_on_ws_TP
+        row.ExceLintWhitespaceOpFalsePositives <- stats.excelint_op_on_ws_TP
         row.ExceLintRandomTPBaseline <- stats.excelint_random_baseline
         row.ExceLintTrueRefPValue <- stats.excelint_pvalue
         row.CUSTODESTrueRefTruePositives <- stats.custodes_true_ref_TP
         row.CUSTODESTrueRefFalsePositives <- stats.custodes_true_ref_FP
+        row.CUSTODESMissingFormulaTruePositives <- stats.custodes_missing_formula_TP
+        row.CUSTODESMissingFormulaFalsePositives <- stats.custodes_missing_formula_FP
+        row.CUSTODESWhitespaceOpTruePositives <- stats.custodes_op_on_ws_TP
+        row.CUSTODESWhitespaceOpFalsePositives <- stats.custodes_op_on_ws_TP
         row.CUSTODESRandomTPBaseline <- stats.custodes_random_baseline
         row.CUSTODESTrueRefPValue <- stats.custodes_pvalue
         row.ExceLintPrecisionVsTrueRefBugs <- precision stats.excelint_true_ref_TP stats.excelint_true_ref_FP

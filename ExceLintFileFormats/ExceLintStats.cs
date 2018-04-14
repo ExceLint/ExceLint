@@ -84,18 +84,22 @@ namespace ExceLintFileFormats
         public int NumTrueRefBugs { get; set; }
         public int ExceLintTrueRefTruePositives { get; set; }
         public int ExceLintTrueRefFalsePositives { get; set; }
+        public int ExceLintMissingFormulaTruePositives { get; set; }
+        public int ExceLintMissingFormulaFalsePositives { get; set; }
+        public int ExceLintWhitespaceOpTruePositives { get; set; }
+        public int ExceLintWhitespaceOpFalsePositives { get; set; }
         public double ExceLintPrecisionVsTrueRefBugs { get; set; }
         public double ExceLintRecallVsTrueRefBugs { get; set; }
-        //public double ExceLintPrecisionTrueRefPctImprovOverRandom { get; set; }
-        //public double ExceLintRecallTrueRefPctImprovOverRandom { get; set; }
         public double ExceLintTrueRefPValue { get; set; }
         public double ExceLintRandomTPBaseline { get; set; }
         public int CUSTODESTrueRefTruePositives { get; set; }
         public int CUSTODESTrueRefFalsePositives { get; set; }
+        public int CUSTODESMissingFormulaTruePositives { get; set; }
+        public int CUSTODESMissingFormulaFalsePositives { get; set; }
+        public int CUSTODESWhitespaceOpTruePositives { get; set; }
+        public int CUSTODESWhitespaceOpFalsePositives { get; set; }
         public double CUSTODESPrecisionVsTrueRefBugs { get; set; }
         public double CUSTODESRecallVsTrueRefBugs { get; set; }
-        //public double CUSTODESPrecisionTrueRefPctImprovOverRandom { get; set; }
-        //public double CUSTODESRecallTrueRefPctImprovOverRandom { get; set; }
         public double CUSTODESTrueRefPValue { get; set; }
         public double CUSTODESRandomTPBaseline { get; set; }
         public int NumExceLintCUSTODESTrueSmellsIntersect { get; set; }
