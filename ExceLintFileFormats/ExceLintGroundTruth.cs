@@ -429,6 +429,16 @@ namespace ExceLintFileFormats
             return _bugs.ContainsKey(addr) && IsTrueRefBug(_bugs[addr]);
         }
 
+        public bool IsAMissingFormulaBug(AST.Address addr)
+        {
+            return _bugs.ContainsKey(addr) && IsMissingFormulaBug(_bugs[addr]);
+        }
+
+        public bool IsAWhitespaceBug(AST.Address addr)
+        {
+            return _bugs.ContainsKey(addr) && IsWhitespaceBug(_bugs[addr]);
+        }
+
         public bool IsATrueRefBugOrSuspicious(AST.Address addr)
         {
             return _bugs.ContainsKey(addr) && IsTrueRefBugOrSuspicious(_bugs[addr]);
@@ -437,11 +447,22 @@ namespace ExceLintFileFormats
         private bool IsTrueRefBug(BugKind b)
         {
             return
-                b == BugKind.FormulaWhereConstantExpected ||
-                b == BugKind.ConstantWhereFormulaExpected ||
                 b == BugKind.ReferenceBug ||
                 b == BugKind.ReferenceBugInverse ||
                 b == BugKind.CalculationError;
+        }
+
+        private bool IsMissingFormulaBug(BugKind b)
+        {
+            return
+                b == BugKind.FormulaWhereConstantExpected ||
+                b == BugKind.ConstantWhereFormulaExpected;
+        }
+
+        private bool IsWhitespaceBug(BugKind b)
+        {
+            return
+                b == BugKind.OperationOnWhitespace;
         }
 
         private bool IsTrueRefBugOrSuspicious(BugKind b)
@@ -497,31 +518,63 @@ namespace ExceLintFileFormats
             get { return _bugs.Keys.Select(a => a.WorkbookName).Distinct().ToArray(); }
         }
 
-        public int TotalNumTrueRefBugs
+        /// <summary>
+        /// Get total # of bugs for given bugkind
+        ///     reference bugs          = 0
+        ///     missing formula bugs    = 1
+        ///     whitespace bugs         = 2
+        /// </summary>
+        /// <param name="bugkind"></param>
+        /// <returns></returns>
+        public int TotalNumBugKindBugs(int bugkind)
         {
-            get
+            var wbs = WorkbooksAnnotated;
+            int count = 0;
+            foreach (var wb in wbs)
             {
-                var wbs = WorkbooksAnnotated;
-                int count = 0;
-                foreach (var wb in wbs)
-                {
-                    count += NumTrueRefBugsForWorkbook(wb);
-                }
-                return count;
+                count += NumBugKindBugsForWorkbook(wb, bugkind);
             }
+            return count;
         }
 
-        public int NumTrueRefBugsForWorkbook(string wbname)
+        /// <summary>
+        /// Get total # of bugs in workbook for given bugkind
+        ///     reference bugs          = 0
+        ///     missing formula bugs    = 1
+        ///     whitespace bugs         = 2
+        /// </summary>
+        /// <param name="wbname"></param>
+        /// <param name="bugkind"></param>
+        /// <returns></returns>
+        public int NumBugKindBugsForWorkbook(string wbname, int bugkind)
         {
+            // predicate is based on arg
+            Func<BugKind, bool> fn;
+            switch (bugkind)
+            {
+                case 0:
+                    fn = (bk) => IsTrueRefBug(bk);
+                    break;
+                case 1:
+                    fn = (bk) => IsMissingFormulaBug(bk);
+                    break;
+                case 2:
+                    fn = (bk) => IsWhitespaceBug(bk);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException("Don't know predicate for bugkind = " + bugkind);
+            }
+
+
             // get the set of duals relevant for this workbook
             var duals =
                 _bugclass_dual_lookup
                 .Where(kvp =>
                     kvp.Key.First().WorkbookName == wbname &&   // where the workbook name is the same
-                    IsTrueRefBug(_bugs[kvp.Key.First()]));      // and it's actually a reference bug
+                    fn(_bugs[kvp.Key.First()]));                // and it's actually a bug of the appropriate kind
 
             // eliminate converse duals
-            var duals_nodupes = new Dictionary<BugClass,BugClass>();
+            var duals_nodupes = new Dictionary<BugClass, BugClass>();
             foreach (var kvp in duals)
             {
                 var bc = kvp.Key;

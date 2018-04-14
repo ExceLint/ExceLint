@@ -49,7 +49,7 @@ let main argv =
     let custodes_num_TP = count_true_ref_TP excelint_gt gt_flags
 
     // count the number of TP in true ref ground truth
-    let excelint_num_TP = excelint_gt.TotalNumTrueRefBugs;
+    let excelint_num_TP = excelint_gt.TotalNumBugKindBugs(0)
 
     // count number of annotations in CUSTODES for workbooks in ExceLint
     let custodes_num_annot = (gt_flags |> Seq.filter (fun a -> wbs.Contains(a.WorkbookName)) |> Seq.length) 

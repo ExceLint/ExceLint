@@ -18,10 +18,18 @@ open MathNet.Numerics.Distributions
         num_true_ref_bugs_this_wb: int;
         excelint_true_ref_TP: int;
         excelint_true_ref_FP: int;
+        excelint_missing_formula_TP: int;
+        excelint_missing_formula_FP: int;
+        excelint_op_on_ws_TP: int;
+        excelint_op_on_ws_FP: int;
         excelint_random_baseline: double;
         excelint_pvalue: double;
         custodes_true_ref_TP: int;
         custodes_true_ref_FP: int;
+        custodes_missing_formula_TP: int;
+        custodes_missing_formula_FP: int;
+        custodes_op_on_ws_TP: int;
+        custodes_op_on_ws_FP: int;
         custodes_random_baseline: double;
         custodes_pvalue: double;
         true_smells_this_wb : HashSet<AST.Address>;
@@ -370,35 +378,56 @@ open MathNet.Numerics.Distributions
         let path = System.IO.Path.Combine(config.OutputDirectory, name)
         Clustering.writeClustering(cells, path)
 
-    let count_true_ref_TP(etruth: ExceLintFileFormats.ExceLintGroundTruth)(flags: HashSet<AST.Address>) : int =
-        let trueref = new Dict<BugClass*BugClass,int>()
+    type BugKind =
+    | ReferenceError
+    | MissingFormula
+    | WhitespaceOp
+        member self.ToNum =
+            match self with
+            | ReferenceError -> 0
+            | MissingFormula -> 1
+            | WhitespaceOp   -> 2
+        member self.Discriminator(etruth: ExceLintFileFormats.ExceLintGroundTruth) =
+            match self with
+            | ReferenceError -> etruth.IsATrueRefBug
+            | MissingFormula -> etruth.IsAMissingFormulaBug
+            | WhitespaceOp   -> etruth.IsAWhitespaceBug
+
+    let count_TP_for_kind(etruth: ExceLintFileFormats.ExceLintGroundTruth)(flags: HashSet<AST.Address>)(kind: BugKind) : int =
+        let counts = new Dict<BugClass*BugClass,int>()
         
         for addr in flags do
-            // is it a bug
-            if etruth.IsATrueRefBug addr then
+            // is it a bug?
+            if kind.Discriminator etruth addr then
                 // does it have a dual?
                 if etruth.AddressHasADual addr then
                     // get duals
                     let duals = etruth.DualsForAddress addr
                     // count
-                    if not (trueref.ContainsKey duals) then
-                        trueref.Add(duals, 1)
+                    if not (counts.ContainsKey duals) then
+                        counts.Add(duals, 1)
                     else
                         // add one if we have not exceeded our max count for this dual
-                        if trueref.[duals] < (etruth.NumBugsForBugClass (fst duals)) then
-                            trueref.[duals] <- trueref.[duals] + 1
+                        if counts.[duals] < (etruth.NumBugsForBugClass (fst duals)) then
+                            counts.[duals] <- counts.[duals] + 1
                 else
                 // make a singleton bugclass and count it
                     let bugclass = new HashSet<AST.Address>([addr])
                     let duals = (bugclass,bugclass)
-                    trueref.Add(duals, 1)
+                    counts.Add(duals, 1)
 
-        Seq.sum trueref.Values
+        Seq.sum counts.Values
 
-    let count_true_ref_FP(etruth: ExceLintFileFormats.ExceLintGroundTruth)(flags: HashSet<AST.Address>) : int =
+    let count_FP_for_kind(etruth: ExceLintFileFormats.ExceLintGroundTruth)(flags: HashSet<AST.Address>)(kind: BugKind) : int =
+        let discriminator =
+            match kind with
+            | ReferenceError -> etruth.IsATrueRefBug
+            | MissingFormula -> etruth.IsAMissingFormulaBug
+            | WhitespaceOp   -> etruth.IsAWhitespaceBug
+
         let mutable i = 0
         for addr in flags do
-            if not (etruth.IsATrueRefBug addr) then
+            if not (discriminator addr) then
                 i <- i + 1
         i
 
@@ -512,11 +541,25 @@ open MathNet.Numerics.Distributions
                 let custodes_flags = new HashSet<AST.Address>(custodes_total_order)
 
                 // find true ref bugs
-                let num_true_ref_bugs_this_wb = etruth.NumTrueRefBugsForWorkbook this_wb
-                let excelint_true_ref_TP = count_true_ref_TP etruth excelint_flags
-                let excelint_true_ref_FP = count_true_ref_FP etruth excelint_flags
-                let custodes_true_ref_TP = count_true_ref_TP etruth custodes_flags
-                let custodes_true_ref_FP = count_true_ref_FP etruth custodes_flags
+                let num_true_ref_bugs_this_wb = etruth.NumBugKindBugsForWorkbook(this_wb,ReferenceError.ToNum)
+                let excelint_true_ref_TP = count_TP_for_kind etruth excelint_flags ReferenceError
+                let excelint_true_ref_FP = count_FP_for_kind etruth excelint_flags ReferenceError
+                let custodes_true_ref_TP = count_TP_for_kind etruth custodes_flags ReferenceError
+                let custodes_true_ref_FP = count_FP_for_kind etruth custodes_flags ReferenceError
+
+                // find missing formula bugs
+                let num_missing_formula_bugs_this_wb = etruth.NumBugKindBugsForWorkbook(this_wb,MissingFormula.ToNum)
+                let excelint_missing_formula_TP = count_TP_for_kind etruth excelint_flags MissingFormula
+                let excelint_missing_formula_FP = count_FP_for_kind etruth excelint_flags MissingFormula
+                let custodes_missing_formula_TP = count_TP_for_kind etruth custodes_flags MissingFormula
+                let custodes_missing_formula_FP = count_FP_for_kind etruth custodes_flags MissingFormula
+
+                // find whitespace bugs
+                let num_whitespace_bugs_this_wb = etruth.NumBugKindBugsForWorkbook(this_wb,WhitespaceOp.ToNum)
+                let excelint_whitespace_TP = count_TP_for_kind etruth excelint_flags WhitespaceOp
+                let excelint_whitespace_FP = count_FP_for_kind etruth excelint_flags WhitespaceOp
+                let custodes_whitespace_TP = count_TP_for_kind etruth custodes_flags WhitespaceOp
+                let custodes_whitespace_FP = count_FP_for_kind etruth custodes_flags WhitespaceOp
                 
                 // find true smells found by neither tool
                 let true_smells_this_wb = ctruth.TrueSmellsbyWorkbook this_wb
@@ -535,13 +578,7 @@ open MathNet.Numerics.Distributions
 
                 // sample sizes
                 let esz = Math.Min(excelint_flags.Count, model.Cutoff + 1)
-                assert (esz = excelint_true_ref_TP + excelint_true_ref_FP)
                 let csz = custodes_flags.Count
-                // TODO: something funny happening here: 2017-11-16
-                //let foo1 = custodes_true_ref_TP
-                //let foo2 = custodes_true_ref_FP
-                //let foo3 = foo1 + foo2
-                //assert (csz = custodes_true_ref_TP + custodes_true_ref_FP)
 
                 let stats = {
                     shortname = shortf;
@@ -552,10 +589,18 @@ open MathNet.Numerics.Distributions
                     num_true_ref_bugs_this_wb = num_true_ref_bugs_this_wb;
                     excelint_true_ref_TP = excelint_true_ref_TP;
                     excelint_true_ref_FP = excelint_true_ref_FP;
+                    excelint_missing_formula_TP = excelint_missing_formula_TP;
+                    excelint_missing_formula_FP = excelint_missing_formula_FP;
+                    excelint_op_on_ws_TP = excelint_whitespace_TP;
+                    excelint_op_on_ws_FP = excelint_whitespace_FP;
                     excelint_random_baseline = expectedNumRandomCorrectFlags model.AllCells.Count num_true_ref_bugs_this_wb esz;
                     excelint_pvalue = PValue model.AllCells.Count num_true_ref_bugs_this_wb excelint_true_ref_TP esz;
                     custodes_true_ref_TP = custodes_true_ref_TP;
                     custodes_true_ref_FP = custodes_true_ref_FP;
+                    custodes_missing_formula_TP = custodes_missing_formula_TP;
+                    custodes_missing_formula_FP = custodes_missing_formula_FP;
+                    custodes_op_on_ws_TP = custodes_whitespace_TP;
+                    custodes_op_on_ws_FP = custodes_whitespace_FP;
                     custodes_random_baseline = expectedNumRandomCorrectFlags model.AllCells.Count num_true_ref_bugs_this_wb csz;
                     custodes_pvalue = PValue model.AllCells.Count num_true_ref_bugs_this_wb custodes_true_ref_TP csz;
                     true_smells_this_wb = true_smells_this_wb;
