@@ -81,8 +81,6 @@ let main argv =
     printfn "There are %A whitespace bugs in the ExceLint corpus." excelint_num_whitespace_TP
     printfn "There are %A total annotations for %A workbooks in the CUSTODES corpus." custodes_num_annot wbs.Count
     printfn "There are %A total annotations in the ExceLint corpus." excelint_gt.Flags.Count
-    printfn "%A annotations in the ExceLint corpus are not reference bugs, whitespace bugs, or missing formula bugs."
-        (excelint_gt.Flags.Count - excelint_num_true_ref_TP - excelint_num_whitespace_TP - excelint_num_missing_formula_TP)
     printfn "%A annotations from CUSTODES are labeled 'not a reference bug' in ExceLint corpus." num_custodes_notabug
 
     printfn "\nPress any key to continue."
