@@ -62,7 +62,8 @@ namespace ExceLintFileFormats
                     SuspiciousCell,
                     ExcelFalsePositive,
                     UnexpectedlyBlankCell,
-                    BenignFormulaError
+                    BenignFormulaError,
+                    OperationOnWhitespace
                 };
             }
         }
