@@ -48,8 +48,14 @@ let main argv =
     // count the number of TP in hand-labeled CUSTODES ground truth file
     let custodes_num_TP = count_true_ref_TP excelint_gt gt_flags
 
-    // count the number of TP in true ref ground truth
-    let excelint_num_TP = excelint_gt.TotalNumBugKindBugs(0)
+    let TRUEREF         = 0
+    let MISSINGFORMULA  = 1
+    let WHITESPACE      = 2
+
+    // count the number of true ref TP in true ref ground truth
+    let excelint_num_true_ref_TP = excelint_gt.TotalNumBugKindBugs(TRUEREF)
+    let excelint_num_missing_formula_TP = excelint_gt.TotalNumBugKindBugs(MISSINGFORMULA)
+    let excelint_num_whitespace_TP = excelint_gt.TotalNumBugKindBugs(WHITESPACE)
 
     // count number of annotations in CUSTODES for workbooks in ExceLint
     let custodes_num_annot = (gt_flags |> Seq.filter (fun a -> wbs.Contains(a.WorkbookName)) |> Seq.length) 
@@ -69,8 +75,10 @@ let main argv =
     // print stuff
     printfn "For the %A workbooks annotated in the ExceLint corpus:" wbs.Count
     printfn "There are %A true ref bugs in the CUSTODES corpus." custodes_num_TP
-    printfn "There are %A true ref bugs in the ExceLint corpus." excelint_num_TP
-    printfn "ExceLint found %A more true ref bugs than CUSTODES." (excelint_num_TP - custodes_num_TP)
+    printfn "There are %A true ref bugs in the ExceLint corpus." excelint_num_true_ref_TP
+    printfn "ExceLint found %A more true ref bugs than CUSTODES." (excelint_num_true_ref_TP - custodes_num_TP)
+    printfn "ExceLint also found %A missing formulas." excelint_num_missing_formula_TP
+    printfn "ExceLint also found %A whitespace bugs." excelint_num_whitespace_TP
     printfn "There are %A total annotations for %A workbooks in the CUSTODES corpus." custodes_num_annot wbs.Count
     printfn "There are %A total annotations in the ExceLint corpus." excelint_gt.Flags.Count
     printfn "%A annotations from CUSTODES are labeled 'not a reference bug' in ExceLint corpus." num_custodes_notabug
