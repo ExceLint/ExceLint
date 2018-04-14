@@ -1917,7 +1917,7 @@ namespace ExceLintUI
             var rng = ParcelCOMShim.Range.RangeFromCOMObject(cursor, Globals.ThisAddIn.Application.ActiveWorkbook);
 
             // get A1 string
-            var a1 = rng.A1Local();
+            var a1 = String.Join(",",rng.Addresses().Select(addr => addr.A1Local()));
 
             // print
             System.Windows.Forms.Clipboard.SetText(a1);
