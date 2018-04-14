@@ -571,7 +571,7 @@ namespace ExceLintFileFormats
                 _bugclass_dual_lookup
                 .Where(kvp =>
                     kvp.Key.First().WorkbookName == wbname &&   // where the workbook name is the same
-                    fn(_bugs[kvp.Key.First()]));                // and it's actually a bug of the appropriate kind
+                    fn(_bugs[kvp.Key.First()]));                // and the bug is of the appropriate kind
 
             // eliminate converse duals
             var duals_nodupes = new Dictionary<BugClass, BugClass>();
@@ -602,6 +602,7 @@ namespace ExceLintFileFormats
             // now get all bugs that don't have duals
             var nodual_bugs = _bugs.Where(kvp =>
                 kvp.Key.WorkbookName == wbname &&       // where the workbook name matches
+                fn(kvp.Value) &&                        // and the bug is of the appropriate kind
                 !duals_addrs.Contains(kvp.Key));        // and the bug has no dual
 
             // now count for duals
