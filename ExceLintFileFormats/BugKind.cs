@@ -39,6 +39,8 @@ namespace ExceLintFileFormats
                     return UnexpectedlyBlankCell;
                 case "bfe":
                     return BenignFormulaError;
+                case "oow":
+                    return OperationOnWhitespace;
                 default:
                     throw new UnknownBugType(kindstr);
             }
@@ -123,6 +125,11 @@ namespace ExceLintFileFormats
         public static BenignFormulaError BenignFormulaError
         {
             get { return BenignFormulaError.Instance; }
+        }
+
+        public static OperationOnWhitespace OperationOnWhitespace
+        {
+            get { return OperationOnWhitespace.Instance; }
         }
 
         public static BugKind DefaultKind
@@ -476,6 +483,35 @@ namespace ExceLintFileFormats
         public override string ToString()
         {
             return "Benign Formula Error";
+        }
+    }
+
+    public class OperationOnWhitespace : BugKind
+    {
+        private static OperationOnWhitespace instance;
+
+        private OperationOnWhitespace() { }
+
+        public static OperationOnWhitespace Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    instance = new OperationOnWhitespace();
+                }
+                return instance;
+            }
+        }
+
+        public override string ToLog()
+        {
+            return "oow";
+        }
+
+        public override string ToString()
+        {
+            return "Operation On Whitespace";
         }
     }
 }
