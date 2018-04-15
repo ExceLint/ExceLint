@@ -81,27 +81,45 @@ namespace ExceLintFileFormats
         public long CUSTODESTimeMs { get; set; }
         public bool CUSTODESFailed { get; set; }
         public string CUSTODESFailureMsg { get; set; }
+        // TRUE REF
         public int NumTrueRefBugs { get; set; }
         public int ExceLintTrueRefTruePositives { get; set; }
         public int ExceLintTrueRefFalsePositives { get; set; }
-        public int ExceLintMissingFormulaTruePositives { get; set; }
-        public int ExceLintMissingFormulaFalsePositives { get; set; }
-        public int ExceLintWhitespaceOpTruePositives { get; set; }
-        public int ExceLintWhitespaceOpFalsePositives { get; set; }
         public double ExceLintPrecisionVsTrueRefBugs { get; set; }
         public double ExceLintRecallVsTrueRefBugs { get; set; }
         public double ExceLintTrueRefPValue { get; set; }
         public double ExceLintRandomTPBaseline { get; set; }
+        // MISSING FORMULA
+        public int NumMissingFormulaBugs { get; set; }
+        public int ExceLintMissingFormulaTruePositives { get; set; }
+        public int ExceLintMissingFormulaFalsePositives { get; set; }
+        public double ExceLintMissingFormulaPrecision { get; set; }
+        public double ExceLintMissingFormulaRecall { get; set; }
+        // WHITESPACE
+        public int NumWhitespaceOpBugs { get; set; }
+        public int ExceLintWhitespaceOpTruePositives { get; set; }
+        public int ExceLintWhitespaceOpFalsePositives { get; set; }
+        public double ExceLintWhitespaceOpPrecision { get; set; }
+        public double ExceLintWhitespaceOpRecall { get; set; }
+        // CUSTODES TRUE REF
         public int CUSTODESTrueRefTruePositives { get; set; }
         public int CUSTODESTrueRefFalsePositives { get; set; }
-        public int CUSTODESMissingFormulaTruePositives { get; set; }
-        public int CUSTODESMissingFormulaFalsePositives { get; set; }
-        public int CUSTODESWhitespaceOpTruePositives { get; set; }
-        public int CUSTODESWhitespaceOpFalsePositives { get; set; }
         public double CUSTODESPrecisionVsTrueRefBugs { get; set; }
         public double CUSTODESRecallVsTrueRefBugs { get; set; }
         public double CUSTODESTrueRefPValue { get; set; }
         public double CUSTODESRandomTPBaseline { get; set; }
+        // CUSTODES MISSING FORMULA
+        public int CUSTODESMissingFormulaTruePositives { get; set; }
+        public int CUSTODESMissingFormulaFalsePositives { get; set; }
+        public double CUSTODEStMissingFormulaPrecision { get; set; }
+        public double CUSTODEStMissingFormulaRecall { get; set; }
+        
+        // CUSTODES WHITESPACE
+        public int CUSTODESWhitespaceOpTruePositives { get; set; }
+        public int CUSTODESWhitespaceOpFalsePositives { get; set; }
+        public double CUSTODEStWhitespaceOpPrecision { get; set; }
+        public double CUSTODEStWhitespaceOpRecall { get; set; }
+        
         public int NumExceLintCUSTODESTrueSmellsIntersect { get; set; }
         public int NumTrueSmellsMissedByBoth { get; set; }
         public int NumExcelFlags { get; set; }

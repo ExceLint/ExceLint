@@ -18,8 +18,10 @@ open MathNet.Numerics.Distributions
         num_true_ref_bugs_this_wb: int;
         excelint_true_ref_TP: int;
         excelint_true_ref_FP: int;
+        num_missing_formulas_this_wb: int;
         excelint_missing_formula_TP: int;
         excelint_missing_formula_FP: int;
+        num_whitespace_ops_this_wb: int;
         excelint_op_on_ws_TP: int;
         excelint_op_on_ws_FP: int;
         excelint_random_baseline: double;
@@ -265,8 +267,10 @@ open MathNet.Numerics.Distributions
         row.NumTrueRefBugs <- stats.num_true_ref_bugs_this_wb
         row.ExceLintTrueRefTruePositives <- stats.excelint_true_ref_TP
         row.ExceLintTrueRefFalsePositives <- stats.excelint_true_ref_FP
+        row.NumMissingFormulaBugs <- stats.num_missing_formulas_this_wb
         row.ExceLintMissingFormulaTruePositives <- stats.excelint_missing_formula_TP
         row.ExceLintMissingFormulaFalsePositives <- stats.excelint_missing_formula_FP
+        row.NumWhitespaceOpBugs <- stats.num_whitespace_ops_this_wb
         row.ExceLintWhitespaceOpTruePositives <- stats.excelint_op_on_ws_TP
         row.ExceLintWhitespaceOpFalsePositives <- stats.excelint_op_on_ws_TP
         row.ExceLintRandomTPBaseline <- stats.excelint_random_baseline
@@ -281,8 +285,16 @@ open MathNet.Numerics.Distributions
         row.CUSTODESTrueRefPValue <- stats.custodes_pvalue
         row.ExceLintPrecisionVsTrueRefBugs <- precision stats.excelint_true_ref_TP stats.excelint_true_ref_FP
         row.ExceLintRecallVsTrueRefBugs <- recall stats.excelint_true_ref_TP (stats.num_true_ref_bugs_this_wb - stats.excelint_true_ref_TP)
+        row.ExceLintMissingFormulaPrecision <- precision stats.excelint_missing_formula_TP stats.excelint_missing_formula_FP
+        row.ExceLintMissingFormulaRecall <- recall stats.excelint_missing_formula_TP (stats.num_missing_formulas_this_wb - stats.excelint_missing_formula_TP)
+        row.ExceLintWhitespaceOpPrecision <- precision stats.excelint_op_on_ws_TP stats.excelint_op_on_ws_FP
+        row.ExceLintWhitespaceOpRecall <- recall stats.excelint_op_on_ws_TP (stats.num_whitespace_ops_this_wb - stats.excelint_op_on_ws_TP)
         row.CUSTODESPrecisionVsTrueRefBugs <- precision stats.custodes_true_ref_TP stats.custodes_true_ref_FP
         row.CUSTODESRecallVsTrueRefBugs <- recall stats.custodes_true_ref_TP (stats.num_true_ref_bugs_this_wb - stats.custodes_true_ref_TP)
+        row.CUSTODEStMissingFormulaPrecision <- precision stats.custodes_missing_formula_TP stats.custodes_missing_formula_FP
+        row.CUSTODEStMissingFormulaRecall <- recall stats.custodes_missing_formula_TP (stats.num_missing_formulas_this_wb - stats.custodes_missing_formula_TP)
+        row.CUSTODEStWhitespaceOpPrecision <- precision stats.custodes_op_on_ws_TP stats.custodes_op_on_ws_FP
+        row.CUSTODEStWhitespaceOpRecall <- recall stats.custodes_op_on_ws_TP (stats.num_whitespace_ops_this_wb - stats.custodes_op_on_ws_TP)
         row.NumCUSTODESSmells <- stats.custodes_flagged.Count
         row.NumTrueSmells <- stats.true_smells_this_wb.Count
         row.NumExceLintTrueSmellsFound <- stats.excelint_true_smells.Count
@@ -597,8 +609,10 @@ open MathNet.Numerics.Distributions
                     num_true_ref_bugs_this_wb = num_true_ref_bugs_this_wb;
                     excelint_true_ref_TP = excelint_true_ref_TP;
                     excelint_true_ref_FP = excelint_true_ref_FP;
+                    num_missing_formulas_this_wb = num_missing_formula_bugs_this_wb;
                     excelint_missing_formula_TP = excelint_missing_formula_TP;
                     excelint_missing_formula_FP = excelint_missing_formula_FP;
+                    num_whitespace_ops_this_wb = num_whitespace_bugs_this_wb;
                     excelint_op_on_ws_TP = excelint_whitespace_TP;
                     excelint_op_on_ws_FP = excelint_whitespace_FP;
                     excelint_random_baseline = expectedNumRandomCorrectFlags model.AllCells.Count num_true_ref_bugs_this_wb esz;
