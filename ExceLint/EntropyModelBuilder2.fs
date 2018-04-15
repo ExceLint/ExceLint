@@ -440,6 +440,8 @@
                     |> Array.distinctBy (fun (s,_,t) -> s,t)
                     // no self fixes
                     |> Array.filter (fun (s,_,t) -> s <> t)
+                    // modification: 2018-04-14: all sources must be formulas
+                    |> Array.filter (fun (s,_,_) -> ClusterIsFormulaValued s ih graph)
                     // all targets must be formulas
                     |> Array.filter (fun (_,_,t) -> ClusterIsFormulaValued t ih graph)
                     // no whitespace sources, for now
