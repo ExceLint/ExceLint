@@ -530,6 +530,9 @@ namespace ExceLintUI
                     var ok = (CUSTODES.OutputResult.OKOutput)output;
                     var ok_output = ok.Item1;
 
+                    // print to messagebox
+                    System.Windows.Forms.MessageBox.Show("CUSTODES OUTPUT:\n\n" + ok_output.RawOutput);
+
                     // Inform user what is about to happen
                     System.Windows.Forms.MessageBox.Show("CUSTODES analysis complete.  Highlighting " + ok_output.Smells.Length + " cells.");
 

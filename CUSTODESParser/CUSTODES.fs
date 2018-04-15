@@ -84,15 +84,16 @@
             )
         )
 
-    type Output(canonicalOutput: AST.Address[]) =
+    type Output(canonicalOutput: AST.Address[], raw_output: string) =
         member self.NumSmells = canonicalOutput.Length
         member self.Smells = canonicalOutput
+        member self.RawOutput = raw_output
 
     type OutputResult =
     | OKOutput of Output*int64
     | BadOutput of string*int64
 
-    let runCUSTODES(spreadsheet: string)(custodesPath: string)(javaPath: string) : CUSTODESParse*int64 =
+    let runCUSTODES(spreadsheet: string)(custodesPath: string)(javaPath: string) : CUSTODESParse*int64*string =
         let outputPath = IO.Path.GetTempPath()
 
         let runf = fun () -> runCommand (shortPath javaPath) [| "-jar"; "-d64"; "-Xms2g"; "-Xmx4g"; shortPath custodesPath; shortPath spreadsheet; shortPath outputPath; |]
@@ -103,14 +104,14 @@
         let output = runf()
         sw.Stop()
 
-        let parsed = match output with
-                     | STDOUT output ->
-                        parse output
-                     | STDERR error ->
-                         match parseException error with
-                         | Some (ex) -> CFailure(ex)
-                         | None -> CFailure(error)
-        parsed, sw.ElapsedMilliseconds
+        let (parsed,raw) = match output with
+                            | STDOUT output ->
+                                parse output, output
+                            | STDERR error ->
+                                match parseException error with
+                                | Some (ex) -> CFailure(ex), ""
+                                | None -> CFailure(error), ""
+        parsed, sw.ElapsedMilliseconds, raw
 
     let CUSTODESToAddress(addrstr: Address)(worksheetname: string)(workbookname: string)(path: string) : AST.Address =
         // we force the mode to absolute because
@@ -133,7 +134,7 @@
         let path = IO.Path.GetDirectoryName(absSpreadsheetPath)
 
         // run custodes
-        let (cOutput,cTime) = runCUSTODES absSpreadsheetPath absCustodesPath absJavaPath
+        let (cOutput,cTime,raw) = runCUSTODES absSpreadsheetPath absCustodesPath absJavaPath
 
         match cOutput with
         | CFailure(err) -> BadOutput(err,cTime)
@@ -147,7 +148,7 @@
                                   ) o
                                   |> Seq.concat |> Seq.toArray
 
-            OKOutput (Output(canonicalOutput),cTime)
+            OKOutput (Output(canonicalOutput,raw),cTime)
 
     let addresses(tool: Tool)(row: CUSTODESGroundTruthRow)(workbook_paths: Dictionary<string, string>) : AST.Address[] =
         let cells_str = tool.Accessor(row).Replace(" ", "")

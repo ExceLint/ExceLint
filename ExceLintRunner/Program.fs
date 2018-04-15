@@ -48,6 +48,7 @@ open MathNet.Numerics.Distributions
         excelint_delta_k: int;
         cells: int;
         collisions: int;
+        rolling_precision: double[];
     }
 
     let hs_difference<'a>(hs1: HashSet<'a>)(hs2: HashSet<'a>) : HashSet<'a> =
@@ -317,6 +318,11 @@ open MathNet.Numerics.Distributions
         row.ExceLintJaccardDistance <- stats.excelint_jaccard
         row.ExceLintDeltaK <- stats.excelint_delta_k
         row.Collisions <- stats.collisions
+        row.Top1Precision <- stats.rolling_precision.[0]
+        row.Top2Precision <- stats.rolling_precision.[1]
+        row.Top3Precision <- stats.rolling_precision.[2]
+        row.Top4Precision <- stats.rolling_precision.[3]
+        row.Top5Precision <- stats.rolling_precision.[4]
 
         csv.WriteRow row
 
@@ -596,6 +602,21 @@ open MathNet.Numerics.Distributions
                 let excelint_excel_intersect = hs_intersection excelint_flags excel_this_wb
                 let custodes_excel_intersect = hs_intersection custodes_flags excel_this_wb
 
+                // compute rolling precision for true ref bugs for excelint
+                let rolling_precision =
+                    [|0..4|]
+                    |> Array.fold (fun acc i ->
+                        if ranking.Length > i then
+                            let flagged_cells = ranking.[..i]
+                            let TPcount = flagged_cells |> Array.fold (fun (acc)(kvp: KeyValuePair<AST.Address,double>) -> acc + (if (etruth.IsATrueRefBug(kvp.Key)) then 1 else 0)) 0
+                            let p = precision TPcount (flagged_cells.Length - TPcount)
+                            p :: acc
+                        else
+                            Double.NaN :: acc
+                        ) []
+                    |> List.rev
+                    |> List.toArray
+
                 // sample sizes
                 let esz = Math.Min(excelint_flags.Count, model.Cutoff + 1)
                 let csz = custodes_flags.Count
@@ -639,6 +660,7 @@ open MathNet.Numerics.Distributions
                     excelint_delta_k = delta_k;
                     cells = scount.ncells;
                     collisions = scount.nnomatch;
+                    rolling_precision = rolling_precision;
                 }
 
                 // write to per-workbook CSV
