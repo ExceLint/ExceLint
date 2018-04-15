@@ -276,7 +276,7 @@ open MathNet.Numerics.Distributions
         row.CUSTODESMissingFormulaTruePositives <- stats.custodes_missing_formula_TP
         row.CUSTODESMissingFormulaFalsePositives <- stats.custodes_missing_formula_FP
         row.CUSTODESWhitespaceOpTruePositives <- stats.custodes_op_on_ws_TP
-        row.CUSTODESWhitespaceOpFalsePositives <- stats.custodes_op_on_ws_TP
+        row.CUSTODESWhitespaceOpFalsePositives <- stats.custodes_op_on_ws_FP
         row.CUSTODESRandomTPBaseline <- stats.custodes_random_baseline
         row.CUSTODESTrueRefPValue <- stats.custodes_pvalue
         row.ExceLintPrecisionVsTrueRefBugs <- precision stats.excelint_true_ref_TP stats.excelint_true_ref_FP
