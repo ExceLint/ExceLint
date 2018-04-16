@@ -9,6 +9,14 @@ using Microsoft.FSharp.Core;
 
 namespace ExceLintFileFormats
 {
+    public enum ErrorClass
+    {
+        INCONSISTENT,
+        MISSINGFORMULA,
+        WHITESPACE,
+        SUSPICIOUS
+    }
+
     public class AddressComparer : IComparer<AST.Address>
     {
         public int Compare(AST.Address a1, AST.Address a2)
@@ -424,9 +432,9 @@ namespace ExceLintFileFormats
             return _bugs.ContainsKey(addr) && _bugs[addr] != BugKind.NotABug;
         }
 
-        public bool IsATrueRefBug(AST.Address addr)
+        public bool IsAnInconsistentFormulaBug(AST.Address addr)
         {
-            return _bugs.ContainsKey(addr) && IsTrueRefBug(_bugs[addr]);
+            return _bugs.ContainsKey(addr) && IsInconsistentFormulaBug(_bugs[addr]);
         }
 
         public bool IsAMissingFormulaBug(AST.Address addr)
@@ -439,12 +447,7 @@ namespace ExceLintFileFormats
             return _bugs.ContainsKey(addr) && IsWhitespaceBug(_bugs[addr]);
         }
 
-        public bool IsATrueRefBugOrSuspicious(AST.Address addr)
-        {
-            return _bugs.ContainsKey(addr) && IsTrueRefBugOrSuspicious(_bugs[addr]);
-        }
-
-        private bool IsTrueRefBug(BugKind b)
+        private bool IsInconsistentFormulaBug(BugKind b)
         {
             return
                 b == BugKind.ReferenceBug ||
@@ -465,10 +468,9 @@ namespace ExceLintFileFormats
                 b == BugKind.OperationOnWhitespace;
         }
 
-        private bool IsTrueRefBugOrSuspicious(BugKind b)
+        private bool IsSuspiciousCell(BugKind b)
         {
             return
-                IsTrueRefBug(b) ||
                 b == BugKind.SuspiciousCell;
         }
 
@@ -519,52 +521,48 @@ namespace ExceLintFileFormats
         }
 
         /// <summary>
-        /// Get total # of bugs for given bugkind
-        ///     reference bugs          = 0
-        ///     missing formula bugs    = 1
-        ///     whitespace bugs         = 2
+        /// Get total # of bugs for given error class
         /// </summary>
         /// <param name="bugkind"></param>
         /// <returns></returns>
-        public int TotalNumBugKindBugs(int bugkind)
+        public int TotalNumBugKindBugs(ErrorClass ec)
         {
             var wbs = WorkbooksAnnotated;
             int count = 0;
             foreach (var wb in wbs)
             {
-                count += NumBugKindBugsForWorkbook(wb, bugkind);
+                count += NumBugKindBugsForWorkbook(wb, ec);
             }
             return count;
         }
 
         /// <summary>
-        /// Get total # of bugs in workbook for given bugkind
-        ///     reference bugs          = 0
-        ///     missing formula bugs    = 1
-        ///     whitespace bugs         = 2
+        /// Get total # of bugs in workbook for given error class
         /// </summary>
         /// <param name="wbname"></param>
         /// <param name="bugkind"></param>
         /// <returns></returns>
-        public int NumBugKindBugsForWorkbook(string wbname, int bugkind)
+        public int NumBugKindBugsForWorkbook(string wbname, ErrorClass ec)
         {
             // predicate is based on arg
             Func<BugKind, bool> fn;
-            switch (bugkind)
+            switch (ec)
             {
-                case 0:
-                    fn = (bk) => IsTrueRefBug(bk);
+                case ErrorClass.INCONSISTENT:
+                    fn = (bk) => IsInconsistentFormulaBug(bk);
                     break;
-                case 1:
+                case ErrorClass.MISSINGFORMULA:
                     fn = (bk) => IsMissingFormulaBug(bk);
                     break;
-                case 2:
+                case ErrorClass.WHITESPACE:
                     fn = (bk) => IsWhitespaceBug(bk);
                     break;
+                case ErrorClass.SUSPICIOUS:
+                    fn = (bk) => IsSuspiciousCell(bk);
+                    break;
                 default:
-                    throw new ArgumentOutOfRangeException("Don't know predicate for bugkind = " + bugkind);
+                    throw new ArgumentOutOfRangeException("Don't know predicate for error class = " + ec);
             }
-
 
             // get the set of duals relevant for this workbook
             var duals =

@@ -15,9 +15,9 @@ open MathNet.Numerics.Distributions
         custodes_flagged: HashSet<AST.Address>;
         excelint_not_custodes: HashSet<AST.Address>;
         custodes_not_excelint: HashSet<AST.Address>;
-        num_true_ref_bugs_this_wb: int;
-        excelint_true_ref_TP: int;
-        excelint_true_ref_FP: int;
+        num_inconsistent_bugs_this_wb: int;
+        excelint_inconsistent_TP: int;
+        excelint_inconsistent_FP: int;
         num_missing_formulas_this_wb: int;
         excelint_missing_formula_TP: int;
         excelint_missing_formula_FP: int;
@@ -26,8 +26,8 @@ open MathNet.Numerics.Distributions
         excelint_op_on_ws_FP: int;
         excelint_random_baseline: double;
         excelint_pvalue: double;
-        custodes_true_ref_TP: int;
-        custodes_true_ref_FP: int;
+        custodes_inconsistent_TP: int;
+        custodes_inconsistent_FP: int;
         custodes_missing_formula_TP: int;
         custodes_missing_formula_FP: int;
         custodes_op_on_ws_TP: int;
@@ -265,9 +265,9 @@ open MathNet.Numerics.Distributions
         row.CUSTODESTimeMs <- stats.custodes_time
         row.CUSTODESFailed <- match custodes_o with | Some custodes -> (match custodes with | CUSTODES.BadOutput _ -> true | _ -> false) | None -> true
         row.CUSTODESFailureMsg <- match custodes_o with | Some custodes -> (match custodes with | CUSTODES.BadOutput(msg,_) -> msg | _ -> "") | None -> "did not run CUSTODES"
-        row.NumTrueRefBugs <- stats.num_true_ref_bugs_this_wb
-        row.ExceLintTrueRefTruePositives <- stats.excelint_true_ref_TP
-        row.ExceLintTrueRefFalsePositives <- stats.excelint_true_ref_FP
+        row.NumTrueRefBugs <- stats.num_inconsistent_bugs_this_wb
+        row.ExceLintTrueRefTruePositives <- stats.excelint_inconsistent_TP
+        row.ExceLintTrueRefFalsePositives <- stats.excelint_inconsistent_FP
         row.NumMissingFormulaBugs <- stats.num_missing_formulas_this_wb
         row.ExceLintMissingFormulaTruePositives <- stats.excelint_missing_formula_TP
         row.ExceLintMissingFormulaFalsePositives <- stats.excelint_missing_formula_FP
@@ -276,22 +276,22 @@ open MathNet.Numerics.Distributions
         row.ExceLintWhitespaceOpFalsePositives <- stats.excelint_op_on_ws_TP
         row.ExceLintRandomTPBaseline <- stats.excelint_random_baseline
         row.ExceLintTrueRefPValue <- stats.excelint_pvalue
-        row.CUSTODESTrueRefTruePositives <- stats.custodes_true_ref_TP
-        row.CUSTODESTrueRefFalsePositives <- stats.custodes_true_ref_FP
+        row.CUSTODESTrueRefTruePositives <- stats.custodes_inconsistent_TP
+        row.CUSTODESTrueRefFalsePositives <- stats.custodes_inconsistent_FP
         row.CUSTODESMissingFormulaTruePositives <- stats.custodes_missing_formula_TP
         row.CUSTODESMissingFormulaFalsePositives <- stats.custodes_missing_formula_FP
         row.CUSTODESWhitespaceOpTruePositives <- stats.custodes_op_on_ws_TP
         row.CUSTODESWhitespaceOpFalsePositives <- stats.custodes_op_on_ws_FP
         row.CUSTODESRandomTPBaseline <- stats.custodes_random_baseline
         row.CUSTODESTrueRefPValue <- stats.custodes_pvalue
-        row.ExceLintPrecisionVsTrueRefBugs <- precision stats.excelint_true_ref_TP stats.excelint_true_ref_FP
-        row.ExceLintRecallVsTrueRefBugs <- recall stats.excelint_true_ref_TP (stats.num_true_ref_bugs_this_wb - stats.excelint_true_ref_TP)
+        row.ExceLintPrecisionVsTrueRefBugs <- precision stats.excelint_inconsistent_TP stats.excelint_inconsistent_FP
+        row.ExceLintRecallVsTrueRefBugs <- recall stats.excelint_inconsistent_TP (stats.num_inconsistent_bugs_this_wb - stats.excelint_inconsistent_TP)
         row.ExceLintMissingFormulaPrecision <- precision stats.excelint_missing_formula_TP stats.excelint_missing_formula_FP
         row.ExceLintMissingFormulaRecall <- recall stats.excelint_missing_formula_TP (stats.num_missing_formulas_this_wb - stats.excelint_missing_formula_TP)
         row.ExceLintWhitespaceOpPrecision <- precision stats.excelint_op_on_ws_TP stats.excelint_op_on_ws_FP
         row.ExceLintWhitespaceOpRecall <- recall stats.excelint_op_on_ws_TP (stats.num_whitespace_ops_this_wb - stats.excelint_op_on_ws_TP)
-        row.CUSTODESPrecisionVsTrueRefBugs <- precision stats.custodes_true_ref_TP stats.custodes_true_ref_FP
-        row.CUSTODESRecallVsTrueRefBugs <- recall stats.custodes_true_ref_TP (stats.num_true_ref_bugs_this_wb - stats.custodes_true_ref_TP)
+        row.CUSTODESPrecisionVsTrueRefBugs <- precision stats.custodes_inconsistent_TP stats.custodes_inconsistent_FP
+        row.CUSTODESRecallVsTrueRefBugs <- recall stats.custodes_inconsistent_TP (stats.num_inconsistent_bugs_this_wb - stats.custodes_inconsistent_TP)
         row.CUSTODEStMissingFormulaPrecision <- precision stats.custodes_missing_formula_TP stats.custodes_missing_formula_FP
         row.CUSTODEStMissingFormulaRecall <- recall stats.custodes_missing_formula_TP (stats.num_missing_formulas_this_wb - stats.custodes_missing_formula_TP)
         row.CUSTODEStWhitespaceOpPrecision <- precision stats.custodes_op_on_ws_TP stats.custodes_op_on_ws_FP
@@ -415,7 +415,7 @@ open MathNet.Numerics.Distributions
             | WhitespaceOp   -> 2
         member self.Discriminator(etruth: ExceLintFileFormats.ExceLintGroundTruth) =
             match self with
-            | ReferenceError -> etruth.IsATrueRefBug
+            | ReferenceError -> etruth.IsAnInconsistentFormulaBug
             | MissingFormula -> etruth.IsAMissingFormulaBug
             | WhitespaceOp   -> etruth.IsAWhitespaceBug
 
@@ -447,7 +447,7 @@ open MathNet.Numerics.Distributions
     let count_FP_for_kind(etruth: ExceLintFileFormats.ExceLintGroundTruth)(flags: HashSet<AST.Address>)(kind: BugKind) : int =
         let discriminator =
             match kind with
-            | ReferenceError -> etruth.IsATrueRefBug
+            | ReferenceError -> etruth.IsAnInconsistentFormulaBug
             | MissingFormula -> etruth.IsAMissingFormulaBug
             | WhitespaceOp   -> etruth.IsAWhitespaceBug
 
@@ -567,21 +567,21 @@ open MathNet.Numerics.Distributions
                 let custodes_flags = new HashSet<AST.Address>(custodes_total_order)
 
                 // find true ref bugs
-                let num_true_ref_bugs_this_wb = etruth.NumBugKindBugsForWorkbook(this_wb,ReferenceError.ToNum)
-                let excelint_true_ref_TP = count_TP_for_kind etruth excelint_flags ReferenceError
-                let excelint_true_ref_FP = count_FP_for_kind etruth excelint_flags ReferenceError
-                let custodes_true_ref_TP = count_TP_for_kind etruth custodes_flags ReferenceError
-                let custodes_true_ref_FP = count_FP_for_kind etruth custodes_flags ReferenceError
+                let num_inconsistent_bugs_this_wb = etruth.NumBugKindBugsForWorkbook(this_wb,ErrorClass.INCONSISTENT)
+                let excelint_inconsistent_TP = count_TP_for_kind etruth excelint_flags ReferenceError
+                let excelint_inconsistent_FP = count_FP_for_kind etruth excelint_flags ReferenceError
+                let custodes_inconsistent_TP = count_TP_for_kind etruth custodes_flags ReferenceError
+                let custodes_inconsistent_FP = count_FP_for_kind etruth custodes_flags ReferenceError
 
                 // find missing formula bugs
-                let num_missing_formula_bugs_this_wb = etruth.NumBugKindBugsForWorkbook(this_wb,MissingFormula.ToNum)
+                let num_missing_formula_bugs_this_wb = etruth.NumBugKindBugsForWorkbook(this_wb,ErrorClass.MISSINGFORMULA)
                 let excelint_missing_formula_TP = count_TP_for_kind etruth excelint_flags MissingFormula
                 let excelint_missing_formula_FP = count_FP_for_kind etruth excelint_flags MissingFormula
                 let custodes_missing_formula_TP = count_TP_for_kind etruth custodes_flags MissingFormula
                 let custodes_missing_formula_FP = count_FP_for_kind etruth custodes_flags MissingFormula
 
                 // find whitespace bugs
-                let num_whitespace_bugs_this_wb = etruth.NumBugKindBugsForWorkbook(this_wb,WhitespaceOp.ToNum)
+                let num_whitespace_bugs_this_wb = etruth.NumBugKindBugsForWorkbook(this_wb,ErrorClass.WHITESPACE)
                 let excelint_whitespace_TP = count_TP_for_kind etruth excelint_flags WhitespaceOp
                 let excelint_whitespace_FP = count_FP_for_kind etruth excelint_flags WhitespaceOp
                 let custodes_whitespace_TP = count_TP_for_kind etruth custodes_flags WhitespaceOp
@@ -608,7 +608,7 @@ open MathNet.Numerics.Distributions
                     |> Array.fold (fun acc i ->
                         if ranking.Length > i then
                             let flagged_cells = ranking.[..i]
-                            let TPcount = flagged_cells |> Array.fold (fun (acc)(kvp: KeyValuePair<AST.Address,double>) -> acc + (if (etruth.IsATrueRefBug(kvp.Key)) then 1 else 0)) 0
+                            let TPcount = flagged_cells |> Array.fold (fun (acc)(kvp: KeyValuePair<AST.Address,double>) -> acc + (if (etruth.IsAnInconsistentFormulaBug(kvp.Key)) then 1 else 0)) 0
                             let p = precision TPcount (flagged_cells.Length - TPcount)
                             p :: acc
                         else
@@ -627,25 +627,25 @@ open MathNet.Numerics.Distributions
                     custodes_flagged = custodes_flags;
                     excelint_not_custodes = hs_difference excelint_flags custodes_flags;
                     custodes_not_excelint = hs_difference custodes_flags excelint_flags;
-                    num_true_ref_bugs_this_wb = num_true_ref_bugs_this_wb;
-                    excelint_true_ref_TP = excelint_true_ref_TP;
-                    excelint_true_ref_FP = excelint_true_ref_FP;
+                    num_inconsistent_bugs_this_wb = num_inconsistent_bugs_this_wb;
+                    excelint_inconsistent_TP = excelint_inconsistent_TP;
+                    excelint_inconsistent_FP = excelint_inconsistent_FP;
                     num_missing_formulas_this_wb = num_missing_formula_bugs_this_wb;
                     excelint_missing_formula_TP = excelint_missing_formula_TP;
                     excelint_missing_formula_FP = excelint_missing_formula_FP;
                     num_whitespace_ops_this_wb = num_whitespace_bugs_this_wb;
                     excelint_op_on_ws_TP = excelint_whitespace_TP;
                     excelint_op_on_ws_FP = excelint_whitespace_FP;
-                    excelint_random_baseline = expectedNumRandomCorrectFlags model.AllCells.Count num_true_ref_bugs_this_wb esz;
-                    excelint_pvalue = PValue model.AllCells.Count num_true_ref_bugs_this_wb excelint_true_ref_TP esz;
-                    custodes_true_ref_TP = custodes_true_ref_TP;
-                    custodes_true_ref_FP = custodes_true_ref_FP;
+                    excelint_random_baseline = expectedNumRandomCorrectFlags model.AllCells.Count num_inconsistent_bugs_this_wb esz;
+                    excelint_pvalue = PValue model.AllCells.Count num_inconsistent_bugs_this_wb excelint_inconsistent_TP esz;
+                    custodes_inconsistent_TP = custodes_inconsistent_TP;
+                    custodes_inconsistent_FP = custodes_inconsistent_FP;
                     custodes_missing_formula_TP = custodes_missing_formula_TP;
                     custodes_missing_formula_FP = custodes_missing_formula_FP;
                     custodes_op_on_ws_TP = custodes_whitespace_TP;
                     custodes_op_on_ws_FP = custodes_whitespace_FP;
-                    custodes_random_baseline = expectedNumRandomCorrectFlags model.AllCells.Count num_true_ref_bugs_this_wb csz;
-                    custodes_pvalue = PValue model.AllCells.Count num_true_ref_bugs_this_wb custodes_true_ref_TP csz;
+                    custodes_random_baseline = expectedNumRandomCorrectFlags model.AllCells.Count num_inconsistent_bugs_this_wb csz;
+                    custodes_pvalue = PValue model.AllCells.Count num_inconsistent_bugs_this_wb custodes_inconsistent_TP csz;
                     true_smells_this_wb = true_smells_this_wb;
                     true_smells_not_found_by_excelint = true_smells_not_found_by_excelint;
                     true_smells_not_found_by_custodes = true_smells_not_found_by_custodes;
