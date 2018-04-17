@@ -418,26 +418,73 @@ open MathNet.Numerics.Distributions
             | ReferenceError -> etruth.IsAnInconsistentFormulaBug
             | MissingFormula -> etruth.IsAMissingFormulaBug
             | WhitespaceOp   -> etruth.IsAWhitespaceBug
+        member self.ErrorClass =
+            match self with
+            | ReferenceError -> ErrorClass.INCONSISTENT
+            | MissingFormula -> ErrorClass.MISSINGFORMULA
+            | WhitespaceOp -> ErrorClass.WHITESPACE
 
-    let count_TP_for_kind(etruth: ExceLintFileFormats.ExceLintGroundTruth)(flags: HashSet<AST.Address>)(kind: BugKind) : int =
+    //let count_TP_for_kind(etruth: ExceLintFileFormats.ExceLintGroundTruth)(wbname: string)(flags: HashSet<AST.Address>)(kind: BugKind) : int =
+    //    let counts = new Dict<BugClass*BugClass,int>()
+
+    //    let duals = etruth.KindBugsForWorkbook(wbname, kind.ErrorClass)
+
+    //    for addr in flags do
+    //        // is it a bug?
+    //        if kind.Discriminator etruth addr then
+    //            // does it have a dual?
+    //            if etruth.AddressHasADual addr then
+    //                // get duals
+    //                let duals = etruth.DualsForAddress addr
+    //                // count
+    //                if not (counts.ContainsKey duals) then
+    //                    counts.Add(duals, 1)
+    //                else
+    //                    // add one if we have not exceeded our max count for this dual
+    //                    if counts.[duals] < (etruth.NumBugsForBugClass (fst duals)) then
+    //                        counts.[duals] <- counts.[duals] + 1
+    //            else
+    //            // make a singleton bugclass and count it
+    //                let bugclass = new HashSet<AST.Address>([addr])
+    //                let duals = (bugclass,bugclass)
+    //                counts.Add(duals, 1)
+
+    //    Seq.sum counts.Values
+
+    let dual_for_addr(bc: Dictionary<BugClass,BugClass>)(addr: AST.Address) : KeyValuePair<BugClass,BugClass> option =
+        // search bc
+        let mutable found_dual = None
+        for kvp in bc do
+            let left = kvp.Key
+            let right = kvp.Value
+            if (left.Contains addr) || (right.Contains addr) then
+                found_dual <- Some kvp
+        found_dual
+
+    let count_TP_for_kind(etruth: ExceLintFileFormats.ExceLintGroundTruth)(wbname: string)(flags: HashSet<AST.Address>)(kind: BugKind) : int =
         let counts = new Dict<BugClass*BugClass,int>()
-        
+
+        let duals = etruth.KindBugsForWorkbook(wbname, kind.ErrorClass)
+
         for addr in flags do
-            // is it a bug?
-            if kind.Discriminator etruth addr then
-                // does it have a dual?
-                if etruth.AddressHasADual addr then
-                    // get duals
-                    let duals = etruth.DualsForAddress addr
-                    // count
-                    if not (counts.ContainsKey duals) then
-                        counts.Add(duals, 1)
-                    else
-                        // add one if we have not exceeded our max count for this dual
-                        if counts.[duals] < (etruth.NumBugsForBugClass (fst duals)) then
-                            counts.[duals] <- counts.[duals] + 1
+            let dual = dual_for_addr duals addr
+            match dual with
+            | Some d ->
+                // we know that these are all bugs; get dual
+                let tup = d.Key, d.Value
+                // count
+                if not (counts.ContainsKey tup) then
+                    counts.Add(tup, 1)
                 else
-                // make a singleton bugclass and count it
+                    // add one if we have not exceeded our max count for this dual
+                    let total_bugs = (etruth.NumBugsForBugClass (d.Key))
+                    if counts.[tup] < total_bugs then
+                        counts.[tup] <- counts.[tup] + 1
+            | None ->
+                // is it actually a bug?
+                if kind.Discriminator etruth addr then
+                    // yes it is
+                    // make a singleton bugclass and count it
                     let bugclass = new HashSet<AST.Address>([addr])
                     let duals = (bugclass,bugclass)
                     counts.Add(duals, 1)
@@ -568,23 +615,26 @@ open MathNet.Numerics.Distributions
 
                 // find true ref bugs
                 let num_inconsistent_bugs_this_wb = etruth.NumBugKindBugsForWorkbook(this_wb,ErrorClass.INCONSISTENT)
-                let excelint_inconsistent_TP = count_TP_for_kind etruth excelint_flags ReferenceError
+                let excelint_inconsistent_TP = count_TP_for_kind etruth this_wb excelint_flags ReferenceError
                 let excelint_inconsistent_FP = count_FP_for_kind etruth excelint_flags ReferenceError
-                let custodes_inconsistent_TP = count_TP_for_kind etruth custodes_flags ReferenceError
+                assert (num_inconsistent_bugs_this_wb >= excelint_inconsistent_TP)
+
+                let custodes_inconsistent_TP = count_TP_for_kind etruth this_wb custodes_flags ReferenceError
                 let custodes_inconsistent_FP = count_FP_for_kind etruth custodes_flags ReferenceError
+                assert (num_inconsistent_bugs_this_wb >= custodes_inconsistent_TP)
 
                 // find missing formula bugs
                 let num_missing_formula_bugs_this_wb = etruth.NumBugKindBugsForWorkbook(this_wb,ErrorClass.MISSINGFORMULA)
-                let excelint_missing_formula_TP = count_TP_for_kind etruth excelint_flags MissingFormula
+                let excelint_missing_formula_TP = count_TP_for_kind etruth this_wb excelint_flags MissingFormula
                 let excelint_missing_formula_FP = count_FP_for_kind etruth excelint_flags MissingFormula
-                let custodes_missing_formula_TP = count_TP_for_kind etruth custodes_flags MissingFormula
+                let custodes_missing_formula_TP = count_TP_for_kind etruth this_wb custodes_flags MissingFormula
                 let custodes_missing_formula_FP = count_FP_for_kind etruth custodes_flags MissingFormula
 
                 // find whitespace bugs
                 let num_whitespace_bugs_this_wb = etruth.NumBugKindBugsForWorkbook(this_wb,ErrorClass.WHITESPACE)
-                let excelint_whitespace_TP = count_TP_for_kind etruth excelint_flags WhitespaceOp
+                let excelint_whitespace_TP = count_TP_for_kind etruth this_wb excelint_flags WhitespaceOp
                 let excelint_whitespace_FP = count_FP_for_kind etruth excelint_flags WhitespaceOp
-                let custodes_whitespace_TP = count_TP_for_kind etruth custodes_flags WhitespaceOp
+                let custodes_whitespace_TP = count_TP_for_kind etruth this_wb custodes_flags WhitespaceOp
                 let custodes_whitespace_FP = count_FP_for_kind etruth custodes_flags WhitespaceOp
                 
                 // find true smells found by neither tool

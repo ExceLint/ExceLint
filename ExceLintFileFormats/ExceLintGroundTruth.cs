@@ -536,13 +536,7 @@ namespace ExceLintFileFormats
             return count;
         }
 
-        /// <summary>
-        /// Get total # of bugs in workbook for given error class
-        /// </summary>
-        /// <param name="wbname"></param>
-        /// <param name="bugkind"></param>
-        /// <returns></returns>
-        public int NumBugKindBugsForWorkbook(string wbname, ErrorClass ec)
+        private Func<BugKind,bool> getPredicate(ErrorClass ec)
         {
             // predicate is based on arg
             Func<BugKind, bool> fn;
@@ -563,6 +557,13 @@ namespace ExceLintFileFormats
                 default:
                     throw new ArgumentOutOfRangeException("Don't know predicate for error class = " + ec);
             }
+            return fn;
+        }
+
+        public Dictionary<BugClass,BugClass> KindBugsForWorkbook(string wbname, ErrorClass ec)
+        {
+            // predicate is based on arg
+            Func<BugKind, bool> fn = getPredicate(ec);
 
             // get the set of duals relevant for this workbook
             var duals =
@@ -583,9 +584,62 @@ namespace ExceLintFileFormats
                 }
             }
 
+            // HACK: some duals are not properly merged. merge them.
+            var mergelist = new List<Tuple<BugClass, BugClass>>();
+            foreach (var kvp in duals_nodupes)
+            {
+                var lhs = kvp.Key;
+                var rhs = kvp.Value;
+                bool added = false;
+                foreach (var tup in mergelist)
+                {
+                    var left = tup.Item1;
+                    var right = tup.Item2;
+                    if (lhs.Any(e => left.Contains(e)) || rhs.Any(e => right.Contains(e)))
+                    {
+                        foreach (var addr in lhs)
+                        {
+                            left.Add(addr);
+                        }
+                        foreach (var addr in rhs)
+                        {
+                            right.Add(addr);
+                        }
+                        added = true;
+                    }
+                }
+                if (!added)
+                {
+                    mergelist.Add(new Tuple<BugClass, BugClass>(lhs, rhs));
+                }
+            }
+            var duals_nodupes_merged = new Dictionary<BugClass, BugClass>();
+            foreach (var tup in mergelist)
+            {
+                var left = tup.Item1;
+                var right = tup.Item2;
+                duals_nodupes_merged.Add(left, right);
+            }
+
+            return duals_nodupes_merged;
+        }
+
+        /// <summary>
+        /// Get total # of bugs in workbook for given error class
+        /// </summary>
+        /// <param name="wbname"></param>
+        /// <param name="bugkind"></param>
+        /// <returns></returns>
+        public int NumBugKindBugsForWorkbook(string wbname, ErrorClass ec)
+        {
+            // predicate is based on arg
+            Func<BugKind, bool> fn = getPredicate(ec);
+
+            var duals = KindBugsForWorkbook(wbname, ec);
+
             // flatten
             var duals_addrs = new HashSet<AST.Address>();
-            foreach (var kvp in duals_nodupes)
+            foreach (var kvp in duals)
             {
                 foreach (var addr in kvp.Key)
                 {
@@ -605,7 +659,7 @@ namespace ExceLintFileFormats
 
             // now count for duals
             int bugs = 0;
-            foreach (var kvp in duals_nodupes)
+            foreach (var kvp in duals)
             {
                 bugs += NumBugsForBugClass(kvp.Key);
             }
