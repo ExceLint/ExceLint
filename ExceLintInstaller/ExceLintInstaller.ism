@@ -340,33 +340,55 @@
 		<col def="S0">ISDotNetInstallerArgsUninstall</col>
 		<col def="S0">ISDotNetInstallerArgsRollback</col>
 		<row><td>AllOtherFiles</td><td>{8BAC82F6-5F01-4AF6-B2C2-E143EE4DFABB}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>AllOtherFiles1</td><td>{4EE3954B-0443-4A08-83F9-9A00C9ABE4F1}</td><td>INSTALLDIR</td><td>8</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>COMWrapper.Primary_output</td><td>{95640401-1A0F-41A1-9772-BDBB2A0F5119}</td><td>INSTALLDIR</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>COMWrapper.Primary_output1</td><td>{7810BAF0-B959-45E4-9184-BDCB5BFBFD4B}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td>comwrapper.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>COMWrapper.Primary_output1</td><td>{7810BAF0-B959-45E4-9184-BDCB5BFBFD4B}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>COMWrapper.Primary_output2</td><td>{F79EA66C-723C-4767-B847-A2D1D13A110F}</td><td>INSTALLDIR</td><td>8</td><td/><td>comwrapper.primary_output1</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>CUSTODESParser.Primary_Output</td><td>{6506EDD2-C954-4D13-83B4-B114593FE6D5}</td><td>INSTALLDIR</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>CUSTODESParser.Primary_Output1</td><td>{FCBE6334-5DBC-4A75-9FFE-FE633F14CDAE}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td>custodesparser.primary_outpu</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>CUSTODESParser.Primary_Output1</td><td>{FCBE6334-5DBC-4A75-9FFE-FE633F14CDAE}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>CUSTODESParser.Primary_Output2</td><td>{6089169B-6275-4FFF-AD38-47F2700C0964}</td><td>INSTALLDIR</td><td>8</td><td/><td>custodesparser.primary_outpu1</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>Depends.Primary_output</td><td>{369C356D-424E-4AC3-88F0-D8B0A8482DB8}</td><td>INSTALLDIR</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>Depends.Primary_output1</td><td>{92359A81-74B5-4AC9-882D-D9BBA613CEE6}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td>depends.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>Depends.Primary_output1</td><td>{92359A81-74B5-4AC9-882D-D9BBA613CEE6}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>Depends.Primary_output2</td><td>{1F18D98A-49A3-4DC3-9A6D-0C67C4FCA1D3}</td><td>INSTALLDIR</td><td>8</td><td/><td>depends.primary_output1</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ExceLint.Primary_Output</td><td>{83B6A89F-7000-4FE7-9A33-999ED1B02884}</td><td>INSTALLDIR</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>ExceLint.Primary_Output1</td><td>{E7A37ED0-ACAB-43F5-8154-0AF8DD68EEEE}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td>excelint.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExceLint.Primary_Output1</td><td>{E7A37ED0-ACAB-43F5-8154-0AF8DD68EEEE}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExceLint.Primary_Output2</td><td>{117F28C6-EF8F-44B2-BF51-7FE31DEC3F8E}</td><td>INSTALLDIR</td><td>8</td><td/><td>excelint.primary_output1</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ExceLintCLIGenerator.Primary_output</td><td>{88985231-5E94-4F48-ADD5-E05762122494}</td><td>INSTALLDIR</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ExceLintFileFormats.Primary_output</td><td>{1DE677A1-698A-4095-8071-241DAB3998E4}</td><td>INSTALLDIR</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>ExceLintFileFormats.Primary_output1</td><td>{4C37AF31-0A22-4757-9AD7-7341597AD732}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td>excelintfileformats.primary_</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExceLintFileFormats.Primary_output1</td><td>{4C37AF31-0A22-4757-9AD7-7341597AD732}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExceLintFileFormats.Primary_output2</td><td>{37DBAB00-4623-4609-970A-26DF56FAD28E}</td><td>INSTALLDIR</td><td>8</td><td/><td>excelintfileformats.primary_1</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ExceLintRunner.Primary_Output</td><td>{CDEC7122-1DA9-4E14-BA49-612E3B56AB22}</td><td>INSTALLDIR</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>ExceLintRunner.Primary_Output1</td><td>{9EBEB800-FD7A-4F93-82BF-14222D39A42E}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td>excelintrunner.primary_outpu</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>ExceLintUI.Content_Files</td><td>{5C64ED20-3F75-459F-A9C0-20FDD5E7F202}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td>excelintui.content_files</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExceLintRunner.Primary_Output1</td><td>{9EBEB800-FD7A-4F93-82BF-14222D39A42E}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExceLintRunner.Primary_Output2</td><td>{63AF40D2-248C-4742-910B-D7A0E1F83F11}</td><td>INSTALLDIR</td><td>8</td><td/><td>excelintrunner.primary_outpu1</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExceLintUI.Content_Files</td><td>{5C64ED20-3F75-459F-A9C0-20FDD5E7F202}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExceLintUI.Content_Files1</td><td>{C5DF8A65-CFB5-491A-8589-531935679A6A}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExceLintUI.Content_Files2</td><td>{4649320A-6AB1-4E40-875D-322165D43108}</td><td>INSTALLDIR</td><td>8</td><td/><td>excelintui.content_files2</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExceLintUI.Content_Files3</td><td>{37746ABD-563C-4070-9F68-B6356A3853FA}</td><td>INSTALLDIR</td><td>8</td><td/><td>excelintui.content_files3</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExceLintUI.Debug_Symbols</td><td>{7EA45AFA-9F74-42D2-8AB0-AE908E792693}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExceLintUI.Debug_Symbols1</td><td>{8AD772D9-A1BF-44B7-933C-235A3E1FFE39}</td><td>INSTALLDIR</td><td>8</td><td/><td>excelintui.debug_symbols1</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ExceLintUI.Primary_output</td><td>{2C3B0C00-E125-44B6-8744-FF6D299C0D95}</td><td>INSTALLDIR</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>ExceLintUI.Primary_output1</td><td>{B45E1A00-FCDF-47A8-9FF2-69082016D790}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td>excelintui.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExceLintUI.Primary_output1</td><td>{B45E1A00-FCDF-47A8-9FF2-69082016D790}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExceLintUI.Primary_output2</td><td>{CB708E12-F86E-4660-B955-442463A46044}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExceLintUI.Primary_output3</td><td>{259D4110-EBD7-4925-8B29-2FCBA5287BA8}</td><td>INSTALLDIR</td><td>8</td><td/><td>excelintui.primary_output2</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExceLintUI.Primary_output4</td><td>{6C9CFCB4-6634-445D-8CF4-099893ED810A}</td><td>INSTALLDIR</td><td>8</td><td/><td>excelintui.primary_output3</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExceLintUI.Source_Files</td><td>{BF99D207-F037-42D4-8E26-A334A037C624}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExceLintUI.Source_Files1</td><td>{EE791511-A92B-492C-AC81-876B17B9766B}</td><td>INSTALLDIR</td><td>8</td><td/><td>excelintui.source_files1</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ExcelParser.Primary_Output</td><td>{9DC8BA28-208A-4CD0-9EF7-3C52C2354273}</td><td>INSTALLDIR</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>ExcelParser.Primary_Output1</td><td>{8F79A777-BA4C-48FC-8733-DDC054E0A18F}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td>excelparser.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExcelParser.Primary_Output1</td><td>{8F79A777-BA4C-48FC-8733-DDC054E0A18F}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExcelParser.Primary_Output2</td><td>{8FFCAB53-EB49-4F30-BD94-C1E1D55EDFBD}</td><td>INSTALLDIR</td><td>8</td><td/><td>excelparser.primary_output1</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>FParsec.Primary_Output</td><td>{1220C08E-1112-4B3B-ADEC-4D8A28DAF6D8}</td><td>INSTALLDIR</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>FParsec.Primary_Output1</td><td>{1E738D83-3E09-448E-A930-D5810EB5A7A6}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td>fparsec.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>FParsec.Primary_Output1</td><td>{1E738D83-3E09-448E-A930-D5810EB5A7A6}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>FParsec.Primary_Output2</td><td>{44867AD9-6DAC-4B7A-A43C-318DECD888DD}</td><td>INSTALLDIR</td><td>8</td><td/><td>fparsec.primary_output1</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>FParsecCS.Primary_output</td><td>{297D5171-0EB7-4FC0-9B9E-F480D2E652AB}</td><td>INSTALLDIR</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>FParsecCS.Primary_output1</td><td>{383785E1-924D-48EC-BB56-588A2B0446A7}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td>fparseccs.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>FParsecCS.Primary_output1</td><td>{383785E1-924D-48EC-BB56-588A2B0446A7}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>FParsecCS.Primary_output2</td><td>{AC18C01E-DC82-4ADB-B54F-9B1A8C93B2DD}</td><td>INSTALLDIR</td><td>8</td><td/><td>fparseccs.primary_output1</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ISX_DEFAULTCOMPONENT</td><td>{79DB6CB0-95C3-47CD-983E-E760B4E3C6D9}</td><td>INSTALLDIR</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>MathNet.Numerics.dll</td><td>{05A48894-3F8D-4761-B2CC-AF1B5DEA6222}</td><td>INSTALLDIR</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>MathNet.Numerics.dll1</td><td>{3CF5BB62-CE43-4F7C-B8DF-97644D29EAA1}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td>mathnet.numerics.dll</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>MathNet.Numerics.dll1</td><td>{3CF5BB62-CE43-4F7C-B8DF-97644D29EAA1}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>MathNet.Numerics.dll2</td><td>{6247A000-E0C4-4657-8963-DA835B9CE14E}</td><td>INSTALLDIR</td><td>8</td><td/><td>mathnet.numerics.dll1</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ParcelCOMShim.Primary_Output</td><td>{0ED9ACA4-549B-4D07-909F-792A0AEAFB1B}</td><td>INSTALLDIR</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>ParcelCOMShim.Primary_Output1</td><td>{9009F06B-AA15-4D5A-8749-15315805A97D}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td>parcelcomshim.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ParcelCOMShim.Primary_Output1</td><td>{9009F06B-AA15-4D5A-8749-15315805A97D}</td><td>WILLIAMS.EDU</td><td>8</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ParcelCOMShim.Primary_Output2</td><td>{AD19E560-A4FA-44D7-BCD4-376BD8E5FA97}</td><td>INSTALLDIR</td><td>8</td><td/><td>parcelcomshim.primary_output1</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>StatsGatherer.Primary_Output</td><td>{F97D8F5A-E6D3-4748-8968-EABE3D5AD3B7}</td><td>INSTALLDIR</td><td>2</td><td/><td/><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 	</table>
 
@@ -1091,6 +1113,24 @@
 		<row><td>INSTALLDIR</td><td>MathNet.Numerics.dll</td></row>
 		<row><td>INSTALLDIR</td><td>ParcelCOMShim.Primary_Output</td></row>
 		<row><td>INSTALLDIR</td><td>StatsGatherer.Primary_Output</td></row>
+		<row><td>WILLIAMS.EDU</td><td>AllOtherFiles</td></row>
+		<row><td>WILLIAMS.EDU</td><td>COMWrapper.Primary_output1</td></row>
+		<row><td>WILLIAMS.EDU</td><td>CUSTODESParser.Primary_Output1</td></row>
+		<row><td>WILLIAMS.EDU</td><td>Depends.Primary_output1</td></row>
+		<row><td>WILLIAMS.EDU</td><td>ExceLint.Primary_Output1</td></row>
+		<row><td>WILLIAMS.EDU</td><td>ExceLintFileFormats.Primary_output1</td></row>
+		<row><td>WILLIAMS.EDU</td><td>ExceLintRunner.Primary_Output1</td></row>
+		<row><td>WILLIAMS.EDU</td><td>ExceLintUI.Content_Files</td></row>
+		<row><td>WILLIAMS.EDU</td><td>ExceLintUI.Content_Files1</td></row>
+		<row><td>WILLIAMS.EDU</td><td>ExceLintUI.Debug_Symbols</td></row>
+		<row><td>WILLIAMS.EDU</td><td>ExceLintUI.Primary_output1</td></row>
+		<row><td>WILLIAMS.EDU</td><td>ExceLintUI.Primary_output2</td></row>
+		<row><td>WILLIAMS.EDU</td><td>ExceLintUI.Source_Files</td></row>
+		<row><td>WILLIAMS.EDU</td><td>ExcelParser.Primary_Output1</td></row>
+		<row><td>WILLIAMS.EDU</td><td>FParsec.Primary_Output1</td></row>
+		<row><td>WILLIAMS.EDU</td><td>FParsecCS.Primary_output1</td></row>
+		<row><td>WILLIAMS.EDU</td><td>MathNet.Numerics.dll1</td></row>
+		<row><td>WILLIAMS.EDU</td><td>ParcelCOMShim.Primary_Output1</td></row>
 	</table>
 
 	<table name="CustomAction">
@@ -1909,33 +1949,55 @@
 		<col key="yes" def="s38">Feature_</col>
 		<col key="yes" def="s72">Component_</col>
 		<row><td>AlwaysInstall</td><td>AllOtherFiles</td></row>
+		<row><td>AlwaysInstall</td><td>AllOtherFiles1</td></row>
 		<row><td>AlwaysInstall</td><td>COMWrapper.Primary_output</td></row>
 		<row><td>AlwaysInstall</td><td>COMWrapper.Primary_output1</td></row>
+		<row><td>AlwaysInstall</td><td>COMWrapper.Primary_output2</td></row>
 		<row><td>AlwaysInstall</td><td>CUSTODESParser.Primary_Output</td></row>
 		<row><td>AlwaysInstall</td><td>CUSTODESParser.Primary_Output1</td></row>
+		<row><td>AlwaysInstall</td><td>CUSTODESParser.Primary_Output2</td></row>
 		<row><td>AlwaysInstall</td><td>Depends.Primary_output</td></row>
 		<row><td>AlwaysInstall</td><td>Depends.Primary_output1</td></row>
+		<row><td>AlwaysInstall</td><td>Depends.Primary_output2</td></row>
 		<row><td>AlwaysInstall</td><td>ExceLint.Primary_Output</td></row>
 		<row><td>AlwaysInstall</td><td>ExceLint.Primary_Output1</td></row>
+		<row><td>AlwaysInstall</td><td>ExceLint.Primary_Output2</td></row>
 		<row><td>AlwaysInstall</td><td>ExceLintCLIGenerator.Primary_output</td></row>
 		<row><td>AlwaysInstall</td><td>ExceLintFileFormats.Primary_output</td></row>
 		<row><td>AlwaysInstall</td><td>ExceLintFileFormats.Primary_output1</td></row>
+		<row><td>AlwaysInstall</td><td>ExceLintFileFormats.Primary_output2</td></row>
 		<row><td>AlwaysInstall</td><td>ExceLintRunner.Primary_Output</td></row>
 		<row><td>AlwaysInstall</td><td>ExceLintRunner.Primary_Output1</td></row>
+		<row><td>AlwaysInstall</td><td>ExceLintRunner.Primary_Output2</td></row>
 		<row><td>AlwaysInstall</td><td>ExceLintUI.Content_Files</td></row>
+		<row><td>AlwaysInstall</td><td>ExceLintUI.Content_Files1</td></row>
+		<row><td>AlwaysInstall</td><td>ExceLintUI.Content_Files2</td></row>
+		<row><td>AlwaysInstall</td><td>ExceLintUI.Content_Files3</td></row>
+		<row><td>AlwaysInstall</td><td>ExceLintUI.Debug_Symbols</td></row>
+		<row><td>AlwaysInstall</td><td>ExceLintUI.Debug_Symbols1</td></row>
 		<row><td>AlwaysInstall</td><td>ExceLintUI.Primary_output</td></row>
 		<row><td>AlwaysInstall</td><td>ExceLintUI.Primary_output1</td></row>
+		<row><td>AlwaysInstall</td><td>ExceLintUI.Primary_output2</td></row>
+		<row><td>AlwaysInstall</td><td>ExceLintUI.Primary_output3</td></row>
+		<row><td>AlwaysInstall</td><td>ExceLintUI.Primary_output4</td></row>
+		<row><td>AlwaysInstall</td><td>ExceLintUI.Source_Files</td></row>
+		<row><td>AlwaysInstall</td><td>ExceLintUI.Source_Files1</td></row>
 		<row><td>AlwaysInstall</td><td>ExcelParser.Primary_Output</td></row>
 		<row><td>AlwaysInstall</td><td>ExcelParser.Primary_Output1</td></row>
+		<row><td>AlwaysInstall</td><td>ExcelParser.Primary_Output2</td></row>
 		<row><td>AlwaysInstall</td><td>FParsec.Primary_Output</td></row>
 		<row><td>AlwaysInstall</td><td>FParsec.Primary_Output1</td></row>
+		<row><td>AlwaysInstall</td><td>FParsec.Primary_Output2</td></row>
 		<row><td>AlwaysInstall</td><td>FParsecCS.Primary_output</td></row>
 		<row><td>AlwaysInstall</td><td>FParsecCS.Primary_output1</td></row>
+		<row><td>AlwaysInstall</td><td>FParsecCS.Primary_output2</td></row>
 		<row><td>AlwaysInstall</td><td>ISX_DEFAULTCOMPONENT</td></row>
 		<row><td>AlwaysInstall</td><td>MathNet.Numerics.dll</td></row>
 		<row><td>AlwaysInstall</td><td>MathNet.Numerics.dll1</td></row>
+		<row><td>AlwaysInstall</td><td>MathNet.Numerics.dll2</td></row>
 		<row><td>AlwaysInstall</td><td>ParcelCOMShim.Primary_Output</td></row>
 		<row><td>AlwaysInstall</td><td>ParcelCOMShim.Primary_Output1</td></row>
+		<row><td>AlwaysInstall</td><td>ParcelCOMShim.Primary_Output2</td></row>
 		<row><td>AlwaysInstall</td><td>StatsGatherer.Primary_Output</td></row>
 	</table>
 
@@ -1951,20 +2013,25 @@
 		<col def="S255">ISBuildSourcePath</col>
 		<col def="I4">ISAttributes</col>
 		<col def="S72">ISComponentSubFolder_</col>
-		<row><td>burnsy.ico</td><td>AllOtherFiles</td><td>burnsy.ico</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ISProjectFolder&gt;\burnsy.ico</td><td>1</td><td/></row>
-		<row><td>comwrapper.primary_output</td><td>COMWrapper.Primary_output1</td><td>COMWrapper.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;COMWrapper&gt;|Built</td><td>3</td><td/></row>
-		<row><td>custodesparser.primary_outpu</td><td>CUSTODESParser.Primary_Output1</td><td>CUSTODESParser.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;CUSTODESParser&gt;|Built</td><td>3</td><td/></row>
-		<row><td>depends.primary_output</td><td>Depends.Primary_output1</td><td>Depends.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;Depends&gt;|Built</td><td>3</td><td/></row>
-		<row><td>excelint.primary_output</td><td>ExceLint.Primary_Output1</td><td>ExceLint.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLint&gt;|Built</td><td>3</td><td/></row>
-		<row><td>excelintfileformats.primary_</td><td>ExceLintFileFormats.Primary_output1</td><td>ExceLintFileFormats.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLintFileFormats&gt;|Built</td><td>3</td><td/></row>
-		<row><td>excelintrunner.primary_outpu</td><td>ExceLintRunner.Primary_Output1</td><td>ExceLintRunner.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLintRunner&gt;|Built</td><td>3</td><td/></row>
-		<row><td>excelintui.content_files</td><td>ExceLintUI.Content_Files</td><td>ExceLintUI.Content Files</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLintUI&gt;|ContentFiles</td><td>3</td><td/></row>
-		<row><td>excelintui.primary_output</td><td>ExceLintUI.Primary_output1</td><td>ExceLintUI.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLintUI&gt;|Built</td><td>3</td><td/></row>
-		<row><td>excelparser.primary_output</td><td>ExcelParser.Primary_Output1</td><td>ExcelParser.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExcelParser&gt;|Built</td><td>3</td><td/></row>
-		<row><td>fparsec.primary_output</td><td>FParsec.Primary_Output1</td><td>FParsec.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;FParsec&gt;|Built</td><td>3</td><td/></row>
-		<row><td>fparseccs.primary_output</td><td>FParsecCS.Primary_output1</td><td>FParsecCS.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;FParsecCS&gt;|Built</td><td>3</td><td/></row>
-		<row><td>mathnet.numerics.dll</td><td>MathNet.Numerics.dll1</td><td>MATHNE~1.DLL|MathNet.Numerics.dll</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;VSSolutionFolder&gt;\ExceLintRunner\bin\Debug\MathNet.Numerics.dll</td><td>1</td><td/></row>
-		<row><td>parcelcomshim.primary_output</td><td>ParcelCOMShim.Primary_Output1</td><td>ParcelCOMShim.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ParcelCOMShim&gt;|Built</td><td>3</td><td/></row>
+		<row><td>comwrapper.primary_output1</td><td>COMWrapper.Primary_output2</td><td>COMWrapper.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;COMWrapper&gt;|Built</td><td>3</td><td/></row>
+		<row><td>custodesparser.primary_outpu1</td><td>CUSTODESParser.Primary_Output2</td><td>CUSTODESParser.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;CUSTODESParser&gt;|Built</td><td>3</td><td/></row>
+		<row><td>depends.primary_output1</td><td>Depends.Primary_output2</td><td>Depends.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;Depends&gt;|Built</td><td>3</td><td/></row>
+		<row><td>excelint.primary_output1</td><td>ExceLint.Primary_Output2</td><td>ExceLint.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLint&gt;|Built</td><td>3</td><td/></row>
+		<row><td>excelintfileformats.primary_1</td><td>ExceLintFileFormats.Primary_output2</td><td>ExceLintFileFormats.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLintFileFormats&gt;|Built</td><td>3</td><td/></row>
+		<row><td>excelintrunner.primary_outpu1</td><td>ExceLintRunner.Primary_Output2</td><td>ExceLintRunner.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLintRunner&gt;|Built</td><td>3</td><td/></row>
+		<row><td>excelintui.content_files2</td><td>ExceLintUI.Content_Files2</td><td>ExceLintUI.Content Files</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLintUI&gt;|ContentFiles</td><td>3</td><td/></row>
+		<row><td>excelintui.content_files3</td><td>ExceLintUI.Content_Files3</td><td>ExceLintUI.Content Files</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLintUI&gt;|ContentFiles</td><td>3</td><td/></row>
+		<row><td>excelintui.debug_symbols1</td><td>ExceLintUI.Debug_Symbols1</td><td>ExceLintUI.Debug Symbols</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLintUI&gt;|Symbols</td><td>3</td><td/></row>
+		<row><td>excelintui.dll.manifest</td><td>AllOtherFiles1</td><td>EXCELI~1.MAN|ExceLintUI.dll.manifest</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;VSSolutionFolder&gt;\ExceLintUI\bin\Debug\ExceLintUI.dll.manifest</td><td>1</td><td/></row>
+		<row><td>excelintui.primary_output2</td><td>ExceLintUI.Primary_output3</td><td>ExceLintUI.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLintUI&gt;|Built</td><td>3</td><td/></row>
+		<row><td>excelintui.primary_output3</td><td>ExceLintUI.Primary_output4</td><td>ExceLintUI.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLintUI&gt;|Built</td><td>3</td><td/></row>
+		<row><td>excelintui.source_files1</td><td>ExceLintUI.Source_Files1</td><td>ExceLintUI.Source Files</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLintUI&gt;|SourceFiles</td><td>3</td><td/></row>
+		<row><td>excelintui.vsto</td><td>AllOtherFiles1</td><td>EXCELI~1.VST|ExceLintUI.vsto</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;VSSolutionFolder&gt;\ExceLintUI\bin\Debug\ExceLintUI.vsto</td><td>1</td><td/></row>
+		<row><td>excelparser.primary_output1</td><td>ExcelParser.Primary_Output2</td><td>ExcelParser.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExcelParser&gt;|Built</td><td>3</td><td/></row>
+		<row><td>fparsec.primary_output1</td><td>FParsec.Primary_Output2</td><td>FParsec.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;FParsec&gt;|Built</td><td>3</td><td/></row>
+		<row><td>fparseccs.primary_output1</td><td>FParsecCS.Primary_output2</td><td>FParsecCS.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;FParsecCS&gt;|Built</td><td>3</td><td/></row>
+		<row><td>mathnet.numerics.dll1</td><td>MathNet.Numerics.dll2</td><td>MATHNE~1.DLL|MathNet.Numerics.dll</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;VSSolutionFolder&gt;\ExceLintRunner\bin\Debug\MathNet.Numerics.dll</td><td>1</td><td/></row>
+		<row><td>parcelcomshim.primary_output1</td><td>ParcelCOMShim.Primary_Output2</td><td>ParcelCOMShim.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ParcelCOMShim&gt;|Built</td><td>3</td><td/></row>
 	</table>
 
 	<table name="FileSFPCatalog">
@@ -2109,33 +2176,55 @@
 		<col def="S0">HTTPLocation</col>
 		<col def="S0">Miscellaneous</col>
 		<row><td>AllOtherFiles</td><td/><td/><td>_E5B867A9_56FC_481C_A849_4AB7EA99CD3F_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>AllOtherFiles1</td><td/><td/><td>_CE4D9A03_585D_41EA_9F83_0796D181BF4C_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>COMWrapper.Primary_output</td><td/><td/><td>_42663356_B917_47C3_8D1E_19E427C926AF_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>COMWrapper.Primary_output1</td><td/><td/><td>_42CE4BBA_415B_43A9_8EEF_E3E08FD07B24_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>COMWrapper.Primary_output2</td><td/><td/><td>_CEB3B37C_C90B_4AF5_A445_5ADE9C711975_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>CUSTODESParser.Primary_Output</td><td/><td/><td>_03147AC1_95FA_468F_85A9_D747BD3AA374_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>CUSTODESParser.Primary_Output1</td><td/><td/><td>_8E233AA0_073F_410F_8C49_A384CEFA64C3_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>CUSTODESParser.Primary_Output2</td><td/><td/><td>_44E35ED8_E791_4815_8A72_94D80A069D3E_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>Depends.Primary_output</td><td/><td/><td>_087AC475_391E_410F_9A8C_D3026EF5A685_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>Depends.Primary_output1</td><td/><td/><td>_D33B67FD_C3C8_4AE9_9BCD_C96BE69A7B6D_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>Depends.Primary_output2</td><td/><td/><td>_03A4F1ED_FAD7_4190_A5D1_DDDA8E149788_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ExceLint.Primary_Output</td><td/><td/><td>_7EA62BF1_D9E9_494B_97A1_885DF3C759CA_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ExceLint.Primary_Output1</td><td/><td/><td>_AE7C07D3_62BF_4967_B637_6981001D01F9_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ExceLint.Primary_Output2</td><td/><td/><td>_DE8789E5_658A_4816_9B0D_9886C2FF34DE_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ExceLintCLIGenerator.Primary_output</td><td/><td/><td>_C71BA997_66C9_4E78_9B1C_9D31921F32CA_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ExceLintFileFormats.Primary_output</td><td/><td/><td>_7D116A78_1A29_4C8F_B97A_EA213A32887A_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ExceLintFileFormats.Primary_output1</td><td/><td/><td>_766C154F_99BF_4C4C_8765_6033DBE93A96_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ExceLintFileFormats.Primary_output2</td><td/><td/><td>_4A29A764_4EF3_40CC_BBE0_1EAAB01EA681_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ExceLintRunner.Primary_Output</td><td/><td/><td>_2B86DE73_1C30_41A8_B94B_D1F468A8F53C_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ExceLintRunner.Primary_Output1</td><td/><td/><td>_BCAD9D94_700F_4EDF_9098_EC9030AD666B_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ExceLintRunner.Primary_Output2</td><td/><td/><td>_ECBEC2AD_B152_4174_AC39_864BEA0A2268_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ExceLintUI.Content_Files</td><td/><td/><td>_A138740E_CC44_4F7F_B43B_32425D120562_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ExceLintUI.Content_Files1</td><td/><td/><td>_9E1C9037_2F19_4084_AC97_3BE44AE48897_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ExceLintUI.Content_Files2</td><td/><td/><td>_C5DD7CF3_0536_4F52_9731_D7A1094E20D8_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ExceLintUI.Content_Files3</td><td/><td/><td>_0435C0A1_DD0B_48D5_9ECF_D8BD358DD6E1_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ExceLintUI.Debug_Symbols</td><td/><td/><td>_C1D83CC9_A60A_4BBC_A409_5559E3F52A28_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ExceLintUI.Debug_Symbols1</td><td/><td/><td>_98DB83CA_78C6_42A1_949D_3784E46C1E3B_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ExceLintUI.Primary_output</td><td/><td/><td>_7954D820_BA00_42A8_9E38_62C0BD89A08E_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ExceLintUI.Primary_output1</td><td/><td/><td>_ADC6C25A_04F4_4C8E_9989_ED70B24B0569_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ExceLintUI.Primary_output2</td><td/><td/><td>_43E35786_7E9B_4219_B6D4_01E256B55716_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ExceLintUI.Primary_output3</td><td/><td/><td>_C9F45CBE_4414_43D5_B1CF_8401A99AA15D_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ExceLintUI.Primary_output4</td><td/><td/><td>_FA9BA57A_967F_46C9_9712_E97C0A228AA5_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ExceLintUI.Source_Files</td><td/><td/><td>_96D27FAD_B539_4AD1_AC62_2543DACA3D21_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ExceLintUI.Source_Files1</td><td/><td/><td>_72B4376F_270F_4472_B473_E95307222DCF_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ExcelParser.Primary_Output</td><td/><td/><td>_F52FDEAB_E4F4_468B_BB19_BE824F0742B7_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ExcelParser.Primary_Output1</td><td/><td/><td>_A17032E1_8F00_4F7F_A523_561A06C3FAFF_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ExcelParser.Primary_Output2</td><td/><td/><td>_F4E69D92_86A0_4218_A67E_E1F4E1B2C1BD_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>FParsec.Primary_Output</td><td/><td/><td>_CCFEB7EC_DAC1_4DFE_8193_C50B6F14785A_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>FParsec.Primary_Output1</td><td/><td/><td>_43855F03_5559_4B62_B9B2_582F472748A9_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>FParsec.Primary_Output2</td><td/><td/><td>_9C9CB8EE_4ED0_4F23_B9E1_59056F1A96B7_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>FParsecCS.Primary_output</td><td/><td/><td>_F096BB03_F32A_40BD_A20F_60B4765FB967_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>FParsecCS.Primary_output1</td><td/><td/><td>_BE4F1243_A960_4ACA_98DE_4F018EB3F17E_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>FParsecCS.Primary_output2</td><td/><td/><td>_7C17E041_0E90_47B7_8DBA_BF0D60351390_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ISX_DEFAULTCOMPONENT</td><td/><td/><td>_B6EE9F24_5BDB_4CFA_B769_AC93C53BBBEA_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>MathNet.Numerics.dll</td><td/><td/><td>_E85C0C4E_36B1_46DA_AD4E_9DD41F4F2E77_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>MathNet.Numerics.dll1</td><td/><td/><td>_4F361D4B_2ECD_44FC_9C60_F8FEE0F1A32A_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>MathNet.Numerics.dll2</td><td/><td/><td>_05E48B41_F810_4B7B_893E_3FDD78013032_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ParcelCOMShim.Primary_Output</td><td/><td/><td>_947F6C5A_02C7_4C88_AD7C_650884E157A0_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ParcelCOMShim.Primary_Output1</td><td/><td/><td>_8E38CEFF_B3C4_41BC_A6C0_3B24F5E4AAFD_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ParcelCOMShim.Primary_Output2</td><td/><td/><td>_56053116_80A8_4568_AC57_3622A4939D14_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>StatsGatherer.Primary_Output</td><td/><td/><td>_91A84B3A_C52E_44EF_B1D3_58A506C760D4_FILTER</td><td/><td/><td/><td/></row>
 	</table>
 
