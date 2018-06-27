@@ -669,6 +669,12 @@ namespace ExceLintUI
 
         private void RunCUSTODES_Click(object sender, RibbonControlEventArgs e)
         {
+            var debug = false;
+            if ((System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Alt) > 0)
+            {
+                debug = true;
+            }
+
             string rootPath = null;
 
             // install CUSTODES if not already installed
@@ -686,7 +692,7 @@ namespace ExceLintUI
             Globals.ThisAddIn.Application.DisplayAlerts = false;
 
             // run analysis and display on screen
-            currentWorkbook.toggleCUSTODES(rootPath, custodesPath, JAVA_PATH, Globals.ThisAddIn.Application.ActiveWorkbook);
+            currentWorkbook.toggleCUSTODES(rootPath, custodesPath, JAVA_PATH, Globals.ThisAddIn.Application.ActiveWorkbook, debug);
 
             setUIState(currentWorkbook);
 

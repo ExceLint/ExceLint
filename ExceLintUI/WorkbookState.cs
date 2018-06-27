@@ -508,7 +508,7 @@ namespace ExceLintUI
             }
         }
 
-        public void toggleCUSTODES(string rootPath, string custodesPath, string javaPath, Workbook w)
+        public void toggleCUSTODES(string rootPath, string custodesPath, string javaPath, Workbook w, bool debug)
         {
             // get current sheet
             var ws = (Worksheet)w.ActiveSheet;
@@ -531,7 +531,10 @@ namespace ExceLintUI
                     var ok_output = ok.Item1;
 
                     // print to messagebox
-                    System.Windows.Forms.MessageBox.Show("CUSTODES OUTPUT:\n\n" + ok_output.RawOutput);
+                    if(debug)
+                    {
+                        System.Windows.Forms.MessageBox.Show("CUSTODES OUTPUT:\n\n" + ok_output.RawOutput);
+                    }
 
                     // Inform user what is about to happen
                     System.Windows.Forms.MessageBox.Show("CUSTODES analysis complete.  Highlighting " + ok_output.Smells.Length + " cells.");
@@ -1351,7 +1354,9 @@ namespace ExceLintUI
         {
             restoreOutputColors();
             _audited.Clear();
+            currentFlag = 0;
             _analysis.hasRun = false;
+            _custodes_shown[(Worksheet)_workbook.ActiveSheet] = false;
             setTool(active: false);
         }
 
