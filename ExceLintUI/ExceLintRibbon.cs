@@ -49,7 +49,7 @@ namespace ExceLintUI
             if (fixClusterModel == null)
             {
                 // change button name
-                RegularityMap.Label = "Hide Regularity Map";
+                RegularityMap.Label = "Hide Global View";
 
                 // create progbar in main thread;
                 // worker thread will call Dispose
@@ -92,7 +92,7 @@ namespace ExceLintUI
                 currentWorkbook.restoreOutputColors();
 
                 // change button name
-                RegularityMap.Label = "Show Regularity Map";
+                RegularityMap.Label = "Show Global View";
 
                 // reset model
                 fixClusterModel = null;
@@ -422,7 +422,7 @@ namespace ExceLintUI
         private void resetFixesButton_Click(object sender, RibbonControlEventArgs e)
         {
             // change button name
-            FixClusterButton.Label = "Regularity Map";
+            FixClusterButton.Label = "Global View";
 
             // toss everything so that the user can do this again
             fixClusterModel = null;
@@ -727,10 +727,10 @@ namespace ExceLintUI
             for (int i = 0; i < feats.Length; i++)
             {
                 // run feature
-                sb.Append(feats[i]);
-                sb.Append(" = ");
+                //sb.Append(feats[i]);
+                //sb.Append(" = ");
                 sb.Append(conf.get_FeatureByName(feats[i]).Invoke(cursorAddr).Invoke(dag).ToString());
-                sb.Append("\n");
+                //sb.Append("\n");
             }
 
             // display

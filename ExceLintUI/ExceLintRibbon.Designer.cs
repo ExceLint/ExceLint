@@ -53,6 +53,7 @@
             this.EntropyRanking = this.Factory.CreateRibbonButton();
             this.RunCUSTODES = this.Factory.CreateRibbonButton();
             this.ClearEverything = this.Factory.CreateRibbonButton();
+            this.RangeForSelection = this.Factory.CreateRibbonButton();
             this.box2 = this.Factory.CreateRibbonBox();
             this.LSHTest = this.Factory.CreateRibbonButton();
             this.getLSH = this.Factory.CreateRibbonButton();
@@ -82,11 +83,13 @@
             this.allCells = this.Factory.CreateRibbonCheckBox();
             this.weightByIntrinsicAnomalousness = this.Factory.CreateRibbonCheckBox();
             this.conditioningSetSize = this.Factory.CreateRibbonCheckBox();
-            this.separator4 = this.Factory.CreateRibbonSeparator();
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
             this.button1 = this.Factory.CreateRibbonButton();
-            this.RangeForSelection = this.Factory.CreateRibbonButton();
+            this.separator1 = this.Factory.CreateRibbonSeparator();
+            this.separator2 = this.Factory.CreateRibbonSeparator();
+            this.separator3 = this.Factory.CreateRibbonSeparator();
+            this.separator5 = this.Factory.CreateRibbonSeparator();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -109,6 +112,14 @@
             // CheckCellGroup
             // 
             this.CheckCellGroup.Items.Add(this.box1);
+            this.CheckCellGroup.Items.Add(this.separator2);
+            this.CheckCellGroup.Items.Add(this.RegularityMap);
+            this.CheckCellGroup.Items.Add(this.separator5);
+            this.CheckCellGroup.Items.Add(this.VectorForCell);
+            this.CheckCellGroup.Items.Add(this.separator1);
+            this.CheckCellGroup.Items.Add(this.ClearEverything);
+            this.CheckCellGroup.Items.Add(this.separator3);
+            this.CheckCellGroup.Items.Add(this.RunCUSTODES);
             this.CheckCellGroup.Items.Add(this.ClusterBox);
             this.CheckCellGroup.Items.Add(this.useResultant);
             this.CheckCellGroup.Items.Add(this.normSSCheckBox);
@@ -127,7 +138,6 @@
             this.CheckCellGroup.Items.Add(this.allCells);
             this.CheckCellGroup.Items.Add(this.weightByIntrinsicAnomalousness);
             this.CheckCellGroup.Items.Add(this.conditioningSetSize);
-            this.CheckCellGroup.Items.Add(this.separator4);
             this.CheckCellGroup.Items.Add(this.annotate);
             this.CheckCellGroup.Items.Add(this.annotateThisCell);
             this.CheckCellGroup.Name = "CheckCellGroup";
@@ -137,14 +147,11 @@
             this.box1.Items.Add(this.AnalyzeButton);
             this.box1.Items.Add(this.MarkAsOKButton);
             this.box1.Items.Add(this.StartOverButton);
-            this.box1.Items.Add(this.RegularityMap);
             this.box1.Items.Add(this.showHeatmap);
             this.box1.Items.Add(this.clusterForCell);
             this.box1.Items.Add(this.FixClusterButton);
             this.box1.Items.Add(this.resetFixesButton);
             this.box1.Items.Add(this.EntropyRanking);
-            this.box1.Items.Add(this.RunCUSTODES);
-            this.box1.Items.Add(this.ClearEverything);
             this.box1.Items.Add(this.RangeForSelection);
             this.box1.Items.Add(this.box2);
             this.box1.Items.Add(this.distanceCombo);
@@ -182,7 +189,7 @@
             // 
             this.RegularityMap.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
             this.RegularityMap.Image = global::ExceLintUI.Properties.Resources.graph;
-            this.RegularityMap.Label = "Show Regularity Map";
+            this.RegularityMap.Label = "Show Global View";
             this.RegularityMap.Name = "RegularityMap";
             this.RegularityMap.ShowImage = true;
             this.RegularityMap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.RegularityMap_Click);
@@ -235,6 +242,7 @@
             this.EntropyRanking.Label = "Entropy Ranking";
             this.EntropyRanking.Name = "EntropyRanking";
             this.EntropyRanking.ShowImage = true;
+            this.EntropyRanking.Visible = false;
             this.EntropyRanking.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.EntropyRanking_Click);
             // 
             // RunCUSTODES
@@ -255,13 +263,22 @@
             this.ClearEverything.ShowImage = true;
             this.ClearEverything.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ClearEverything_Click);
             // 
+            // RangeForSelection
+            // 
+            this.RangeForSelection.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.RangeForSelection.Image = global::ExceLintUI.Properties.Resources.graph;
+            this.RangeForSelection.Label = "Range for Selection";
+            this.RangeForSelection.Name = "RangeForSelection";
+            this.RangeForSelection.ShowImage = true;
+            this.RangeForSelection.Visible = false;
+            this.RangeForSelection.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.RangeForSelection_Click);
+            // 
             // box2
             // 
             this.box2.BoxStyle = Microsoft.Office.Tools.Ribbon.RibbonBoxStyle.Vertical;
             this.box2.Items.Add(this.LSHTest);
             this.box2.Items.Add(this.getLSH);
             this.box2.Items.Add(this.readClusterDump);
-            this.box2.Items.Add(this.VectorForCell);
             this.box2.Items.Add(this.cellIsFormula);
             this.box2.Items.Add(this.drawAllClusters);
             this.box2.Items.Add(this.LoadTrueSmells);
@@ -293,14 +310,18 @@
             // 
             // VectorForCell
             // 
+            this.VectorForCell.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.VectorForCell.Image = global::ExceLintUI.Properties.Resources.graph;
             this.VectorForCell.Label = "Vector for Cell";
             this.VectorForCell.Name = "VectorForCell";
+            this.VectorForCell.ShowImage = true;
             this.VectorForCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.VectorForCell_Click);
             // 
             // cellIsFormula
             // 
             this.cellIsFormula.Label = "Is Formula?";
             this.cellIsFormula.Name = "cellIsFormula";
+            this.cellIsFormula.Visible = false;
             this.cellIsFormula.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.cellIsFormula_Click);
             // 
             // drawAllClusters
@@ -320,12 +341,14 @@
             // 
             this.ExceLintVsTrueSmells.Label = "ExceLint vs True Smells";
             this.ExceLintVsTrueSmells.Name = "ExceLintVsTrueSmells";
+            this.ExceLintVsTrueSmells.Visible = false;
             this.ExceLintVsTrueSmells.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ExceLintVsTrueSmells_Click);
             // 
             // NukeSettings
             // 
             this.NukeSettings.Label = "Nuke Settings";
             this.NukeSettings.Name = "NukeSettings";
+            this.NukeSettings.Visible = false;
             this.NukeSettings.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.NukeSettings_Click);
             // 
             // distanceCombo
@@ -372,6 +395,7 @@
             this.significanceTextBox.Name = "significanceTextBox";
             this.significanceTextBox.SizeString = "100.0";
             this.significanceTextBox.Text = "5";
+            this.significanceTextBox.Visible = false;
             this.significanceTextBox.TextChanged += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.significanceTextBox_TextChanged);
             // 
             // spectralRanking
@@ -471,10 +495,6 @@
             this.conditioningSetSize.Visible = false;
             this.conditioningSetSize.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.conditioningSetSize_Click);
             // 
-            // separator4
-            // 
-            this.separator4.Name = "separator4";
-            // 
             // annotate
             // 
             this.annotate.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
@@ -482,6 +502,7 @@
             this.annotate.Label = "Annotate";
             this.annotate.Name = "annotate";
             this.annotate.ShowImage = true;
+            this.annotate.Visible = false;
             this.annotate.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotate_Click);
             // 
             // annotateThisCell
@@ -491,6 +512,7 @@
             this.annotateThisCell.Label = "Annotate Current Cell";
             this.annotateThisCell.Name = "annotateThisCell";
             this.annotateThisCell.ShowImage = true;
+            this.annotateThisCell.Visible = false;
             this.annotateThisCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.annotateThisCell_Click);
             // 
             // button1
@@ -501,14 +523,21 @@
             this.button1.Name = "button1";
             this.button1.ShowImage = true;
             // 
-            // RangeForSelection
+            // separator1
             // 
-            this.RangeForSelection.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.RangeForSelection.Image = global::ExceLintUI.Properties.Resources.graph;
-            this.RangeForSelection.Label = "Range for Selection";
-            this.RangeForSelection.Name = "RangeForSelection";
-            this.RangeForSelection.ShowImage = true;
-            this.RangeForSelection.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.RangeForSelection_Click);
+            this.separator1.Name = "separator1";
+            // 
+            // separator2
+            // 
+            this.separator2.Name = "separator2";
+            // 
+            // separator3
+            // 
+            this.separator3.Name = "separator3";
+            // 
+            // separator5
+            // 
+            this.separator5.Name = "separator5";
             // 
             // ExceLintRibbon
             // 
@@ -554,7 +583,6 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox conditioningSetSize;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox spectralRanking;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox showFixes;
-        internal Microsoft.Office.Tools.Ribbon.RibbonSeparator separator4;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton annotate;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton annotateThisCell;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox normRefCheckBox;
@@ -582,6 +610,10 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton RegularityMap;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton NukeSettings;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton RangeForSelection;
+        internal Microsoft.Office.Tools.Ribbon.RibbonSeparator separator2;
+        internal Microsoft.Office.Tools.Ribbon.RibbonSeparator separator1;
+        internal Microsoft.Office.Tools.Ribbon.RibbonSeparator separator5;
+        internal Microsoft.Office.Tools.Ribbon.RibbonSeparator separator3;
     }
 
     partial class ThisRibbonCollection
