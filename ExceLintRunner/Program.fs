@@ -7,6 +7,7 @@ open ExceLint.Utils
 open ExceLintFileFormats
 open System.Threading
 open MathNet.Numerics.Distributions
+open System.Diagnostics
 
     type BugClass = HashSet<AST.Address>
     type Stats = {
@@ -754,6 +755,10 @@ open MathNet.Numerics.Distributions
 
     [<EntryPoint>]
     let main argv = 
+        // global stopwatch
+        let sw = new Stopwatch()
+        sw.Start |> ignore
+
         let config =
             try
                 Args.processArgs argv
@@ -797,6 +802,9 @@ open MathNet.Numerics.Distributions
                         printfn "Cannot analyze workbook %A because:\n%A" shortf e.Message
                         printfn "Stacktrace:\n%A" e.StackTrace
         )
+
+        sw.Stop |> ignore
+        printfn "Total elapsed time: %A seconds" ((float sw.ElapsedMilliseconds) / 1000.0)
 
         if config.DontExitWithoutKeystroke then
             printfn "Press Enter to continue."
