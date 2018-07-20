@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>getting_started</title>
+
+
+<style type="text/css">
+body {
+  font-family: Helvetica, arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  background-color: white;
+  padding: 30px; }
+
+body > *:first-child {
+  margin-top: 0 !important; }
+body > *:last-child {
+  margin-bottom: 0 !important; }
+
+a {
+  color: #4183C4; }
+a.absent {
+  color: #cc0000; }
+a.anchor {
+  display: block;
+  padding-left: 30px;
+  margin-left: -30px;
+  cursor: pointer;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0; }
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 20px 0 10px;
+  padding: 0;
+  font-weight: bold;
+  -webkit-font-smoothing: antialiased;
+  cursor: text;
+  position: relative; }
+
+h1:hover a.anchor, h2:hover a.anchor, h3:hover a.anchor, h4:hover a.anchor, h5:hover a.anchor, h6:hover a.anchor {
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA09pVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoMTMuMCAyMDEyMDMwNS5tLjQxNSAyMDEyLzAzLzA1OjIxOjAwOjAwKSAgKE1hY2ludG9zaCkiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OUM2NjlDQjI4ODBGMTFFMTg1ODlEODNERDJBRjUwQTQiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OUM2NjlDQjM4ODBGMTFFMTg1ODlEODNERDJBRjUwQTQiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo5QzY2OUNCMDg4MEYxMUUxODU4OUQ4M0REMkFGNTBBNCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo5QzY2OUNCMTg4MEYxMUUxODU4OUQ4M0REMkFGNTBBNCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PsQhXeAAAABfSURBVHjaYvz//z8DJYCRUgMYQAbAMBQIAvEqkBQWXI6sHqwHiwG70TTBxGaiWwjCTGgOUgJiF1J8wMRAIUA34B4Q76HUBelAfJYSA0CuMIEaRP8wGIkGMA54bgQIMACAmkXJi0hKJQAAAABJRU5ErkJggg==) no-repeat 10px center;
+  text-decoration: none; }
+
+h1 tt, h1 code {
+  font-size: inherit; }
+
+h2 tt, h2 code {
+  font-size: inherit; }
+
+h3 tt, h3 code {
+  font-size: inherit; }
+
+h4 tt, h4 code {
+  font-size: inherit; }
+
+h5 tt, h5 code {
+  font-size: inherit; }
+
+h6 tt, h6 code {
+  font-size: inherit; }
+
+h1 {
+  font-size: 28px;
+  color: black; }
+
+h2 {
+  font-size: 24px;
+  border-bottom: 1px solid #cccccc;
+  color: black; }
+
+h3 {
+  font-size: 18px; }
+
+h4 {
+  font-size: 16px; }
+
+h5 {
+  font-size: 14px; }
+
+h6 {
+  color: #777777;
+  font-size: 14px; }
+
+p, blockquote, ul, ol, dl, li, table, pre {
+  margin: 15px 0; }
+
+hr {
+  background: transparent url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAYAAAAECAYAAACtBE5DAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNSBNYWNpbnRvc2giIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6OENDRjNBN0E2NTZBMTFFMEI3QjRBODM4NzJDMjlGNDgiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6OENDRjNBN0I2NTZBMTFFMEI3QjRBODM4NzJDMjlGNDgiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo4Q0NGM0E3ODY1NkExMUUwQjdCNEE4Mzg3MkMyOUY0OCIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo4Q0NGM0E3OTY1NkExMUUwQjdCNEE4Mzg3MkMyOUY0OCIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PqqezsUAAAAfSURBVHjaYmRABcYwBiM2QSA4y4hNEKYDQxAEAAIMAHNGAzhkPOlYAAAAAElFTkSuQmCC) repeat-x 0 0;
+  border: 0 none;
+  color: #cccccc;
+  height: 4px;
+  padding: 0;
+}
+
+body > h2:first-child {
+  margin-top: 0;
+  padding-top: 0; }
+body > h1:first-child {
+  margin-top: 0;
+  padding-top: 0; }
+  body > h1:first-child + h2 {
+    margin-top: 0;
+    padding-top: 0; }
+body > h3:first-child, body > h4:first-child, body > h5:first-child, body > h6:first-child {
+  margin-top: 0;
+  padding-top: 0; }
+
+a:first-child h1, a:first-child h2, a:first-child h3, a:first-child h4, a:first-child h5, a:first-child h6 {
+  margin-top: 0;
+  padding-top: 0; }
+
+h1 p, h2 p, h3 p, h4 p, h5 p, h6 p {
+  margin-top: 0; }
+
+li p.first {
+  display: inline-block; }
+li {
+  margin: 0; }
+ul, ol {
+  padding-left: 30px; }
+
+ul :first-child, ol :first-child {
+  margin-top: 0; }
+
+dl {
+  padding: 0; }
+  dl dt {
+    font-size: 14px;
+    font-weight: bold;
+    font-style: italic;
+    padding: 0;
+    margin: 15px 0 5px; }
+    dl dt:first-child {
+      padding: 0; }
+    dl dt > :first-child {
+      margin-top: 0; }
+    dl dt > :last-child {
+      margin-bottom: 0; }
+  dl dd {
+    margin: 0 0 15px;
+    padding: 0 15px; }
+    dl dd > :first-child {
+      margin-top: 0; }
+    dl dd > :last-child {
+      margin-bottom: 0; }
+
+blockquote {
+  border-left: 4px solid #dddddd;
+  padding: 0 15px;
+  color: #777777; }
+  blockquote > :first-child {
+    margin-top: 0; }
+  blockquote > :last-child {
+    margin-bottom: 0; }
+
+table {
+  padding: 0;border-collapse: collapse; }
+  table tr {
+    border-top: 1px solid #cccccc;
+    background-color: white;
+    margin: 0;
+    padding: 0; }
+    table tr:nth-child(2n) {
+      background-color: #f8f8f8; }
+    table tr th {
+      font-weight: bold;
+      border: 1px solid #cccccc;
+      margin: 0;
+      padding: 6px 13px; }
+    table tr td {
+      border: 1px solid #cccccc;
+      margin: 0;
+      padding: 6px 13px; }
+    table tr th :first-child, table tr td :first-child {
+      margin-top: 0; }
+    table tr th :last-child, table tr td :last-child {
+      margin-bottom: 0; }
+
+img {
+  max-width: 100%; }
+
+span.frame {
+  display: block;
+  overflow: hidden; }
+  span.frame > span {
+    border: 1px solid #dddddd;
+    display: block;
+    float: left;
+    overflow: hidden;
+    margin: 13px 0 0;
+    padding: 7px;
+    width: auto; }
+  span.frame span img {
+    display: block;
+    float: left; }
+  span.frame span span {
+    clear: both;
+    color: #333333;
+    display: block;
+    padding: 5px 0 0; }
+span.align-center {
+  display: block;
+  overflow: hidden;
+  clear: both; }
+  span.align-center > span {
+    display: block;
+    overflow: hidden;
+    margin: 13px auto 0;
+    text-align: center; }
+  span.align-center span img {
+    margin: 0 auto;
+    text-align: center; }
+span.align-right {
+  display: block;
+  overflow: hidden;
+  clear: both; }
+  span.align-right > span {
+    display: block;
+    overflow: hidden;
+    margin: 13px 0 0;
+    text-align: right; }
+  span.align-right span img {
+    margin: 0;
+    text-align: right; }
+span.float-left {
+  display: block;
+  margin-right: 13px;
+  overflow: hidden;
+  float: left; }
+  span.float-left span {
+    margin: 13px 0 0; }
+span.float-right {
+  display: block;
+  margin-left: 13px;
+  overflow: hidden;
+  float: right; }
+  span.float-right > span {
+    display: block;
+    overflow: hidden;
+    margin: 13px auto 0;
+    text-align: right; }
+
+code, tt {
+  margin: 0 2px;
+  padding: 0 5px;
+  white-space: nowrap;
+  border: 1px solid #eaeaea;
+  background-color: #f8f8f8;
+  border-radius: 3px; }
+
+pre code {
+  margin: 0;
+  padding: 0;
+  white-space: pre;
+  border: none;
+  background: transparent; }
+
+.highlight pre {
+  background-color: #f8f8f8;
+  border: 1px solid #cccccc;
+  font-size: 13px;
+  line-height: 19px;
+  overflow: auto;
+  padding: 6px 10px;
+  border-radius: 3px; }
+
+pre {
+  background-color: #f8f8f8;
+  border: 1px solid #cccccc;
+  font-size: 13px;
+  line-height: 19px;
+  overflow: auto;
+  padding: 6px 10px;
+  border-radius: 3px; }
+  pre code, pre tt {
+    background-color: transparent;
+    border: none; }
+
+sup {
+    font-size: 0.83em;
+    vertical-align: super;
+    line-height: 0;
+}
+
+kbd {
+  display: inline-block;
+  padding: 3px 5px;
+  font-size: 11px;
+  line-height: 10px;
+  color: #555;
+  vertical-align: middle;
+  background-color: #fcfcfc;
+  border: solid 1px #ccc;
+  border-bottom-color: #bbb;
+  border-radius: 3px;
+  box-shadow: inset 0 -1px 0 #bbb
+}
+
+* {
+	-webkit-print-color-adjust: exact;
+}
+@media screen and (min-width: 914px) {
+    body {
+        width: 854px;
+        margin:0 auto;
+    }
+}
+@media print {
+	table, pre {
+		page-break-inside: avoid;
+	}
+	pre {
+		word-wrap: break-word;
+	}
+}
+</style>
+
+<style type="text/css">
+/**
+ * prism.js default theme for JavaScript, CSS and HTML
+ * Based on dabblet (http://dabblet.com)
+ * @author Lea Verou
+ */
+
+code[class*="language-"],
+pre[class*="language-"] {
+	color: black;
+	background: none;
+	text-shadow: 0 1px white;
+	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	word-wrap: normal;
+	line-height: 1.5;
+
+	-moz-tab-size: 4;
+	-o-tab-size: 4;
+	tab-size: 4;
+
+	-webkit-hyphens: none;
+	-moz-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+}
+
+pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
+code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
+	text-shadow: none;
+	background: #b3d4fc;
+}
+
+pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
+code[class*="language-"]::selection, code[class*="language-"] ::selection {
+	text-shadow: none;
+	background: #b3d4fc;
+}
+
+@media print {
+	code[class*="language-"],
+	pre[class*="language-"] {
+		text-shadow: none;
+	}
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+	padding: 1em;
+	margin: .5em 0;
+	overflow: auto;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+	background: #f5f2f0;
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+	padding: .1em;
+	border-radius: .3em;
+	white-space: normal;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+	color: slategray;
+}
+
+.token.punctuation {
+	color: #999;
+}
+
+.namespace {
+	opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+	color: #905;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+	color: #690;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+	color: #a67f59;
+	background: hsla(0, 0%, 100%, .5);
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+	color: #07a;
+}
+
+.token.function {
+	color: #DD4A68;
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+	color: #e90;
+}
+
+.token.important,
+.token.bold {
+	font-weight: bold;
+}
+.token.italic {
+	font-style: italic;
+}
+
+.token.entity {
+	cursor: help;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<h1 id="toc_0">OOPSLA 2018 Artifact Evaluation Getting Started Guide for ExceLint</h1>
+
+<h2 id="toc_1">Glossary</h2>
+
+<table>
+<thead>
+<tr>
+<th>term</th>
+<th>meaning</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>ExceLint</td>
+<td>ExceLint is a static analysis that finds formula errors in spreadsheets.</td>
+</tr>
+<tr>
+<td>ExceLint UI</td>
+<td>The ExceLint UI is an implementation of the ExceLint analysis, written as a plugin for Microsoft Excel on Windows.</td>
+</tr>
+<tr>
+<td>ExceLint benchmark runner</td>
+<td>The ExceLint runner is a command-line batch scripting tool that runs Excel in the background, feeding it a set of files and ground truth annotations supplied by the user.  The output of the tool is a CSV containing benchmark statistics that you can use to compare against the paper.</td>
+</tr>
+<tr>
+<td>Workbook</td>
+<td>An Excel file is called a <em>workbook</em>.  Workbooks usually end in <code>.xls</code> or <code>.xlsx</code></td>
+</tr>
+<tr>
+<td>Worksheet</td>
+<td>An Excel workbook usually contains many spreadsheets; each spreadsheet is called a <code>worksheet</code>. You can navigate worksheets in Excel by using the tabs on the bottom left of the workbook.</td>
+</tr>
+<tr>
+<td>Ribbon</td>
+<td>The ribbon is a user interface component that groups buttons together.  Buttons are grouped by function and organized by function, with that function&#39;s name appearing in the tabs at the top of the ribbon.  The ribbon is usually found at the top of a workbook, just under the Excel window&#39;s title bar.</td>
+</tr>
+<tr>
+<td>Formula</td>
+<td>A <em>formula</em> is an Excel expression.  All Excel formulas are purely functional.  Every formula is prefixed by a <code>=</code> character.</td>
+</tr>
+<tr>
+<td>Reference</td>
+<td>A reference in Excel is a syntactic construct that indicates where another cell&#39;s value should be substitued into a formula during evaluation.  For example, the formula <code>=A1+A2</code> means that the values stored in cells <code>A1</code> and <code>A2</code> should be substituted into the expression where <code>A1</code> and <code>A2</code> occur, respectively, when the formula is evaluated.</td>
+</tr>
+<tr>
+<td>Reference shape</td>
+<td>Two formulas are <em>reference equivalent</em> if they refer to the same cell offsets, <em>relative to the position of the formula itself</em>.  Such formulas are said to have the same <em>reference shape</em>. Refer to the definition of <em>reference equivalence</em> on page 4 of our paper for further elaboration.</td>
+</tr>
+<tr>
+<td>Vector fingerprint</td>
+<td>Each reference in a formula induces a reference vector, which is a vector encoding of the reference relative to the location of the formula itself.  Since a formula may have multiple refernces, it induces a set of vectors.  For performance reasons, ExceLint &quot;compresses&quot; this set of vectors into a single vector, called the <em>vector fingerprint</em>.  See section 4.1.1. on page 10 of the paper for further elaboration.</td>
+</tr>
+<tr>
+<td>Formula error</td>
+<td>A <em>formula error</em> is a formula that deviates from the intended reference shape by either including an extra reference, omitting a reference, or misreferencing data. We also include manifestly wrong calculations in this category, such as choosing the wrong operation.  See the Evaluation section of the paper for more details.</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="toc_2">Table of Contents</h2>
+
+<ul>
+<li><a href="#toc_3">Overview</a></li>
+<li><a href="#toc_4">Paper</a></li>
+<li><a href="#toc_5">Software Needed</a></li>
+<li><a href="#toc_6">ExceLint Data Files</a></li>
+<li><a href="#toc_7">Installation</a>
+
+<ul>
+<li><a href="#toc_8">Azure Installation Instructions</a></li>
+<li><a href="#toc_9">Preconfigured Azure Instance</a></li>
+</ul></li>
+<li><a href="#toc_10">A Short ExceLint Tutorial</a>
+
+<ul>
+<li><a href="#toc_11">Proposed Fix Tool</a></li>
+<li><a href="#toc_12">Global View</a></li>
+<li><a href="#toc_13">Vector Tool</a></li>
+<li><a href="#toc_14">CUSTODES</a></li>
+</ul></li>
+<li><a href="#toc_15">Running ExceLint Benchmarks</a>
+
+<ul>
+<li><a href="#toc_16">Post-processing script</a></li>
+<li><a href="#toc_19">Comparing the tool&#39;s output to the paper</a></li>
+</ul></li>
+<li><a href="#toc_23">Paper Errata</a></li>
+<li><a href="#toc_24">Source Code</a>
+
+<ul>
+<li><a href="#toc_25">Building and Running ExceLint from Source</a></li>
+</ul></li>
+<li><a href="#toc_26">Troubleshooting</a></li>
+</ul>
+
+<h2 id="toc_3">Overview</h2>
+
+<p>ExceLint is a static analysis that finds formula errors in spreadsheets.</p>
+
+<p>In order to fully evaluate ExceLint, you will need to install the ExceLint UI plugin on a Windows machine that has a copy of Office 2016.  This guide provides an installation walkthrough as well as instructions for running the tool.  You can run the tool as a plugin using Excel, or using the benchmark runner which will reproduce the results from the paper.  Finally, a post-processing script is supplied that will produce charts similar to those found in the paper.</p>
+
+<p>We tested ExceLint using Windows 10/Windows Server 2016 and Excel 2016.  While ExceLint works in principle with other versions of Windows and Excel (e.g., Excel 2010/2013), we have not tested these alternative configurations and do not recommend using them.</p>
+
+<h2 id="toc_4">Paper</h2>
+
+<p>We include our original paper submission for the committee&#39;s reference. The OOPSLA PC pointed out a number of areas where our paper could use improvement, so we provide author responses to help clarify things. We will address all of these concerns in the final draft.</p>
+
+<p>See the <code>paper/</code> directory in the <code>excelint_data_files.zip</code> archive (see below).</p>
+
+<h2 id="toc_5">Software Needed:</h2>
+
+<ol>
+<li>Microsoft Remote Desktop client installed on your local machine
+
+<ul>
+<li>Windows (built-in)</li>
+<li>Mac (see Mac App store)</li>
+<li>Linux/UNIX <a href="https://www.remmina.org/wp/">https://www.remmina.org/wp/</a></li>
+</ul></li>
+<li>Microsoft Office 365 (2016):
+
+<ul>
+<li>For a free education license: <a href="https://products.office.com/student/office-in-education">https://products.office.com/student/office-in-education</a></li>
+<li>Alternatively, download the free trial: <a href="https://www.microsoft.com/en-us/evalcenter/evaluate-office-365-proplus#description_11711">https://www.microsoft.com/en-us/evalcenter/evaluate-office-365-proplus#description_11711</a> (free trial may require a credit card)</li>
+</ul></li>
+<li>Java (in order to run CUSTODES tool; we used Java 8 Update 171; we chose the &quot;Windows Offline 64-bit&quot; version): <a href="https://java.com/en/download/manual.jsp">https://java.com/en/download/manual.jsp</a></li>
+<li>R Programming Language (to run post-processing script; we used v3.5.0 for Windows): <a href="http://cran.mirrors.hoobly.com/">http://cran.mirrors.hoobly.com/</a></li>
+<li>(optionally) Mozilla Firefox for Windows: <a href="https://getfirefox.com">https://getfirefox.com</a></li>
+<li>(optionally) ExceLint source code (see <code>OOPSLA-AEC</code> branch): <a href="https://github.com/ExceLint/ExceLint">https://github.com/ExceLint/ExceLint</a></li>
+<li>(optionally) Visual Studio 2017: (we used the Professional edition; Community may also work) <a href="https://visualstudio.microsoft.com/vs/whatsnew/">https://visualstudio.microsoft.com/vs/whatsnew/</a></li>
+</ol>
+
+<h2 id="toc_6">ExceLint Data Files</h2>
+
+<p>The <code>excelint_data_files.zip</code> archive contains the following:</p>
+
+<table>
+<thead>
+<tr>
+<th>name</th>
+<th>purpose</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>artifact/ExceLintInstaller.exe</code></td>
+<td>This is an InstallShield program that will install ExceLint on a Windows computer.</td>
+</tr>
+<tr>
+<td><code>benchmarks/</code></td>
+<td>This is the suite of benchmark files we used to evaluate ExceLint and CUSTODES.  These files come from the CUSTODES group, and were originally drawn from the EUSES benchmark suite.  <strong>NOTE:</strong> The EUSES Consortium expressly prohibits redistribution without prior consent; these files are supplied for AEC evaluation purposes only.  Please do not redistribute.</td>
+</tr>
+<tr>
+<td><code>case_study/Public_debt-ratios_advanced-summary.xlsx</code></td>
+<td>This is the summary sheet from the Reinhart-Rogoff study &quot;Growth in a Time of Debt&quot;.  We obtained this spreadsheet directly from the authors and do not have permission to redistribute.  Please do not redistribute.</td>
+</tr>
+<tr>
+<td><code>custodes/</code></td>
+<td>This folder contains the CUSTODES implementation.  You can run it by <code>cd</code>&#39;ing to this directory and running <code>java -jar cc2.jar</code>.</td>
+</tr>
+<tr>
+<td><code>ground_truth/</code></td>
+<td>This folder contains two ground truth annotations.</td>
+</tr>
+<tr>
+<td><code>ground_truth/annotations.csv</code></td>
+<td>This file contains annotations collected by a manual audit of the CUSTODES benchmarks by the ExceLint authors.  The purpose of this audit was to find <em>formula errors</em>.  The annotation format is described in the file <code>ExceLintFileFormats/BugKind.cs</code> file and is readable using the <code>ExceLintFileFormats</code> library. Note that of the numerous bug classes in this file, we only consider <code>ReferenceBug</code> (<code>ref</code>), <code>ReferenceBugInverse</code> (<code>refi</code>), and <code>CalculationError</code> (<code>calc</code>) to be &quot;formula errors.&quot;  <code>ref</code> means that a formula makes a reference error; if the formula is part of a larger set of formulas, and the formula is inconsistent with that set, those other formulas will be marked <code>refi</code>.  <code>calc</code> means that the formula calculates the wrong value.  See the paper for details on how we count errors (&quot;Bug Duals&quot;).</td>
+</tr>
+<tr>
+<td><code>ground_truth/smell_detection_result.csv</code></td>
+<td>This file contains annotations collected by a manual audit of the CUSTODES benchmarks by the CUSTODES authors.  The purpose of this audit was to find <em>smells</em>.  The annotation format is described in the file <code>ExceLintFileFormats/CUSTODESGroundTruth.cs</code> file and is readable using the <code>ExceLintFileFormats</code> library.</td>
+</tr>
+<tr>
+<td><code>getting_started/getting_started.html</code></td>
+<td>Getting Started guide.</td>
+</tr>
+<tr>
+<td><code>paper/</code></td>
+<td>The submitted paper and author response.</td>
+</tr>
+<tr>
+<td><code>post-processing/charts.R</code></td>
+<td>This file is an R script that reads the <code>excelint_output.csv</code> file produced by the ExceLint benchmark runner tool and produces plots like those seen in the paper.  See below for usage instructions.</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="toc_7">Installation</h2>
+
+<p>You may either install ExceLint on your own Windows machine if you have one available, or you may follow the instructions below for obtaining an Azure virtual machine and installing ExceLint in a VM.  Note that we provide a preconfigured, prepaid Azure VM for the committee&#39;s use in case reviewers encounter difficulty setting up their environments (see &quot;Preconfigured Azure Instance&quot; section below).</p>
+
+<p>Minimally, you will need working copies of Windows, Office 2016, and you will need to install ExceLint and extract its benchmarks to your disk.</p>
+
+<p>If you run into trouble installing ExceLint on your personal machine, we suggest running the tool in Azure instead, since we have tested this environment.  Below a certain usage threshold, Azure is free of charge, but you will need a credit card to register either way.</p>
+
+<p>Setup instructions are as follows:</p>
+
+<h3 id="toc_8">Azure Installation Instructions:</h3>
+
+<ol>
+<li>Create a (free) Azure account if you do not already have one at <a href="https://azure.com">https://azure.com</a></li>
+<li>Go to <a href="https://portal.azure.com/">https://portal.azure.com/</a></li>
+<li>Click the <code>Create a resource</code> button in the upper left of the screen.</li>
+<li>Click the <code>Windows Server 2016 VM</code> button (or search if it is not on the main screen)</li>
+<li>In the name field, type: <code>ExceLintVM</code></li>
+<li>Leave the <code>VM disk type&quot; as &quot;SSD</code>.</li>
+<li>Enter a <code>username</code> of your choosing</li>
+<li>Enter a <code>password</code> of your choosing</li>
+<li>Under <code>Subscription</code>, select <code>Pay-As-You-Go</code></li>
+<li>Under <code>Resource group</code>, select <code>Create new</code> and enter a name of your choosing in the text field.</li>
+<li>Under <code>Location</code>, choose a location near you.</li>
+<li>Under <code>Already have a Windows license?</code> choose <code>No</code></li>
+<li>Click <code>OK</code></li>
+<li>We recommend the <code>D4s_v3</code> machine type; select <code>D4s_v3</code> and click the <code>Select</code> button (this VM costs $0.096/hour)</li>
+<li>Under <code>Settings</code>, find the <code>Select public inbound ports</code> and select <code>RDP (3389)</code> from the drop-down menu.</li>
+<li>You are now shown a summary of the VM&#39;s settings.  Click <code>Create</code> to start the VM.</li>
+<li>Once the VM starts, you will see a dashboard for the VM.  Click the <code>Connect</code> button, select <code>RDP</code>, and click <code>Download RDP File</code> to download an RDP connection file.  You will need a locally-installed copy of Microsoft Remote Desktop in order to connect.</li>
+<li>Open the RDP file, which should launch Microsoft Remote Desktop.  If you are using Remmina or other third party client, refer to your documentation on how to open an RDP file.</li>
+<li>If you are presented with a certificate to approve (usually on Mac), 
+
+<ol>
+<li>(on Mac) Click <code>Show Certificate</code></li>
+<li>(on Mac) Click <code>Always trust ...</code></li>
+<li>(on Mac) Click <code>Continue</code></li>
+</ol></li>
+<li>You may need to reenter your username and password (that you entered above) to login to the VM</li>
+<li>Open Internet Explorer.</li>
+<li>We suggest that you first download Mozilla Firefox; Internet Explorer&#39;s security settings by default are very restrictive and will make further downloads annoying.</li>
+<li>Now launch Firefox and download the following:
+
+<ol>
+<li>Download and run the Microsoft Office installer.</li>
+<li>Download and run the Java installer.</li>
+<li>Download and run the R Programming Language installer.</li>
+<li>Download the ExceLint data files and extract them. Right click on <code>excelint_data_files.zip</code>, select <code>Extract All...</code>, click the <code>Browse...</code> button and navigate to the place you want to save them (e.g., <code>Desktop</code>), and click the <code>Extract</code> button.
+
+<ul>
+<li>Run the ExceLint installer in <code>artifact/ExceLintInstaller.exe</code></li>
+</ul></li>
+</ol></li>
+<li>All of ExceLint tools and benchmarks should now be installed.</li>
+</ol>
+
+<h3 id="toc_9">Preconfigured Azure Instance</h3>
+
+<p>If you would like to use a preconfigured installation of ExceLint, direct your Remote Desktop client to:</p>
+
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>IP:</td>
+<td><code>23.96.20.176</code></td>
+</tr>
+<tr>
+<td>Username:</td>
+<td><code>dbarowy</code></td>
+</tr>
+<tr>
+<td>Password</td>
+<td><code>OOPSLA2018!!!!</code></td>
+</tr>
+</tbody>
+</table>
+
+<p>You will likely need to accept a certificate when you login.</p>
+
+<p>Reviewers should coordinate their use of this instance since we are only making one available to the committee.</p>
+
+<p><strong>Note that we provide this VM for the convenience of the committee, but please be cognizant of the fact that we are paying for its use (i.e., CPU time) out of our own research grant money.  Careless use may incur unnecessary expense.  We ask that you limit your use of this resource to legitimate reviewing tasks for this artifact submission.</strong></p>
+
+<h2 id="toc_10">A Short ExceLint UI Tutorial</h2>
+
+<ol>
+<li>Launch <code>Excel</code>.</li>
+<li>Click <code>Open Other Workbooks</code></li>
+<li>Select an Excel file (workbook) of your choosing.  A good first demonstration is the benchmark file <code>act3_lab23_posey.xls</code>, which is small enough to examine fully.</li>
+<li>After opening your workbook, look for the <code>ExceLint</code> tab in the Excel ribbon.  If this is the only Excel plugin you have installed, it will be the rightmost tab in the ribbon.  Click on the <code>ExceLint</code> tab.</li>
+</ol>
+
+<p><img src="ribbon.png" alt="ribbon" style="width:700px;"/></p>
+
+<p><strong>Note: You may want to refer to the Troubleshooting section below as Excel&#39;s security mechanisms sometimes prevent the ExceLint user interface from running; we detail solutions for common problems in that section.</strong></p>
+
+<h3 id="toc_11">Proposed Fix Tool (step-by-step audit)</h3>
+
+<ol>
+<li>To ask ExceLint for a step-by-step guided audit, click the <code>Audit</code> <img src="audit_button.png" alt="audit button" style="width:50px;"/> button.</li>
+<li>After a brief analysis delay (you should see a progress bar), ExceLint will highlight a suspected formula error, if it locates one.
+
+<ul>
+<li>Two groups of cells are highlighted: the suspected error in red, and a group of closely related formulas in green.
+<img src="flagged_cell.png" alt="clear everything button" style="width:700px;"/> </li>
+<li>You should interpret this display as suggesting a &quot;proposed fix.&quot;  The visualization is suggesting that the cell(s) highlighted in red should be rewritten to have the same <em>reference shape</em> (see glossary) as the the cells(s) highlighted in green.</li>
+<li>To see Excel&#39;s formula view, press <code>Ctrl-`</code></li>
+</ul></li>
+<li>To obtain the next error candidate, click the <code>Next Cell</code> <img src="next_cell_button.png" alt="next cell button" style="width:45px;"/> button.</li>
+<li>To stop the audit, click the <code>Clear Everything</code> <img src="clear_everything_button.png" alt="clear everything button" style="width:65px;"/> button.</li>
+</ol>
+
+<p>Note that the tool currently does not make any provisions for users changing (e.g., fixing) cells while an audit is in progress.  Such changes will not be reflected in the analysis unless it is re-run.</p>
+
+<p>The benchmark suite evaluates the effectiveness and speed of the proposed fix tool assuming that a user investigates every proposed fix.  See &quot;Running ExceLint Benchmarks&quot; below.  Note that for usability purposes, ExceLint only displays the analysis results for the current worksheet.  We found that audits that jumped from sheet to sheet were confusing.  By contrast, the benchmark runner conducts a whole-workbook analysis.</p>
+
+<h3 id="toc_12">Global view</h3>
+
+<p>The global view provides a global visualization of all the regions of the current worksheet.  Click the <code>Show Global View</code> <img src="global_view_button.png" alt="global view button" style="width:70px;"/>  button to see the visualization.  Click <code>Hide Global View</code> to clear the visualization.</p>
+
+<p>You should interpret each contiguous region of cells having the same color as having the same reference shape.  Note that to cut down on visual clutter, the coloring algorithm does not assign colors to whitespace or strings, and all numeric data is given the same color.</p>
+
+<p>Our preferred manner of working with ExceLint is to switch between the Proposed Fix Tool and the Global View.  The Proposed Fix Tool quickly identifies potential problems while the Global View provides context that sometimes helps determine whether a flagged cell is truly a bug.</p>
+
+<h3 id="toc_13">Vector Tool</h3>
+
+<p>You can ask ExceLint to show you the <em>vector fingerprint</em> (see glossary) for the currently selected cell.  Select a cell in the spreadsheet and then click the <code>Vector for Cell</code> <img src="vector_button.png" alt="vector button" style="width:50px;"/>  button.  Note that all cells, including strings and whitespace, have a fingerprint.  The fields of the vector shown are:</p>
+
+<div><pre><code class="language-none">&lt;x,y,z,dx,dy,dz,c&gt;</code></pre></div>
+
+<p>where <code>x</code>, <code>y</code>, and <code>z</code> are the column, row, and worksheet index (in a lexicographical ordering of worksheet names) of the selected cell and where <code>dx</code>, <code>dy</code>, and <code>dz</code> are the resultant of the set of induced reference vectors.  <code>c</code> indicates the type of the cell if it is a value.  See section 3.1 on page 4 of the paper.</p>
+
+<p>Note that the form of the fingerprint used most widely in ExceLint is the &quot;location-free&quot; variant that omits <code>x</code>, <code>y</code>, and <code>z</code>.  This is the form described in the paper.</p>
+
+<h3 id="toc_14">CUSTODES</h3>
+
+<p>We built a UI for CUSTODES to make side-by-side comparisons with ExceLint easier.  CUSTODES is a command-line tool that produces a list of cells to audit.  We provide an adaptation of ExceLint&#39;s UI that highlights the cells flagged by CUSTODES.</p>
+
+<p>To run CUSTODES, click on the <code>Run CUSTODES</code> <img src="run_custodes_button.png" alt="run custodes button" style="width:65px;"/> button.  Note that the ExceLint UI will run CUSTODES in a command prompt window, collect the output, and then display it in Excel.  Since we do not have access to CUSTODES internals, we were not able to provide a progress bar.  Please be patient and wait until the CUSTODES analysis is finished.</p>
+
+<p>When you are done looking at CUSTODES outputs, click the <code>Clear Everything</code> button.</p>
+
+<h2 id="toc_15">Running ExceLint Benchmarks</h2>
+
+<p>The benchmark runner command line tool is located in the ExceLint install directory.  If you accepted the defaults for the ExceLint installer, programs should be installed in <code>C:\Program Files (x86)\williams.edu\ExceLint\</code>.</p>
+
+<p><em>Running the benchmark suite takes roughly 1 hour, 15 minutes using the specified Azure VM instance.</em></p>
+
+<ol>
+<li>Open the Windows command prompt (<code>cmd.exe</code>)</li>
+<li>Type <code>cd C:\Program Files (x86)\williams.edu\ExceLint\</code></li>
+<li>To see the benchmark runner&#39;s command-line options, run <code>ExceLintRunner.exe</code> without any arguments.  Note that the runner supports a much larger set of analyses than the analysis described in the paper.  Most of these analyses were &quot;dead ends&quot;.  Since we have stopped maintaining these, you may find that the tool crashes or behaves strangely if you select them, although you are free to explore them if you wish.</li>
+<li>The following invocation works for us.  You will need to adjust for your own local paths (e.g., replace <code>dbarowy</code>).  Note that we extracted <code>excelint_data_files.zip</code> to the Desktop.</li>
+</ol>
+
+<div><pre><code class="language-none">ExceLintRunner.exe ^
+  &quot;C:\Users\dbarowy\Desktop\excelint_data_files\benchmarks&quot; ^
+  &quot;C:\Users\dbarowy\Desktop\excelint_output&quot; ^
+  &quot;C:\Users\dbarowy\Desktop\excelint_data_files\ground_truth\annotations.csv&quot; ^
+  &quot;C:\Users\dbarowy\Desktop\excelint_data_files\ground_truth\smell_detection_result.csv&quot; ^
+  &quot;C:\Program Files\Java\jre1.8.0_171\bin\java.exe&quot; ^
+  &quot;C:\Users\dbarowy\Desktop\excelint_data_files\custodes\cc2.jar&quot; ^
+  -cluster -noshuffle</code></pre></div>
+
+<ol>
+<li>Using the command invocation above, there will be a folder called <code>excelint_output/</code> on the Desktop.  Inside this folder are many outputs, most importantly, a file called <code>excelint_output.csv</code>, which you will use as input to the post-processing script.</li>
+</ol>
+
+<h3 id="toc_16">Post-processing script</h3>
+
+<p>We supply a post-processing script in the <code>post-processing/</code> folder that computes all of the statistics and plots shown in the paper.  To run this, you will need the R programming language runtime installed (see link above).</p>
+
+<h4 id="toc_17">Installing R and R packages</h4>
+
+<p>After installing the R programming language runtime for Windows, you will need to install several R packages:</p>
+
+<ol>
+<li>Using the Windows command prompt (<code>cmd.exe</code>), type: <code>&quot;C:\Program Files\R\R-3.5.0\bin\R.exe&quot;</code></li>
+<li>At the prompt, type: <code>install.packages(c(&quot;ggplot2&quot;,&quot;dplyr&quot;,&quot;devtools&quot;,&quot;reshape&quot;))</code></li>
+<li>Follow the prompts to choose a download mirror (any will do).</li>
+<li>When you are asked if you want to save the workspace image, enter <code>n</code>.</li>
+<li>Enter <code>q()</code> to quit.</li>
+</ol>
+
+<h4 id="toc_18">Running the script</h4>
+
+<ol>
+<li><p>Using the Windows command prompt (<code>cmd.exe</code>), <code>cd</code> to your <code>excelint_data_files\post-processing</code> folder.</p>
+
+<p>E.g.,
+<code>
+cd C:\Users\dbarowy\Desktop\excelint_data_files\post-processing
+</code></p></li>
+<li><p>Run the R script, supplying the location of the <code>excelint_output.csv</code> file you generated earlier.</p>
+
+<p>E.g.,
+<code>
+&quot;C:\Program Files\R\R-3.5.0\bin\Rscript.exe&quot; charts.R &quot;C:\Users\dbarowy\Desktop\excelint_output\excelint_output.csv&quot;
+</code></p></li>
+<li><p>The script will print out some package management information, and then it will compute and print a set of statistics like the following:</p>
+
+<div><pre><code class="language-none"> OVERALL STATS: 
+Number of benchmarks:  70 
+Total number of cells:  110091 
+Total number of formulas:  25554 
+Total number of formula errors:  397 
+Total number of smells:  1952 
+
+ FORMULA ERRORS: 
+ExceLint: Total formula error true positives (TP):  89 
+ExceLint: Total formula error false positives (FP):  223 
+ExceLint: Formula error mean precision:  64.18 % 
+ExceLint: Formula error mean recall:  62.1 % 
+ExceLint: Formula error mean precision (adj):  63.79 % 
+ExceLint: # benchmarks nothing flagged:  34 
+ExceLint: # benchmarks nothing flagged because there were no errors:  23 
+CUSTODES: Total formula error true positives (TP):  52 
+CUSTODES: Total formula error false positives (FP):  1816 
+CUSTODES: Formula error mean precision:  20.38 % 
+CUSTODES: Formula error mean recall:  61.24 % 
+CUSTODES: Formula error mean precision (adj):  19.6 % 
+CUSTODES: # benchmarks nothing flagged:  8 
+CUSTODES: # benchmarks nothing flagged because there were no errors:  5 
+
+ RUN TIME: 
+ExceLint: mean run time in ms:  21834.17 
+ExceLint: median run time in ms:  7948.5 
+CUSTODES: mean run time in ms:  27945.06 
+CUSTODES: median run time in ms:  5573 
+
+ SMELLS: 
+ExceLint: Total smells true positives (TP):  60 
+ExceLint: Total smells false positives (FP):  266 
+ExceLint: Smells mean precision:  61.07 % 
+ExceLint: Smells mean recall:  18.68 % </code></pre></div></li>
+<li><p>The script also produces a set of PDF plots in the current working directory.  If you installed Mozilla Firefox, plots can be viewed by right-clicking on the file, selecting <code>Open With</code>, then selecting <code>More Apps</code>, and then selecting <code>Mozilla Firefox</code> from the list.</p></li>
+</ol>
+
+<h3 id="toc_19">Comparing the tool&#39;s output to the paper</h3>
+
+<h4 id="toc_20">Relevant Figures</h4>
+
+<ol>
+<li>Figure 1 shows the spreadsheet <code>act3_lab23_posey.xls</code>.  Run an audit (click the <code>Audit</code> button); the highlight shown in the figure is the first error highlighted by the tool.</li>
+<li>Figure 2 shows the spreadsheet <code>act3_lab23_posey.xls</code>.  Show the Global View (click the <code>Show Global View</code> button); the regions shown should be the same as the excerpt shown in the paper.  The colors themselves may be different because we fixed a bug in the coloring algorithm after we submitted the paper.</li>
+<li>Figure 5a; same spreadsheet as Figure 2.</li>
+<li>Figure 5b shows ExceLint highlighting a missing formula.  This figure was inadvertently left in the paper from an earlier version (see &quot;Paper Errata&quot; below).</li>
+<li>Figure 6 shows the spreadsheet <code>01sumat.xls</code>.  Open the spreadsheet and go to sheet <code>PM2.5</code> and run an audit (click the <code>Audit</code> button); the first highlight shown is cell <code>J30</code>.  If you view this spreadsheet using Excel&#39;s &quot;formula view&quot; (<code>Ctrl-`</code>) you will see that the reference in <code>J30</code> inadvertently excludes cell <code>J7</code>.</li>
+</ol>
+
+<h4 id="toc_21">Numbers</h4>
+
+<ol>
+<li>Results for RQ1 on p. 15 can be checked by examining the output of the post-processing script (above).  They are: mean and median precision and recall for ExceLint and CUSTODES.</li>
+<li>The precision/recall boxplot from the paper on page 16 is reproduced by the post-processing script.  See the file <code>precision_recall_plot.pdf</code>.</li>
+<li>The performance boxplot from the paper on page 16 is reproduced by the post-processing script.  See the file <code>performance_plot.pdf</code>.</li>
+<li>The adjusted mean precision numbers on page 16 can be found in the post-processing output marked <code>(adj)</code>.</li>
+<li>In the section named &quot;High precision when doing nothing&quot; on page 17, the counts can be found in the post-processing output marked <code># benchmarks nothing flagged</code>.</li>
+<li>Results for RQ2 on page 17 can be found in the <code>RUN TIME</code> section of the post-processing output.</li>
+</ol>
+
+<h4 id="toc_22">Case Study</h4>
+
+<p>The case study spreadsheet can be found in the <code>case_study/</code> folder.  To reproduce the highlight, run an audit (click the <code>Audit</code> button).  The highlight shown in the paper is the second (of two) errors found.  Both errors make the same mistake.  The cells highlighted in red are actually correct, because most of the spreadsheet is wrong and ExceLint finds the inconsistency.</p>
+
+<h2 id="toc_23">Paper Errata</h2>
+
+<ol>
+<li><p>We inadvertently dropped two benchmarks from our results due to a bug in our benchmark runner and an accidental miscount.  There are 70 benchmarks in total (not 68, as we report in the paper).  This mistake had a small effect on most of the numbers reported in the paper.  The correct numbers are shown above in the section titled &quot;Post-processing script&quot;.</p></li>
+<li><p>Note that the example described in Figure 5b (page 12; also text in section 4.2.2 on page 13) is from an old version of ExceLint and no longer works as described (i.e., ExceLint no longer flags &quot;missing formulas&quot; since they are not unambiguously errors).  We mistakenly left this old example in our submission.  If you would like to reproduce the old behavior, comment out line 444 in the file <code>ExceLint/EntropyModelBuilder2.fs</code>, which is</p>
+
+<div><pre><code class="language-none">|&gt; Array.filter (fun (_,_,t) -&gt; ClusterIsFormulaValued t ih graph)</code></pre></div>
+
+<p>and recompile using the instructions in the &quot;Source Code&quot; section below.</p>
+
+<p>Note that the example described in the introduction (Fig 1., page 2) works as described.</p></li>
+</ol>
+
+<h2 id="toc_24">Source Code</h2>
+
+<p>You may download the source code for ExceLint using <code>git</code>.  ExceLint is a Visual Studio 2017 solution.</p>
+
+<p>We have produced an <code>OOPSLA-AEC</code> branch in the <code>ExceLint</code> repository that provides a stable branch for the committee&#39;s evaluation purposes.</p>
+
+<p>Run:</p>
+
+<p><code>$ git clone --recursive https://github.com/ExceLint/ExceLint.git</code></p>
+
+<p>After cloning, checkout the <code>OOPSLA-AEC</code> branch:</p>
+
+<p><code>$ git checkout OOPSLA-AEC</code></p>
+
+<p>We do a <code>--recursive</code> checkout above because ExceLint depends on a number of subprojects developed by our group.  The following table describes the libraries used by ExceLint in the ExceLint solution.</p>
+
+<table>
+<thead>
+<tr>
+<th>library</th>
+<th>purpose</th>
+<th>language</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><code>AnnotationStats</code></td>
+<td>A console program that prints statistics about the ground truth annotations</td>
+<td>F#</td>
+</tr>
+<tr>
+<td><code>COMWrapper</code></td>
+<td>A wrapper that ensures that reference-counted Excel COM objects are correctly disposed of by managed (.NET) code.</td>
+<td>C#</td>
+</tr>
+<tr>
+<td><code>COMWrapperTests</code></td>
+<td>A unit test suite for <code>COMWrapper</code>.</td>
+<td>C#</td>
+</tr>
+<tr>
+<td><code>CUSTODESParser</code></td>
+<td>A parser for CUSTODES tool outputs.</td>
+<td>F#</td>
+</tr>
+<tr>
+<td><code>Depends</code></td>
+<td>A library that efficiently extracts a spreadsheet&#39;s dependence graph.</td>
+<td>C#</td>
+</tr>
+<tr>
+<td><code>DependsTests</code></td>
+<td>A unit test suite for <code>Depends</code></td>
+<td>C#</td>
+</tr>
+<tr>
+<td><code>ExceLint</code></td>
+<td><strong>This library contains the core static analysis.</strong></td>
+<td>F#</td>
+</tr>
+<tr>
+<td><code>ExceLintCLIGenerator</code></td>
+<td>A defunct UI used during development to make it easy to call the benchmark runner</td>
+<td>C#</td>
+</tr>
+<tr>
+<td><code>ExceLintFileFormats</code></td>
+<td>A library that defines file formats needed by the ExceLint runner to read input files and to produce output files.</td>
+<td>C#</td>
+</tr>
+<tr>
+<td><code>ExceLintInstaller</code></td>
+<td>An InstallShield project used to produce the release installer used for this project.</td>
+<td>InstallShield</td>
+</tr>
+<tr>
+<td><code>ExceLintRunner</code></td>
+<td>A console program used to run ExceLint in benchmark mode.</td>
+<td>F#</td>
+</tr>
+<tr>
+<td><code>ExceLintRunnerTests</code></td>
+<td>A unit test suite for <code>ExceLintRunner</code></td>
+<td>C#</td>
+</tr>
+<tr>
+<td><code>ExceLintTests</code></td>
+<td>A unit test suite for <code>ExceLint</code></td>
+<td>C#</td>
+</tr>
+<tr>
+<td><code>ExceLintUI</code></td>
+<td><strong>This library is the top-level project that produces a plugin for Microsoft Excel.</strong>  It is implemented using the Visual Studio Tools for Office (VSTO) API.  The ExceLint UI manages the UI layer, mostly forwarding calls to the <code>ExceLint</code> library.</td>
+<td>C#</td>
+</tr>
+<tr>
+<td><code>ExcelParser</code></td>
+<td>A parser that produces ASTs for Excel formulas.</td>
+<td>F#</td>
+</tr>
+<tr>
+<td><code>ExcelParserConsole</code></td>
+<td>A console program that displays the AST for a given Excel formula</td>
+<td>F#</td>
+</tr>
+<tr>
+<td><code>FParsec</code></td>
+<td>A third-party parser combinator library.</td>
+<td>F#</td>
+</tr>
+<tr>
+<td><code>FParsecCS</code></td>
+<td>Low-level routines for <code>FParsec</code></td>
+<td>C#</td>
+</tr>
+<tr>
+<td><code>ParcelCOMShim</code></td>
+<td>A library that facilitates calling <code>ExcelParser</code> on Excel COM types</td>
+<td>F#</td>
+</tr>
+<tr>
+<td><code>ParcelTest</code></td>
+<td>Unit test suite for <code>ExcelParser</code></td>
+<td>C#</td>
+</tr>
+<tr>
+<td><code>StatsGatherer</code></td>
+<td>A console program that crawls a collection of Excel workbooks and gathers statistics about them</td>
+<td>F#</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="toc_25">Building and Running ExceLint from Source</h3>
+
+<p>You will need an installed copy of Microsoft Visual Studio 2017 in order to build ExceLint.</p>
+
+<ol>
+<li>Open the <code>ExceLint.sln</code> file using Visual Studio.</li>
+<li>Right-click on the <code>ExceLintUI</code> project in the <code>Solution Explorer</code> pane and select <code>Set as StartUp Project</code>.</li>
+<li>Select the <code>Debug</code> -&gt; <code>Start Debugging</code> option from the menu.  This will compile ExceLint, install the VSTO plugin into Excel, and start Excel in a debugging session.  You can set breakpoints in Visual Studio, which may be triggered by interacting with the plugin.</li>
+</ol>
+
+<h2 id="toc_26">Troubleshooting</h2>
+
+<p>A variety of problems can occasionally pop up when using or building ExceLint.</p>
+
+<p><strong>Problem:</strong> ExceLint does nothing when I click on the buttons in the UI.</p>
+
+<p><strong>Solution:</strong> Excel will not allow ExceLint to run when it is in &quot;Protected Mode&quot;.  If it is, there will be a yellow bar across the top of the spreadsheet to that effect.  You will need to click the <code>Enable Editing</code> button to allow ExceLint to run.</p>
+
+<p><strong>Problem:</strong> You started the ExceLint runner but had to force quit it using Ctrl-C.  Now there are a bunch of <code>excel.exe</code> instances running in the background.</p>
+
+<p><strong>Solution:</strong> You can force quit all running instances of Excel by typing <code>taskkill /f /im excel.exe</code> into the <code>cmd.exe</code> command prompt.</p>
+
+<p><strong>Problem:</strong> The <code>Clear Everything</code> button does not clear everything.</p>
+
+<p><strong>Solution:</strong> We occasionally find and try to squash bugs where the UI is out of sync with the analysis.  We may have missed a corner case or two.  If you find that you cannot clear visualizations, close the reopen the workbook <strong>without saving the workbook</strong>.  <em>It is important that you do not save the workbook when you close it, otherwise the visualizations themselves will overwrite the default formatting in the workbook!</em></p>
+
+<p><strong>Problem:</strong> Excel reported that it was &quot;running into problems with the &#39;excelint&#39; add-on&quot;, asked me if I wanted to disable it and I clicked <code>Yes</code>.  Now ExceLint has disappeared from the ribbon menu in Excel.</p>
+
+<p><strong>Solution:</strong> This is a &quot;feature&quot; of Excel: it disables plugins that cause Excel to crash.  Unfortunately, it also interprets halting the program using the debugging tools as a &quot;crash.&quot;  You can re-enable ExceLint by completing the following steps:</p>
+
+<ol>
+<li>Open a file in Excel (any file).</li>
+<li>Click the <code>File</code> menu.</li>
+<li>Click the <code>Options</code> button on the bottom left of the screen.</li>
+<li>Click the <code>Add-Ins</code> option in the menu that appears.</li>
+<li>You should see <code>ExceLint</code> under the heading <code>Disabled Application Add-Ins</code> list (you may have to scroll down).</li>
+<li>In the <code>Manage</code> drop down, select <code>COM Add-Ins</code> and click the <code>Go...</code> button.</li>
+<li>Check the unchecked <code>ExceLint</code> checkbox and click the <code>OK</code> button.</li>
+<li><code>ExceLint</code> should now appear in the Ribbon.  If it does not, perform the next steps.</li>
+<li>Again, click <code>File</code>, click <code>Options</code>, select <code>Add-Ins</code>.</li>
+<li>In the <code>Manage</code> drop down, select <code>Disabled Items</code> and click the <code>Go...</code> button.</li>
+<li>In the menu that appears, select <code>ExceLint</code> and click the <code>Enable</code> button, then repeat steps 1-7.</li>
+<li>If ExceLint still does not re-appear, uninstall ExceLint, delete the direcotry <code>C:\Program Files (x86)\williams.edu</code>, log out of the user account, log back in, and reinstall ExceLint using the installer.</li>
+<li>If that does not work, contact the authors for additional support.</li>
+</ol>
+
+
+
+<script type="text/javascript">
+var _self="undefined"!=typeof window?window:"undefined"!=typeof WorkerGlobalScope&&self instanceof WorkerGlobalScope?self:{},Prism=function(){var e=/\blang(?:uage)?-(\w+)\b/i,t=0,n=_self.Prism={util:{encode:function(e){return e instanceof a?new a(e.type,n.util.encode(e.content),e.alias):"Array"===n.util.type(e)?e.map(n.util.encode):e.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\u00a0/g," ")},type:function(e){return Object.prototype.toString.call(e).match(/\[object (\w+)\]/)[1]},objId:function(e){return e.__id||Object.defineProperty(e,"__id",{value:++t}),e.__id},clone:function(e){var t=n.util.type(e);switch(t){case"Object":var a={};for(var r in e)e.hasOwnProperty(r)&&(a[r]=n.util.clone(e[r]));return a;case"Array":return e.map&&e.map(function(e){return n.util.clone(e)})}return e}},languages:{extend:function(e,t){var a=n.util.clone(n.languages[e]);for(var r in t)a[r]=t[r];return a},insertBefore:function(e,t,a,r){r=r||n.languages;var l=r[e];if(2==arguments.length){a=arguments[1];for(var i in a)a.hasOwnProperty(i)&&(l[i]=a[i]);return l}var o={};for(var s in l)if(l.hasOwnProperty(s)){if(s==t)for(var i in a)a.hasOwnProperty(i)&&(o[i]=a[i]);o[s]=l[s]}return n.languages.DFS(n.languages,function(t,n){n===r[e]&&t!=e&&(this[t]=o)}),r[e]=o},DFS:function(e,t,a,r){r=r||{};for(var l in e)e.hasOwnProperty(l)&&(t.call(e,l,e[l],a||l),"Object"!==n.util.type(e[l])||r[n.util.objId(e[l])]?"Array"!==n.util.type(e[l])||r[n.util.objId(e[l])]||(r[n.util.objId(e[l])]=!0,n.languages.DFS(e[l],t,l,r)):(r[n.util.objId(e[l])]=!0,n.languages.DFS(e[l],t,null,r)))}},plugins:{},highlightAll:function(e,t){var a={callback:t,selector:'code[class*="language-"], [class*="language-"] code, code[class*="lang-"], [class*="lang-"] code'};n.hooks.run("before-highlightall",a);for(var r,l=a.elements||document.querySelectorAll(a.selector),i=0;r=l[i++];)n.highlightElement(r,e===!0,a.callback)},highlightElement:function(t,a,r){for(var l,i,o=t;o&&!e.test(o.className);)o=o.parentNode;o&&(l=(o.className.match(e)||[,""])[1],i=n.languages[l]),t.className=t.className.replace(e,"").replace(/\s+/g," ")+" language-"+l,o=t.parentNode,/pre/i.test(o.nodeName)&&(o.className=o.className.replace(e,"").replace(/\s+/g," ")+" language-"+l);var s=t.textContent,u={element:t,language:l,grammar:i,code:s};if(!s||!i)return n.hooks.run("complete",u),void 0;if(n.hooks.run("before-highlight",u),a&&_self.Worker){var c=new Worker(n.filename);c.onmessage=function(e){u.highlightedCode=e.data,n.hooks.run("before-insert",u),u.element.innerHTML=u.highlightedCode,r&&r.call(u.element),n.hooks.run("after-highlight",u),n.hooks.run("complete",u)},c.postMessage(JSON.stringify({language:u.language,code:u.code,immediateClose:!0}))}else u.highlightedCode=n.highlight(u.code,u.grammar,u.language),n.hooks.run("before-insert",u),u.element.innerHTML=u.highlightedCode,r&&r.call(t),n.hooks.run("after-highlight",u),n.hooks.run("complete",u)},highlight:function(e,t,r){var l=n.tokenize(e,t);return a.stringify(n.util.encode(l),r)},tokenize:function(e,t){var a=n.Token,r=[e],l=t.rest;if(l){for(var i in l)t[i]=l[i];delete t.rest}e:for(var i in t)if(t.hasOwnProperty(i)&&t[i]){var o=t[i];o="Array"===n.util.type(o)?o:[o];for(var s=0;s<o.length;++s){var u=o[s],c=u.inside,g=!!u.lookbehind,h=!!u.greedy,f=0,d=u.alias;u=u.pattern||u;for(var p=0;p<r.length;p++){var m=r[p];if(r.length>e.length)break e;if(!(m instanceof a)){u.lastIndex=0;var y=u.exec(m),v=1;if(!y&&h&&p!=r.length-1){var b=r[p+1].matchedStr||r[p+1],k=m+b;if(p<r.length-2&&(k+=r[p+2].matchedStr||r[p+2]),u.lastIndex=0,y=u.exec(k),!y)continue;var w=y.index+(g?y[1].length:0);if(w>=m.length)continue;var _=y.index+y[0].length,P=m.length+b.length;if(v=3,P>=_){if(r[p+1].greedy)continue;v=2,k=k.slice(0,P)}m=k}if(y){g&&(f=y[1].length);var w=y.index+f,y=y[0].slice(f),_=w+y.length,S=m.slice(0,w),O=m.slice(_),j=[p,v];S&&j.push(S);var A=new a(i,c?n.tokenize(y,c):y,d,y,h);j.push(A),O&&j.push(O),Array.prototype.splice.apply(r,j)}}}}}return r},hooks:{all:{},add:function(e,t){var a=n.hooks.all;a[e]=a[e]||[],a[e].push(t)},run:function(e,t){var a=n.hooks.all[e];if(a&&a.length)for(var r,l=0;r=a[l++];)r(t)}}},a=n.Token=function(e,t,n,a,r){this.type=e,this.content=t,this.alias=n,this.matchedStr=a||null,this.greedy=!!r};if(a.stringify=function(e,t,r){if("string"==typeof e)return e;if("Array"===n.util.type(e))return e.map(function(n){return a.stringify(n,t,e)}).join("");var l={type:e.type,content:a.stringify(e.content,t,r),tag:"span",classes:["token",e.type],attributes:{},language:t,parent:r};if("comment"==l.type&&(l.attributes.spellcheck="true"),e.alias){var i="Array"===n.util.type(e.alias)?e.alias:[e.alias];Array.prototype.push.apply(l.classes,i)}n.hooks.run("wrap",l);var o="";for(var s in l.attributes)o+=(o?" ":"")+s+'="'+(l.attributes[s]||"")+'"';return"<"+l.tag+' class="'+l.classes.join(" ")+'" '+o+">"+l.content+"</"+l.tag+">"},!_self.document)return _self.addEventListener?(_self.addEventListener("message",function(e){var t=JSON.parse(e.data),a=t.language,r=t.code,l=t.immediateClose;_self.postMessage(n.highlight(r,n.languages[a],a)),l&&_self.close()},!1),_self.Prism):_self.Prism;var r=document.currentScript||[].slice.call(document.getElementsByTagName("script")).pop();return r&&(n.filename=r.src,document.addEventListener&&!r.hasAttribute("data-manual")&&document.addEventListener("DOMContentLoaded",n.highlightAll)),_self.Prism}();"undefined"!=typeof module&&module.exports&&(module.exports=Prism),"undefined"!=typeof global&&(global.Prism=Prism);
+</script>
+
+<script type="text/x-mathjax-config">
+(function () {
+
+MathJax.Hub.Config({
+	'showProcessingMessages': false,
+	'messageStyle': 'none'
+});
+
+if (typeof MathJaxListener !== 'undefined') {
+	MathJax.Hub.Register.StartupHook('End', function () {
+		MathJaxListener.invokeCallbackForKey_('End');
+	});
+}
+
+})();
+</script>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+
+</body>
+
+</html>
