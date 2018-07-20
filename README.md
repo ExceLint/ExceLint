@@ -11,10 +11,10 @@ By Dan Barowy (Williams College),  Emery Berger (UMass Amherst), Ben Zorn (Micro
 * [Paper](#paper)
 * [Software Needed](#software-needed)
 * [Installation](#installation)
-* [A Short ExceLint Tutorial](#tutorial)
-	* [Proposed Fix Tool](#proposed-fix)
+* [A Short ExceLint Tutorial](#a-short-excelint-ui-tutorial)
+	* [Proposed Fix Tool](#proposed-fix-tool-step-by-step-audit)
 	* [Global View](#global-view)
-* [Building from Source Code](#building-from-source-code)
+* [Building from Source Code](#building-and-running-excelint-from-source-code)
 * [Troubleshooting](#troubleshooting)
 
 [](#glossary)
