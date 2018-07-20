@@ -45,26 +45,29 @@
             this.AnalyzeButton = this.Factory.CreateRibbonButton();
             this.MarkAsOKButton = this.Factory.CreateRibbonButton();
             this.StartOverButton = this.Factory.CreateRibbonButton();
-            this.RegularityMap = this.Factory.CreateRibbonButton();
             this.showHeatmap = this.Factory.CreateRibbonButton();
             this.clusterForCell = this.Factory.CreateRibbonButton();
             this.FixClusterButton = this.Factory.CreateRibbonButton();
             this.resetFixesButton = this.Factory.CreateRibbonButton();
             this.EntropyRanking = this.Factory.CreateRibbonButton();
-            this.RunCUSTODES = this.Factory.CreateRibbonButton();
-            this.ClearEverything = this.Factory.CreateRibbonButton();
             this.RangeForSelection = this.Factory.CreateRibbonButton();
             this.box2 = this.Factory.CreateRibbonBox();
             this.LSHTest = this.Factory.CreateRibbonButton();
             this.getLSH = this.Factory.CreateRibbonButton();
             this.readClusterDump = this.Factory.CreateRibbonButton();
-            this.VectorForCell = this.Factory.CreateRibbonButton();
             this.cellIsFormula = this.Factory.CreateRibbonButton();
             this.drawAllClusters = this.Factory.CreateRibbonCheckBox();
             this.LoadTrueSmells = this.Factory.CreateRibbonButton();
             this.ExceLintVsTrueSmells = this.Factory.CreateRibbonButton();
             this.NukeSettings = this.Factory.CreateRibbonButton();
             this.distanceCombo = this.Factory.CreateRibbonComboBox();
+            this.separator2 = this.Factory.CreateRibbonSeparator();
+            this.RegularityMap = this.Factory.CreateRibbonButton();
+            this.VectorForCell = this.Factory.CreateRibbonButton();
+            this.separator1 = this.Factory.CreateRibbonSeparator();
+            this.ClearEverything = this.Factory.CreateRibbonButton();
+            this.separator3 = this.Factory.CreateRibbonSeparator();
+            this.RunCUSTODES = this.Factory.CreateRibbonButton();
             this.ClusterBox = this.Factory.CreateRibbonCheckBox();
             this.useResultant = this.Factory.CreateRibbonCheckBox();
             this.normSSCheckBox = this.Factory.CreateRibbonCheckBox();
@@ -86,10 +89,6 @@
             this.annotate = this.Factory.CreateRibbonButton();
             this.annotateThisCell = this.Factory.CreateRibbonButton();
             this.button1 = this.Factory.CreateRibbonButton();
-            this.separator1 = this.Factory.CreateRibbonSeparator();
-            this.separator2 = this.Factory.CreateRibbonSeparator();
-            this.separator3 = this.Factory.CreateRibbonSeparator();
-            this.separator5 = this.Factory.CreateRibbonSeparator();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -114,7 +113,6 @@
             this.CheckCellGroup.Items.Add(this.box1);
             this.CheckCellGroup.Items.Add(this.separator2);
             this.CheckCellGroup.Items.Add(this.RegularityMap);
-            this.CheckCellGroup.Items.Add(this.separator5);
             this.CheckCellGroup.Items.Add(this.VectorForCell);
             this.CheckCellGroup.Items.Add(this.separator1);
             this.CheckCellGroup.Items.Add(this.ClearEverything);
@@ -185,15 +183,6 @@
             this.StartOverButton.Visible = false;
             this.StartOverButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.StartOverButton_Click);
             // 
-            // RegularityMap
-            // 
-            this.RegularityMap.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.RegularityMap.Image = global::ExceLintUI.Properties.Resources.graph;
-            this.RegularityMap.Label = "Show Global View";
-            this.RegularityMap.Name = "RegularityMap";
-            this.RegularityMap.ShowImage = true;
-            this.RegularityMap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.RegularityMap_Click);
-            // 
             // showHeatmap
             // 
             this.showHeatmap.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
@@ -245,24 +234,6 @@
             this.EntropyRanking.Visible = false;
             this.EntropyRanking.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.EntropyRanking_Click);
             // 
-            // RunCUSTODES
-            // 
-            this.RunCUSTODES.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.RunCUSTODES.Image = global::ExceLintUI.Properties.Resources.analyze_small;
-            this.RunCUSTODES.Label = "Run CUSTODES";
-            this.RunCUSTODES.Name = "RunCUSTODES";
-            this.RunCUSTODES.ShowImage = true;
-            this.RunCUSTODES.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.RunCUSTODES_Click);
-            // 
-            // ClearEverything
-            // 
-            this.ClearEverything.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.ClearEverything.Image = global::ExceLintUI.Properties.Resources.clear_small;
-            this.ClearEverything.Label = "Clear Everything";
-            this.ClearEverything.Name = "ClearEverything";
-            this.ClearEverything.ShowImage = true;
-            this.ClearEverything.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ClearEverything_Click);
-            // 
             // RangeForSelection
             // 
             this.RangeForSelection.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
@@ -307,15 +278,6 @@
             this.readClusterDump.Name = "readClusterDump";
             this.readClusterDump.Visible = false;
             this.readClusterDump.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.readClusterDump_Click);
-            // 
-            // VectorForCell
-            // 
-            this.VectorForCell.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.VectorForCell.Image = global::ExceLintUI.Properties.Resources.graph;
-            this.VectorForCell.Label = "Vector for Cell";
-            this.VectorForCell.Name = "VectorForCell";
-            this.VectorForCell.ShowImage = true;
-            this.VectorForCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.VectorForCell_Click);
             // 
             // cellIsFormula
             // 
@@ -363,6 +325,56 @@
             this.distanceCombo.Name = "distanceCombo";
             this.distanceCombo.Text = "Earth Mover";
             this.distanceCombo.Visible = false;
+            // 
+            // separator2
+            // 
+            this.separator2.Name = "separator2";
+            // 
+            // RegularityMap
+            // 
+            this.RegularityMap.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.RegularityMap.Image = global::ExceLintUI.Properties.Resources.graph;
+            this.RegularityMap.Label = "Show Global View";
+            this.RegularityMap.Name = "RegularityMap";
+            this.RegularityMap.ShowImage = true;
+            this.RegularityMap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.RegularityMap_Click);
+            // 
+            // VectorForCell
+            // 
+            this.VectorForCell.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.VectorForCell.Image = global::ExceLintUI.Properties.Resources.graph;
+            this.VectorForCell.Label = "Vector for Cell";
+            this.VectorForCell.Name = "VectorForCell";
+            this.VectorForCell.ShowImage = true;
+            this.VectorForCell.Visible = false;
+            this.VectorForCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.VectorForCell_Click);
+            // 
+            // separator1
+            // 
+            this.separator1.Name = "separator1";
+            // 
+            // ClearEverything
+            // 
+            this.ClearEverything.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.ClearEverything.Image = global::ExceLintUI.Properties.Resources.clear_small;
+            this.ClearEverything.Label = "Clear Everything";
+            this.ClearEverything.Name = "ClearEverything";
+            this.ClearEverything.ShowImage = true;
+            this.ClearEverything.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ClearEverything_Click);
+            // 
+            // separator3
+            // 
+            this.separator3.Name = "separator3";
+            // 
+            // RunCUSTODES
+            // 
+            this.RunCUSTODES.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.RunCUSTODES.Image = global::ExceLintUI.Properties.Resources.analyze_small;
+            this.RunCUSTODES.Label = "Run CUSTODES";
+            this.RunCUSTODES.Name = "RunCUSTODES";
+            this.RunCUSTODES.ShowImage = true;
+            this.RunCUSTODES.Visible = false;
+            this.RunCUSTODES.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.RunCUSTODES_Click);
             // 
             // ClusterBox
             // 
@@ -523,22 +535,6 @@
             this.button1.Name = "button1";
             this.button1.ShowImage = true;
             // 
-            // separator1
-            // 
-            this.separator1.Name = "separator1";
-            // 
-            // separator2
-            // 
-            this.separator2.Name = "separator2";
-            // 
-            // separator3
-            // 
-            this.separator3.Name = "separator3";
-            // 
-            // separator5
-            // 
-            this.separator5.Name = "separator5";
-            // 
             // ExceLintRibbon
             // 
             this.Name = "ExceLintRibbon";
@@ -612,7 +608,6 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton RangeForSelection;
         internal Microsoft.Office.Tools.Ribbon.RibbonSeparator separator2;
         internal Microsoft.Office.Tools.Ribbon.RibbonSeparator separator1;
-        internal Microsoft.Office.Tools.Ribbon.RibbonSeparator separator5;
         internal Microsoft.Office.Tools.Ribbon.RibbonSeparator separator3;
     }
 
