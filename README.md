@@ -17,7 +17,7 @@ By Dan Barowy (Williams College),  Emery Berger (UMass Amherst), Ben Zorn (Micro
 * [Building from Source Code](#building-from-source-code)
 * [Troubleshooting](#troubleshooting)
 
-[create an anchor](#glossary)
+[](#glossary)
 ## Glossary
 
 |term|meaning|
@@ -33,7 +33,7 @@ By Dan Barowy (Williams College),  Emery Berger (UMass Amherst), Ben Zorn (Micro
 |Vector fingerprint|Each reference in a formula induces a reference vector, which is a vector encoding of the reference relative to the location of the formula itself.  Since a formula may have multiple refernces, it induces a set of vectors.  For performance reasons, ExceLint "compresses" this set of vectors into a single vector, called the _vector fingerprint_.  See section 4.1.1. on page 10 of the paper for further elaboration.|
 |Formula error|A _formula error_ is a formula that deviates from the intended reference shape by either including an extra reference, omitting a reference, or misreferencing data. We also include manifestly wrong calculations in this category, such as choosing the wrong operation.|
 
-[create an anchor](#overview)
+[](#overview)
 ## Overview
 
 ExceLint is a static analysis that finds formula errors in spreadsheets.
@@ -42,12 +42,12 @@ In order to use ExceLint, you will need to install the ExceLint UI plugin on a W
 
 We tested ExceLint using Windows 10/Windows Server 2016 and Excel 2016. While ExceLint works in principle with other versions of Windows and Excel (e.g., Excel 2010/2013), we have not tested these alternative configurations and do not recommend using them.
 
-[create an anchor](#paper)
+[](#paper)
 ## Paper
 
 A pre-print of a technical paper describing this work is available by request (mail emery@cs.umass.edu).
 
-[create an anchor](#software-needed)
+[](#software-needed)
 ## Software Needed:
 
 1. Microsoft Windows 10 or Microsoft Windows Server 2016
@@ -57,7 +57,7 @@ A pre-print of a technical paper describing this work is available by request (m
 1. (optionally) ExceLint source code
 1. (optionally) Visual Studio 2017: (we use the Professional edition; Community may also work) [https://visualstudio.microsoft.com/vs/whatsnew/](https://visualstudio.microsoft.com/vs/whatsnew/)
 
-[create an anchor](#installation)
+[](#installation)
 ## Installation
 
 You will need working copies of Windows, Office 2016 before installing.
@@ -70,7 +70,7 @@ You will need working copies of Windows, Office 2016 before installing.
 1. Start Microsoft Excel.
 1. There should be an ExceLint tab available on the Excel ribbon.  If the ExceLint tab is missing, see the [Troubleshooting](#troubleshooting) section.
 
-[create an anchor](#tutorial)
+[](#tutorial)
 ## A Short ExceLint UI Tutorial
 
 1. Launch `Excel`.
@@ -82,7 +82,7 @@ You will need working copies of Windows, Office 2016 before installing.
 
 **Note: You may want to refer to the Troubleshooting section below as Excel's security mechanisms sometimes prevent the ExceLint user interface from running; we detail solutions for common problems in that section.**
 
-[create an anchor](#proposed-fix)
+[](#proposed-fix)
 ### Proposed Fix Tool (step-by-step audit)
 
 1. To ask ExceLint for a step-by-step guided audit _for the current worksheet_, click the `Audit` <img src="readme_images/audit_button.png" alt="audit button" style="width:50px;"/> button.
@@ -96,7 +96,7 @@ You will need working copies of Windows, Office 2016 before installing.
 
 Note that the tool currently does not make any provisions for users changing (e.g., fixing) cells while an audit is in progress.  Such changes will not be reflected in the analysis unless it is re-run.
 
-[create an anchor](#global-view)
+[](#global-view)
 ### Global view
 
 The global view provides a global visualization of all the regions of the current worksheet.  Click the `Show Global View` <img src="readme_images/global_view_button.png" alt="global view button" style="width:70px;"/>  button to see the visualization.  Click `Hide Global View` to clear the visualization.
@@ -105,7 +105,7 @@ You should interpret each contiguous region of cells having the same color as ha
 
 Our preferred manner of working with ExceLint is to switch between the Proposed Fix Tool and the Global View.  The Proposed Fix Tool quickly identifies potential problems while the Global View provides context that sometimes helps determine whether a flagged cell is truly a bug.
 
-[create an anchor](#building-from-source-code)
+[](#building-from-source-code)
 ## Building and Running ExceLint from Source Code
 
 You may download the latest source code for ExceLint using `git`.  ExceLint is a Visual Studio 2017 solution.
