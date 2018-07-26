@@ -138,6 +138,7 @@ namespace ExceLintFileFormats
         public double ExceLintJaccardDistance { get; set; }
         public int ExceLintDeltaK { get; set; }
         public int Collisions { get; set; }
+        public double NormalizedEntropy { get; set; }
         // ROLLING THRESHOLD
         public double Top1Precision { get; set; }
         public double Top2Precision { get; set; }

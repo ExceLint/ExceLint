@@ -337,6 +337,11 @@
                 let c2 = target.Clustering z
                 BinaryMinEntropyTree.ClusteringEntropyDiff c1 c2
 
+            member self.AllWorkbooksNormalizedEntropy : double = 
+                let cs = fsc.WorksheetIndices |> Seq.map (fun z -> self.Clustering z) 
+                let wb_cluster = cs |> Seq.reduce (fun c1 c2 -> c1.Union c2)
+                BinaryMinEntropyTree.NormalizedClusteringEntropy wb_cluster
+
             member private self.PrevailingDirectionAdjacencies(z: int)(onlyFormulaTargets: bool) : (ImmutableHashSet<AST.Address>*AST.Address)[] =
                 self.Clustering z
                 |> Seq.filter (fun c -> if onlyFormulaTargets then ClusterIsFormulaValued c ih graph else true)

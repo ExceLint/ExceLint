@@ -102,6 +102,8 @@
 
         member self.ValueFor(x: int)(y: int)(z: int) = valueMap.[x,y,z]
 
+        member self.WorksheetIndices = zNum |> Seq.map (fun kvp -> kvp.Value)
+
         // layout of grid is [x][y]
         static member NewFalseGrid(width: int)(height: int) : bool[][] =
             [| 1 .. width |]

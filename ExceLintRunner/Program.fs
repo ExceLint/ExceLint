@@ -8,6 +8,7 @@ open ExceLintFileFormats
 open System.Threading
 open MathNet.Numerics.Distributions
 open System.Diagnostics
+open Depends
 
     type BugClass = HashSet<AST.Address>
     type Stats = {
@@ -50,6 +51,7 @@ open System.Diagnostics
         cells: int;
         collisions: int;
         rolling_precision: double[];
+        normalized_entropy: double;
     }
 
     let hs_difference<'a>(hs1: HashSet<'a>)(hs2: HashSet<'a>) : HashSet<'a> =
@@ -319,6 +321,7 @@ open System.Diagnostics
         row.ExceLintJaccardDistance <- stats.excelint_jaccard
         row.ExceLintDeltaK <- stats.excelint_delta_k
         row.Collisions <- stats.collisions
+        row.NormalizedEntropy <- stats.normalized_entropy
         row.Top1Precision <- stats.rolling_precision.[0]
         row.Top2Precision <- stats.rolling_precision.[1]
         row.Top3Precision <- stats.rolling_precision.[2]
@@ -424,33 +427,6 @@ open System.Diagnostics
             | ReferenceError -> ErrorClass.INCONSISTENT
             | MissingFormula -> ErrorClass.MISSINGFORMULA
             | WhitespaceOp -> ErrorClass.WHITESPACE
-
-    //let count_TP_for_kind(etruth: ExceLintFileFormats.ExceLintGroundTruth)(wbname: string)(flags: HashSet<AST.Address>)(kind: BugKind) : int =
-    //    let counts = new Dict<BugClass*BugClass,int>()
-
-    //    let duals = etruth.KindBugsForWorkbook(wbname, kind.ErrorClass)
-
-    //    for addr in flags do
-    //        // is it a bug?
-    //        if kind.Discriminator etruth addr then
-    //            // does it have a dual?
-    //            if etruth.AddressHasADual addr then
-    //                // get duals
-    //                let duals = etruth.DualsForAddress addr
-    //                // count
-    //                if not (counts.ContainsKey duals) then
-    //                    counts.Add(duals, 1)
-    //                else
-    //                    // add one if we have not exceeded our max count for this dual
-    //                    if counts.[duals] < (etruth.NumBugsForBugClass (fst duals)) then
-    //                        counts.[duals] <- counts.[duals] + 1
-    //            else
-    //            // make a singleton bugclass and count it
-    //                let bugclass = new HashSet<AST.Address>([addr])
-    //                let duals = (bugclass,bugclass)
-    //                counts.Add(duals, 1)
-
-    //    Seq.sum counts.Values
 
     let dual_for_addr(bc: Dictionary<BugClass,BugClass>)(addr: AST.Address) : KeyValuePair<BugClass,BugClass> option =
         // search bc
@@ -672,6 +648,21 @@ open System.Diagnostics
                 let esz = Math.Min(excelint_flags.Count, model.Cutoff + 1)
                 let csz = custodes_flags.Count
 
+                // compute entropy
+                let entropy_opt =
+                    match model.Analysis with
+                    | CommonTypes.Cluster c ->
+                        match c.escapehatch with
+                        | Some obj ->
+                            if (obj :? EntropyModelBuilder2.EntropyModel2) then
+                                let e = obj :?> EntropyModelBuilder2.EntropyModel2
+                                Some e.AllWorkbooksNormalizedEntropy
+                            else 
+                                None
+                        | None -> None
+                        
+                    | _ -> None
+
                 let stats = {
                     shortname = shortf;
                     threshold = config.alpha;
@@ -712,6 +703,7 @@ open System.Diagnostics
                     cells = scount.ncells;
                     collisions = scount.nnomatch;
                     rolling_precision = rolling_precision;
+                    normalized_entropy = match entropy_opt with | Some(e) -> e | None -> Double.NaN;
                 }
 
                 // write to per-workbook CSV
