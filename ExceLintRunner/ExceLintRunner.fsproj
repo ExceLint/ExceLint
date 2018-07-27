@@ -27,7 +27,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DocumentationFile>bin\Debug\ExceLintRunner.XML</DocumentationFile>
     <Prefer32Bit>true</Prefer32Bit>
-    <StartArguments>"C:\Users\Daniel Barowy\Documents\Visual Studio 2017\Projects\ExceLintPaper\data\spreadsheets\custodes" "C:\Users\Daniel Barowy\Desktop\num_singletons_benchmarks" "C:\Users\Daniel Barowy\Documents\Visual Studio 2017\Projects\ExceLintPaper\analysis\oopsla2018_annotations\true_ref_bugs.csv" "C:\Users\Daniel Barowy\Documents\Visual Studio 2017\Projects\ExceLintPaper\data\analyses\CUSTODES\smell_detection_result.csv" "C:\ProgramData\Oracle\Java\javapath\java.exe" "C:\Users\Daniel Barowy\Documents\Visual Studio 2017\Projects\ExceLintPaper\data\analyses\CUSTODES2\cc2.jar" -verbose -cluster -noexit -noshuffle</StartArguments>
+    <StartArguments>"C:\Users\Daniel Barowy\Documents\Visual Studio 2017\Projects\ExceLintPaper\data\spreadsheets\custodes" "C:\Users\Daniel Barowy\Desktop\num_singletons_benchmarks-2" "C:\Users\Daniel Barowy\Documents\Visual Studio 2017\Projects\ExceLintPaper\analysis\oopsla2018_annotations\true_ref_bugs.csv" "C:\Users\Daniel Barowy\Documents\Visual Studio 2017\Projects\ExceLintPaper\data\analyses\CUSTODES\smell_detection_result.csv" "C:\ProgramData\Oracle\Java\javapath\java.exe" "C:\Users\Daniel Barowy\Documents\Visual Studio 2017\Projects\ExceLintPaper\data\analyses\CUSTODES2\cc2.jar" -verbose -cluster -noexit -noshuffle</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
