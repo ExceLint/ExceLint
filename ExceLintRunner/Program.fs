@@ -52,6 +52,7 @@ open Depends
         collisions: int;
         rolling_precision: double[];
         normalized_entropy: double;
+        num_singleton_formulas: int;
     }
 
     let hs_difference<'a>(hs1: HashSet<'a>)(hs2: HashSet<'a>) : HashSet<'a> =
@@ -322,6 +323,7 @@ open Depends
         row.ExceLintDeltaK <- stats.excelint_delta_k
         row.Collisions <- stats.collisions
         row.NormalizedEntropy <- stats.normalized_entropy
+        row.NumSingletonFormulaCells <- stats.num_singleton_formulas
         row.Top1Precision <- stats.rolling_precision.[0]
         row.Top2Precision <- stats.rolling_precision.[1]
         row.Top3Precision <- stats.rolling_precision.[2]
@@ -663,6 +665,21 @@ open Depends
                         
                     | _ -> None
 
+                // count number of singleton formulas
+                let singletons_opt = 
+                     match model.Analysis with
+                    | CommonTypes.Cluster c ->
+                        match c.escapehatch with
+                        | Some obj ->
+                            if (obj :? EntropyModelBuilder2.EntropyModel2) then
+                                let e = obj :?> EntropyModelBuilder2.EntropyModel2
+                                Some e.NumSingletonFormulas
+                            else 
+                                None
+                        | None -> None
+                        
+                    | _ -> None
+
                 let stats = {
                     shortname = shortf;
                     threshold = config.alpha;
@@ -704,6 +721,7 @@ open Depends
                     collisions = scount.nnomatch;
                     rolling_precision = rolling_precision;
                     normalized_entropy = match entropy_opt with | Some(e) -> e | None -> Double.NaN;
+                    num_singleton_formulas = match singletons_opt with | Some(e) -> e | None -> 0
                 }
 
                 // write to per-workbook CSV

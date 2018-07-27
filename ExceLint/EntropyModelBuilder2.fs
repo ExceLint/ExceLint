@@ -342,6 +342,15 @@
                 let wb_cluster = cs |> Seq.reduce (fun c1 c2 -> c1.Union c2)
                 BinaryMinEntropyTree.NormalizedClusteringEntropy wb_cluster
 
+            member self.NumSingletonFormulas : int = 
+                let cs = fsc.WorksheetIndices |> Seq.map (fun z -> self.Clustering z) 
+                let wb_cluster = cs |> Seq.reduce (fun c1 c2 -> c1.Union c2)
+                let singleton_num =
+                    wb_cluster |>
+                    Seq.map (fun c -> c |> Seq.toArray) |>
+                    Seq.fold (fun acc c -> if c.Length = 1 && graph.isFormula(c.[0]) then acc + 1 else acc) 0
+                singleton_num
+
             member private self.PrevailingDirectionAdjacencies(z: int)(onlyFormulaTargets: bool) : (ImmutableHashSet<AST.Address>*AST.Address)[] =
                 self.Clustering z
                 |> Seq.filter (fun c -> if onlyFormulaTargets then ClusterIsFormulaValued c ih graph else true)
