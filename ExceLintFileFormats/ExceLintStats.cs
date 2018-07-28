@@ -142,6 +142,7 @@ namespace ExceLintFileFormats
         public int NumSingletonFormulaCells { get; set; }
         public int NumSingletonCells { get; set; }
         public int NumClusters { get; set; }
+        public string ClusterSizes { get; set; }
         // ROLLING THRESHOLD
         public double Top1Precision { get; set; }
         public double Top2Precision { get; set; }

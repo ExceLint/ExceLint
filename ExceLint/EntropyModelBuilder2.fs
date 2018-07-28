@@ -364,6 +364,11 @@
                 let wb_cluster = cs |> Seq.reduce (fun c1 c2 -> c1.Union c2)
                 wb_cluster.Count
 
+            member self.ClusterSizes : int list =
+                let cs = fsc.WorksheetIndices |> Seq.map (fun z -> self.Clustering z) 
+                let wb_cluster = cs |> Seq.reduce (fun c1 c2 -> c1.Union c2)
+                wb_cluster |> Seq.map (fun c -> c.Count) |> Seq.toList 
+
             member private self.PrevailingDirectionAdjacencies(z: int)(onlyFormulaTargets: bool) : (ImmutableHashSet<AST.Address>*AST.Address)[] =
                 self.Clustering z
                 |> Seq.filter (fun c -> if onlyFormulaTargets then ClusterIsFormulaValued c ih graph else true)

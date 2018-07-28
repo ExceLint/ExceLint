@@ -55,6 +55,7 @@ open Depends
         num_singleton_formulas: int;
         num_singletons: int;
         num_clusters: int;
+        cluster_sizes: int list;
     }
 
     let hs_difference<'a>(hs1: HashSet<'a>)(hs2: HashSet<'a>) : HashSet<'a> =
@@ -327,6 +328,7 @@ open Depends
         row.NormalizedEntropy <- stats.normalized_entropy
         row.NumSingletonFormulaCells <- stats.num_singleton_formulas
         row.NumSingletonCells <- stats.num_singletons
+        row.ClusterSizes <- stats.cluster_sizes.ToString() 
         row.Top1Precision <- stats.rolling_precision.[0]
         row.Top2Precision <- stats.rolling_precision.[1]
         row.Top3Precision <- stats.rolling_precision.[2]
@@ -711,6 +713,20 @@ open Depends
                         
                     | _ -> None
 
+                let cluster_sizes_opt =
+                     match model.Analysis with
+                    | CommonTypes.Cluster c ->
+                        match c.escapehatch with
+                        | Some obj ->
+                            if (obj :? EntropyModelBuilder2.EntropyModel2) then
+                                let e = obj :?> EntropyModelBuilder2.EntropyModel2
+                                Some e.ClusterSizes
+                            else 
+                                None
+                        | None -> None
+                        
+                    | _ -> None
+
                 let stats = {
                     shortname = shortf;
                     threshold = config.alpha;
@@ -755,6 +771,7 @@ open Depends
                     num_singleton_formulas = match singletons_opt with | Some(e) -> e | None -> 0;
                     num_singletons = match singleton_cells_opt with | Some(e) -> e | None -> 0;
                     num_clusters = match nc_opt with | Some(e) -> e | None -> 0;
+                    cluster_sizes = match cluster_sizes_opt with | Some(e) -> e | None -> [];
                 }
 
                 // write to per-workbook CSV
