@@ -6,6 +6,7 @@ using System;
 using System.Text.RegularExpressions;
 using BugClass = System.Collections.Generic.HashSet<AST.Address>;
 using Microsoft.FSharp.Core;
+using COMWrapper;
 
 namespace ExceLintFileFormats
 {
@@ -536,6 +537,34 @@ namespace ExceLintFileFormats
             return count;
         }
 
+        public int TotalOffByOneBugs(string benchmarks_path)
+        {
+            int count = 0;
+            using (var app = new Application())
+            {
+                var wbs = WorkbooksAnnotated;
+
+                foreach (var wb in wbs)
+                {
+                    var path = Path.Combine(benchmarks_path, wb);
+
+                    Console.WriteLine("Opening workbook \"" + wb + "\" for dependence analysis.");
+                    using (var workbook = app.OpenWorkbook(path))
+                    {
+                        // run dependence analysis
+                        var graph = workbook.buildDependenceGraph();
+
+                        // count
+                        int c = NumOffByOneBugsForWorkbook(wb, graph);
+                        count += c;
+
+                        Console.WriteLine("Closing workbook \"" + wb + "\".");
+                    }
+                }
+            }
+            return count;
+        }
+
         private Func<BugKind,bool> getPredicate(ErrorClass ec)
         {
             // predicate is based on arg
@@ -668,6 +697,55 @@ namespace ExceLintFileFormats
             bugs += nodual_bugs.Count();
 
             return bugs;
+        }
+
+        private int NumberOfReferences(AST.Address addr, Depends.DAG graph)
+        {
+            if (graph.isFormula(addr))
+            {
+                var fexpr = Parcel.parseFormulaAtAddress(addr, graph.getFormulaAtAddress(addr));
+                var heads_single = Parcel.addrReferencesFromExpr(fexpr);
+                var heads_vector = Parcel.rangeReferencesFromExpr(fexpr).SelectMany(rng => rng.Addresses()).ToArray();
+                return heads_single.Length + heads_vector.Length;
+            } else
+            {
+                return 0;
+            }
+        }
+
+        public int NumOffByOneBugsForWorkbook(string wbname, Depends.DAG graph)
+        {
+            var ec = ErrorClass.INCONSISTENT;
+
+            // predicate is based on arg
+            Func<BugKind, bool> fn = getPredicate(ec);
+
+            var duals = KindBugsForWorkbook(wbname, ec);
+
+            // count both sides subject to dual counting rules
+            var count = 0;
+
+            foreach (var dual in duals)
+            {
+                // which dual is smaller and which larger?
+                var smaller = dual.Key.Count <= dual.Value.Count ? dual.Key.ToArray() : dual.Value.ToArray();
+                var larger = dual.Key.Count <= dual.Value.Count ? dual.Value.ToArray() : dual.Key.ToArray();
+
+                foreach (var addr in smaller)
+                {
+                    // get the number of references for addr
+                    int addr_ref_num = NumberOfReferences(addr, graph);
+                    // get the number of references for any representative from dual
+                    int dual_ref_num = NumberOfReferences(larger[0], graph);
+
+                    if (addr_ref_num + 1 == dual_ref_num || addr_ref_num - 1 == dual_ref_num)
+                    {
+                        count++;
+                    }
+                }
+            }
+
+            return count;
         }
 
         public int NumBugsForBugClass(BugClass bc)

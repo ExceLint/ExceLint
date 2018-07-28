@@ -54,6 +54,9 @@ let main argv =
     let excelint_num_whitespace = excelint_gt.TotalNumBugKindBugs(ErrorClass.WHITESPACE)
     let excelint_num_suspicious = excelint_gt.TotalNumBugKindBugs(ErrorClass.SUSPICIOUS)
 
+    // count off-by-one bugs; requires dependence analysis
+    let excelint_num_off_by_one = excelint_gt.TotalOffByOneBugs(custodes_wbdir);
+
     // count number of annotations in CUSTODES for workbooks in ExceLint
     let custodes_num_annot = (gt_flags |> Seq.filter (fun a -> wbs.Contains(a.WorkbookName)) |> Seq.length) 
 
@@ -77,6 +80,7 @@ let main argv =
     printfn "There are %A missing formulas in the ExceLint corpus" excelint_num_missing_formula
     printfn "There are %A whitespace bugs in the ExceLint corpus." excelint_num_whitespace
     printfn "There are %A suspicious cells in the ExceLint corpus." excelint_num_suspicious
+    printfn "There are %A off-by-one errors in the ExceLint corpus." excelint_num_off_by_one
     printfn "There are %A total annotations for %A workbooks in the CUSTODES corpus." custodes_num_annot wbs.Count
     printfn "There are %A total annotations in the ExceLint corpus." excelint_gt.Flags.Count
     printfn "%A annotations from CUSTODES are labeled 'not a reference bug' in ExceLint corpus." num_custodes_notabug

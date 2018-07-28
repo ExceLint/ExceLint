@@ -68,6 +68,14 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Depends\COMWrapper\COMWrapper.csproj">
+      <Project>{d9bc52ff-2319-4216-96fd-6f9cf2d05539}</Project>
+      <Name>COMWrapper</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Depends\Depends\Depends.csproj">
+      <Project>{34fa1bc2-cfd6-44ec-ac0c-dfc62313e4bf}</Project>
+      <Name>Depends</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Depends\parcel\Parcel\ExcelParser.fsproj">
       <Project>{6de2a2b9-c029-4bdb-8992-d16276471d9f}</Project>
       <Name>ExcelParser</Name>
