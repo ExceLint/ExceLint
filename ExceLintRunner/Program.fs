@@ -329,6 +329,7 @@ open Depends
         row.NumSingletonFormulaCells <- stats.num_singleton_formulas
         row.NumSingletonCells <- stats.num_singletons
         row.ClusterSizes <- stats.cluster_sizes.ToString() 
+        row.NumClusters <- stats.num_clusters
         row.Top1Precision <- stats.rolling_precision.[0]
         row.Top2Precision <- stats.rolling_precision.[1]
         row.Top3Precision <- stats.rolling_precision.[2]
