@@ -141,8 +141,11 @@ namespace ExceLintFileFormats
         public double NormalizedEntropy { get; set; }
         public int NumSingletonFormulaCells { get; set; }
         public int NumSingletonCells { get; set; }
+        public int NumSingletonCellsNonWs { get; set; }
         public int NumClusters { get; set; }
         public string ClusterSizes { get; set; }
+        public int NumClustersNonWs { get; set; }
+        public string ClusterSizesNonWs { get; set; }
         // ROLLING THRESHOLD
         public double Top1Precision { get; set; }
         public double Top2Precision { get; set; }

@@ -54,8 +54,11 @@ open Depends
         normalized_entropy: double;
         num_singleton_formulas: int;
         num_singletons: int;
+        num_singletons_non_ws: int;
         num_clusters: int;
+        num_clusters_non_ws: int;
         cluster_sizes: int list;
+        cluster_sizes_non_ws: int list;
     }
 
     let hs_difference<'a>(hs1: HashSet<'a>)(hs2: HashSet<'a>) : HashSet<'a> =
@@ -328,8 +331,11 @@ open Depends
         row.NormalizedEntropy <- stats.normalized_entropy
         row.NumSingletonFormulaCells <- stats.num_singleton_formulas
         row.NumSingletonCells <- stats.num_singletons
+        row.NumSingletonCellsNonWs <- stats.num_singletons_non_ws
         row.ClusterSizes <- "[" + String.Join("; ", stats.cluster_sizes) + "]"
+        row.ClusterSizesNonWs <- "[" + String.Join("; ", stats.cluster_sizes_non_ws) + "]"
         row.NumClusters <- stats.num_clusters
+        row.NumClustersNonWs <- stats.num_clusters_non_ws
         row.Top1Precision <- stats.rolling_precision.[0]
         row.Top2Precision <- stats.rolling_precision.[1]
         row.Top3Precision <- stats.rolling_precision.[2]
@@ -700,6 +706,20 @@ open Depends
                         
                     | _ -> None
 
+                let ncws_opt = 
+                     match model.Analysis with
+                    | CommonTypes.Cluster c ->
+                        match c.escapehatch with
+                        | Some obj ->
+                            if (obj :? EntropyModelBuilder2.EntropyModel2) then
+                                let e = obj :?> EntropyModelBuilder2.EntropyModel2
+                                Some e.NumClustersNonWhitespace
+                            else 
+                                None
+                        | None -> None
+                        
+                    | _ -> None
+
                 let singleton_cells_opt =
                      match model.Analysis with
                     | CommonTypes.Cluster c ->
@@ -708,6 +728,20 @@ open Depends
                             if (obj :? EntropyModelBuilder2.EntropyModel2) then
                                 let e = obj :?> EntropyModelBuilder2.EntropyModel2
                                 Some e.NumSingletons
+                            else 
+                                None
+                        | None -> None
+                        
+                    | _ -> None
+
+                let singleton_cells_nonws_opt =
+                     match model.Analysis with
+                    | CommonTypes.Cluster c ->
+                        match c.escapehatch with
+                        | Some obj ->
+                            if (obj :? EntropyModelBuilder2.EntropyModel2) then
+                                let e = obj :?> EntropyModelBuilder2.EntropyModel2
+                                Some e.NumSingletonsNonWhitespace
                             else 
                                 None
                         | None -> None
@@ -725,8 +759,21 @@ open Depends
                             else 
                                 None
                         | None -> None
-                        
                     | _ -> None
+
+                let cluster_sizes_non_ws_opt =
+                    match model.Analysis with
+                    | CommonTypes.Cluster c ->
+                        match c.escapehatch with
+                        | Some obj ->
+                            if (obj :? EntropyModelBuilder2.EntropyModel2) then
+                                let e = obj :?> EntropyModelBuilder2.EntropyModel2
+                                Some e.ClusterSizesNonWhitespace
+                            else 
+                                None
+                        | None -> None
+                    | _ -> None
+
 
                 let stats = {
                     shortname = shortf;
@@ -771,8 +818,11 @@ open Depends
                     normalized_entropy = match entropy_opt with | Some(e) -> e | None -> Double.NaN;
                     num_singleton_formulas = match singletons_opt with | Some(e) -> e | None -> 0;
                     num_singletons = match singleton_cells_opt with | Some(e) -> e | None -> 0;
+                    num_singletons_non_ws = match singleton_cells_nonws_opt with | Some(e) -> e | None -> 0;
                     num_clusters = match nc_opt with | Some(e) -> e | None -> 0;
+                    num_clusters_non_ws = match ncws_opt with | Some(e) -> e | None -> 0;
                     cluster_sizes = match cluster_sizes_opt with | Some(e) -> e | None -> [];
+                    cluster_sizes_non_ws = match cluster_sizes_non_ws_opt with | Some(e) -> e | None -> [];
                 }
 
                 // write to per-workbook CSV

@@ -351,6 +351,18 @@
                     Seq.fold (fun acc c -> if c.Length = 1 && graph.isFormula(c.[0]) then acc + 1 else acc) 0
                 singleton_num
 
+            member self.NumSingletonsNonWhitespace : int = 
+                let cs = fsc.WorksheetIndices |> Seq.map (fun z -> self.Clustering z) 
+                let wb_cluster =
+                    cs
+                    |> Seq.reduce (fun c1 c2 -> c1.Union c2)
+                    |> Seq.map (fun c -> Seq.toArray c) 
+                let singleton_num =
+                    wb_cluster
+                    |> Seq.filter (fun c -> not (AddressIsWhitespaceValued (c.[0]) ih graph))
+                    |> Seq.fold (fun acc c -> if c.Length = 1 then acc + 1 else acc) 0
+                singleton_num
+
             member self.NumSingletons : int = 
                 let cs = fsc.WorksheetIndices |> Seq.map (fun z -> self.Clustering z) 
                 let wb_cluster = cs |> Seq.reduce (fun c1 c2 -> c1.Union c2)
@@ -364,10 +376,25 @@
                 let wb_cluster = cs |> Seq.reduce (fun c1 c2 -> c1.Union c2)
                 wb_cluster.Count
 
+            member self.NumClustersNonWhitespace : int =
+                let cs = fsc.WorksheetIndices |> Seq.map (fun z -> self.Clustering z) 
+                let wb_cluster = cs |> Seq.reduce (fun c1 c2 -> c1.Union c2) |> Seq.map (fun c -> Seq.toArray c) 
+                let wb_cluster_non_ws =
+                    wb_cluster
+                    |> Seq.filter (fun c -> not (AddressIsWhitespaceValued (c.[0]) ih graph))
+                Seq.length wb_cluster_non_ws
+
             member self.ClusterSizes : int list =
                 let cs = fsc.WorksheetIndices |> Seq.map (fun z -> self.Clustering z) 
                 let wb_cluster = cs |> Seq.reduce (fun c1 c2 -> c1.Union c2)
                 wb_cluster |> Seq.map (fun c -> c.Count) |> Seq.toList 
+
+            member self.ClusterSizesNonWhitespace : int list =
+                let cs = fsc.WorksheetIndices |> Seq.map (fun z -> self.Clustering z) 
+                let wb_cluster = cs |> Seq.reduce (fun c1 c2 -> c1.Union c2) |> Seq.map (fun c -> Seq.toArray c) 
+                wb_cluster
+                |> Seq.filter (fun c -> not (AddressIsWhitespaceValued (c.[0]) ih graph))
+                |> Seq.map (fun c -> c.Length) |> Seq.toList 
 
             member private self.PrevailingDirectionAdjacencies(z: int)(onlyFormulaTargets: bool) : (ImmutableHashSet<AST.Address>*AST.Address)[] =
                 self.Clustering z
