@@ -183,3 +183,12 @@ A variety of problems can occasionally pop up when using or building ExceLint.
 11. In the menu that appears, select `ExceLint` and click the `Enable` button, then repeat steps 1-7.
 12. If ExceLint still does not re-appear, uninstall ExceLint, delete the direcotry `C:\Program Files (x86)\williams.edu`, log out of the user account, log back in, and reinstall ExceLint using the installer.
 13. If that does not work, contact the authors for additional support.
+
+## Acknowledgements
+
+This material is based upon work supported by the National Science
+Foundation under Grant No. CCF-1617892. Any opinions, findings, and
+conclusions or recommendations expressed in this material are those of
+the author(s) and do not necessarily reflect the views of the National
+Science Foundation.
+
