@@ -45,7 +45,7 @@ We tested ExceLint using Windows 10/Windows Server 2016 and Excel 2016. While Ex
 [](#paper)
 ## Paper
 
-The following technical paper describes how ExceLint works and includes an extensive empirical evaluation: [_ExceLint: Automatically Finding Spreadsheet Formula Errors_](https://github.com/ExceLint/ExceLint/ExceLint-OOPSLA2018.pdf), Daniel W. Barowy (Williams College), Emery D. Berger (University of Massachusetts Amherst), Benjamin Zorn (Microsoft Research). In _Proceedings of the ACM on Programming Languages_, Volume 2, Number OOPSLA. 
+The following technical paper describes how ExceLint works and includes an extensive empirical evaluation: [_ExceLint: Automatically Finding Spreadsheet Formula Errors_](https://github.com/ExceLint/ExceLint/blob/master/ExceLint-OOPSLA2018.pdf), Daniel W. Barowy (Williams College), Emery D. Berger (University of Massachusetts Amherst), Benjamin Zorn (Microsoft Research). In _Proceedings of the ACM on Programming Languages_, Volume 2, Number OOPSLA. 
 
 
 [](#software-needed)
