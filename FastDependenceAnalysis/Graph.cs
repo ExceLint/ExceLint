@@ -10,8 +10,6 @@ namespace FastDependenceAnalysis
 {
     public class Graph
     {
-
-
         public Graph(Excel.Application a, Excel.Worksheet w)
         {
             // things to do:
@@ -44,6 +42,7 @@ namespace FastDependenceAnalysis
             // process formulas
             foreach (var formula in formulas)
             {
+
                 var addr = addrCache.getAddr(formula.Row, formula.Column, wsname, wbname, path);
                 retVal.formulas.Add(addr, formula.Data);
                 retVal.f2v.Add(addr, new HashSet<AST.Range>());
@@ -93,6 +92,16 @@ namespace FastDependenceAnalysis
             for (int y = 0; y < height; y++)
             {
                 outer_y[y] = new Excel.Range[width];
+            }
+            return outer_y;
+        }
+
+        private static AST.Address[][] InitAddressTable(int width, int height)
+        {
+            var outer_y = new AST.Address[height][];
+            for (int y = 0; y < height; y++)
+            {
+                outer_y[y] = new AST.Address[width];
             }
             return outer_y;
         }
@@ -218,6 +227,32 @@ namespace FastDependenceAnalysis
                 }
             }
             return output;
+        }
+
+        private class AddrCache
+        {
+            Dictionary<Tuple<int, int>, AST.Address> addrs;
+
+            public AddrCache(int initSz)
+            {
+                addrs = new Dictionary<Tuple<int, int>, AST.Address>(initSz);
+            }
+
+            public AST.Address getAddr(int row, int col, string wsname, string wbname, string path)
+            {
+                var rc = new Tuple<int, int>(row, col);
+                AST.Address addr;
+                if (addrs.ContainsKey(rc))
+                {
+                    addr = addrs[rc];
+                }
+                else
+                {
+                    addr = AST.Address.fromR1C1withMode(row, col, AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+                    addrs.Add(rc, addr);
+                }
+                return addr;
+            }
         }
     }
 
