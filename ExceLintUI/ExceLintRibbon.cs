@@ -475,21 +475,6 @@ namespace ExceLintUI
             }
         }
 
-        private string InvertedHistogramPrettyPrinter(ROInvertedHistogram ih)
-        {
-            var sb = new StringBuilder();
-
-            sb.Append("[\n");
-            foreach (var kvp in ih)
-            {
-                var c = kvp.Value.Item3;
-                sb.Append(c.ToString());
-                sb.Append("\n");
-            }
-            sb.Append("]\n");
-            return sb.ToString();
-        }
-
         private void FixClusterButton_Click(object sender, RibbonControlEventArgs e)
         {
             // disable annoying OLE warnings
@@ -629,42 +614,6 @@ namespace ExceLintUI
 
             // display cluster
             System.Windows.Forms.MessageBox.Show(String.Join(", ", cluster.Select(a => a.A1Local())));
-        }
-
-        private void nearestNeighborForCluster_Click(object sender, RibbonControlEventArgs e)
-        {
-            var w = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-
-            var app = Globals.ThisAddIn.Application;
-
-            // get cursor location
-            var cursor = (Excel.Range)app.Selection;
-
-            // get address for cursor
-            AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, Globals.ThisAddIn.Application.ActiveWorkbook);
-
-            // create progbar in main thread;
-            // worker thread will call Dispose
-            var pb = new ProgBar();
-
-            // build the model
-            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-            var model = currentWorkbook.GetClusterModelForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
-
-            // get inverse lookup for clustering
-            var addr2Cl = CommonFunctions.ReverseClusterLookupMutable(model.CurrentClustering);
-
-            // get cluster for address
-            var cluster = addr2Cl[cursorAddr];
-
-            // find the nearest neighbor
-            var neighbor = model.NearestNeighborForCluster(cluster);
-
-            // remove progress bar
-            pb.Close();
-
-            // display cluster
-            System.Windows.Forms.MessageBox.Show(String.Join(", ", neighbor.Select(a => a.A1Local())));
         }
 
         private void RunCUSTODES_Click(object sender, RibbonControlEventArgs e)
@@ -954,28 +903,6 @@ namespace ExceLintUI
             setUIState(currentWorkbook);
         }
 
-        private void button2_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.getL2NormSum(forceDAGBuild: forceBuildDAG.Checked);
-        }
-
-        private void ToDOT_Click(object sender, RibbonControlEventArgs e)
-        {
-            var graphviz = currentWorkbook.ToDOT();
-            System.Windows.Clipboard.SetText(graphviz);
-            System.Windows.Forms.MessageBox.Show("Done. Graph is in the clipboard.");
-        }
-
-        private void colSelect_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.getSelected(getConfig(), ExceLint.Scope.Selector.SameColumn, forceDAGBuild: forceBuildDAG.Checked);
-        }
-
-        private void rowSelected_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.getSelected(getConfig(), ExceLint.Scope.Selector.SameRow, forceDAGBuild: forceBuildDAG.Checked);
-        }
-
         private void showHeatmap_Click(object sender, RibbonControlEventArgs e)
         {
             var w = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
@@ -1004,62 +931,6 @@ namespace ExceLintUI
 
             // set UI state
             setUIState(currentWorkbook);
-        }
-
-        private static void DoHeatmap(FSharpOption<double> sigThresh, WorkbookState wbs, ExceLint.FeatureConf conf, bool forceBuildDAG, Action<WorkbookState> updateState, ProgBar pb)
-        {
-            var w = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-
-            if (sigThresh == FSharpOption<double>.None)
-            {
-                return;
-            }
-            else
-            {
-                wbs.toolSignificance = sigThresh.Value;
-                try
-                {
-                    // if, BEFORE the analysis, the user requests debug info
-                    // AND the heatmap is PRESENTLY HIDDEN, show the debug info
-                    // whether there ends up being a heatmap to show or not.
-                    var debug_display = wbs.DebugMode && wbs.Visualization_Hidden(w);
-
-                    wbs.toggleHeatMap(w, WorkbookState.MAX_DURATION_IN_MS, conf, forceBuildDAG, pb);
-                    updateState(wbs);
-
-                    // debug output
-                    if (debug_display)
-                    {
-                        var debug_info = prepareDebugInfo(wbs);
-                        var timing_info = prepareTimingInfo(wbs);
-                        RunInSTAThread(() => printDebugInfo(debug_info, timing_info));
-                    }
-
-                    pb.GoAway();
-                }
-                catch (AST.ParseException ex)
-                {
-                    RunInSTAThread(() =>
-                    {
-                        System.Windows.Forms.Clipboard.SetText(ex.Message);
-                        System.Windows.Forms.MessageBox.Show("Could not parse the formula string:\n" + ex.Message);
-                    });
-                }
-                catch (AnalysisCancelled)
-                {
-                    RunInSTAThread(() =>
-                    {
-                        System.Windows.Forms.MessageBox.Show("Analysis cancelled.");
-                    });
-                }
-                catch (OutOfMemoryException)
-                {
-                    RunInSTAThread(() =>
-                    {
-                        System.Windows.Forms.MessageBox.Show("Insufficient memory to perform analysis.");
-                    });
-                }
-            }
         }
 
         private void allCellsFreq_Click(object sender, RibbonControlEventArgs e)
@@ -1102,61 +973,6 @@ namespace ExceLintUI
             currentWorkbook.ConfigChanged();
         }
 
-        private void inDegree_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.ConfigChanged();
-        }
-
-        private void outDegree_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.ConfigChanged();
-        }
-
-        private void combinedDegree_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.ConfigChanged();
-        }
-
-        private void inVectors_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.ConfigChanged();
-        }
-
-        private void outVectors_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.ConfigChanged();
-        }
-
-        private void inVectorsAbs_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.ConfigChanged();
-        }
-
-        private void outVectorsAbs_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.ConfigChanged();
-        }
-
-        private void ProximityAbove_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.ConfigChanged();
-        }
-
-        private void ProximityBelow_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.ConfigChanged();
-        }
-
-        private void ProximityLeft_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.ConfigChanged();
-        }
-
-        private void ProximityRight_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.ConfigChanged();
-        }
-
         private void significanceTextBox_TextChanged(object sender, RibbonControlEventArgs e)
         {
             currentWorkbook.ConfigChanged();
@@ -1194,67 +1010,6 @@ namespace ExceLintUI
             setUIState(this.currentWorkbook);
 
             currentWorkbook.ConfigChanged();
-        }
-
-        private void spectralPlot_Click(object sender, RibbonControlEventArgs e)
-        {
-            // check for debug checkbox
-            currentWorkbook.DebugMode = this.DebugOutput.Checked;
-
-            // get significance threshold
-            var sig = getPercent(this.significanceTextBox.Text, this.significanceTextBox.Label);
-
-            // workbook- and UI-update callback
-            Action<WorkbookState> updateWorkbook = (WorkbookState wbs) =>
-            {
-                this.currentWorkbook = wbs;
-                setUIState(currentWorkbook);
-            };
-
-            // create progbar
-            var pb = new ProgBar();
-
-            // display form, running analysis if necessary
-            currentWorkbook.showSpectralPlot(WorkbookState.MAX_DURATION_IN_MS, getConfig(), this.forceBuildDAG.Checked, pb);
-
-            // close progbar
-            pb.Close();
-        }
-
-        private void scatter3D_Click(object sender, RibbonControlEventArgs e)
-        {
-            // check for debug checkbox
-            currentWorkbook.DebugMode = this.DebugOutput.Checked;
-
-            // get significance threshold
-            var sig = getPercent(this.significanceTextBox.Text, this.significanceTextBox.Label);
-
-            // workbook- and UI-update callback
-            Action<WorkbookState> updateWorkbook = (WorkbookState wbs) =>
-            {
-                this.currentWorkbook = wbs;
-                setUIState(currentWorkbook);
-            };
-
-            // create progbar
-            var pb = new ProgBar();
-
-            // display form, running analysis if necessary
-            currentWorkbook.show3DScatterPlot(WorkbookState.MAX_DURATION_IN_MS, getConfig(), this.forceBuildDAG.Checked, pb);
-
-            // close progbar
-            pb.Close();
-        }
-
-        private string normalizeFileName(string fileName)
-        {
-            // just alphanumerics
-            var r = new System.Text.RegularExpressions.Regex(
-                        "[^a-zA-Z0-9-_. ]",
-                        System.Text.RegularExpressions.RegexOptions.Compiled
-                    );
-
-            return r.Replace(fileName, "");
         }
 
         private void annotate_Click(object sender, RibbonControlEventArgs e)
@@ -1427,13 +1182,6 @@ namespace ExceLintUI
             }
         }
 
-        private void ExportSquareMatrixButton_Click(object sender, RibbonControlEventArgs e)
-        {
-            var csv = CurrentWorkbook.GetSquareMatrices(forceBuildDAG.Checked, normRefCheckBox.Checked, normSSCheckBox.Checked);
-            System.Windows.Forms.Clipboard.SetText(csv);
-            System.Windows.Forms.MessageBox.Show("Exported to clipboard.");
-        }
-
         private void readClusterDump_Click(object sender, RibbonControlEventArgs e)
         {
             // get active sheet
@@ -1447,21 +1195,6 @@ namespace ExceLintUI
 
             // display
             currentWorkbook.DrawClusters(clustering, activeWs);
-        }
-
-        private void moranForSelectedCells_Click(object sender, RibbonControlEventArgs e)
-        {
-            // get workbook
-            var w = (Excel.Workbook)((Worksheet)Globals.ThisAddIn.Application.ActiveSheet).Parent;
-
-            // get cursor location
-            var cursor = (Excel.Range)Globals.ThisAddIn.Application.Selection;
-
-            // compute I
-            var I = currentWorkbook.MoranForSelection(cursor, w, getConfig(), this.forceBuildDAG.Checked);
-
-            // display
-            System.Windows.Forms.MessageBox.Show(I.ToString());
         }
 
         #endregion BUTTON_HANDLERS
