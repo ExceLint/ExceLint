@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using Excel = Microsoft.Office.Interop.Excel;
 using ExprOpt = Microsoft.FSharp.Core.FSharpOption<AST.Expression>;
 
@@ -12,66 +8,42 @@ namespace FastDependenceAnalysis
 {
     public class Graph
     {
+        private string[][] _formulaTable;
+        private object[][] _valueTable;
+        private List<Dependence>[][] _dependenceTable;
+
         public Graph(Excel.Application a, Excel.Worksheet w)
-        {
-            // things to do:
-            // 1. read in the CURRENT sheet
-            // 2. allocate storage for all of the strings in the sheet in the usedrange
-            // 3. allocate storage for all of the formulas in the sheet in the usedrange
-            // 4. for each cell
-            //   4.a. if that cell contains data, copy the string into a multi-array with the same coords
-            //   4.b. if that cell contains a formula, copy the string into a multi-array with the same coords
-            FastFormulaReadWorksheet(a, w);
-        }
-
-        private struct Dependence
-        {
-            public Dependence(bool onSheet, int row, int col)
-            {
-                OnSheet = onSheet;
-                Row = row;
-                Col = col;
-            }
-
-            public bool OnSheet { get; }
-
-            public int Row { get; }
-
-            public int Col { get; }
-        }
-
-        public static void FastFormulaReadWorksheet(Excel.Application a, Excel.Worksheet w)
         {
             // get names once
             string wsname = w.Name;
             string wbname = ((Excel.Workbook)w.Parent).Name;
-            string path = ((Excel.Workbook) w.Parent).Path;
+            string path = ((Excel.Workbook)w.Parent).Path;
 
             // get used range
             Excel.Range urng = w.UsedRange;
 
             // formula table
             // invariant: null means not a formula
-            var formulaTable = ReadFormulas(urng);
+            _formulaTable = ReadFormulas(urng);
 
             // value table
             // invariant: null means empty cell
-            var valueTable = ReadData(urng);
+            _valueTable = ReadData(urng);
 
             // dependence table
             // invariant: table entry contains list of indices of dependency
-            var dependenceTable = InitDependenceTable(valueTable.Length, valueTable[0].Length);
+            _dependenceTable = InitDependenceTable(_valueTable[0].Length, _valueTable.Length);
 
             // get dependence information from formulas
-            for (int row = 0; row < valueTable.Length; row++)
+            for (int row = 0; row < _valueTable.Length; row++)
             {
-                for (int col = 0; col < valueTable[0].Length; row++)
+                for (int col = 0; col < _valueTable[0].Length; col++)
                 {
                     // is the cell a formula?
-                    if (formulaTable[row][col] != null)
+                    if (_formulaTable[row][col] != null)
                     {
                         // parse formula
-                        ExprOpt astOpt = Parcel.parseFormula(formulaTable[row][col], path, wbname, wsname);
+                        ExprOpt astOpt = Parcel.parseFormula(_formulaTable[row][col], path, wbname, wsname);
                         if (ExprOpt.get_IsSome(astOpt))
                         {
                             var ast = astOpt.Value;
@@ -88,7 +60,7 @@ namespace FastDependenceAnalysis
                                 var addr = arefs[i];
                                 // Excel row and column are 1-based
                                 // subtract one to make them zero-based
-                                dependenceTable[row][col].Add(new Dependence(addr.WorksheetName != wsname, addr.Row - 1, addr.Col - 1));
+                                _dependenceTable[row][col].Add(new Dependence(addr.WorksheetName != wsname, addr.Row - 1, addr.Col - 1));
                             }
 
                             // references next
@@ -101,13 +73,29 @@ namespace FastDependenceAnalysis
                                     var addr = addrs[j];
                                     // Excel row and column are 1-based
                                     // subtract one to make them zero-based
-                                    dependenceTable[row][col].Add(new Dependence(addr.WorksheetName != wsname, addr.Row - 1, addr.Col - 1));
+                                    _dependenceTable[row][col].Add(new Dependence(addr.WorksheetName != wsname, addr.Row - 1, addr.Col - 1));
                                 }
                             }
                         }
                     }
                 }
             }
+        }
+
+        private struct Dependence
+        {
+            public Dependence(bool onSheet, int row, int col)
+            {
+                OnSheet = onSheet;
+                Row = row;
+                Col = col;
+            }
+
+            public bool OnSheet { get; }
+
+            public int Row { get; }
+
+            public int Col { get; }
         }
 
         private static string[][] InitStringTable(int width, int height)
