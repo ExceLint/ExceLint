@@ -46,7 +46,7 @@
     <FriendlyName>ExceLintUI</FriendlyName>
     <OfficeApplicationDescription />
     <LoadBehavior>3</LoadBehavior>
-	<AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+    <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.0">
@@ -314,6 +314,10 @@
     <ProjectReference Include="..\ExceLint\ExceLint.fsproj">
       <Project>{a62bca5a-eb55-46ed-a49a-fdb34771b605}</Project>
       <Name>ExceLint</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\FastDependenceAnalysis\FastDependenceAnalysis.csproj">
+      <Project>{bb6178d3-40c3-442f-902c-5a6cb2eefa1c}</Project>
+      <Name>FastDependenceAnalysis</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

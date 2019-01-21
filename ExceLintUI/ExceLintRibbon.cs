@@ -752,6 +752,9 @@ namespace ExceLintUI
 
         private void AnalyzeButton_Click(object sender, RibbonControlEventArgs e)
         {
+            // test
+            var graph = new FastDependenceAnalysis.Graph(Globals.ThisAddIn.Application, (Worksheet)Globals.ThisAddIn.Application.ActiveSheet);
+
             // check for debug checkbox
             currentWorkbook.DebugMode = this.DebugOutput.Checked;
 

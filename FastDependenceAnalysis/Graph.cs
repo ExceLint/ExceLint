@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Excel = Microsoft.Office.Interop.Excel;
+using ExprOpt = Microsoft.FSharp.Core.FSharpOption<AST.Expression>;
 
 namespace FastDependenceAnalysis
 {
@@ -19,50 +21,92 @@ namespace FastDependenceAnalysis
             // 4. for each cell
             //   4.a. if that cell contains data, copy the string into a multi-array with the same coords
             //   4.b. if that cell contains a formula, copy the string into a multi-array with the same coords
+            FastFormulaReadWorksheet(a, w);
+        }
 
+        private struct Dependence
+        {
+            public Dependence(bool onSheet, int row, int col)
+            {
+                OnSheet = onSheet;
+                Row = row;
+                Col = col;
+            }
+
+            public bool OnSheet { get; }
+
+            public int Row { get; }
+
+            public int Col { get; }
         }
 
         public static void FastFormulaReadWorksheet(Excel.Application a, Excel.Worksheet w)
         {
-            // get name once
-            var wsname = w.Name;
+            // get names once
+            string wsname = w.Name;
+            string wbname = ((Excel.Workbook)w.Parent).Name;
+            string path = ((Excel.Workbook) w.Parent).Path;
 
             // get used range
             Excel.Range urng = w.UsedRange;
 
-            // get formulas
-            var formulas = ReadFormulas(urng);
+            // formula table
+            // invariant: null means not a formula
+            var formulaTable = ReadFormulas(urng);
 
-            // get data
-            var inputs = ReadData(urng);
+            // value table
+            // invariant: null means empty cell
+            var valueTable = ReadData(urng);
 
-            // init COM ref table (filled initially with null values)
-            var refs = InitRangeTable(inputs.Length,inputs[0].Length);
+            // dependence table
+            // invariant: table entry contains list of indices of dependency
+            var dependenceTable = InitDependenceTable(valueTable.Length, valueTable[0].Length);
 
-            // process formulas
-            foreach (var formula in formulas)
+            // get dependence information from formulas
+            for (int row = 0; row < valueTable.Length; row++)
             {
+                for (int col = 0; col < valueTable[0].Length; row++)
+                {
+                    // is the cell a formula?
+                    if (formulaTable[row][col] != null)
+                    {
+                        // parse formula
+                        ExprOpt astOpt = Parcel.parseFormula(formulaTable[row][col], path, wbname, wsname);
+                        if (ExprOpt.get_IsSome(astOpt))
+                        {
+                            var ast = astOpt.Value;
+                            // get range referencese
+                            var rrefs = Parcel.rangeReferencesFromExpr(ast);
+                            // get address references
+                            var arefs = Parcel.addrReferencesFromExpr(ast);
 
-                var addr = addrCache.getAddr(formula.Row, formula.Column, wsname, wbname, path);
-                retVal.formulas.Add(addr, formula.Data);
-                retVal.f2v.Add(addr, new HashSet<AST.Range>());
-                retVal.f2i.Add(addr, new HashSet<AST.Address>());
-            }
+                            // convert references into internal representation
 
-            // process data
-            foreach (var input in inputs)
-            {
-                var addr = addrCache.getAddr(input.Row, input.Column, wsname, wbname, path);
-                retVal.inputs.Add(addr, input.Data);
-            }
+                            // addresses first
+                            for (int i = 0; i < arefs.Length; i++)
+                            {
+                                var addr = arefs[i];
+                                // Excel row and column are 1-based
+                                // subtract one to make them zero-based
+                                dependenceTable[row][col].Add(new Dependence(addr.WorksheetName != wsname, addr.Row - 1, addr.Col - 1));
+                            }
 
-            // process COM refs
-            foreach (var drng in refs)
-            {
-                var addr = addrCache.getAddr(drng.Row, drng.Column, wsname, wbname, path);
-                var formula = retVal.formulas.ContainsKey(addr) ? new Microsoft.FSharp.Core.FSharpOption<string>(retVal.formulas[addr]) : Microsoft.FSharp.Core.FSharpOption<string>.None;
-                var cr = new ParcelCOMShim.LocalCOMRef(wb, worksheet, drng.Data, path, wbname, wsname, formula, 1, 1);
-                retVal.allCells.Add(addr, cr);
+                            // references next
+                            for (int i = 0; i < rrefs.Length; i++)
+                            {
+                                var rng = rrefs[i];
+                                var addrs = rng.Addresses();
+                                for (int j = 0; j < addrs.Length; j++)
+                                {
+                                    var addr = addrs[j];
+                                    // Excel row and column are 1-based
+                                    // subtract one to make them zero-based
+                                    dependenceTable[row][col].Add(new Dependence(addr.WorksheetName != wsname, addr.Row - 1, addr.Col - 1));
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -86,24 +130,24 @@ namespace FastDependenceAnalysis
             return outer_y;
         }
 
-        private static object[][] InitRangeTable(int width, int height)
+        private static List<Dependence>[][] InitDependenceTable(int width, int height)
         {
-            var outer_y = new Excel.Range[height][];
+            var outer_y = new List<Dependence>[height][];
             for (int y = 0; y < height; y++)
             {
-                outer_y[y] = new Excel.Range[width];
+                outer_y[y] = new List<Dependence>[width];
+                for (int x = 0; x < width; x++)
+                {
+                    outer_y[y][x] = new List<Dependence>();
+                }
             }
             return outer_y;
         }
 
-        private static AST.Address[][] InitAddressTable(int width, int height)
+
+        private static AST.Address CellToAddress(int row, int col, string wsname, string wbname, string path)
         {
-            var outer_y = new AST.Address[height][];
-            for (int y = 0; y < height; y++)
-            {
-                outer_y[y] = new AST.Address[width];
-            }
-            return outer_y;
+            return AST.Address.fromR1C1withMode(row, col, AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
         }
 
         private static object[][] ReadData(Excel.Range urng)
@@ -227,32 +271,6 @@ namespace FastDependenceAnalysis
                 }
             }
             return output;
-        }
-
-        private class AddrCache
-        {
-            Dictionary<Tuple<int, int>, AST.Address> addrs;
-
-            public AddrCache(int initSz)
-            {
-                addrs = new Dictionary<Tuple<int, int>, AST.Address>(initSz);
-            }
-
-            public AST.Address getAddr(int row, int col, string wsname, string wbname, string path)
-            {
-                var rc = new Tuple<int, int>(row, col);
-                AST.Address addr;
-                if (addrs.ContainsKey(rc))
-                {
-                    addr = addrs[rc];
-                }
-                else
-                {
-                    addr = AST.Address.fromR1C1withMode(row, col, AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
-                    addrs.Add(rc, addr);
-                }
-                return addr;
-            }
         }
     }
 
