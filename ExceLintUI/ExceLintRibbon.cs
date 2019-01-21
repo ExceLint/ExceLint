@@ -39,7 +39,7 @@ namespace ExceLintUI
             Globals.ThisAddIn.Application.DisplayAlerts = false;
 
             // get dependence graph
-            var graph = currentWorkbook.getDependenceGraph(false);
+            var graph = new Graph(Globals.ThisAddIn.Application, (Worksheet)Globals.ThisAddIn.Application.ActiveSheet);
 
             // get active sheet
             Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
@@ -138,35 +138,6 @@ namespace ExceLintUI
             var cs1 = ElideStringClusters(cs, ih, graph);
             var cs2 = ElideWhitespaceClusters(cs1, ih, graph);
             return cs2;
-        }
-
-        private void VectorForCell_Click(object sender, RibbonControlEventArgs e)
-        {
-            // get cursor location
-            var cursor = (Excel.Range)Globals.ThisAddIn.Application.Selection;
-            AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, Globals.ThisAddIn.Application.ActiveWorkbook);
-
-            // get config
-            var conf = getConfig();
-
-            // get dependence graph
-            var dag = currentWorkbook.getDependenceGraph(true);
-
-            var sb = new StringBuilder();
-
-            // get vector for each enabled feature
-            var feats = conf.EnabledFeatures;
-            for (int i = 0; i < feats.Length; i++)
-            {
-                // run feature
-                //sb.Append(feats[i]);
-                //sb.Append(" = ");
-                sb.Append(conf.get_FeatureByName(feats[i]).Invoke(cursorAddr).Invoke(dag).ToString());
-                //sb.Append("\n");
-            }
-
-            // display
-            System.Windows.Forms.MessageBox.Show(sb.ToString());
         }
 
         public WorkbookState CurrentWorkbook { 
@@ -280,57 +251,6 @@ namespace ExceLintUI
             currentWorkbook.resetTool();
             setUIState(currentWorkbook);
         }
-
-        public void PopulateAnnotations(WorkbookState workbook)
-        {
-            if (Annotations != null)
-            {
-                // populate notes
-                var annots = Annotations.AnnotationsFor(workbook.WorkbookName);
-                foreach (var annot in annots)
-                {
-                    var rng = ParcelCOMShim.Address.GetCOMObject(annot.Item1, Globals.ThisAddIn.Application);
-                    if (rng.Comment != null)
-                    {
-                        rng.Comment.Delete();
-                    }
-                    var comment = annot.Item2.Comment;
-                    try
-                    {
-                        rng.AddComment(comment);
-                    } catch (Exception e)
-                    {
-                        // for reasons unbeknownst to me, adding a comment
-                        // after previously having stopped and restarted
-                        // annotations sometimes throws an AccessViolationException.
-                    }
-                    
-                }
-            }
-        }
-
-        public void DepopulateAnnotations(WorkbookState workbook)
-        {
-            if (Annotations != null)
-            {
-                try
-                {
-                    var annots = Annotations.AnnotationsFor(workbook.WorkbookName);
-                    foreach (var annot in annots)
-                    {
-                        var rng = ParcelCOMShim.Address.GetCOMObject(annot.Item1, Globals.ThisAddIn.Application);
-                        if (rng.Comment != null && rng.Comment.Text() == annot.Item2.Comment)
-                        {
-                            rng.Comment.Delete();
-                        }
-                    }
-                } catch
-                {
-                    // give up; this can happen as a side-effect of our wbstate removal code (cancellation timeout check)
-                }
-            }
-            
-        }
         #endregion BUTTON_HANDLERS
 
         #region EVENTS
@@ -344,14 +264,11 @@ namespace ExceLintUI
         private void ExceLintRibbon_Load(object sender, RibbonUIEventArgs e)
         {
             // Callbacks for handling workbook state objects
-            //WorkbookOpen(Globals.ThisAddIn.Application.ActiveWorkbook);
-            //((Excel.AppEvents_Event)Globals.ThisAddIn.Application).NewWorkbook += WorkbookOpen;
             Globals.ThisAddIn.Application.WorkbookOpen += WorkbookOpen;
             Globals.ThisAddIn.Application.WorkbookActivate += WorkbookActivated;
             Globals.ThisAddIn.Application.WorkbookDeactivate += WorkbookDeactivated;
             Globals.ThisAddIn.Application.WorkbookBeforeClose += WorkbookBeforeClose;
             Globals.ThisAddIn.Application.SheetChange += SheetChange;
-            Globals.ThisAddIn.Application.WorkbookAfterSave += WorkbookAfterSave;
             Globals.ThisAddIn.Application.ProtectedViewWindowOpen += ProtectedViewWindowOpen;
             Globals.ThisAddIn.Application.SheetActivate += WorksheetActivate;
             Globals.ThisAddIn.Application.SheetDeactivate += WorksheetDeactivate;
@@ -382,10 +299,10 @@ namespace ExceLintUI
 
         private void SheetSelectionChange(object Sh, Excel.Range Target)
         {
-            var app = Globals.ThisAddIn.Application;
+            //var app = Globals.ThisAddIn.Application;
 
-            // get cursor location
-            var cursor = (Excel.Range)app.Selection;
+            //// get cursor location
+            //var cursor = (Excel.Range)app.Selection;
         }
 
         private void WorksheetActivate(object Sh)
@@ -397,22 +314,6 @@ namespace ExceLintUI
         {
             // set UI as nonfunctional
             setUIState(null);
-        }
-
-        private void WorkbookAfterSave(Excel.Workbook Wb, bool Success)
-        {
-            // this checks whether:
-            // 1. there is a DAG
-            // 2. the DAG changed bit is not set
-            // 3. the force-update bit is not set
-            if (currentWorkbook.DAGRefreshNeeded(forceDAGBuild: true))
-            {
-                // Did the workbook really change? Diff it first.
-                if (currentWorkbook.DAGChanged())
-                {
-                    currentWorkbook.SerializeDAG(forceDAGBuild: true);
-                }
-            }
         }
 
         // This event is called when Excel opens a workbook
@@ -449,7 +350,6 @@ namespace ExceLintUI
             }
             currentWorkbook = wbstates[workbook];
             setUIState(currentWorkbook);
-            if (AnnotationMode) PopulateAnnotations(currentWorkbook);
         }
 
         private void cancelRemoveState()
@@ -487,8 +387,6 @@ namespace ExceLintUI
                 wbShutdown.TryRemove(workbook, out outcome);
             }
 
-            if (AnnotationMode) DepopulateAnnotations(currentWorkbook);
-
             currentWorkbook = null;
 
             // WorkbookBeforeClose event does not fire for default workbooks
@@ -524,7 +422,6 @@ namespace ExceLintUI
         {
             if (currentWorkbook != null)
             {
-                currentWorkbook.MarkDAGAsChanged();
                 currentWorkbook.resetTool();
                 setUIState(currentWorkbook);
             }
@@ -587,16 +484,10 @@ namespace ExceLintUI
             }
         }
 
-        public ExceLint.FeatureConf getConfig()
+        public FeatureConf getConfig()
         {
-            var c = new ExceLint.FeatureConf();
-
-
+            var c = new FeatureConf();
             c = c.enableShallowInputVectorMixedFullCVectorResultantOSI(true);
-            
-            // limit analysis to a single sheet
-            c = c.limitAnalysisToSheet(((Worksheet)Globals.ThisAddIn.Application.ActiveWorkbook.ActiveSheet).Name);
-
             return c;
         }
 

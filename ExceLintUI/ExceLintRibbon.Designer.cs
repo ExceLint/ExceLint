@@ -119,16 +119,6 @@
             this.RegularityMap.ShowImage = true;
             this.RegularityMap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.RegularityMap_Click);
             // 
-            // VectorForCell
-            // 
-            this.VectorForCell.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.VectorForCell.Image = global::ExceLintUI.Properties.Resources.graph;
-            this.VectorForCell.Label = "Vector for Cell";
-            this.VectorForCell.Name = "VectorForCell";
-            this.VectorForCell.ShowImage = true;
-            this.VectorForCell.Visible = false;
-            this.VectorForCell.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.VectorForCell_Click);
-            // 
             // separator1
             // 
             this.separator1.Name = "separator1";

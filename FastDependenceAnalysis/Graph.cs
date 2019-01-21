@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Excel = Microsoft.Office.Interop.Excel;
 using ExprOpt = Microsoft.FSharp.Core.FSharpOption<AST.Expression>;
@@ -8,6 +9,9 @@ namespace FastDependenceAnalysis
 {
     public class Graph
     {
+        private string _wsname;
+        private string _wbname;
+        private string _path;
         private string[][] _formulaTable;
         private object[][] _valueTable;
         private List<Dependence>[][] _dependenceTable;
@@ -15,9 +19,9 @@ namespace FastDependenceAnalysis
         public Graph(Excel.Application a, Excel.Worksheet w)
         {
             // get names once
-            string wsname = w.Name;
-            string wbname = ((Excel.Workbook)w.Parent).Name;
-            string path = ((Excel.Workbook)w.Parent).Path;
+            _wsname = w.Name;
+            _wbname = ((Excel.Workbook)w.Parent).Name;
+            _path = ((Excel.Workbook)w.Parent).Path;
 
             // get used range
             Excel.Range urng = w.UsedRange;
@@ -43,7 +47,7 @@ namespace FastDependenceAnalysis
                     if (_formulaTable[row][col] != null)
                     {
                         // parse formula
-                        ExprOpt astOpt = Parcel.parseFormula(_formulaTable[row][col], path, wbname, wsname);
+                        ExprOpt astOpt = Parcel.parseFormula(_formulaTable[row][col], _path, _wbname, _wsname);
                         if (ExprOpt.get_IsSome(astOpt))
                         {
                             var ast = astOpt.Value;
@@ -60,7 +64,7 @@ namespace FastDependenceAnalysis
                                 var addr = arefs[i];
                                 // Excel row and column are 1-based
                                 // subtract one to make them zero-based
-                                _dependenceTable[row][col].Add(new Dependence(addr.WorksheetName != wsname, addr.Row - 1, addr.Col - 1));
+                                _dependenceTable[row][col].Add(new Dependence(addr.WorksheetName != _wsname, addr.Row - 1, addr.Col - 1));
                             }
 
                             // references next
@@ -73,9 +77,14 @@ namespace FastDependenceAnalysis
                                     var addr = addrs[j];
                                     // Excel row and column are 1-based
                                     // subtract one to make them zero-based
-                                    _dependenceTable[row][col].Add(new Dependence(addr.WorksheetName != wsname, addr.Row - 1, addr.Col - 1));
+                                    _dependenceTable[row][col].Add(new Dependence(addr.WorksheetName != _wsname, addr.Row - 1, addr.Col - 1));
                                 }
                             }
+                        }
+                        else
+                        {
+                            // do ourselves a favor and remove entry from formula table
+                            _formulaTable[row][col] = null;
                         }
                     }
                 }
@@ -260,7 +269,18 @@ namespace FastDependenceAnalysis
             }
             return output;
         }
-    }
 
-    
+        public AST.Address[] getAllFormulaAddrs()
+        {
+            var addrs = new HashSet<AST.Address>();
+            for (int row = 0; row < _valueTable.Length; row++)
+            {
+                for (int col = 0; col < _valueTable[0].Length; col++)
+                {
+                    CellToAddress(row, col, _wsname, _wbname, _path);
+                }
+            }
+            return addrs.ToArray();
+        }
+    }
 }
