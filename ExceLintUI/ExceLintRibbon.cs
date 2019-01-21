@@ -57,7 +57,7 @@ namespace ExceLintUI
 
                 // build the model
                 var sw2 = System.Diagnostics.Stopwatch.StartNew();
-                fixClusterModel = currentWorkbook.NewEntropyModelForWorksheet2(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
+                fixClusterModel = currentWorkbook.NewEntropyModelForWorksheet2(activeWs, getConfig(), true, pb);
 
                 // get z for worksheet
                 int z = -1;
@@ -96,56 +96,6 @@ namespace ExceLintUI
 
                 // reset model
                 fixClusterModel = null;
-            }
-        }
-
-        private void LoadTrueSmells_Click(object sender, RibbonControlEventArgs e)
-        {
-            // get active sheet
-            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-
-            if (String.IsNullOrWhiteSpace(true_smells_csv))
-            {
-                var ofd = new System.Windows.Forms.OpenFileDialog();
-                ofd.Title = "Where is the True Smells CSV?";
-                ofd.ShowDialog();
-                true_smells_csv = ofd.FileName;
-                Properties.Settings.Default.CUSTODESTrueSmellsCSVPath = true_smells_csv;
-                Properties.Settings.Default.Save();
-            }
-
-            if (String.IsNullOrWhiteSpace(custodes_wbs_path))
-            {
-                var odd = new System.Windows.Forms.FolderBrowserDialog();
-                odd.Description = "Where are all the workbooks stored?";
-                odd.ShowDialog();
-                custodes_wbs_path = odd.SelectedPath;
-                Properties.Settings.Default.CUSTODESWorkbooksPath = custodes_wbs_path;
-                Properties.Settings.Default.Save();
-            }
-
-            // open & parse
-            if (System.IO.Directory.Exists(custodes_wbs_path) && System.IO.File.Exists(true_smells_csv))
-            {
-                var allsmells = CUSTODES.GroundTruth.Load(custodes_wbs_path, true_smells_csv);
-
-                // get true smells for this workbook
-                var truesmells = allsmells.TrueSmellsbyWorkbook(Globals.ThisAddIn.Application.ActiveWorkbook.Name);
-                var clustering = new HashSet<HashSet<AST.Address>>();
-                clustering.Add(truesmells);
-
-                // in case we've run something before, restore colors
-                currentWorkbook.restoreOutputColors();
-
-                // save colors
-                CurrentWorkbook.saveColors(activeWs);
-
-                // display
-                currentWorkbook.DrawClusters(clustering, activeWs);
-            }
-            else
-            {
-                System.Windows.Forms.MessageBox.Show("Can't find true smells CSV or workbook directory");
             }
         }
 
@@ -260,30 +210,6 @@ namespace ExceLintUI
             return new Tuple<HashSet<AST.Address>, HashSet<AST.Address>, HashSet<AST.Address>>(eonly, both, oonly);
         }
 
-        private void cellIsFormula_Click(object sender, RibbonControlEventArgs e)
-        {
-            // get cursor location
-            var cursor = (Excel.Range)Globals.ThisAddIn.Application.Selection;
-            AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, Globals.ThisAddIn.Application.ActiveWorkbook);
-
-            // get config
-            var conf = getConfig();
-
-            // create progbar in main thread;
-            // worker thread will call Dispose
-            var pb = new ProgBar();
-
-            // build the model
-            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-            var model = currentWorkbook.NewEntropyModelForWorksheet2(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
-
-            // remove progress bar
-            pb.Close();
-
-            // display
-            System.Windows.Forms.MessageBox.Show(cursorAddr.A1Local() + " = " + EntropyModelBuilder2.AddressIsFormulaValued(cursorAddr, model.InvertedHistogram, model.DependenceGraph).ToString());
-        }
-
         private string ProposedFixesToString(CommonTypes.ProposedFix[] fixes)
         {
             // produce output string
@@ -377,59 +303,19 @@ namespace ExceLintUI
             var conf = getConfig();
 
             // get significance threshold
-            var sig = getPercent(this.significanceTextBox.Text, this.significanceTextBox.Label);
-            conf = conf.setThresh(sig.Value);
+            conf = conf.setThresh(0.95);
 
             // create progbar in main thread;
             // worker thread will call Dispose
             var pb = new ProgBar();
 
             // build the model
-            var model = currentWorkbook.NewEntropyModelForWorksheet2(activeWs, conf, this.forceBuildDAG.Checked, pb);
+            var model = currentWorkbook.NewEntropyModelForWorksheet2(activeWs, conf, true, pb);
 
             // remove progress bar
             pb.Close();
 
             return model;
-        }
-
-        private void EntropyRanking_Click(object sender, RibbonControlEventArgs e)
-        {
-            // get clustering
-            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-            var model = ModelInit(activeWs);
-            var clusters = GetEntropyClustering(model, activeWs);
-
-            // restore
-            currentWorkbook.restoreOutputColors();
-
-            // save colors
-            currentWorkbook.saveColors(activeWs);
-
-            // draw
-            currentWorkbook.DrawImmutableClusters(clusters, model.InvertedHistogram, activeWs);
-
-            // get z for this worksheet
-            var z = model.ZForWorksheet(activeWs.Name);
-
-            // get fixes
-            var fixes = model.Fixes(z);
-
-            // show message boxes
-            System.Windows.Forms.MessageBox.Show("cutoff = " + model.Cutoff + "\n\nproposed fixes:\n" + ProposedFixesToString(fixes));
-        }
-
-        private void resetFixesButton_Click(object sender, RibbonControlEventArgs e)
-        {
-            // change button name
-            FixClusterButton.Label = "Global View";
-
-            // toss everything so that the user can do this again
-            fixClusterModel = null;
-            fixAddress = null;
-
-            // redisplay visualiztion
-            currentWorkbook.restoreOutputColors();
         }
 
         private Clusters ElideWhitespaceClusters(Clusters cs, ROInvertedHistogram ih, Depends.DAG graph)
@@ -464,203 +350,9 @@ namespace ExceLintUI
 
         private Clusters PrettyClusters(Clusters cs, ROInvertedHistogram ih, Depends.DAG graph)
         {
-            if (this.drawAllClusters.Checked)
-            {
-                return cs;
-            } else
-            {
-                var cs1 = ElideStringClusters(cs, ih, graph);
-                var cs2 = ElideWhitespaceClusters(cs1, ih, graph);
-                return cs2;
-            }
-        }
-
-        private void FixClusterButton_Click(object sender, RibbonControlEventArgs e)
-        {
-            // disable annoying OLE warnings
-            Globals.ThisAddIn.Application.DisplayAlerts = false;
-
-            // get dependence graph
-            var graph = currentWorkbook.getDependenceGraph(false);
-
-            // get active sheet
-            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-
-            if (fixClusterModel == null)
-            {
-                // create progbar in main thread;
-                // worker thread will call Dispose
-                var pb = new ProgBar();
-
-                // build the model
-                var sw2 = System.Diagnostics.Stopwatch.StartNew();
-                fixClusterModel = currentWorkbook.NewEntropyModelForWorksheet2(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
-
-                // get z for worksheet
-                var z = fixClusterModel.ZForWorksheet(activeWs.Name);
-
-                // do visualization
-                var histo2 = fixClusterModel.InvertedHistogram;
-                var clusters2 = fixClusterModel.Clustering(z);
-                sw2.Stop();
-
-                var cl_filt2 = PrettyClusters(clusters2, histo2, graph);
-                currentWorkbook.restoreOutputColors();
-                currentWorkbook.DrawImmutableClusters(cl_filt2, fixClusterModel.InvertedHistogram, activeWs);
-
-                // if debug mode, write out clusters
-                if (this.DebugOutput.Checked)
-                {
-                    var desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-                    var debug_file = System.IO.Path.Combine(desktop, "excelint_clustering_dump.csv");
-                    Clustering.writeClustering(clusters2, debug_file);
-                }
-
-                // remove progress bar
-                pb.Close();
-
-                // DEBUG: give me the graph
-                //var gv = FasterBinaryMinEntropyTree.GraphViz(fixClusterModel.Trees[z]);
-                //System.Windows.Forms.Clipboard.SetText(gv);
-                //System.Windows.Forms.MessageBox.Show("graph in clipboard");
-                //System.Windows.Forms.MessageBox.Show("score time ms: " + fixClusterModel.ScoreTimeMs);
-
-                // change button name
-                FixClusterButton.Label = "Select Source";
-            }
-            else
-            {
-                var app = Globals.ThisAddIn.Application;
-
-                // get cursor location
-                var cursor = (Excel.Range)app.Selection;
-
-                // get address for cursor
-                AST.Address cursorAddr =
-                    ParcelCOMShim.Address.AddressFromCOMObject(cursor, Globals.ThisAddIn.Application.ActiveWorkbook);
-
-                // get z for worksheet
-                var z = fixClusterModel.ZForWorksheet(activeWs.Name);
-
-                if (fixAddress == null)
-                {
-                    fixAddress = cursorAddr;
-
-                    // change button name
-                    FixClusterButton.Label = "Select Target";
-                }
-                else
-                {
-                    // do fix
-                    var newModel = fixClusterModel.MergeCell(fixAddress, cursorAddr);
-
-                    // compute change in entropy
-                    var deltaE = fixClusterModel.EntropyDiff(z, newModel);
-
-                    // save new model
-                    fixClusterModel = newModel;
-
-                    // redisplay visualiztion
-                    var cl_filt = PrettyClusters(newModel.Clustering(z), newModel.InvertedHistogram, graph);
-                    currentWorkbook.restoreOutputColors();
-                    currentWorkbook.DrawImmutableClusters(cl_filt, fixClusterModel.InvertedHistogram, activeWs);
-
-                    // display output
-                    System.Windows.Forms.MessageBox.Show("Change in entropy: " + deltaE);
-
-                    // reset address
-                    fixAddress = null;
-
-                    // change button name
-                    FixClusterButton.Label = "Select Source";
-                }
-            }
-
-            // re-enable annoying OLE warnings
-            Globals.ThisAddIn.Application.DisplayAlerts = true;
-        }
-
-        private void clusterForCell_Click(object sender, RibbonControlEventArgs e)
-        {
-            var ws = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-
-            var app = Globals.ThisAddIn.Application;
-
-            // get cursor location
-            var cursor = (Excel.Range)app.Selection;
-
-            // get address for cursor
-            AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, Globals.ThisAddIn.Application.ActiveWorkbook);
-
-            // create progbar in main thread;
-            // worker thread will call Dispose
-            var pb = new ProgBar();
-
-            // build the model
-            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-            var model = currentWorkbook.NewEntropyModelForWorksheet2(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
-
-            // get z for worksheet
-            var z = model.ZForWorksheet(ws.Name);
-
-            // get inverse lookup for clustering
-            var addr2Cl = CommonFunctions.ReverseClusterLookup(model.Clustering(z));
-
-            // get cluster for address
-            var cluster = addr2Cl[cursorAddr];
-
-            // remove progress bar
-            pb.Close();
-
-            // display cluster
-            System.Windows.Forms.MessageBox.Show(String.Join(", ", cluster.Select(a => a.A1Local())));
-        }
-
-        private void RunCUSTODES_Click(object sender, RibbonControlEventArgs e)
-        {
-            var debug = false;
-            if ((System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Alt) > 0)
-            {
-                debug = true;
-            }
-
-            string rootPath = null;
-
-            // install CUSTODES if not already installed
-            if (rootPath == null)
-            {
-                rootPath = InstallScript.InitDirs();
-            }
-            if (custodesPath == null)
-            {
-                custodesPath = InstallScript.InstallCUSTODES(rootPath);
-            }
-
-            // make sure that Excel does not think that
-            // long-running analyses are deadlocks
-            Globals.ThisAddIn.Application.DisplayAlerts = false;
-
-            // run analysis and display on screen
-            currentWorkbook.toggleCUSTODES(rootPath, custodesPath, JAVA_PATH, Globals.ThisAddIn.Application.ActiveWorkbook, debug);
-
-            setUIState(currentWorkbook);
-
-            // reset alerts
-            Globals.ThisAddIn.Application.DisplayAlerts = true;
-        }
-
-        private void LSHTest_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.LSHTest(getConfig(), this.forceBuildDAG.Checked);
-        }
-
-        private void getLSH_Click(object sender, RibbonControlEventArgs e)
-        {
-            // get cursor location
-            var cursor = (Excel.Range)Globals.ThisAddIn.Application.Selection;
-            AST.Address cursorAddr = ParcelCOMShim.Address.AddressFromCOMObject(cursor, Globals.ThisAddIn.Application.ActiveWorkbook);
-
-            currentWorkbook.getLSHforAddr(cursorAddr, false);
+            var cs1 = ElideStringClusters(cs, ih, graph);
+            var cs2 = ElideWhitespaceClusters(cs1, ih, graph);
+            return cs2;
         }
 
         private void VectorForCell_Click(object sender, RibbonControlEventArgs e)
@@ -673,7 +365,7 @@ namespace ExceLintUI
             var conf = getConfig();
 
             // get dependence graph
-            var dag = currentWorkbook.getDependenceGraph(this.forceBuildDAG.Checked);
+            var dag = currentWorkbook.getDependenceGraph(true);
 
             var sb = new StringBuilder();
 
@@ -705,10 +397,7 @@ namespace ExceLintUI
             var graph = new FastDependenceAnalysis.Graph(Globals.ThisAddIn.Application, (Worksheet)Globals.ThisAddIn.Application.ActiveSheet);
 
             // check for debug checkbox
-            currentWorkbook.DebugMode = this.DebugOutput.Checked;
-
-            // get significance threshold
-            var sig = getPercent(this.significanceTextBox.Text, this.significanceTextBox.Label);
+            currentWorkbook.DebugMode = false;
 
             // workbook- and UI-update callback
             Action<WorkbookState> updateWorkbook = (WorkbookState wbs) =>
@@ -722,7 +411,7 @@ namespace ExceLintUI
             var pb = new ProgBar();
 
             Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-            DoAnalysis(sig, currentWorkbook, getConfig(), this.forceBuildDAG.Checked, updateWorkbook, pb, showFixes.Checked, activeWs);
+            DoAnalysis(0.95, currentWorkbook, getConfig(), true, updateWorkbook, pb, true, activeWs);
         }
 
         public static void DoAnalysis(FSharpOption<double> sigThresh, WorkbookState wbs, FeatureConf conf, bool forceBuildDAG, Action<WorkbookState> updateState, ProgBar pb, bool showFixes, Worksheet ws)
@@ -893,7 +582,7 @@ namespace ExceLintUI
         private void MarkAsOKButton_Click(object sender, RibbonControlEventArgs e)
         {
             Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-            currentWorkbook.markAsOK(showFixes.Checked, activeWs);
+            currentWorkbook.markAsOK(true, activeWs);
             setUIState(currentWorkbook);
         }
 
@@ -901,186 +590,6 @@ namespace ExceLintUI
         {
             currentWorkbook.resetTool();
             setUIState(currentWorkbook);
-        }
-
-        private void showHeatmap_Click(object sender, RibbonControlEventArgs e)
-        {
-            var w = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-
-            if (currentWorkbook.Visualization_Hidden(w))
-            {
-                // create progbar in main thread;
-                // worker thread will call Dispose
-                var pb = new ProgBar();
-
-                // show a cluster visualization
-                Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-                currentWorkbook.GetClusteringForWorksheet(activeWs, getConfig(), this.forceBuildDAG.Checked, pb);
-
-                // remove progress bar
-                pb.Close();
-            }
-            else
-            {
-                // erase the cluster visualization
-                currentWorkbook.resetTool();
-            }
-
-            // toggle button
-            currentWorkbook.toggleHeatMapSetting(w);
-
-            // set UI state
-            setUIState(currentWorkbook);
-        }
-
-        private void allCellsFreq_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.ConfigChanged();
-        }
-
-        private void columnCellsFreq_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.ConfigChanged();
-        }
-
-        private void rowCellsFreq_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.ConfigChanged();
-        }
-
-        private void DebugOutput_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.ConfigChanged();
-        }
-
-        private void forceBuildDAG_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.ConfigChanged();
-        }
-
-        private void inferAddrModes_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.ConfigChanged();
-        }
-
-        private void allCells_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.ConfigChanged();
-        }
-
-        private void weightByIntrinsicAnomalousness_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.ConfigChanged();
-        }
-
-        private void significanceTextBox_TextChanged(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.ConfigChanged();
-        }
-
-        private void conditioningSetSize_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.ConfigChanged();
-        }
-
-        private void levelsFreq_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.ConfigChanged();
-        }
-
-        private void spectralRanking_Click(object sender, RibbonControlEventArgs e)
-        {
-            if (this.spectralRanking.Checked)
-            {
-                this.allCellsFreq.Checked = false;
-                this.rowCellsFreq.Checked = false;
-                this.columnCellsFreq.Checked = false;
-                this.levelsFreq.Checked = false;
-                this.sheetFreq.Checked = true;
-                this.showFixes.Enabled = true;
-            } else
-            {
-                this.allCellsFreq.Checked = true;
-                this.rowCellsFreq.Checked = true;
-                this.columnCellsFreq.Checked = true;
-                this.levelsFreq.Checked = false;
-                this.sheetFreq.Checked = false;
-            }
-
-            setUIState(this.currentWorkbook);
-
-            currentWorkbook.ConfigChanged();
-        }
-
-        private void annotate_Click(object sender, RibbonControlEventArgs e)
-        {
-            // if we are not currently in annotation mode:
-            if (!AnnotationMode)
-            {
-                // get initial directory from user settings
-                string iDir = (string)Properties.Settings.Default["ExceLintGroundTruthPath"];
-                if (String.IsNullOrWhiteSpace(iDir))
-                {
-                    // default to My Documents
-                    iDir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                }
-
-                // file open dialog
-                var sfd = new System.Windows.Forms.SaveFileDialog();
-                sfd.OverwritePrompt = false;
-                sfd.DefaultExt = "csv";
-                sfd.FileName = DEFAULT_GROUND_TRUTH_FILENAME;
-                sfd.InitialDirectory = System.IO.Path.GetFullPath(iDir);
-                sfd.RestoreDirectory = true;
-
-                var result = sfd.ShowDialog();
-
-                if (result == System.Windows.Forms.DialogResult.OK)
-                {
-                    var fileName = sfd.FileName;
-
-                    // update user settings
-                    Properties.Settings.Default["ExceLintGroundTruthPath"] = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(fileName));
-                    Properties.Settings.Default.Save();
-
-                    if (System.IO.File.Exists(fileName))
-                    {
-                        // append
-                        Annotations = ExceLintGroundTruth.Load(fileName);
-                    }
-                    else
-                    {
-                        // otherwise, create the file
-                        Annotations = ExceLintGroundTruth.Create(fileName);
-                    }
-
-                    // put notes into workbook
-                    foreach (var wbs in wbstates.Values)
-                    {
-                        PopulateAnnotations(wbs);
-                    }
-
-                    // set the button as "stop" annotation
-                    setUIState(currentWorkbook);
-                }
-            }
-            else
-            {
-                // write data to file
-                Annotations.Write();
-
-                // de-populate notes
-                foreach (var wbs in wbstates.Values)
-                {
-                    DepopulateAnnotations(wbs);
-                }
-
-                // nullify the reference
-                Annotations = null;
-
-                // set the button to "start" annotation
-                setUIState(currentWorkbook);
-            }
         }
 
         public void PopulateAnnotations(WorkbookState workbook)
@@ -1134,20 +643,6 @@ namespace ExceLintUI
             
         }
 
-        private void annotateThisCell_Click(object sender, RibbonControlEventArgs e)
-        {
-            var app = Globals.ThisAddIn.Application;
-
-            // get cursor location
-            var cursor = (Excel.Range)app.Selection;
-
-            // get range object
-            var rng = ParcelCOMShim.Range.RangeFromCOMObject(cursor, app.ActiveWorkbook);
-
-            // prompt user for annotations and save results
-            annotateCells(rng.Addresses(), app);
-        }
-
         private void annotateCells(AST.Address[] addrs, Application app)
         {
             // get bug annotation from database
@@ -1181,22 +676,6 @@ namespace ExceLintUI
                 }
             }
         }
-
-        private void readClusterDump_Click(object sender, RibbonControlEventArgs e)
-        {
-            // get active sheet
-            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-
-            var ofd = new System.Windows.Forms.OpenFileDialog();
-            ofd.ShowDialog();
-
-            // read clustering from disk
-            var clustering = Clustering.readClustering(ofd.FileName);
-
-            // display
-            currentWorkbook.DrawClusters(clustering, activeWs);
-        }
-
         #endregion BUTTON_HANDLERS
 
         #region EVENTS
@@ -1252,22 +731,6 @@ namespace ExceLintUI
 
             // get cursor location
             var cursor = (Excel.Range)app.Selection;
-
-            if (cursor.Count == 1)
-            {
-                // user selected a single cell
-                annotateThisCell.Enabled = true;
-                annotateThisCell.Label = "Annotate This Cell";
-            } else if (cursor.Count > 1)
-            {
-                // user selected a single cell
-                annotateThisCell.Enabled = true;
-                annotateThisCell.Label = "Annotate These Cells";
-            } else
-            {
-                annotateThisCell.Label = "Annotate This Cell";
-                annotateThisCell.Enabled = false;
-            }
         }
 
         private void WorksheetActivate(object Sh)
@@ -1287,12 +750,12 @@ namespace ExceLintUI
             // 1. there is a DAG
             // 2. the DAG changed bit is not set
             // 3. the force-update bit is not set
-            if (currentWorkbook.DAGRefreshNeeded(forceDAGBuild: forceBuildDAG.Checked))
+            if (currentWorkbook.DAGRefreshNeeded(forceDAGBuild: true))
             {
                 // Did the workbook really change? Diff it first.
                 if (currentWorkbook.DAGChanged())
                 {
-                    currentWorkbook.SerializeDAG(forceDAGBuild: forceBuildDAG.Checked);
+                    currentWorkbook.SerializeDAG(forceDAGBuild: true);
                 }
             }
         }
@@ -1441,20 +904,6 @@ namespace ExceLintUI
             this.MarkAsOKButton.ScreenTip = text;
             this.StartOverButton.ScreenTip = text;
             this.AnalyzeButton.ScreenTip = text;
-            this.showHeatmap.ScreenTip = text;
-            this.allCellsFreq.ScreenTip = text;
-            this.columnCellsFreq.ScreenTip = text;
-            this.rowCellsFreq.ScreenTip = text;
-            this.levelsFreq.ScreenTip = text;
-            this.sheetFreq.ScreenTip = text;
-            this.DebugOutput.ScreenTip = text;
-            this.forceBuildDAG.ScreenTip = text;
-            this.inferAddrModes.ScreenTip = text;
-            this.allCells.ScreenTip = text;
-            this.weightByIntrinsicAnomalousness.ScreenTip = text;
-            this.significanceTextBox.ScreenTip = text;
-            this.conditioningSetSize.ScreenTip = text;
-            this.spectralRanking.ScreenTip = text;
         }
 
         private void setUIState(WorkbookState wbs)
@@ -1481,25 +930,6 @@ namespace ExceLintUI
                 this.MarkAsOKButton.Enabled = disabled;
                 this.StartOverButton.Enabled = disabled;
                 this.AnalyzeButton.Enabled = disabled;
-                this.showHeatmap.Enabled = disabled;
-                this.allCellsFreq.Enabled = disabled;
-                this.columnCellsFreq.Enabled = disabled;
-                this.rowCellsFreq.Enabled = disabled;
-                this.levelsFreq.Enabled = disabled;
-                this.DebugOutput.Enabled = disabled;
-                this.forceBuildDAG.Enabled = disabled;
-                this.inferAddrModes.Enabled = disabled;
-                this.allCells.Enabled = disabled;
-                this.sheetFreq.Enabled = disabled;
-                this.weightByIntrinsicAnomalousness.Enabled = disabled;
-                this.significanceTextBox.Enabled = disabled;
-                this.conditioningSetSize.Enabled = disabled;
-                this.spectralRanking.Enabled = disabled;
-                this.showFixes.Enabled = disabled;
-                this.annotate.Enabled = disabled;
-                this.useResultant.Enabled = disabled;
-                this.ClusterBox.Enabled = disabled;
-                this.RunCUSTODES.Enabled = disabled;
 
                 // tell the user ExceLint doesn't work
                 SetTooltips(disabled_text);
@@ -1514,65 +944,13 @@ namespace ExceLintUI
                 this.AnalyzeButton.Enabled = wbs.Analyze_Enabled && wbs.Visualization_Hidden(w);
 
                 // only enable viewing heatmaps if we are not in the middle of an analysis
-                this.showHeatmap.Enabled = wbs.Analyze_Enabled && wbs.CUSTODES_Hidden(w);
-                this.RunCUSTODES.Enabled = wbs.Analyze_Enabled && wbs.Visualization_Hidden(w);
                 this.RegularityMap.Enabled = wbs.Analyze_Enabled && wbs.Visualization_Hidden(w);
-                this.EntropyRanking.Enabled = wbs.Analyze_Enabled && wbs.Visualization_Hidden(w);
 
                 // disable config buttons if we are:
                 // 1. in the middle of an audit, or
                 // 2. we are viewing the heatmap, or
                 // 3. if spectral ranking is checked, disable scopes
                 var enable_config = wbs.Analyze_Enabled && wbs.Visualization_Hidden(w) && wbs.CUSTODES_Hidden(w);
-                this.allCellsFreq.Enabled = enable_config && !this.spectralRanking.Checked;
-                this.columnCellsFreq.Enabled = enable_config && !this.spectralRanking.Checked;
-                this.rowCellsFreq.Enabled = enable_config && !this.spectralRanking.Checked;
-                this.levelsFreq.Enabled = enable_config && !this.spectralRanking.Checked;
-                this.sheetFreq.Enabled = enable_config && !this.spectralRanking.Checked;
-                this.DebugOutput.Enabled = enable_config;
-                this.forceBuildDAG.Enabled = enable_config;
-                this.inferAddrModes.Enabled = enable_config;
-                this.allCells.Enabled = enable_config;
-                this.weightByIntrinsicAnomalousness.Enabled = enable_config;
-                this.significanceTextBox.Enabled = enable_config;
-                this.conditioningSetSize.Enabled = enable_config;
-                this.spectralRanking.Enabled = enable_config;
-                this.useResultant.Enabled = enable_config;
-                this.showFixes.Enabled = enable_config && this.spectralRanking.Checked;
-                this.annotate.Enabled = true;   // user can annotate at any time
-                this.ClusterBox.Enabled = enable_config;
-
-                // toggle the heatmap label depending on the heatmap shown/hidden state
-                if (wbs.Visualization_Hidden(w))
-                {
-                    this.showHeatmap.Label = "Show Formula Similarity";
-                }
-                else
-                {
-                    this.showHeatmap.Label = "Hide Formula Similarity";
-                }
-
-                // toggle the CUSTODES label depending on the analysis shown/hidden state
-                if (wbs.CUSTODES_Hidden(w))
-                {
-                    this.RunCUSTODES.Label = "Run CUSTODES";
-                }
-                else
-                {
-                    this.RunCUSTODES.Label = "Hide CUSTODES";
-                }
-
-                // toggle the annotation button depending on whether we have
-                // an annotation datastructure open or not
-                if (AnnotationMode)
-                {
-                    this.annotate.Label = "Stop Annotating";
-                    this.annotateThisCell.Visible = true;
-                } else
-                {
-                    this.annotate.Label = "Annotate";
-                    this.annotateThisCell.Visible = false;
-                }
             }
         }
 
@@ -1580,54 +958,11 @@ namespace ExceLintUI
         {
             var c = new ExceLint.FeatureConf();
 
-            // spatiostructual vectors
-            if (this.ClusterBox.Checked)
-            {
-                c = c.enableShallowInputVectorMixedFullCVectorResultantOSI(true);
-            } else if (this.useResultant.Checked) {
-                c = c.enableShallowInputVectorMixedResultant(true);
-            } else {
-                c = c.enableShallowInputVectorMixedL2NormSum(true);
-            }
 
-            // Scopes (i.e., conditioned analysis)
-            if (this.allCellsFreq.Checked) { c = c.analyzeRelativeToAllCells(true); }
-            if (this.columnCellsFreq.Checked) { c = c.analyzeRelativeToColumns(true); }
-            if (this.rowCellsFreq.Checked) { c = c.analyzeRelativeToRows(true); }
-            if (this.levelsFreq.Checked) { c = c.analyzeRelativeToLevels(true); }
-            if (this.sheetFreq.Checked) { c = c.analyzeRelativeToSheet(true); }
-
-            // weighting / program resynthesis
-            if (this.inferAddrModes.Checked) { c = c.inferAddressModes(true);  }
-            if (!this.allCells.Checked) { c = c.analyzeOnlyFormulas(true);  }
-            if (this.weightByIntrinsicAnomalousness.Checked) { c = c.weightByIntrinsicAnomalousness(true); }
-            if (this.conditioningSetSize.Checked) { c = c.weightByConditioningSetSize(true); }
-
-            // ranking type
-            if (this.spectralRanking.Checked) { c = c.spectralRanking(true).analyzeRelativeToSheet(true); }
-
-            // distance metric
-            switch(distanceCombo.Text)
-            {
-                case "Earth Mover":
-                    c = c.enableDistanceEarthMover(true);
-                    break;
-                case "Nearest Neighbor":
-                    c = c.enableDistanceNearestNeighbor(true);
-                    break;
-                case "Mean Centroid":
-                    c = c.enableDistanceMeanCentroid(true);
-                    break;
-            }   
+            c = c.enableShallowInputVectorMixedFullCVectorResultantOSI(true);
             
-            // COF?
-            c = c.enableShallowInputVectorMixedCOFRefUnnormSSNorm(false);
-
             // limit analysis to a single sheet
-            c = c.limitAnalysisToSheet(((Excel.Worksheet)Globals.ThisAddIn.Application.ActiveWorkbook.ActiveSheet).Name);
-
-            // debug mode
-            if (this.DebugOutput.Checked) { c = c.enableDebugMode(true); }
+            c = c.limitAnalysisToSheet(((Worksheet)Globals.ThisAddIn.Application.ActiveWorkbook.ActiveSheet).Name);
 
             return c;
         }
@@ -1644,27 +979,6 @@ namespace ExceLintUI
         }
 
         #endregion UTILITY_FUNCTIONS
-
-        private void NukeSettings_Click(object sender, RibbonControlEventArgs e)
-        {
-            Properties.Settings.Default.Reset();
-        }
-
-        private void RangeForSelection_Click(object sender, RibbonControlEventArgs e)
-        {
-            // get cursor location
-            var cursor = (Excel.Range)Globals.ThisAddIn.Application.Selection;
-
-            // get range
-            var rng = ParcelCOMShim.Range.RangeFromCOMObject(cursor, Globals.ThisAddIn.Application.ActiveWorkbook);
-
-            // get A1 string
-            var a1 = String.Join(",",rng.Addresses().Select(addr => addr.A1Local()));
-
-            // print
-            System.Windows.Forms.Clipboard.SetText(a1);
-            System.Windows.Forms.MessageBox.Show(a1);
-        }
     }
 }
 
