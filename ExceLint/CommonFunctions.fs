@@ -107,12 +107,7 @@
                 let rec tf(addr: AST.Address) : AST.Address list =
                     if (dag.isFormula addr) then
                         // find all of the inputs (local dependencies) for formula
-                        let refs_single = dag.getFormulaSingleCellInputs addr |> List.ofSeq
-                        let refs_vector = dag.getFormulaInputVectors addr |>
-                                                List.ofSeq |>
-                                                List.map (fun rng -> rng.Addresses() |> Array.toList) |>
-                                                List.concat
-                        let refs = refs_single @ refs_vector
+                        let refs = dag.getFormulaSingleCellInputs addr |> List.ofSeq
                         // prepend addr & recursively call this function
                         addr :: (List.map tf refs |> List.concat)
                     else

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Excel = Microsoft.Office.Interop.Excel;
@@ -146,15 +147,14 @@ namespace FastDependenceAnalysis
                                 var addr = arefs[i];
                                 // Excel row and column are 1-based
                                 // subtract one to make them zero-based
-                                _dependenceTable[row][col].Add(new SingleDependence(isOffSheet(addr), addr.Row - 1, addr.Col - 1));
+                                _dependenceTable[row][col].Add(new Dependence(isOffSheet(addr), addr.Row - 1, addr.Col - 1));
                             }
 
-                            // references next
+                            // ranges next
                             for (int i = 0; i < rrefs.Length; i++)
                             {
                                 var rng = rrefs[i];
                                 var addrs = rng.Addresses();
-                                var sds = new List<SingleDependence>();
 
                                 int maxCol = Int32.MinValue;
                                 int minCol = Int32.MaxValue;
@@ -170,8 +170,7 @@ namespace FastDependenceAnalysis
 
                                     // Excel row and column are 1-based
                                     // subtract one to make them zero-based
-                                    var sd = new SingleDependence(addrOffSheet, addr.Row - 1, addr.Col - 1);
-                                    sds.Add(sd);
+                                    _dependenceTable[row][col].Add(new Dependence(addrOffSheet, addr.Row - 1, addr.Col - 1));
 
                                     // find bounds
                                     if (addr.Row < minRow)
@@ -200,9 +199,6 @@ namespace FastDependenceAnalysis
                                         onSheet = false;
                                     }
                                 }
-
-                                var rd = new RangeDependence(onSheet, minRow - 1, minCol - 1, maxRow - 1, maxCol - 1, sds);
-                                _dependenceTable[row][col].Add(rd);
                             }
                         }
                         else
@@ -215,15 +211,11 @@ namespace FastDependenceAnalysis
             }
         }
 
-        interface Dependence
-        {
-            bool SingleRef { get; }
-            bool OnSheet { get; }
-        }
 
-        private struct SingleDependence : Dependence
+
+        private struct Dependence
         {
-            public SingleDependence(bool onSheet, int row, int col)
+            public Dependence(bool onSheet, int row, int col)
             {
                 OnSheet = onSheet;
                 Row = row;
@@ -235,43 +227,8 @@ namespace FastDependenceAnalysis
             public int Row { get; }
 
             public int Col { get; }
-
-            public bool SingleRef
-            {
-                get { return true; }
-            }
         }
-
-        private struct RangeDependence : Dependence
-        {
-            public RangeDependence(bool onSheet, int row_tl, int col_tl, int row_br, int col_br, List<SingleDependence> addrs)
-            {
-                OnSheet = onSheet;
-                RowTop = row_tl;
-                ColLeft = col_tl;
-                RowBottom = row_br;
-                ColRight = col_br;
-                Addresses = addrs;
-            }
-
-            public bool OnSheet { get; }
-
-            public int RowTop { get; }
-
-            public int ColLeft { get; }
-
-            public int RowBottom { get; }
-
-            public int ColRight { get; }
-
-            public List<SingleDependence> Addresses { get; }
-
-            public bool SingleRef
-            {
-                get { return false; }
-            }
-        }
-
+        
         private static string[][] InitStringTable(int width, int height)
         {
             var outer_y = new string[height][];
@@ -309,13 +266,16 @@ namespace FastDependenceAnalysis
 
         private static AST.Address CellToAddress(int row, int col, string wsname, string wbname, string path)
         {
-            return AST.Address.fromR1C1withMode(row, col, AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+            return AST.Address.fromR1C1withMode(row + 1, col + 1, AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
         }
 
-        private static SingleDependence AddressToCell(AST.Address addr, Graph g)
+        private static Dependence AddressToCell(AST.Address addr, Graph g)
         {
+            Debug.Assert(addr.Row > 0);
+            Debug.Assert(addr.Col > 0);
+
             // if it's on-sheet, set flag to true
-            return new SingleDependence(
+            return new Dependence(
                 addr.Path == g.Path &&
                 addr.WorkbookName == g.Workbook &&
                 addr.WorksheetName == g.Worksheet,
@@ -540,49 +500,10 @@ namespace FastDependenceAnalysis
             var output = new HashSet<AST.Address>();
             if (d.OnSheet)
             {
-                foreach (Dependence dabs in _dependenceTable[d.Row][d.Col])
+                foreach (Dependence d2 in _dependenceTable[d.Row][d.Col])
                 {
-                    if (dabs.SingleRef)
-                    {
-                        var d2 = (SingleDependence)dabs;
                         var addr2 = CellToAddress(d2.Row, d2.Col, _wsname, _wbname, _path);
                         output.Add(addr2);
-                    }
-                }
-            }
-
-            return output;
-        }
-
-        public HashSet<AST.Range> getFormulaInputVectors(AST.Address faddr)
-        {
-            var d = AddressToCell(faddr, this);
-            var output = new HashSet<AST.Range>();
-            if (d.OnSheet)
-            {
-                foreach (Dependence dabs in _dependenceTable[d.Row][d.Col])
-                {
-                    if (!dabs.SingleRef)
-                    {
-                        var rd = (RangeDependence)dabs;
-                        if (rd.OnSheet)
-                        {
-                            var topright = CellToAddress(rd.RowTop, rd.ColLeft, _wsname, _wbname, _path);
-                            var bottomleft = CellToAddress(rd.RowBottom, rd.ColRight, _wsname, _wbname, _path);
-                            AST.Range r = new AST.Range(topright, bottomleft);
-                            output.Add(r);
-                        }
-                        else
-                        {
-                            // this dependence graph is lossy, so all we know is that it is
-                            // not this sheet
-                            string u = "unknown";
-                            var topright = CellToAddress(rd.RowTop, rd.ColLeft, u, u, u);
-                            var bottomleft = CellToAddress(rd.RowBottom, rd.ColRight, u, u, u);
-                            AST.Range r = new AST.Range(topright, bottomleft);
-                            output.Add(r);
-                        }
-                    }
                 }
             }
 
