@@ -9,18 +9,19 @@ namespace FastDependenceAnalysis
 {
     public class Graph
     {
-        private string _wsname;
-        private string _wbname;
-        private string _path;
-        private string[][] _formulaTable;
-        private object[][] _valueTable;
-        private List<Dependence>[][] _dependenceTable;
-        private int _used_range_top;        // 1-based top y coordinate
-        private int _used_range_bottom;     // 1-based bottom y coordinate
-        private int _used_range_left;       // 1-based left-hand x coordinate
-        private int _used_range_right;      // 1-based right-hand x coordinate
-        private int _used_range_width;
-        private int _used_range_height;
+        private readonly string _wsname;
+        private readonly string _wbname;
+        private readonly string _path;
+        private readonly string[][] _formulaTable;
+        private readonly object[][] _valueTable;
+        private readonly List<Dependence>[][] _dependenceTable;
+        private readonly int _used_range_top;        // 1-based top y coordinate
+        private readonly int _used_range_bottom;     // 1-based bottom y coordinate
+        private readonly int _used_range_left;       // 1-based left-hand x coordinate
+        private readonly int _used_range_right;      // 1-based right-hand x coordinate
+        private readonly int _used_range_width;
+        private readonly int _used_range_height;
+        private readonly int _num_formulas;
 
         public string Worksheet
         {
@@ -34,6 +35,11 @@ namespace FastDependenceAnalysis
         public string Path
         {
             get { return _path; }
+        }
+
+        public int NumFormulas
+        {
+            get { return _num_formulas; }
         }
 
         public Dictionary<AST.Address, string> Values
@@ -123,6 +129,9 @@ namespace FastDependenceAnalysis
                         ExprOpt astOpt = Parcel.parseFormula(_formulaTable[row][col], _path, _wbname, _wsname);
                         if (ExprOpt.get_IsSome(astOpt))
                         {
+                            // it's a formula; count it
+                            _num_formulas++;
+
                             var ast = astOpt.Value;
                             // get range referencese
                             var rrefs = Parcel.rangeReferencesFromExpr(ast);

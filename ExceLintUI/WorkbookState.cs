@@ -140,7 +140,7 @@ namespace ExceLintUI
         public Analysis inProcessAnalysis(long max_duration_in_ms, ExceLint.FeatureConf config, Progress p)
         {
             // sanity check
-            if (_dag.getAllFormulaAddrs().Length == 0)
+            if (_dag.NumFormulas == 0)
             {
                 return new Analysis { scores = null, ranOK = false, cutoff = 0 };
             }
