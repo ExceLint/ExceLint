@@ -58,12 +58,35 @@ namespace FastDependenceAnalysis
             return addr.Path != _path || addr.WorkbookName != _wbname || addr.WorksheetName != _wsname;
         }
 
+        public static string WorksheetName(Excel.Worksheet w)
+        {
+            return w.Name;
+        }
+
+        public static string WorkbookName(Excel.Worksheet w)
+        {
+            return ((Excel.Workbook)w.Parent).Name;
+        }
+
+        public static string WorkbookPath(Excel.Worksheet w)
+        {
+            var pthtmp = ((Excel.Workbook)w.Parent).Path;
+            if (pthtmp.EndsWith(@"\"))
+            {
+                return pthtmp;
+            }
+            else
+            {
+                return pthtmp + @"\";
+            }
+        }
+
         public Graph(Excel.Application a, Excel.Worksheet w)
         {
             // get names once
-            _wsname = w.Name;
-            _wbname = ((Excel.Workbook)w.Parent).Name;
-            _path = ((Excel.Workbook)w.Parent).Path;
+            _wsname = WorksheetName(w);
+            _wbname = WorkbookName(w);
+            _path = WorkbookPath(w);
 
             // get used range
             Excel.Range urng = w.UsedRange;
@@ -183,7 +206,11 @@ namespace FastDependenceAnalysis
             }
         }
 
-        interface Dependence { }
+        interface Dependence
+        {
+            bool SingleRef { get; }
+            bool OnSheet { get; }
+        }
 
         private struct SingleDependence : Dependence
         {
@@ -199,6 +226,11 @@ namespace FastDependenceAnalysis
             public int Row { get; }
 
             public int Col { get; }
+
+            public bool SingleRef
+            {
+                get { return true; }
+            }
         }
 
         private struct RangeDependence : Dependence
@@ -224,6 +256,11 @@ namespace FastDependenceAnalysis
             public int ColRight { get; }
 
             public List<SingleDependence> Addresses { get; }
+
+            public bool SingleRef
+            {
+                get { return false; }
+            }
         }
 
         private static string[][] InitStringTable(int width, int height)
@@ -494,10 +531,14 @@ namespace FastDependenceAnalysis
             var output = new HashSet<AST.Address>();
             if (d.OnSheet)
             {
-                foreach (SingleDependence d2 in _dependenceTable[d.Row][d.Col])
+                foreach (Dependence dabs in _dependenceTable[d.Row][d.Col])
                 {
-                    var addr2 = CellToAddress(d2.Row, d2.Col, _wsname, _wbname, _path);
-                    output.Add(addr2);
+                    if (dabs.SingleRef)
+                    {
+                        var d2 = (SingleDependence)dabs;
+                        var addr2 = CellToAddress(d2.Row, d2.Col, _wsname, _wbname, _path);
+                        output.Add(addr2);
+                    }
                 }
             }
 
@@ -510,26 +551,29 @@ namespace FastDependenceAnalysis
             var output = new HashSet<AST.Range>();
             if (d.OnSheet)
             {
-                foreach (RangeDependence rd in _dependenceTable[d.Row][d.Col])
+                foreach (Dependence dabs in _dependenceTable[d.Row][d.Col])
                 {
-                    if (rd.OnSheet)
+                    if (!dabs.SingleRef)
                     {
-                        var topright = CellToAddress(rd.RowTop, rd.ColLeft, _wsname, _wbname, _path);
-                        var bottomleft = CellToAddress(rd.RowBottom, rd.ColRight, _wsname, _wbname, _path);
-                        AST.Range r = new AST.Range(topright, bottomleft);
-                        output.Add(r);
+                        var rd = (RangeDependence)dabs;
+                        if (rd.OnSheet)
+                        {
+                            var topright = CellToAddress(rd.RowTop, rd.ColLeft, _wsname, _wbname, _path);
+                            var bottomleft = CellToAddress(rd.RowBottom, rd.ColRight, _wsname, _wbname, _path);
+                            AST.Range r = new AST.Range(topright, bottomleft);
+                            output.Add(r);
+                        }
+                        else
+                        {
+                            // this dependence graph is lossy, so all we know is that it is
+                            // not this sheet
+                            string u = "unknown";
+                            var topright = CellToAddress(rd.RowTop, rd.ColLeft, u, u, u);
+                            var bottomleft = CellToAddress(rd.RowBottom, rd.ColRight, u, u, u);
+                            AST.Range r = new AST.Range(topright, bottomleft);
+                            output.Add(r);
+                        }
                     }
-                    else
-                    {
-                        // this dependence graph is lossy, so all we know is that it is
-                        // not this sheet
-                        string u = "unknown";
-                        var topright = CellToAddress(rd.RowTop, rd.ColLeft, u, u, u);
-                        var bottomleft = CellToAddress(rd.RowBottom, rd.ColRight, u, u, u);
-                        AST.Range r = new AST.Range(topright, bottomleft);
-                        output.Add(r);
-                    }
-                    
                 }
             }
 
