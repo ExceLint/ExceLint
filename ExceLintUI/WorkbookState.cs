@@ -59,7 +59,6 @@ namespace ExceLintUI
         private Graph _dag;
         private bool _debug_mode = false;
         private bool _dag_changed = false;
-        private Dictionary<Worksheet, ExceLint.ClusterModelBuilder.ClusterModel> _m = new Dictionary<Worksheet, ExceLint.ClusterModelBuilder.ClusterModel>();
 
         public int currentFlag = 0;
 
@@ -176,7 +175,7 @@ namespace ExceLintUI
             ExceLint.FeatureConf conf, Boolean forceDAGBuild, ProgBar pb)
         {
             // create
-            return ExceLint.ModelBuilder.initEntropyModel2(app, conf, _dag, Progress.NOPProgress());
+            return ExceLint.ModelBuilder.initEntropyModel2(_app, conf, _dag, Progress.NOPProgress());
         }
 
         public void DrawImmutableClusters(Clusters clusters, ROInvertedHistogram ih, Worksheet ws)

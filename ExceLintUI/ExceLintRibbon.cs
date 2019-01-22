@@ -109,7 +109,7 @@ namespace ExceLintUI
 
             foreach (ImmutableHashSet<AST.Address> c in cs)
             {
-                if (!c.All(a => EntropyModelBuilder.AddressIsWhitespaceValued(a, ih, graph)))
+                if (!c.All(a => EntropyModelBuilder2.AddressIsWhitespaceValued(a, ih, graph)))
                 {
                     output.Add(c);
                 }
@@ -124,7 +124,7 @@ namespace ExceLintUI
 
             foreach (ImmutableHashSet<AST.Address> c in cs)
             {
-                if (!c.All(a => EntropyModelBuilder.AddressIsStringValued(a, ih, graph)))
+                if (!c.All(a => EntropyModelBuilder2.AddressIsStringValued(a, ih, graph)))
                 {
                     output.Add(c);
                 }
