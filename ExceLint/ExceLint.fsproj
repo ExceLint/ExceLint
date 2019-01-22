@@ -64,7 +64,6 @@
     <Compile Include="BasicStats.fs" />
     <Compile Include="Scope.fs" />
     <Compile Include="Feature.fs" />
-    <Compile Include="Degree.fs" />
     <Compile Include="Vector.fs" />
     <Compile Include="Proximity.fs" />
     <Compile Include="CompressedRadixTree.fs" />
@@ -81,13 +80,7 @@
     <Compile Include="FasterBinaryMinEntropyTree.fs" />
     <Compile Include="BinaryMinEntropyTree.fs" />
     <Compile Include="ErrorModel.fs" />
-    <Compile Include="EntropyModelBuilder.fs" />
     <Compile Include="EntropyModelBuilder2.fs" />
-    <Compile Include="ClusterModelBuilder.fs" />
-    <Compile Include="OldClusterModel.fs" />
-    <Compile Include="COFModelBuilder.fs" />
-    <Compile Include="SpectralModelBuilder.fs" />
-    <Compile Include="KMedioidsClusterModelBuilder.fs" />
     <Compile Include="ModelBuilder.fs" />
     <None Include="App.config" />
     <Content Include="packages.config" />
@@ -96,6 +89,11 @@
     <ProjectReference Include="..\ExceLintFileFormats\ExceLintFileFormats.csproj">
       <Name>ExceLintFileFormats</Name>
       <Project>{bf7683ed-f2e1-42d4-916c-d8dd2e58f389}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\FastDependenceAnalysis\FastDependenceAnalysis.csproj">
+      <Name>FastDependenceAnalysis</Name>
+      <Project>{bb6178d3-40c3-442f-902c-5a6cb2eefa1c}</Project>
       <Private>True</Private>
     </ProjectReference>
     <Reference Include="FSharp.Core, Version=4.4.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
@@ -112,11 +110,6 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Xml.Linq" />
-    <ProjectReference Include="..\Depends\Depends\Depends.csproj">
-      <Name>Depends</Name>
-      <Project>{34fa1bc2-cfd6-44ec-ac0c-dfc62313e4bf}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="..\Depends\parcel\Parcel\ExcelParser.fsproj">
       <Name>ExcelParser</Name>
       <Project>{6de2a2b9-c029-4bdb-8992-d16276471d9f}</Project>

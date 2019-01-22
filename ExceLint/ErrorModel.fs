@@ -5,6 +5,7 @@
     open Utils
     open ConfUtils
     open CommonTypes
+    open FastDependenceAnalysis
 
     type ErrorModel(input: Input, analysis: Analysis, config: FeatureConf) =
         let r = match analysis with
@@ -19,7 +20,7 @@
 
         member self.AllCells : HashSet<AST.Address> = new HashSet<AST.Address>(input.dag.allCells())
 
-        member self.DependenceGraph : Depends.DAG = input.dag
+        member self.DependenceGraph : Graph = input.dag
 
         member self.ScoreTimeInMilliseconds : int64 =
             match analysis with 
@@ -153,7 +154,7 @@
 
         member self.Analysis = analysis
 
-        member self.inspectSelectorFor(addr: AST.Address, sel: Scope.Selector, dag: Depends.DAG) : KeyValuePair<AST.Address,(string*Countable)[]>[] =
+        member self.inspectSelectorFor(addr: AST.Address, sel: Scope.Selector, dag: Graph) : KeyValuePair<AST.Address,(string*Countable)[]>[] =
             let sID = sel.id addr dag
 
             let d = new Dict<AST.Address,(string*Countable) list>()
@@ -218,7 +219,7 @@
 
             d
 
-        static member private rankingIsSane(r: Ranking)(dag: Depends.DAG)(formulasOnly: bool)(local_anomalies_ok: bool) : bool =
+        static member private rankingIsSane(r: Ranking)(dag: Graph)(formulasOnly: bool)(local_anomalies_ok: bool) : bool =
             if formulasOnly && not local_anomalies_ok then
                 Array.forall (fun (kvp: KeyValuePair<AST.Address,double>) -> dag.isFormula kvp.Key) r
             else

@@ -1,8 +1,8 @@
 ﻿namespace ExceLint
 
 module Scope =
-    open System.Collections.Generic
     open Utils
+    open FastDependenceAnalysis
 
     type Path = string
 
@@ -112,7 +112,7 @@ module Scope =
         // compute conditional distributions.  E.g., if addr1
         // and addr2 have the same SameColumn ID, then they are
         // in the same column.
-        member self.id(addr: AST.Address)(dag: Depends.DAG) : SelectID =
+        member self.id(addr: AST.Address)(dag: Graph) : SelectID =
             match self with
             | AllCells -> AllID
             | SameColumn -> ColumnID { x = Some addr.X; y = None; fullpath = Some (fullpath addr) }

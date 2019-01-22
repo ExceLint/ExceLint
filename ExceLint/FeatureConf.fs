@@ -1,10 +1,10 @@
 ﻿namespace ExceLint
     open System.Collections.Generic
-    open System.Collections
     open System
+    open FastDependenceAnalysis
 
     module ConfUtils =
-        type RunnerMap = Map<string, AST.Address -> Depends.DAG -> Countable>
+        type RunnerMap = Map<string, AST.Address -> Graph -> Countable>
 
     type DistanceMetric =
     | NearestNeighbor
@@ -13,7 +13,7 @@
 
     // a C#-friendly configuration object that is also pure/fluent
     type FeatureConf private (userConf: Map<string,Capability>, limitToSheet: string option, alpha: double) =
-        let nop(cell: AST.Address)(dag: Depends.DAG) : Countable = Countable.Num 0.0
+        let nop(cell: AST.Address)(dag: Graph) : Countable = Countable.Num 0.0
 
         // this function adds a feature and its capabilities to the configuration map,
         // and returns a new FeatureConf
@@ -38,10 +38,7 @@
         let _base = BaseFeature.run
 
         let _capabilities : Map<string,Capability> =
-            [   Degree.InDegree.capability;
-                Degree.OutDegree.capability;
-                Degree.CombinedDegree.capability;
-                Vector.DeepInputVectorRelativeL2NormSum.capability;
+            [   Vector.DeepInputVectorRelativeL2NormSum.capability;
                 Vector.DeepOutputVectorRelativeL2NormSum.capability;
                 Vector.DeepInputVectorAbsoluteL2NormSum.capability;
                 Vector.DeepOutputVectorAbsoluteL2NormSum.capability;
@@ -81,12 +78,6 @@
             new FeatureConf(userConf, limitToSheet, alphanew)
 
         // fluent constructors
-        member self.enableInDegree(on: bool) : FeatureConf =
-            capabilityConstructorHelper Degree.InDegree.capability self on _config
-        member self.enableOutDegree(on: bool) : FeatureConf =
-            capabilityConstructorHelper Degree.OutDegree.capability self on _config
-        member self.enableCombinedDegree(on: bool) : FeatureConf =
-            capabilityConstructorHelper Degree.CombinedDegree.capability self on _config
         member self.enableDeepInputVectorRelativeL2NormSum(on: bool) : FeatureConf =
             capabilityConstructorHelper Vector.DeepInputVectorRelativeL2NormSum.capability self on _config
         member self.enableDeepOutputVectorRelativeL2NormSum(on: bool) : FeatureConf =
@@ -272,20 +263,6 @@
                 Vector.ShallowInputVectorMixedCOFNoAspect.normalizeSSSpace
             else
                 false
-        member self.DD(dag: Depends.DAG): Dictionary<Vector.WorksheetName,Vector.DistDict> =
-            let (name,_) = Vector.ShallowInputVectorMixedCOFNoAspect.capability
-            if _config.ContainsKey name then
-                let (bdd,dd) = Vector.ShallowInputVectorMixedCOFNoAspect.Instance.BuildDistDict dag
-                dd
-            else
-                failwith "Invalid operation for configured analysis."
-        member self.BDD(dag: Depends.DAG): Dictionary<Vector.WorksheetName,Dictionary<AST.Address,Vector.SquareVector>> =
-            let (name,_) = Vector.ShallowInputVectorMixedCOFNoAspect.capability
-            if _config.ContainsKey name then
-                let (bdd,dd) = Vector.ShallowInputVectorMixedCOFNoAspect.Instance.BuildDistDict dag
-                bdd
-            else
-                failwith "Invalid operation for configured analysis."
         member self.DistanceMetric =
             if _config.ContainsKey "MeanCentroidDistance" then
                 DistanceMetric.MeanCentroid

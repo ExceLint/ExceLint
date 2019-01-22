@@ -9,6 +9,10 @@
     open MathNet.Numerics.Distributions
 
     module EntropyModelBuilder2 =
+        open FastDependenceAnalysis
+
+        type ImmDistanceFMaker = ROInvertedHistogram -> ImmDistanceF
+
         [<Struct>]
         type Stats(feat_ms: int64, scale_ms: int64, invert_ms: int64, fsc_ms: int64, infer_ms: int64) =
             member self.FeatureTimeMS = feat_ms
@@ -71,7 +75,7 @@
             let (_,_,v) = ih.[addr]
             v
 
-        let AddressIsFormulaValued(a: AST.Address)(ih: ROInvertedHistogram)(graph: Depends.DAG) : bool =
+        let AddressIsFormulaValued(a: AST.Address)(ih: ROInvertedHistogram)(graph: Graph) : bool =
             // have to check both because, e.g., =RAND() has a whitespace vector
             // and "fixes" may not be formulas in the dependence graph
             if ih.ContainsKey a then
@@ -83,7 +87,7 @@
             else
                 false
 
-        let AddressIsNumericValued(a: AST.Address)(ih: ROInvertedHistogram)(graph: Depends.DAG) : bool =
+        let AddressIsNumericValued(a: AST.Address)(ih: ROInvertedHistogram)(graph: Graph) : bool =
             if graph.Values.ContainsKey a then
                 let s = graph.Values.[a]
                 let mutable d: double = 0.0
@@ -93,7 +97,7 @@
             else
                 false
 
-        let AddressIsWhitespaceValued(a: AST.Address)(ih: ROInvertedHistogram)(graph: Depends.DAG) : bool =
+        let AddressIsWhitespaceValued(a: AST.Address)(ih: ROInvertedHistogram)(graph: Graph) : bool =
             if graph.Values.ContainsKey a then
                 let s = graph.Values.[a]
                 let b = String.IsNullOrWhiteSpace(s)
@@ -102,13 +106,13 @@
             else
                 true
 
-        let AddressIsStringValued(a: AST.Address)(ih: ROInvertedHistogram)(graph: Depends.DAG) : bool =
+        let AddressIsStringValued(a: AST.Address)(ih: ROInvertedHistogram)(graph: Graph) : bool =
             let nn = not (AddressIsNumericValued a ih graph)
             let nf = not (AddressIsFormulaValued a ih graph)
             let nws = not (AddressIsWhitespaceValued a ih graph)
             nn && nf && nws
 
-        let ClusterIsFormulaValued(c: ImmutableHashSet<AST.Address>)(ih: ROInvertedHistogram)(graph: Depends.DAG) : bool =
+        let ClusterIsFormulaValued(c: ImmutableHashSet<AST.Address>)(ih: ROInvertedHistogram)(graph: Graph) : bool =
             c |> Seq.forall (fun addr -> AddressIsFormulaValued addr ih graph)
 
         let ClusterDirectionVector(c1: ImmutableHashSet<AST.Address>) : Countable =
@@ -192,7 +196,7 @@
                 // if they're the same, return true
                 sco = sco'
 
-        type EntropyModel2(alpha: double, graph: Depends.DAG, regions: ImmutableClustering[], ih: ROInvertedHistogram, fsc: FastSheetCounter, d: ImmDistanceFMaker, indivisibles: ImmutableClustering[], stats: Stats) =
+        type EntropyModel2(alpha: double, graph: Graph, regions: ImmutableClustering[], ih: ROInvertedHistogram, fsc: FastSheetCounter, d: ImmDistanceFMaker, indivisibles: ImmutableClustering[], stats: Stats) =
             // save the reverse lookup for later use
             let revLookups = Array.map (fun r -> ReverseClusterLookup r) regions
 

@@ -1,5 +1,5 @@
 namespace ExceLint
-    open Depends
+    open FastDependenceAnalysis
     open System
 
     type ConfigKind =
@@ -277,12 +277,12 @@ namespace ExceLint
                 i <- i + 1.0
             sum.ScalarDivide i
 
-    type Capability = { enabled : bool; kind: ConfigKind; runner: AST.Address -> Depends.DAG -> Countable; }
+    type Capability = { enabled : bool; kind: ConfigKind; runner: AST.Address -> Graph -> Countable; }
 
-    type FeatureLambda = AST.Address -> DAG -> Countable
+    type FeatureLambda = AST.Address -> Graph -> Countable
 
     type BaseFeature() =
-        static member run (cell: AST.Address) (dag: DAG): Countable = failwith "Feature must provide run method."
+        static member run (cell: AST.Address) (dag: Graph): Countable = failwith "Feature must provide run method."
         static member capability : string*Capability = failwith "Feature must provide capability."
 
     // the following are for C# interop because

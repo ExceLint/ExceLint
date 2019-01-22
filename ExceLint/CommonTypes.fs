@@ -5,6 +5,7 @@
         open System.Collections
         open System
         open Utils
+        open FastDependenceAnalysis
 
         let private nop = Depends.Progress.NOPProgress()
 
@@ -103,12 +104,12 @@
         type Input = {
             app: Microsoft.Office.Interop.Excel.Application;
             config: FeatureConf;
-            dag: Depends.DAG;
+            dag: Graph;
             alpha: double;
             progress: Depends.Progress;
         }
 
-        let SimpleInput(app: Microsoft.Office.Interop.Excel.Application)(config: FeatureConf)(dag: Depends.DAG) : Input =
+        let SimpleInput(app: Microsoft.Office.Interop.Excel.Application)(config: FeatureConf)(dag: Graph) : Input =
             { app = app; config = config; dag = dag; alpha = 0.05; progress = nop; }
 
         type HistoAnalysis = {

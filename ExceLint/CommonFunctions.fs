@@ -2,17 +2,16 @@
     open System
     open System.Collections.Generic
     open System.Collections.Immutable
-    open System.Linq
     open Utils
     open CommonTypes
     open HashSetUtils
-    open Microsoft.FSharp.Linq
+    open FastDependenceAnalysis
 
     module CommonFunctions =
             // _analysis_base specifies which cells should be ranked:
             // 1. allCells means all cells in the spreadsheet
             // 2. onlyFormulas means only formulas
-            let analysisBase(config: FeatureConf)(d: Depends.DAG) : AST.Address[] =
+            let analysisBase(config: FeatureConf)(d: Graph) : AST.Address[] =
                 let cs = if config.IsEnabled("AnalyzeOnlyFormulas") then
                             d.getAllFormulaAddrs()
                          else
@@ -23,7 +22,7 @@
                           | None -> cs 
                 cs'
 
-            let runEnabledFeatures(cells: AST.Address[])(dag: Depends.DAG)(config: FeatureConf)(progress: Depends.Progress) =
+            let runEnabledFeatures(cells: AST.Address[])(dag: Graph)(config: FeatureConf)(progress: Progress) =
                 config.EnabledFeatures |>
                 Array.map (fun fname ->
                     // get feature lambda
@@ -31,7 +30,6 @@
 
                     // choose the appropriate mapper
                     let mapif = if cells.Length > 100 then Array.Parallel.mapi else Array.mapi
-//                    let mapif = Array.mapi
 
                     let fvals =
                         mapif (fun i cell ->
@@ -46,7 +44,7 @@
                     fname, fvals
                 ) |> adict
 
-            let invertedHistogram(scoretable: ScoreTable)(dag: Depends.DAG)(config: FeatureConf) : ROInvertedHistogram =
+            let invertedHistogram(scoretable: ScoreTable)(dag: Graph)(config: FeatureConf) : ROInvertedHistogram =
                 assert (config.EnabledScopes.Length = 1 && config.EnabledFeatures.Length = 1)
 
                 let d = ImmutableDictionary.CreateBuilder<AST.Address, HistoBin>()
@@ -95,7 +93,7 @@
                 let (_,_,v) = ih.[a]
                 v
 
-            let nop = Depends.Progress.NOPProgress()
+            let nop = Progress.NOPProgress()
 
             let toDict(arr: ('a*'b)[]) : Dict<'a,'b> =
                 // assumes that 'a is unique
@@ -105,7 +103,7 @@
                 ) arr
                 d
 
-            let transitiveInputs(faddr: AST.Address)(dag : Depends.DAG) : AST.Address[] =
+            let transitiveInputs(faddr: AST.Address)(dag : Graph) : AST.Address[] =
                 let rec tf(addr: AST.Address) : AST.Address list =
                     if (dag.isFormula addr) then
                         // find all of the inputs (local dependencies) for formula
