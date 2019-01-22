@@ -15,6 +15,12 @@ namespace FastDependenceAnalysis
         private string[][] _formulaTable;
         private object[][] _valueTable;
         private List<Dependence>[][] _dependenceTable;
+        private int _used_range_top;        // 1-based top y coordinate
+        private int _used_range_bottom;     // 1-based bottom y coordinate
+        private int _used_range_left;       // 1-based left-hand x coordinate
+        private int _used_range_right;      // 1-based right-hand x coordinate
+        private int _used_range_width;
+        private int _used_range_height;
 
         public string Worksheet
         {
@@ -62,13 +68,21 @@ namespace FastDependenceAnalysis
             // get used range
             Excel.Range urng = w.UsedRange;
 
+            // get dimensions
+            _used_range_left = urng.Column;                                  
+            _used_range_right = urng.Columns.Count + _used_range_left - 1;   
+            _used_range_top = urng.Row;                                      
+            _used_range_bottom = urng.Rows.Count + _used_range_top - 1;
+            _used_range_width = _used_range_right - _used_range_left + 1;
+            _used_range_height = _used_range_bottom - _used_range_top + 1;
+
             // formula table
             // invariant: null means not a formula
-            _formulaTable = ReadFormulas(urng);
+            _formulaTable = ReadFormulas(urng, _used_range_left, _used_range_right, _used_range_top, _used_range_bottom, _used_range_width, _used_range_height);
 
             // value table
             // invariant: null means empty cell
-            _valueTable = ReadData(urng);
+            _valueTable = ReadData(urng, _used_range_left, _used_range_right, _used_range_top, _used_range_bottom, _used_range_width, _used_range_height);
 
             // dependence table
             // invariant: table entry contains list of indices of dependency
@@ -110,10 +124,10 @@ namespace FastDependenceAnalysis
                                 var addrs = rng.Addresses();
                                 var sds = new List<SingleDependence>();
 
-                                int maxCol = Int32.MaxValue;
-                                int minCol = Int32.MinValue;
-                                int maxRow = Int32.MaxValue;
-                                int minRow = Int32.MinValue;
+                                int maxCol = Int32.MinValue;
+                                int minCol = Int32.MaxValue;
+                                int maxRow = Int32.MinValue;
+                                int minRow = Int32.MaxValue;
                                 bool onSheet = true;
 
                                 for (int j = 0; j < addrs.Length; j++)
@@ -263,18 +277,8 @@ namespace FastDependenceAnalysis
                 addr.Col - 1);
         }
 
-        private static object[][] ReadData(Excel.Range urng)
+        private static object[][] ReadData(Excel.Range urng, int left, int right, int top, int bottom, int width, int height)
         {
-            // get dimensions
-            int left = urng.Column;                      // 1-based left-hand y coordinate
-            int right = urng.Columns.Count + left - 1;   // 1-based right-hand y coordinate
-            int top = urng.Row;                          // 1-based top x coordinate
-            int bottom = urng.Rows.Count + top - 1;      // 1-based bottom x coordinate
-
-            // init
-            int width = right - left + 1;
-            int height = bottom - top + 1;
-
             // output
             var dataOutput = InitObjectTable(width, height);
 
@@ -315,14 +319,11 @@ namespace FastDependenceAnalysis
                     // increment y if x wrapped (x < x_old or x == x_old when width == 1)
                     y = x <= x_old ? y + 1 : y;
 
-                    int c = x + left;
-                    int r = y + top;
-
                     // don't track if the cell contains nothing
                     if (data[y + 1, x + 1] != null) // adjust indices to be one-based
                     {
                         // copy the value in the cell
-                        dataOutput[r][c] = data[y + 1, x + 1];
+                        dataOutput[y][x] = data[y + 1, x + 1];
                     }
 
                     x_old = x;
@@ -332,23 +333,13 @@ namespace FastDependenceAnalysis
             return dataOutput;
         }
 
-        private static string[][] ReadFormulas(Excel.Range urng)
+        private static string[][] ReadFormulas(Excel.Range urng, int left, int right, int top, int bottom, int width, int height)
         {
             // init R1C1 extractor
             var regex = new Regex("^R([0-9]+)C([0-9]+)$", RegexOptions.Compiled);
 
             // init formula validator
             var fn_filter = new Regex("^=", RegexOptions.Compiled);
-
-            // get dimensions
-            int left = urng.Column;                      // 1-based left-hand y coordinate
-            int right = urng.Columns.Count + left - 1;   // 1-based right-hand y coordinate
-            int top = urng.Row;                          // 1-based top x coordinate
-            int bottom = urng.Rows.Count + top - 1;      // 1-based bottom x coordinate
-
-            // init
-            int width = right - left + 1;
-            int height = bottom - top + 1;
 
             // output
             var output = InitStringTable(width, height);
@@ -378,7 +369,7 @@ namespace FastDependenceAnalysis
                         var f = (string)formulas[r, c];
                         if (fn_filter.IsMatch(f))
                         {
-                            output[r + top - 1][c + left - 1] = f;
+                            output[r - 1][c - 1] = f;
                         }
                     }
                 }
