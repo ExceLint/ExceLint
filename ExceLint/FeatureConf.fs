@@ -38,26 +38,8 @@
         let _base = BaseFeature.run
 
         let _capabilities : Map<string,Capability> =
-            [   Vector.DeepInputVectorRelativeL2NormSum.capability;
-                Vector.DeepOutputVectorRelativeL2NormSum.capability;
-                Vector.DeepInputVectorAbsoluteL2NormSum.capability;
-                Vector.DeepOutputVectorAbsoluteL2NormSum.capability;
-                Vector.DeepInputVectorMixedL2NormSum.capability;
-                Vector.DeepOutputVectorMixedL2NormSum.capability
-                Vector.ShallowInputVectorRelativeL2NormSum.capability;
-                Vector.ShallowOutputVectorRelativeL2NormSum.capability;
-                Vector.ShallowInputVectorAbsoluteL2NormSum.capability;
-                Vector.ShallowOutputVectorAbsoluteL2NormSum.capability;
-                Vector.ShallowInputVectorMixedL2NormSum.capability;
-                Vector.ShallowOutputVectorMixedL2NormSum.capability;
-                Vector.ShallowInputVectorMixedCOFNoAspect.capability;
-                Vector.ShallowInputVectorMixedResultant.capability;
-                Vector.ShallowInputVectorMixedFullCVectorResultantNotOSI.capability;
+            [   
                 Vector.ShallowInputVectorMixedFullCVectorResultantOSI.capability;
-                Proximity.Above.capability;
-                Proximity.Below.capability;
-                Proximity.Left.capability;
-                Proximity.Right.capability
             ] |> Map.ofList
 
         let _config = Map.fold (fun (acc: Map<string,Capability>)(fname: string)(cap: Capability) ->
@@ -78,46 +60,8 @@
             new FeatureConf(userConf, limitToSheet, alphanew)
 
         // fluent constructors
-        member self.enableDeepInputVectorRelativeL2NormSum(on: bool) : FeatureConf =
-            capabilityConstructorHelper Vector.DeepInputVectorRelativeL2NormSum.capability self on _config
-        member self.enableDeepOutputVectorRelativeL2NormSum(on: bool) : FeatureConf =
-            capabilityConstructorHelper Vector.DeepOutputVectorRelativeL2NormSum.capability self on _config
-        member self.enableDeepInputVectorAbsoluteL2NormSum(on: bool) : FeatureConf =
-            capabilityConstructorHelper Vector.DeepInputVectorAbsoluteL2NormSum.capability self on _config
-        member self.enableDeepOutputVectorAbsoluteL2NormSum(on: bool) : FeatureConf =
-            capabilityConstructorHelper Vector.DeepOutputVectorAbsoluteL2NormSum.capability self on _config
-        member self.enableDeepInputVectorMixedL2NormSum(on: bool) : FeatureConf =
-            capabilityConstructorHelper Vector.DeepInputVectorMixedL2NormSum.capability self on _config
-        member self.enableDeepOutputVectorMixedL2NormSum(on: bool) : FeatureConf =
-            capabilityConstructorHelper Vector.DeepOutputVectorMixedL2NormSum.capability self on _config
-        member self.enableShallowInputVectorRelativeL2NormSum(on: bool) : FeatureConf =
-            capabilityConstructorHelper Vector.ShallowInputVectorRelativeL2NormSum.capability self on _config
-        member self.enableShallowOutputVectorRelativeL2NormSum(on: bool) : FeatureConf =
-            capabilityConstructorHelper Vector.ShallowOutputVectorRelativeL2NormSum.capability self on _config
-        member self.enableShallowInputVectorAbsoluteL2NormSum(on: bool) : FeatureConf =
-            capabilityConstructorHelper Vector.ShallowInputVectorAbsoluteL2NormSum.capability self on _config
-        member self.enableShallowOutputVectorAbsoluteL2NormSum(on: bool) : FeatureConf =
-            capabilityConstructorHelper Vector.ShallowOutputVectorAbsoluteL2NormSum.capability self on _config
-        member self.enableShallowInputVectorMixedL2NormSum(on: bool) : FeatureConf =
-            capabilityConstructorHelper Vector.ShallowInputVectorMixedL2NormSum.capability self on _config
-        member self.enableShallowOutputVectorMixedL2NormSum(on: bool) : FeatureConf =
-            capabilityConstructorHelper Vector.ShallowOutputVectorMixedL2NormSum.capability self on _config
-        member self.enableShallowInputVectorMixedCOFRefUnnormSSNorm(on: bool) : FeatureConf =
-            capabilityConstructorHelper Vector.ShallowInputVectorMixedCOFNoAspect.capability self on _config
-        member self.enableShallowInputVectorMixedResultant(on: bool) : FeatureConf =
-            capabilityConstructorHelper Vector.ShallowInputVectorMixedResultant.capability self on _config
-        member self.enableShallowInputVectorMixedFullCVectorResultantNotOSI(on: bool) : FeatureConf =
-            capabilityConstructorHelper Vector.ShallowInputVectorMixedFullCVectorResultantNotOSI.capability self on _config
         member self.enableShallowInputVectorMixedFullCVectorResultantOSI(on: bool) : FeatureConf =
             capabilityConstructorHelper Vector.ShallowInputVectorMixedFullCVectorResultantOSI.capability self on _config
-        member self.enableProximityAbove(on: bool) : FeatureConf =
-            capabilityConstructorHelper Proximity.Above.capability self on _config
-        member self.enableProximityBelow(on: bool) : FeatureConf =
-            capabilityConstructorHelper Proximity.Below.capability self on _config
-        member self.enableProximityLeft(on: bool) : FeatureConf =
-            capabilityConstructorHelper Proximity.Left.capability self on _config
-        member self.enableProximityRight(on: bool) : FeatureConf =
-            capabilityConstructorHelper Proximity.Right.capability self on _config
         member self.analyzeRelativeToAllCells(on: bool) : FeatureConf =
             let name = "ScopeAllCells"
             let cap : Capability = { enabled = true; kind = ConfigKind.Scope; runner = nop}
@@ -232,37 +176,7 @@
         member self.IsEnabledAnalyzeAllCells : bool = not (_config.ContainsKey "AnalyzeOnlyFormulas") || not (_config.["AnalyzeOnlyFormulas"].enabled)
         member self.Cluster : bool =
             let (name0,_) = Vector.ShallowInputVectorMixedFullCVectorResultantOSI.capability
-            let (name1,_) = Vector.ShallowInputVectorMixedFullCVectorResultantNotOSI.capability
-            let (name2,_) = Vector.ShallowInputVectorMixedCVectorResultantNotOSI.capability
-            (_config.ContainsKey name0 && _config.[name0].enabled) ||
-            (_config.ContainsKey name1 && _config.[name1].enabled) ||
-            (_config.ContainsKey name2 && _config.[name2].enabled)
-        member self.OldCluster : bool =
-            let (name1,_) = Vector.ShallowInputVectorMixedFullCVectorResultantNotOSI.capability
-            let (name2,_) = Vector.ShallowInputVectorMixedCVectorResultantNotOSI.capability
-            ((_config.ContainsKey name1 && _config.[name1].enabled) ||
-            (_config.ContainsKey name2 && _config.[name2].enabled)) &&
-            (_config.ContainsKey "oldclusteralgo" && _config.["oldclusteralgo"].enabled)
-        member self.LSHNNCluster : bool =
-            false
-        member self.IsCOF : bool =
-            let (name,_) = Vector.ShallowInputVectorMixedCOFNoAspect.capability
-            _config.ContainsKey name && _config.[name].enabled
-        member self.IsResultant : bool =
-            let (name,_) = Vector.ShallowInputVectorMixedResultant.capability
-            _config.ContainsKey name && _config.[name].enabled
-        member self.NormalizeRefs : bool =
-            let (name,_) = Vector.ShallowInputVectorMixedCOFNoAspect.capability
-            if _config.ContainsKey name then
-                Vector.ShallowInputVectorMixedCOFNoAspect.normalizeRefSpace
-            else
-                false
-        member self.NormalizeSS : bool =
-            let (name,_) = Vector.ShallowInputVectorMixedCOFNoAspect.capability
-            if _config.ContainsKey name then
-                Vector.ShallowInputVectorMixedCOFNoAspect.normalizeSSSpace
-            else
-                false
+            (_config.ContainsKey name0 && _config.[name0].enabled)
         member self.DistanceMetric =
             if _config.ContainsKey "MeanCentroidDistance" then
                 DistanceMetric.MeanCentroid
@@ -300,16 +214,7 @@
                           else
                               config
 
-            // set count type
-            if self.IsCOF then
-                config'
-            elif self.IsResultant then
-                config'
-            elif self.Cluster then
-                config'
-            else
-                // fall back on L2 norm sums is not specified
-                config'.enableShallowInputVectorMixedL2NormSum(true)
+            config'
 
         member self.rawConf = _config
 

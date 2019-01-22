@@ -120,47 +120,7 @@
     
                 tf faddr |> List.toArray
 
-            let refCount(dag: Depends.DAG) : Dict<AST.Address,int> =
-                // for each input in the dependence graph, count how many formulas transitively refer to it
-                let refcounts = Array.map (fun i -> i,(dag.getFormulasThatRefCell i).Length) (dag.allCells()) |> adict
-
-                // if an input was not available at the time of dependence graph construction,
-                // it will not be in dag.allCells() but formulas may refer to it; this
-                // adds what refcount information we can discern from the visible parts
-                // of the dependence graph
-                for f in (dag.getAllFormulaAddrs()) do
-                    let inputs = transitiveInputs f dag
-                    for i in inputs do
-                        if not (refcounts.ContainsKey i) then
-                            refcounts.Add(i, 1)
-                        else
-                            refcounts.[i] <- refcounts.[i] + 1
-
-                refcounts
-
-            let intrinsicAnomalousnessWeights(analysis_base: Depends.DAG -> AST.Address[])(dag: Depends.DAG) : Weights =
-                // get the set of cells to be analyzed
-                let cells = analysis_base(dag)
-
-                // determine how many formulas refer to each input
-                let refcounts = refCount dag
-
-                // for each cell, compute cumulative reference count. the insight here
-                // is that summary rows are counting things that are counted by
-                // subcomputations; thus, we should inflate their ranks by how much
-                // they over-count.
-                // this really only makes sense for formulas, but in case the user
-                // asked for a ranking of all cells, we compute refcounts here even
-                // for non-formulas
-                let weights = Array.map (fun f ->
-                                  let inputs = transitiveInputs f dag
-                                  let weight = double (Array.sumBy (fun i -> refcounts.[i]) inputs)
-                                  f,weight
-                              ) cells
-
-                weights |> dict
-
-            let noWeights(analysis_base: Depends.DAG -> AST.Address[])(dag: Depends.DAG) : Weights =
+            let noWeights(analysis_base: Graph -> AST.Address[])(dag: Graph) : Weights =
                 // get the set of cells to be analyzed
                 let cells = analysis_base(dag)
 
@@ -179,10 +139,7 @@
 
             let weights(input: Input)(analysis: Analysis) : AnalysisOutcome =
                 // compute weights
-                let weights = if input.config.IsEnabled "WeightByIntrinsicAnomalousness" then
-                                  intrinsicAnomalousnessWeights (analysisBase input.config) input.dag
-                              else
-                                  noWeights (analysisBase input.config) input.dag
+                let weights = noWeights (analysisBase input.config) input.dag
 
                 match analysis with
                 | Histogram h -> Success(Histogram({ h with weights = weights }))

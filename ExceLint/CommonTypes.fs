@@ -7,7 +7,7 @@
         open Utils
         open FastDependenceAnalysis
 
-        let private nop = Depends.Progress.NOPProgress()
+        let private nop = Progress.NOPProgress()
 
         type Weight = double
         type Feature = string
@@ -106,7 +106,7 @@
             config: FeatureConf;
             dag: Graph;
             alpha: double;
-            progress: Depends.Progress;
+            progress: Progress;
         }
 
         let SimpleInput(app: Microsoft.Office.Interop.Excel.Application)(config: FeatureConf)(dag: Graph) : Input =

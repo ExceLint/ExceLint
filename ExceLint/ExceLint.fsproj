@@ -65,14 +65,10 @@
     <Compile Include="Scope.fs" />
     <Compile Include="Feature.fs" />
     <Compile Include="Vector.fs" />
-    <Compile Include="Proximity.fs" />
-    <Compile Include="CompressedRadixTree.fs" />
-    <Compile Include="LSH.fs" />
     <Compile Include="FeatureConf.fs" />
     <Compile Include="HashSetUtils.fs" />
     <Compile Include="CommonTypes.fs" />
     <Compile Include="CommonFunctions.fs" />
-    <Compile Include="HashSpace.fs" />
     <Compile Include="Distances.fs" />
     <Compile Include="PerfUtils.fs" />
     <Compile Include="ASTMutator.fs" />
