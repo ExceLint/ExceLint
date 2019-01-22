@@ -292,8 +292,6 @@ namespace ExceLintUI
                     currentFlag = 0;
                 }
             }
-            
-            
         }
 
         public void analyze(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean forceDAGBuild, ProgBar pb)
@@ -312,6 +310,9 @@ namespace ExceLintUI
             // build data dependence graph
             try
             {
+                // test
+                _dag = new Graph(_app, (Worksheet)_app.ActiveSheet);
+
                 _analysis = rawAnalysis(max_duration_in_ms, config, forceDAGBuild, pb);
 
                 if (!_analysis.ranOK)
