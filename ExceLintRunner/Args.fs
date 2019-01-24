@@ -134,8 +134,6 @@ open System.Text.RegularExpressions
                                | "-tronly"     :: rest -> optParse rest { knobs with tronly = true } conf
                                | "-noshuffle"  :: rest -> optParse rest { knobs with shuffle = false } conf
                                // FEATURECONF
-                               | "-resultant"  :: rest -> optParse rest knobs (conf.enableShallowInputVectorMixedResultant true)
-                               | "-spectral"   :: rest -> optParse rest knobs (conf.spectralRanking true)
                                | "-cluster"    :: rest -> optParse rest knobs (conf.enableShallowInputVectorMixedFullCVectorResultantOSI true)
                                | "-allcells"   :: rest -> optParse rest knobs (conf.analyzeRelativeToAllCells true)
                                | "-columns"    :: rest -> optParse rest knobs (conf.analyzeRelativeToColumns true)

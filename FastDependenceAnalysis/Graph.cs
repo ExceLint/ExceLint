@@ -22,7 +22,12 @@ namespace FastDependenceAnalysis
         private readonly int _used_range_right;      // 1-based right-hand x coordinate
         private readonly int _used_range_width;
         private readonly int _used_range_height;
+
+        // stats
         private readonly int _num_formulas;
+        private readonly long _time_ms_marshaling;
+        private readonly long _time_ms_parsing;
+        private readonly long _time_ms_dep_analysis;
 
         public string Worksheet
         {
@@ -41,6 +46,21 @@ namespace FastDependenceAnalysis
         public int NumFormulas
         {
             get { return _num_formulas; }
+        }
+
+        public long TimeMarshalingMilliseconds
+        {
+            get { return _time_ms_marshaling; }
+        }
+
+        public long TimeParsingMilliseconds
+        {
+            get { return _time_ms_parsing; }
+        }
+
+        public long TimeDependenceAnalysisMilliseconds
+        {
+            get { return _time_ms_dep_analysis; }
         }
 
         public Dictionary<AST.Address, string> Values
@@ -90,6 +110,13 @@ namespace FastDependenceAnalysis
 
         public Graph(Excel.Application a, Excel.Worksheet w)
         {
+            // allocate stopwatches
+            var sw = new System.Diagnostics.Stopwatch();    // general purpose
+            var psw = new System.Diagnostics.Stopwatch();   // for parsing
+
+            #region MARSHALING
+            sw.Start();
+
             // get names once
             _wsname = WorksheetName(w);
             _wbname = WorkbookName(w);
@@ -99,25 +126,28 @@ namespace FastDependenceAnalysis
             Excel.Range urng = w.UsedRange;
 
             // get dimensions
-            _used_range_left = urng.Column;                                  
-            _used_range_right = urng.Columns.Count + _used_range_left - 1;   
-            _used_range_top = urng.Row;                                      
+            _used_range_left = urng.Column;
+            _used_range_right = urng.Columns.Count + _used_range_left - 1;
+            _used_range_top = urng.Row;
             _used_range_bottom = urng.Rows.Count + _used_range_top - 1;
             _used_range_width = _used_range_right - _used_range_left + 1;
             _used_range_height = _used_range_bottom - _used_range_top + 1;
 
-            // formula table
+            // read formulas
             // invariant: null means not a formula
             _formulaTable = ReadFormulas(urng, _used_range_left, _used_range_right, _used_range_top, _used_range_bottom, _used_range_width, _used_range_height);
 
-            // value table
+            // read values
             // invariant: null means empty cell
             _valueTable = ReadData(urng, _used_range_left, _used_range_right, _used_range_top, _used_range_bottom, _used_range_width, _used_range_height);
+            _time_ms_marshaling = sw.ElapsedMilliseconds;
+            #endregion MARSHALING
 
+            #region DEPENDENCE
+            sw.Restart();
             // dependence table
             // invariant: table entry contains list of indices of dependency
             _dependenceTable = InitDependenceTable(_valueTable[0].Length, _valueTable.Length);
-
             // get dependence information from formulas
             for (int row = 0; row < _formulaTable.Length; row++)
             {
@@ -127,7 +157,9 @@ namespace FastDependenceAnalysis
                     if (_formulaTable[row][col] != null)
                     {
                         // parse formula
+                        psw.Start();
                         ExprOpt astOpt = Parcel.parseFormula(_formulaTable[row][col], _path, _wbname, _wsname);
+                        psw.Stop();
                         if (ExprOpt.get_IsSome(astOpt))
                         {
                             // it's a formula; count it
@@ -208,10 +240,13 @@ namespace FastDependenceAnalysis
                         }
                     }
                 }
+
+                // stop stopwatches and adjust
+                _time_ms_dep_analysis = sw.ElapsedMilliseconds - psw.ElapsedMilliseconds;
+                _time_ms_parsing = psw.ElapsedMilliseconds;
             }
+            #endregion DEPENDENCE
         }
-
-
 
         private struct Dependence
         {

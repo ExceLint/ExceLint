@@ -8,7 +8,7 @@ open ExceLintFileFormats
 open System.Threading
 open MathNet.Numerics.Distributions
 open System.Diagnostics
-open Depends
+open FastDependenceAnalysis
 
     type BugClass = HashSet<AST.Address>
     type Stats = {
@@ -99,7 +99,7 @@ open Depends
     let PValue(numcells: int)(numbugs: int)(numtp: int)(numflags: int) : double =
         Hypergeometric.PMF(numcells, numbugs, numflags, numtp)
 
-    let per_append_excelint(csv: WorkbookStats)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes_o: CUSTODES.OutputResult option)(model: ErrorModel)(ranking: CommonTypes.Ranking)(dag: Depends.DAG) : unit =
+    let per_append_excelint(csv: WorkbookStats)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes_o: CUSTODES.OutputResult option)(model: ErrorModel)(ranking: CommonTypes.Ranking)(dag: Graph) : unit =
         let output =
             match custodes_o with
             | Some custodes ->
@@ -136,7 +136,7 @@ open Depends
             csv.WriteRow per_row
         ) ranking |> ignore
 
-    let per_append_custodes(csv: WorkbookStats)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes_o: CUSTODES.OutputResult option)(model: ErrorModel)(ranking: CommonTypes.Ranking)(custodes_not_excelint: HashSet<AST.Address>)(dag: Depends.DAG) : unit =
+    let per_append_custodes(csv: WorkbookStats)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes_o: CUSTODES.OutputResult option)(model: ErrorModel)(ranking: CommonTypes.Ranking)(custodes_not_excelint: HashSet<AST.Address>)(dag: Graph) : unit =
         let output =
             match custodes_o with
             | Some custodes ->
@@ -167,7 +167,7 @@ open Depends
             csv.WriteRow per_row
         ) (custodes_not_excelint |> Seq.toArray)
 
-    let per_append_true_smells(csv: WorkbookStats)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes_o: CUSTODES.OutputResult option)(model: ErrorModel)(ranking: CommonTypes.Ranking)(true_smells_not_found: HashSet<AST.Address>)(dag: Depends.DAG) : unit =
+    let per_append_true_smells(csv: WorkbookStats)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(custodes_o: CUSTODES.OutputResult option)(model: ErrorModel)(ranking: CommonTypes.Ranking)(true_smells_not_found: HashSet<AST.Address>)(dag: Graph) : unit =
         let output =
             match custodes_o with
             | Some custodes ->
@@ -260,7 +260,7 @@ open Depends
         row.SigThresh <- stats.threshold
         row.TimeMarshalingMs <- model.DependenceGraph.TimeMarshalingMilliseconds
         row.TimeParsingMs <- model.DependenceGraph.TimeParsingMilliseconds
-        row.TimeGraphConstruct <- model.DependenceGraph.TimeGraphConstructionMilliseconds
+        row.TimeGraphConstruct <- model.DependenceGraph.TimeDependenceAnalysisMilliseconds
         row.ScoreTimeMs <- model.ScoreTimeInMilliseconds
         row.FreqTimeMs <- model.FrequencyTableTimeInMilliseconds
         row.RankingTimeMs <- model.RankingTimeInMilliseconds
@@ -344,45 +344,12 @@ open Depends
 
         csv.WriteRow row
 
-    let kmedioidsJaccardIndex(shortf: string)(model: ErrorModel)(config: Args.Config)(graph: Depends.DAG)(app: Application) : double =
-        try
-            printfn "Running ExceLint k-medioids analysis: %A" shortf
-            let k = model.Clustering.Count
-            let ex_clusters = model.Clustering
-
-            let input = CommonTypes.SimpleInput (app.XLApplication()) config.FeatureConf graph
-            let km_clusters = KMedioidsClusterModelBuilder.getClustering input k
-
-            // assign IDs to clusters
-            let correspondence = CommonFunctions.JaccardCorrespondence km_clusters ex_clusters
-            let ex_ids: CommonTypes.ClusterIDs = CommonFunctions.numberClusters ex_clusters
-            let mutable maxId = ex_ids.Values |> Seq.max
-            let km_ids: CommonTypes.ClusterIDs =
-                km_clusters
-                |> Seq.map (fun cl ->
-                    let ex_cluster_opt = correspondence.[Some cl]
-                    match ex_cluster_opt with
-                    | Some ex_cluster ->
-                        cl, ex_ids.[ex_cluster]
-                    | None ->
-                        maxId <- maxId + 1
-                        cl, maxId
-                    ) |> adict
-
-            // write clustering logs
-            Clustering.writeClustering(ex_clusters, ex_ids, config.clustering_csv shortf "clustering_excelint")
-            Clustering.writeClustering(km_clusters, km_ids, config.clustering_csv shortf "clustering_kmedioids")
-
-            CommonFunctions.ClusteringJaccardIndex km_clusters ex_clusters correspondence
-        with
-        | _ -> 0.0
-
-    let oldClusterAlgoJaccardIndex(shortf: string)(model: ErrorModel)(config: Args.Config)(graph: Depends.DAG)(app: Application) : double*int =
+    let oldClusterAlgoJaccardIndex(shortf: string)(model: ErrorModel)(config: Args.Config)(graph: Graph)(app: Application) : double*int =
         try
             printfn "Running old ExceLint cluster analysis: %A" shortf
             let fc' = config.FeatureConf.enableOldClusteringAlgorithm true
 
-            let model_opt' = ExceLint.ModelBuilder.analyze (app.XLApplication()) fc' graph (config.alpha) (Depends.Progress.NOPProgress())
+            let model_opt' = ExceLint.ModelBuilder.analyze (app.XLApplication()) fc' graph (config.alpha) (Progress.NOPProgress())
             match model_opt' with
             | Some model' ->
                 let ex_k = model.Clustering.Count
@@ -497,7 +464,7 @@ open Depends
 
     type SoundnessCount = { ncells: int; nnomatch: int; }
 
-    let soundness_count(model_opt: ErrorModel option)(dag: Depends.DAG) : SoundnessCount =
+    let soundness_count(model_opt: ErrorModel option)(dag: Graph) : SoundnessCount =
         // get analysis base
         let cells = match model_opt with | Some m -> m.AllCells | None -> failwith "does not apply"
 
@@ -557,7 +524,7 @@ open Depends
 
         printfn "Running ExceLint analysis: %A" shortf
         
-        let model_opt = ExceLint.ModelBuilder.analyze (app.XLApplication()) config.FeatureConf graph (config.alpha) (Depends.Progress.NOPProgress())
+        let model_opt = ExceLint.ModelBuilder.analyze (app.XLApplication()) config.FeatureConf graph (config.alpha) (Progress.NOPProgress())
 
         let scount = soundness_count model_opt graph
 
@@ -566,8 +533,6 @@ open Depends
             | Some model ->
                 if config.CompareAgainstOldNN then
                     oldClusterAlgoJaccardIndex shortf model config graph app
-                elif config.CompareAgainstKMedioid then
-                    kmedioidsJaccardIndex shortf model config graph app, 0
                 else
                     0.0, 0
             | None -> 0.0, 0

@@ -319,7 +319,7 @@ namespace ExceLintUI
                 {
                     System.Windows.Forms.MessageBox.Show("This spreadsheet contains no formulas.");
                     return;
-                }
+                } 
                 //else
                 //{
                 //    var output = String.Join("\n", _analysis.model.ranking());
