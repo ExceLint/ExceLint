@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using BugClass = System.Collections.Generic.HashSet<AST.Address>;
 using Microsoft.FSharp.Core;
 using COMWrapper;
+using FastDependenceAnalysis;
 
 namespace ExceLintFileFormats
 {
@@ -552,10 +553,10 @@ namespace ExceLintFileFormats
                     using (var workbook = app.OpenWorkbook(path))
                     {
                         // run dependence analysis
-                        var graph = workbook.buildDependenceGraph();
+                        var graphs = workbook.buildDependenceGraph();
 
                         // count
-                        int c = NumOffByOneBugsForWorkbook(wb, graph);
+                        int c = NumOffByOneBugsForWorkbook(wb, graphs);
                         count += c;
 
                         Console.WriteLine("Closing workbook \"" + wb + "\".");
@@ -699,11 +700,11 @@ namespace ExceLintFileFormats
             return bugs;
         }
 
-        private int NumberOfReferences(AST.Address addr, Depends.DAG graph)
+        private int NumberOfReferences(AST.Address addr, Graphs graphs)
         {
-            if (graph.isFormula(addr))
+            if (graphs.isFormula(addr))
             {
-                var fexpr = Parcel.parseFormulaAtAddress(addr, graph.getFormulaAtAddress(addr));
+                var fexpr = Parcel.parseFormulaAtAddress(addr, graphs.getFormulaAtAddress(addr));
                 var heads_single = Parcel.addrReferencesFromExpr(fexpr);
                 var heads_vector = Parcel.rangeReferencesFromExpr(fexpr).SelectMany(rng => rng.Addresses()).ToArray();
                 return heads_single.Length + heads_vector.Length;
@@ -713,7 +714,7 @@ namespace ExceLintFileFormats
             }
         }
 
-        public int NumOffByOneBugsForWorkbook(string wbname, Depends.DAG graph)
+        public int NumOffByOneBugsForWorkbook(string wbname, Graphs graphs)
         {
             var ec = ErrorClass.INCONSISTENT;
 
@@ -734,9 +735,9 @@ namespace ExceLintFileFormats
                 foreach (var addr in smaller)
                 {
                     // get the number of references for addr
-                    int addr_ref_num = NumberOfReferences(addr, graph);
+                    int addr_ref_num = NumberOfReferences(addr, graphs);
                     // get the number of references for any representative from dual
-                    int dual_ref_num = NumberOfReferences(larger[0], graph);
+                    int dual_ref_num = NumberOfReferences(larger[0], graphs);
 
                     if (addr_ref_num + 1 == dual_ref_num || addr_ref_num - 1 == dual_ref_num)
                     {

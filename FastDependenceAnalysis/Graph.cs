@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Dynamic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Excel = Microsoft.Office.Interop.Excel;
@@ -8,6 +9,138 @@ using ExprOpt = Microsoft.FSharp.Core.FSharpOption<AST.Expression>;
 
 namespace FastDependenceAnalysis
 {
+    public class Graphs
+    {
+        private readonly Graph[] _worksheet_graphs;
+        private Dictionary<string, int> _worksheet_names_indices;
+
+        public Graphs(Excel.Application a, Excel.Workbook wb)
+        {
+            _worksheet_names_indices = new Dictionary<string, int>();
+            _worksheet_graphs = new Graph[wb.Worksheets.Count];
+            int i = 0;
+            foreach (Excel.Worksheet w in wb.Worksheets)
+            {
+                _worksheet_graphs[i] = new Graph(a, w);
+                _worksheet_names_indices.Add(_worksheet_graphs[i].Worksheet, i);
+                i++;
+            }
+        }
+
+        public bool isFormula(AST.Address addr)
+        {
+            if (_worksheet_names_indices.ContainsKey(addr.WorksheetName))
+            {
+                return _worksheet_graphs[_worksheet_names_indices[addr.WorksheetName]].isFormula(addr);
+            }
+
+            return false;
+        }
+
+        public string getFormulaAtAddress(AST.Address addr)
+        {
+            if (_worksheet_names_indices.ContainsKey(addr.WorksheetName))
+            {
+                return _worksheet_graphs[_worksheet_names_indices[addr.WorksheetName]].getFormulaAtAddress(addr);
+            }
+
+            return null;
+        }
+
+        public Graph[] Worksheets
+        {
+            get { return _worksheet_graphs; }
+        }
+
+        public int NumFormulas
+        {
+            get
+            {
+                int n = 0;
+                for (int i = 0; i < _worksheet_graphs.Length; i++)
+                {
+                    n += _worksheet_graphs[i].NumFormulas;
+                }
+
+                return n;
+            }
+        }
+
+        public int NumCells
+        {
+            get
+            {
+                int n = 0;
+                for (int i = 0; i < _worksheet_graphs.Length; i++)
+                {
+                    n += _worksheet_graphs[i].NumCells;
+                }
+
+                return n;
+            }
+        }
+
+        public long TimeMarshalingMilliseconds
+        {
+            get
+            {
+                long n = 0;
+                for (int i = 0; i < _worksheet_graphs.Length; i++)
+                {
+                    n += _worksheet_graphs[i].TimeMarshalingMilliseconds;
+                }
+
+                return n;
+            }
+        }
+
+        public long TimeParsingMilliseconds
+        {
+            get
+            {
+                long n = 0;
+                for (int i = 0; i < _worksheet_graphs.Length; i++)
+                {
+                    n += _worksheet_graphs[i].TimeParsingMilliseconds;
+                }
+
+                return n;
+            }
+        }
+
+        public long TimeDependenceAnalysisMilliseconds
+        {
+            get
+            {
+                long n = 0;
+                for (int i = 0; i < _worksheet_graphs.Length; i++)
+                {
+                    n += _worksheet_graphs[i].TimeDependenceAnalysisMilliseconds;
+                }
+
+                return n;
+            }
+        }
+
+        public Dictionary<AST.Address, string> Formulas
+        {
+            get
+            {
+                Dictionary<AST.Address,string> d = new Dictionary<AST.Address, string>();
+                for (int i = 0; i < _worksheet_graphs.Length; i++)
+                {
+                    var wd = _worksheet_graphs[i].Formulas;
+                    foreach (var kvp in wd)
+                    {
+                        d.Add(kvp.Key, kvp.Value);
+                    }
+                }
+
+                return d;
+            }
+        }
+    }
+
     public class Graph
     {
         private readonly string _wsname;
@@ -43,9 +176,30 @@ namespace FastDependenceAnalysis
             get { return _path; }
         }
 
+        public Dictionary<AST.Address,string> Formulas
+        {
+            get {
+                Dictionary<AST.Address,string> d = new Dictionary<AST.Address, string>();
+                for (int row = 0; row < _formulaTable.Length; row++)
+                {
+                    for (int col = 0; col < _formulaTable[row].Length; col++)
+                    {
+                        var addr = CellToAddress(row, col, _wsname, _wbname, _path);
+                        d.Add(addr, _formulaTable[row][col]);
+                    }
+                }
+                return d;
+            }
+        }
+
         public int NumFormulas
         {
             get { return _num_formulas; }
+        }
+
+        public int NumCells
+        {
+            get { return _used_range_width * _used_range_height; }
         }
 
         public long TimeMarshalingMilliseconds

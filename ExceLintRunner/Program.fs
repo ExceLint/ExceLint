@@ -14,6 +14,7 @@ open FastDependenceAnalysis
     type Stats = {
         shortname: string;
         threshold: double;
+        excelint_flagged: HashSet<AST.Address>;
         custodes_flagged: HashSet<AST.Address>;
         excelint_not_custodes: HashSet<AST.Address>;
         custodes_not_excelint: HashSet<AST.Address>;
@@ -26,16 +27,12 @@ open FastDependenceAnalysis
         num_whitespace_ops_this_wb: int;
         excelint_op_on_ws_TP: int;
         excelint_op_on_ws_FP: int;
-        excelint_random_baseline: double;
-        excelint_pvalue: double;
         custodes_inconsistent_TP: int;
         custodes_inconsistent_FP: int;
         custodes_missing_formula_TP: int;
         custodes_missing_formula_FP: int;
         custodes_op_on_ws_TP: int;
         custodes_op_on_ws_FP: int;
-        custodes_random_baseline: double;
-        custodes_pvalue: double;
         true_smells_this_wb : HashSet<AST.Address>;
         true_smells_not_found_by_excelint: HashSet<AST.Address>;
         true_smells_not_found_by_custodes: HashSet<AST.Address>;
@@ -46,19 +43,7 @@ open FastDependenceAnalysis
         excelint_excel_intersect: HashSet<AST.Address>;
         custodes_excel_intersect: HashSet<AST.Address>;
         custodes_time: int64;
-        excelint_jaccard: double;
-        excelint_delta_k: int;
         cells: int;
-        collisions: int;
-        rolling_precision: double[];
-        normalized_entropy: double;
-        num_singleton_formulas: int;
-        num_singletons: int;
-        num_singletons_non_ws: int;
-        num_clusters: int;
-        num_clusters_non_ws: int;
-        cluster_sizes: int list;
-        cluster_sizes_non_ws: int list;
     }
 
     let hs_difference<'a>(hs1: HashSet<'a>)(hs2: HashSet<'a>) : HashSet<'a> =
@@ -242,36 +227,26 @@ open FastDependenceAnalysis
             let fn' = double fn
             tp' / (tp' + fn')
 
-    let append_stats(stats: Stats)(csv: ExceLintStats)(model: ErrorModel)(custodes_o: CUSTODES.OutputResult option)(config: Args.Config) : unit =
-        
-        let min_excelint_score =
-            if model.ranking().Length = 0 then
-                0.0
-            else
-                Array.map (fun (kvp: KeyValuePair<AST.Address,double>) -> kvp.Value) (model.ranking()) |> Array.min
-
-        assert (model.AllCells.Count = stats.cells)
-
+    let append_stats(stats: Stats)(csv: ExceLintStats)(custodes_o: CUSTODES.OutputResult option)(config: Args.Config)(graphs: Graphs)(models: ErrorModel[]) : unit =
         // write stats
         let row = ExceLintStatsRow()
         row.BenchmarkName <- stats.shortname
-        row.NumCells <- model.AllCells.Count
-        row.NumFormulas <- model.DependenceGraph.getAllFormulaAddrs().Length
+        row.NumCells <- graphs.NumCells
+        row.NumFormulas <- graphs.NumFormulas
         row.SigThresh <- stats.threshold
-        row.TimeMarshalingMs <- model.DependenceGraph.TimeMarshalingMilliseconds
-        row.TimeParsingMs <- model.DependenceGraph.TimeParsingMilliseconds
-        row.TimeGraphConstruct <- model.DependenceGraph.TimeDependenceAnalysisMilliseconds
-        row.ScoreTimeMs <- model.ScoreTimeInMilliseconds
-        row.FreqTimeMs <- model.FrequencyTableTimeInMilliseconds
-        row.RankingTimeMs <- model.RankingTimeInMilliseconds
-        row.CausesTimeMs <- model.CausesTimeInMilliseconds
-        row.ConditioningSetSzTimeMs <- model.ConditioningSetSizeTimeInMilliseconds
-        row.ExceLintFlags <- if model.ranking().Length > model.Cutoff + 1 then model.Cutoff + 1 else model.ranking().Length
+        row.TimeMarshalingMs <- graphs.TimeMarshalingMilliseconds
+        row.TimeParsingMs <- graphs.TimeParsingMilliseconds
+        row.TimeGraphConstruct <- graphs.TimeDependenceAnalysisMilliseconds
+        row.ScoreTimeMs <- models |> Array.sumBy (fun model -> model.ScoreTimeInMilliseconds)
+        row.FreqTimeMs <- models |> Array.sumBy (fun model -> model.FrequencyTableTimeInMilliseconds)
+        row.RankingTimeMs <-  models |> Array.sumBy (fun model -> model.RankingTimeInMilliseconds)
+        row.CausesTimeMs <-  models |> Array.sumBy (fun model -> model.CausesTimeInMilliseconds)
+        row.ConditioningSetSzTimeMs <-  models |> Array.sumBy (fun model -> model.ConditioningSetSizeTimeInMilliseconds)
+        row.ExceLintFlags <- stats.excelint_flagged.Count;
         row.ExceLintPrecisionVsCustodesGT <- precision (stats.excelint_true_smells.Count) (row.ExceLintFlags - stats.excelint_true_smells.Count)
         row.ExceLintRecallVsCustodesGT <- recall (stats.excelint_true_smells.Count) (stats.true_smells_this_wb.Count - stats.excelint_true_smells.Count)
         row.CUSTODESPrecisionVsCustodesGT <- precision (stats.custodes_true_smells.Count) (stats.custodes_flagged.Count - stats.custodes_true_smells.Count)
         row.CUSTODESRecallVsCustodesGT <- recall (stats.custodes_true_smells.Count) (stats.true_smells_this_wb.Count - stats.custodes_true_smells.Count)
-        row.MinAnomScore <- min_excelint_score
         row.CUSTODESTimeMs <- stats.custodes_time
         row.CUSTODESFailed <- match custodes_o with | Some custodes -> (match custodes with | CUSTODES.BadOutput _ -> true | _ -> false) | None -> true
         row.CUSTODESFailureMsg <- match custodes_o with | Some custodes -> (match custodes with | CUSTODES.BadOutput(msg,_) -> msg | _ -> "") | None -> "did not run CUSTODES"
@@ -284,16 +259,12 @@ open FastDependenceAnalysis
         row.NumWhitespaceOpBugs <- stats.num_whitespace_ops_this_wb
         row.ExceLintWhitespaceOpTruePositives <- stats.excelint_op_on_ws_TP
         row.ExceLintWhitespaceOpFalsePositives <- stats.excelint_op_on_ws_TP
-        row.ExceLintRandomTPBaseline <- stats.excelint_random_baseline
-        row.ExceLintTrueRefPValue <- stats.excelint_pvalue
         row.CUSTODESTrueRefTruePositives <- stats.custodes_inconsistent_TP
         row.CUSTODESTrueRefFalsePositives <- stats.custodes_inconsistent_FP
         row.CUSTODESMissingFormulaTruePositives <- stats.custodes_missing_formula_TP
         row.CUSTODESMissingFormulaFalsePositives <- stats.custodes_missing_formula_FP
         row.CUSTODESWhitespaceOpTruePositives <- stats.custodes_op_on_ws_TP
         row.CUSTODESWhitespaceOpFalsePositives <- stats.custodes_op_on_ws_FP
-        row.CUSTODESRandomTPBaseline <- stats.custodes_random_baseline
-        row.CUSTODESTrueRefPValue <- stats.custodes_pvalue
         row.ExceLintPrecisionVsTrueRefBugs <- precision stats.excelint_inconsistent_TP stats.excelint_inconsistent_FP
         row.ExceLintRecallVsTrueRefBugs <- recall stats.excelint_inconsistent_TP (stats.num_inconsistent_bugs_this_wb - stats.excelint_inconsistent_TP)
         row.ExceLintMissingFormulaPrecision <- precision stats.excelint_missing_formula_TP stats.excelint_missing_formula_FP
@@ -325,22 +296,6 @@ open FastDependenceAnalysis
         row.OptAddrModeInference <- config.FeatureConf.IsEnabledOptAddrmodeInference
         row.OptWeightIntrinsicAnom <- config.FeatureConf.IsEnabledOptWeightIntrinsicAnomalousness
         row.OptWeightConditionSetSz <- config.FeatureConf.IsEnabledOptWeightConditioningSetSize
-        row.ExceLintJaccardDistance <- stats.excelint_jaccard
-        row.ExceLintDeltaK <- stats.excelint_delta_k
-        row.Collisions <- stats.collisions
-        row.NormalizedEntropy <- stats.normalized_entropy
-        row.NumSingletonFormulaCells <- stats.num_singleton_formulas
-        row.NumSingletonCells <- stats.num_singletons
-        row.NumSingletonCellsNonWs <- stats.num_singletons_non_ws
-        row.ClusterSizes <- "[" + String.Join("; ", stats.cluster_sizes) + "]"
-        row.ClusterSizesNonWs <- "[" + String.Join("; ", stats.cluster_sizes_non_ws) + "]"
-        row.NumClusters <- stats.num_clusters
-        row.NumClustersNonWs <- stats.num_clusters_non_ws
-        row.Top1Precision <- stats.rolling_precision.[0]
-        row.Top2Precision <- stats.rolling_precision.[1]
-        row.Top3Precision <- stats.rolling_precision.[2]
-        row.Top4Precision <- stats.rolling_precision.[3]
-        row.Top5Precision <- stats.rolling_precision.[4]
 
         csv.WriteRow row
 
@@ -520,22 +475,16 @@ open FastDependenceAnalysis
         let wb = app.OpenWorkbook(file)
             
         printfn "Building dependence graph: %A" shortf
-        let graph = wb.buildDependenceGraph()
+        let graphs = wb.buildDependenceGraph()
 
         printfn "Running ExceLint analysis: %A" shortf
         
-        let model_opt = ExceLint.ModelBuilder.analyze (app.XLApplication()) config.FeatureConf graph (config.alpha) (Progress.NOPProgress())
+        let model_opts =
+            graphs.Worksheets |>
+            Array.map (fun g -> g, ExceLint.ModelBuilder.analyze (app.XLApplication()) config.FeatureConf g (config.alpha) (Progress.NOPProgress()))
 
-        let scount = soundness_count model_opt graph
-
-        let (jdist,delta_k) =
-            match model_opt with
-            | Some model ->
-                if config.CompareAgainstOldNN then
-                    oldClusterAlgoJaccardIndex shortf model config graph app
-                else
-                    0.0, 0
-            | None -> 0.0, 0
+        let scounts = model_opts |> Array.map (fun (g, model_opt) -> soundness_count model_opt g)
+        let scount = scounts |> Array.reduce (fun acc sc -> { ncells = acc.ncells + sc.ncells; nnomatch = acc.nnomatch + sc.nnomatch; })
 
         let custodes_o =
             if not config.DontRunCUSTODES then
@@ -544,280 +493,124 @@ open FastDependenceAnalysis
             else
                 None
 
-        match model_opt with
-        | Some(model) ->
-            using (new WorkbookStats(config.verbose_csv shortf)) (fun wbstats ->
+        // get the set of cells flagged by ExceLint
+        let excelint_flags =
+            model_opts
+            |> Array.map (fun (g, model_opt) ->
+                   match model_opt with
+                   | Some(model) ->
+                       let ranking = model.ranking()
+                       rankToSet ranking model.Cutoff
+                   | None ->
+                       printfn "Analysis failed for worksheet: %A" g.Worksheet
+                       new HashSet<AST.Address>()
+               )
+            |> Array.reduce (fun acc hs -> hs_union acc hs)
 
-                let ranking = model.ranking()
+        using (new WorkbookStats(config.verbose_csv shortf)) (fun wbstats ->
+            // get workbook name
+            let this_wb = wb.WorkbookName
 
-                // get the set of cells flagged by ExceLint
-                let excelint_flags = rankToSet ranking model.Cutoff
-                // get the set of cells in ExceLint's ranking
-                let excelint_analyzed = rankToSet ranking (ranking.Length - 1)
+            // get the set of cells flagged by CUSTODES
+            let (custodes_total_order,custodes_time) =
+                match custodes_o with
+                | Some custodes ->
+                    match custodes with
+                    | CUSTODES.OKOutput(c,t) -> c.Smells, t
+                    | CUSTODES.BadOutput(_,t) -> [||], t
+                | None -> [||], 0L
 
-                // get workbook name
-                let this_wb = wb.WorkbookName
+            let custodes_flags = new HashSet<AST.Address>(custodes_total_order)
 
-                // get the set of cells flagged by CUSTODES
-                let (custodes_total_order,custodes_time) =
-                    match custodes_o with
-                    | Some custodes ->
-                        match custodes with
-                        | CUSTODES.OKOutput(c,t) -> c.Smells, t
-                        | CUSTODES.BadOutput(_,t) -> [||], t
-                    | None -> [||], 0L
+            // find true ref bugs
+            let num_inconsistent_bugs_this_wb = etruth.NumBugKindBugsForWorkbook(this_wb,ErrorClass.INCONSISTENT)
+            let excelint_inconsistent_TP = count_TP_for_kind etruth this_wb excelint_flags ReferenceError
+            let excelint_inconsistent_FP = count_FP_for_kind etruth excelint_flags ReferenceError
+            assert (num_inconsistent_bugs_this_wb >= excelint_inconsistent_TP)
 
-                let custodes_flags = new HashSet<AST.Address>(custodes_total_order)
+            let custodes_inconsistent_TP = count_TP_for_kind etruth this_wb custodes_flags ReferenceError
+            let custodes_inconsistent_FP = count_FP_for_kind etruth custodes_flags ReferenceError
+            assert (num_inconsistent_bugs_this_wb >= custodes_inconsistent_TP)
 
-                // find true ref bugs
-                let num_inconsistent_bugs_this_wb = etruth.NumBugKindBugsForWorkbook(this_wb,ErrorClass.INCONSISTENT)
-                let excelint_inconsistent_TP = count_TP_for_kind etruth this_wb excelint_flags ReferenceError
-                let excelint_inconsistent_FP = count_FP_for_kind etruth excelint_flags ReferenceError
-                assert (num_inconsistent_bugs_this_wb >= excelint_inconsistent_TP)
+            // find missing formula bugs
+            let num_missing_formula_bugs_this_wb = etruth.NumBugKindBugsForWorkbook(this_wb,ErrorClass.MISSINGFORMULA)
+            let excelint_missing_formula_TP = count_TP_for_kind etruth this_wb excelint_flags MissingFormula
+            let excelint_missing_formula_FP = count_FP_for_kind etruth excelint_flags MissingFormula
+            let custodes_missing_formula_TP = count_TP_for_kind etruth this_wb custodes_flags MissingFormula
+            let custodes_missing_formula_FP = count_FP_for_kind etruth custodes_flags MissingFormula
 
-                let custodes_inconsistent_TP = count_TP_for_kind etruth this_wb custodes_flags ReferenceError
-                let custodes_inconsistent_FP = count_FP_for_kind etruth custodes_flags ReferenceError
-                assert (num_inconsistent_bugs_this_wb >= custodes_inconsistent_TP)
-
-                // find missing formula bugs
-                let num_missing_formula_bugs_this_wb = etruth.NumBugKindBugsForWorkbook(this_wb,ErrorClass.MISSINGFORMULA)
-                let excelint_missing_formula_TP = count_TP_for_kind etruth this_wb excelint_flags MissingFormula
-                let excelint_missing_formula_FP = count_FP_for_kind etruth excelint_flags MissingFormula
-                let custodes_missing_formula_TP = count_TP_for_kind etruth this_wb custodes_flags MissingFormula
-                let custodes_missing_formula_FP = count_FP_for_kind etruth custodes_flags MissingFormula
-
-                // find whitespace bugs
-                let num_whitespace_bugs_this_wb = etruth.NumBugKindBugsForWorkbook(this_wb,ErrorClass.WHITESPACE)
-                let excelint_whitespace_TP = count_TP_for_kind etruth this_wb excelint_flags WhitespaceOp
-                let excelint_whitespace_FP = count_FP_for_kind etruth excelint_flags WhitespaceOp
-                let custodes_whitespace_TP = count_TP_for_kind etruth this_wb custodes_flags WhitespaceOp
-                let custodes_whitespace_FP = count_FP_for_kind etruth custodes_flags WhitespaceOp
+            // find whitespace bugs
+            let num_whitespace_bugs_this_wb = etruth.NumBugKindBugsForWorkbook(this_wb,ErrorClass.WHITESPACE)
+            let excelint_whitespace_TP = count_TP_for_kind etruth this_wb excelint_flags WhitespaceOp
+            let excelint_whitespace_FP = count_FP_for_kind etruth excelint_flags WhitespaceOp
+            let custodes_whitespace_TP = count_TP_for_kind etruth this_wb custodes_flags WhitespaceOp
+            let custodes_whitespace_FP = count_FP_for_kind etruth custodes_flags WhitespaceOp
                 
-                // find true smells found by neither tool
-                let true_smells_this_wb = ctruth.TrueSmellsbyWorkbook this_wb
-                let true_smells_not_found_by_excelint = hs_difference true_smells_this_wb excelint_flags
-                let true_smells_not_found_by_custodes = hs_difference true_smells_this_wb custodes_flags
-                let true_smells_not_found = hs_intersection true_smells_not_found_by_excelint true_smells_not_found_by_custodes
+            // find true smells found by neither tool
+            let true_smells_this_wb = ctruth.TrueSmellsbyWorkbook this_wb
+            let true_smells_not_found_by_excelint = hs_difference true_smells_this_wb excelint_flags
+            let true_smells_not_found_by_custodes = hs_difference true_smells_this_wb custodes_flags
+            let true_smells_not_found = hs_intersection true_smells_not_found_by_excelint true_smells_not_found_by_custodes
 
-                // overall stats
-                let excel_this_wb = ctruth.ExcelbyWorkbook this_wb
-                let excelint_true_smells = hs_intersection excelint_flags true_smells_this_wb
-                assert (excelint_true_smells.IsSubsetOf(excelint_flags))
-                let custodes_true_smells = hs_intersection custodes_flags true_smells_this_wb
-                assert (custodes_true_smells.IsSubsetOf(custodes_flags))
-                let excelint_excel_intersect = hs_intersection excelint_flags excel_this_wb
-                let custodes_excel_intersect = hs_intersection custodes_flags excel_this_wb
+            // overall stats
+            let excel_this_wb = ctruth.ExcelbyWorkbook this_wb
+            let excelint_true_smells = hs_intersection excelint_flags true_smells_this_wb
+            assert (excelint_true_smells.IsSubsetOf(excelint_flags))
+            let custodes_true_smells = hs_intersection custodes_flags true_smells_this_wb
+            assert (custodes_true_smells.IsSubsetOf(custodes_flags))
+            let excelint_excel_intersect = hs_intersection excelint_flags excel_this_wb
+            let custodes_excel_intersect = hs_intersection custodes_flags excel_this_wb
 
-                // compute rolling precision for true ref bugs for excelint
-                let rolling_precision =
-                    [|0..4|]
-                    |> Array.fold (fun acc i ->
-                        if ranking.Length > i then
-                            let flagged_cells = ranking.[..i]
-                            let TPcount = flagged_cells |> Array.fold (fun (acc)(kvp: KeyValuePair<AST.Address,double>) -> acc + (if (etruth.IsAnInconsistentFormulaBug(kvp.Key)) then 1 else 0)) 0
-                            let p = precision TPcount (flagged_cells.Length - TPcount)
-                            p :: acc
-                        else
-                            Double.NaN :: acc
-                        ) []
-                    |> List.rev
-                    |> List.toArray
+            let stats = {
+                shortname = shortf;
+                threshold = config.alpha;
+                excelint_flagged = excelint_flags;
+                custodes_flagged = custodes_flags;
+                excelint_not_custodes = hs_difference excelint_flags custodes_flags;
+                custodes_not_excelint = hs_difference custodes_flags excelint_flags;
+                num_inconsistent_bugs_this_wb = num_inconsistent_bugs_this_wb;
+                excelint_inconsistent_TP = excelint_inconsistent_TP;
+                excelint_inconsistent_FP = excelint_inconsistent_FP;
+                num_missing_formulas_this_wb = num_missing_formula_bugs_this_wb;
+                excelint_missing_formula_TP = excelint_missing_formula_TP;
+                excelint_missing_formula_FP = excelint_missing_formula_FP;
+                num_whitespace_ops_this_wb = num_whitespace_bugs_this_wb;
+                excelint_op_on_ws_TP = excelint_whitespace_TP;
+                excelint_op_on_ws_FP = excelint_whitespace_FP;
+                custodes_inconsistent_TP = custodes_inconsistent_TP;
+                custodes_inconsistent_FP = custodes_inconsistent_FP;
+                custodes_missing_formula_TP = custodes_missing_formula_TP;
+                custodes_missing_formula_FP = custodes_missing_formula_FP;
+                custodes_op_on_ws_TP = custodes_whitespace_TP;
+                custodes_op_on_ws_FP = custodes_whitespace_FP;
+                true_smells_this_wb = true_smells_this_wb;
+                true_smells_not_found_by_excelint = true_smells_not_found_by_excelint;
+                true_smells_not_found_by_custodes = true_smells_not_found_by_custodes;
+                true_smells_not_found = true_smells_not_found;
+                excel_this_wb =  excel_this_wb;
+                excelint_true_smells = excelint_true_smells;
+                custodes_true_smells = custodes_true_smells;
+                excelint_excel_intersect = excelint_excel_intersect;
+                custodes_excel_intersect = custodes_excel_intersect;
+                custodes_time = custodes_time;
+                cells = scount.ncells;
+            }
 
-                // sample sizes
-                let esz = Math.Min(excelint_flags.Count, model.Cutoff + 1)
-                let csz = custodes_flags.Count
+            let models = model_opts |> Array.map (fun (_, mo) -> mo) |> Array.choose id
 
-                // compute entropy
-                let entropy_opt =
-                    match model.Analysis with
-                    | CommonTypes.Cluster c ->
-                        match c.escapehatch with
-                        | Some obj ->
-                            if (obj :? EntropyModelBuilder2.EntropyModel2) then
-                                let e = obj :?> EntropyModelBuilder2.EntropyModel2
-                                Some e.AllWorkbooksNormalizedEntropy
-                            else 
-                                None
-                        | None -> None
-                        
-                    | _ -> None
+            // write overall stats to CSV
+            append_stats stats csv custodes_o config graphs models
 
-                // count number of singleton formulas
-                let singletons_opt = 
-                     match model.Analysis with
-                    | CommonTypes.Cluster c ->
-                        match c.escapehatch with
-                        | Some obj ->
-                            if (obj :? EntropyModelBuilder2.EntropyModel2) then
-                                let e = obj :?> EntropyModelBuilder2.EntropyModel2
-                                Some e.NumSingletonFormulas
-                            else 
-                                None
-                        | None -> None
-                        
-                    | _ -> None
+            // write set of flagged excelint cells, custodes cells, and true smells to external CSV dump
+            let eflags = new HashSet<HashSet<AST.Address>>([excelint_flags])
+            let cflags = new HashSet<HashSet<AST.Address>>([custodes_flags])
+            let smells = new HashSet<HashSet<AST.Address>>([true_smells_this_wb])
+            write_flags eflags config ("excelint_flags-"+this_wb+".csv")
+            write_flags cflags config ("custodes_flags-"+this_wb+".csv")
+            write_flags smells config ("true_smells-"+this_wb+".csv")
+        )
 
-                let nc_opt = 
-                     match model.Analysis with
-                    | CommonTypes.Cluster c ->
-                        match c.escapehatch with
-                        | Some obj ->
-                            if (obj :? EntropyModelBuilder2.EntropyModel2) then
-                                let e = obj :?> EntropyModelBuilder2.EntropyModel2
-                                Some e.NumClusters
-                            else 
-                                None
-                        | None -> None
-                        
-                    | _ -> None
-
-                let ncws_opt = 
-                     match model.Analysis with
-                    | CommonTypes.Cluster c ->
-                        match c.escapehatch with
-                        | Some obj ->
-                            if (obj :? EntropyModelBuilder2.EntropyModel2) then
-                                let e = obj :?> EntropyModelBuilder2.EntropyModel2
-                                Some e.NumClustersNonWhitespace
-                            else 
-                                None
-                        | None -> None
-                        
-                    | _ -> None
-
-                let singleton_cells_opt =
-                     match model.Analysis with
-                    | CommonTypes.Cluster c ->
-                        match c.escapehatch with
-                        | Some obj ->
-                            if (obj :? EntropyModelBuilder2.EntropyModel2) then
-                                let e = obj :?> EntropyModelBuilder2.EntropyModel2
-                                Some e.NumSingletons
-                            else 
-                                None
-                        | None -> None
-                        
-                    | _ -> None
-
-                let singleton_cells_nonws_opt =
-                     match model.Analysis with
-                    | CommonTypes.Cluster c ->
-                        match c.escapehatch with
-                        | Some obj ->
-                            if (obj :? EntropyModelBuilder2.EntropyModel2) then
-                                let e = obj :?> EntropyModelBuilder2.EntropyModel2
-                                Some e.NumSingletonsNonWhitespace
-                            else 
-                                None
-                        | None -> None
-                        
-                    | _ -> None
-
-                let cluster_sizes_opt =
-                     match model.Analysis with
-                    | CommonTypes.Cluster c ->
-                        match c.escapehatch with
-                        | Some obj ->
-                            if (obj :? EntropyModelBuilder2.EntropyModel2) then
-                                let e = obj :?> EntropyModelBuilder2.EntropyModel2
-                                Some e.ClusterSizes
-                            else 
-                                None
-                        | None -> None
-                    | _ -> None
-
-                let cluster_sizes_non_ws_opt =
-                    match model.Analysis with
-                    | CommonTypes.Cluster c ->
-                        match c.escapehatch with
-                        | Some obj ->
-                            if (obj :? EntropyModelBuilder2.EntropyModel2) then
-                                let e = obj :?> EntropyModelBuilder2.EntropyModel2
-                                Some e.ClusterSizesNonWhitespace
-                            else 
-                                None
-                        | None -> None
-                    | _ -> None
-
-
-                let stats = {
-                    shortname = shortf;
-                    threshold = config.alpha;
-                    custodes_flagged = custodes_flags;
-                    excelint_not_custodes = hs_difference excelint_flags custodes_flags;
-                    custodes_not_excelint = hs_difference custodes_flags excelint_flags;
-                    num_inconsistent_bugs_this_wb = num_inconsistent_bugs_this_wb;
-                    excelint_inconsistent_TP = excelint_inconsistent_TP;
-                    excelint_inconsistent_FP = excelint_inconsistent_FP;
-                    num_missing_formulas_this_wb = num_missing_formula_bugs_this_wb;
-                    excelint_missing_formula_TP = excelint_missing_formula_TP;
-                    excelint_missing_formula_FP = excelint_missing_formula_FP;
-                    num_whitespace_ops_this_wb = num_whitespace_bugs_this_wb;
-                    excelint_op_on_ws_TP = excelint_whitespace_TP;
-                    excelint_op_on_ws_FP = excelint_whitespace_FP;
-                    excelint_random_baseline = expectedNumRandomCorrectFlags model.AllCells.Count num_inconsistent_bugs_this_wb esz;
-                    excelint_pvalue = PValue model.AllCells.Count num_inconsistent_bugs_this_wb excelint_inconsistent_TP esz;
-                    custodes_inconsistent_TP = custodes_inconsistent_TP;
-                    custodes_inconsistent_FP = custodes_inconsistent_FP;
-                    custodes_missing_formula_TP = custodes_missing_formula_TP;
-                    custodes_missing_formula_FP = custodes_missing_formula_FP;
-                    custodes_op_on_ws_TP = custodes_whitespace_TP;
-                    custodes_op_on_ws_FP = custodes_whitespace_FP;
-                    custodes_random_baseline = expectedNumRandomCorrectFlags model.AllCells.Count num_inconsistent_bugs_this_wb csz;
-                    custodes_pvalue = PValue model.AllCells.Count num_inconsistent_bugs_this_wb custodes_inconsistent_TP csz;
-                    true_smells_this_wb = true_smells_this_wb;
-                    true_smells_not_found_by_excelint = true_smells_not_found_by_excelint;
-                    true_smells_not_found_by_custodes = true_smells_not_found_by_custodes;
-                    true_smells_not_found = true_smells_not_found;
-                    excel_this_wb =  excel_this_wb;
-                    excelint_true_smells = excelint_true_smells;
-                    custodes_true_smells = custodes_true_smells;
-                    excelint_excel_intersect = excelint_excel_intersect;
-                    custodes_excel_intersect = custodes_excel_intersect;
-                    custodes_time = custodes_time;
-                    excelint_jaccard = jdist;
-                    excelint_delta_k = delta_k;
-                    cells = scount.ncells;
-                    collisions = scount.nnomatch;
-                    rolling_precision = rolling_precision;
-                    normalized_entropy = match entropy_opt with | Some(e) -> e | None -> Double.NaN;
-                    num_singleton_formulas = match singletons_opt with | Some(e) -> e | None -> 0;
-                    num_singletons = match singleton_cells_opt with | Some(e) -> e | None -> 0;
-                    num_singletons_non_ws = match singleton_cells_nonws_opt with | Some(e) -> e | None -> 0;
-                    num_clusters = match nc_opt with | Some(e) -> e | None -> 0;
-                    num_clusters_non_ws = match ncws_opt with | Some(e) -> e | None -> 0;
-                    cluster_sizes = match cluster_sizes_opt with | Some(e) -> e | None -> [];
-                    cluster_sizes_non_ws = match cluster_sizes_non_ws_opt with | Some(e) -> e | None -> [];
-                }
-
-                // write to per-workbook CSV
-                per_append_excelint wbstats etruth ctruth custodes_o model ranking graph
-                let custodes_not_in_ranking = hs_difference (stats.excelint_not_custodes) excelint_analyzed
-                per_append_custodes wbstats etruth ctruth custodes_o model ranking custodes_not_in_ranking graph
-                let true_smells_not_in_ranking = hs_difference (hs_difference true_smells_not_found excelint_analyzed) custodes_not_in_ranking
-                per_append_true_smells wbstats etruth ctruth custodes_o model ranking true_smells_not_in_ranking graph
-
-                // write overall stats to CSV
-                append_stats stats csv model custodes_o config
-
-                // write set of flagged excelint cells, custodes cells, and true smells to external CSV dump
-                let eflags = new HashSet<HashSet<AST.Address>>([excelint_flags])
-                let cflags = new HashSet<HashSet<AST.Address>>([custodes_flags])
-                let smells = new HashSet<HashSet<AST.Address>>([true_smells_this_wb])
-                write_flags eflags config ("excelint_flags-"+this_wb+".csv")
-                write_flags cflags config ("custodes_flags-"+this_wb+".csv")
-                write_flags smells config ("true_smells-"+this_wb+".csv")
-
-                // sanity checks
-                assert ((hs_intersection excelint_analyzed custodes_not_in_ranking).Count = 0)
-                assert ((hs_intersection excelint_analyzed true_smells_not_in_ranking).Count = 0)
-                assert ((hs_intersection custodes_not_in_ranking true_smells_not_in_ranking).Count = 0)
-                per_append_debug debug_csv model stats.custodes_flagged config ranking
-            )
-
-            printfn "Analysis complete: %A" shortf
-        | None ->
-            printfn "Analysis failed: %A" shortf
+        printfn "Analysis complete: %A" shortf
 
     let fyshuffle(a: 'a[]) : 'a[] =
         let n = a.Length
