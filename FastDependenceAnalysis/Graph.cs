@@ -826,20 +826,51 @@ namespace FastDependenceAnalysis
             return output.ToArray();
         }
 
+        // returns the union of the formula and value boxes;
+        // we use this because Excel's used range is a bad
+        // indicator of actual spreadsheet size
+        private Tuple<int, int, int, int> UnionedBoundingBox()
+        {
+            int left = _formula_box_left < _value_box_left ? _formula_box_left : _value_box_left;
+            int right = _formula_box_right > _value_box_right ? _formula_box_right : _value_box_right;
+            int top = _formula_box_top < _value_box_top ? _formula_box_top : _value_box_top;
+            int bottom = _formula_box_bottom < _value_box_bottom ? _formula_box_bottom : _value_box_bottom;
+            return new Tuple<int, int, int, int>(left, right, top, bottom);
+        }
+
         public AST.Address[] allCellsIncludingBlanks()
         {
-            AST.Address[] output = new AST.Address[_used_range_width * _used_range_height];
-            int i = 0;
-            for (int row = 0; row < _used_range_height; row++)
+            var bb = UnionedBoundingBox();
+            int left = bb.Item1;
+            int right = bb.Item2;
+            int top = bb.Item3;
+            int bottom = bb.Item4;
+
+            int width = right - left + 1;
+            int height = bottom - top + 1;
+
+            var output = new List<AST.Address>();
+            for (int row = top; row < bottom; row++)
             {
-                for (int col = 0; col < _used_range_width; col++)
+                for (int col = left; col < right; col++)
                 {
-                    var addr = CellToAddress(row, col, _wsname, _wbname, _path);
-                    output[i] = addr;
-                    i++;
+                    var addr = AST.Address.fromR1C1withMode(
+                                    row,
+                                    col,
+                                    AST.AddressMode.Absolute,
+                                    AST.AddressMode.Absolute,
+                                    _wsname,
+                                    _wbname,
+                                    _path
+                               );
+                    if (InFormulaBox(addr) || InValueBox(addr))
+                    {
+                        output.Add(addr);
+                    }
                 }
             }
-            return output;
+
+            return output.ToArray();
         }
 
         public int getPathClosureIndex(Tuple<string, string, string> path)
