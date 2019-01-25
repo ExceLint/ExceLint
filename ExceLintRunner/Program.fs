@@ -479,9 +479,10 @@ open FastDependenceAnalysis
 
         printfn "Running ExceLint analysis: %A" shortf
         
+        // analyze sheets in parallel
         let model_opts =
             graphs.Worksheets |>
-            Array.map (fun g -> g, ExceLint.ModelBuilder.analyze (app.XLApplication()) config.FeatureConf g (config.alpha) (Progress.NOPProgress()))
+            Array.Parallel.map (fun g -> g, ExceLint.ModelBuilder.analyze (app.XLApplication()) config.FeatureConf g (config.alpha) (Progress.NOPProgress()))
 
         let scounts = model_opts |> Array.map (fun (g, model_opt) -> soundness_count model_opt g)
         let scount = scounts |> Array.reduce (fun acc sc -> { ncells = acc.ncells + sc.ncells; nnomatch = acc.nnomatch + sc.nnomatch; })
