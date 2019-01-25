@@ -148,8 +148,10 @@ namespace FastDependenceAnalysis
         private readonly string _path;
         private readonly string[][] _formulaTable;
         private readonly object[][] _valueTable;
-        private readonly Dictionary<Tuple<int, int>, List<Dependence>> _dependenceTable;
+        private readonly Dictionary<Tuple<int, int>, List<Reference>> _referenceTable;
 
+        // bounding boxes
+        // used range
         private readonly int _used_range_top;        // 1-based top y coordinate
         private readonly int _used_range_bottom;     // 1-based bottom y coordinate
         private readonly int _used_range_left;       // 1-based left-hand x coordinate
@@ -157,13 +159,21 @@ namespace FastDependenceAnalysis
         private readonly int _used_range_width;
         private readonly int _used_range_height;
 
+        // formulas
         private readonly int _formula_box_top;
         private readonly int _formula_box_bottom;
         private readonly int _formula_box_left;
         private readonly int _formula_box_right;
 
+        // data
+        private readonly int _value_box_top;
+        private readonly int _value_box_bottom;
+        private readonly int _value_box_left;
+        private readonly int _value_box_right;
+
         // stats
         private readonly int _num_formulas;
+        private readonly int _num_values;
         private readonly long _time_ms_marshaling;
         private readonly long _time_ms_parsing;
         private readonly long _time_ms_dep_analysis;
@@ -203,9 +213,11 @@ namespace FastDependenceAnalysis
             get { return _num_formulas; }
         }
 
+        // This is a count of non-empty cells,
+        // which includes data and formulas
         public int NumCells
         {
-            get { return _used_range_width * _used_range_height; }
+            get { return _num_values; }
         }
 
         public long TimeMarshalingMilliseconds
@@ -304,7 +316,14 @@ namespace FastDependenceAnalysis
 
             // read values
             // invariant: null means empty cell
-            _valueTable = ReadData(urng, _used_range_left, _used_range_right, _used_range_top, _used_range_bottom, _used_range_width, _used_range_height);
+            var vd = ReadData(urng, _used_range_left, _used_range_right, _used_range_top, _used_range_bottom, _used_range_width, _used_range_height);
+            _valueTable = vd.Data;
+            _value_box_left = vd.Left;
+            _value_box_right = vd.Right;
+            _value_box_top = vd.Top;
+            _value_box_bottom = vd.Bottom;
+            _num_values = vd.Count;
+
             _time_ms_marshaling = sw.ElapsedMilliseconds;
             #endregion MARSHALING
 
@@ -312,7 +331,7 @@ namespace FastDependenceAnalysis
             sw.Restart();
             // dependence table
             // invariant: table entry contains list of indices of dependency
-            _dependenceTable = new Dictionary<Tuple<int, int>, List<Dependence>>();
+            _referenceTable = new Dictionary<Tuple<int, int>, List<Reference>>();
             // get dependence information from formulas
             for (int row = 0; row < _formulaTable.Length; row++)
             {
@@ -328,6 +347,8 @@ namespace FastDependenceAnalysis
                         if (ExprOpt.get_IsSome(astOpt))
                         {
                             // it's a formula; count it
+                            // we count here because we only truly know if a string is a formula
+                            // when we try to parse it
                             _num_formulas++;
 
                             var ast = astOpt.Value;
@@ -343,13 +364,13 @@ namespace FastDependenceAnalysis
                             {
                                 var addr = arefs[i];
                                 var key = new Tuple<int, int>(row, col);
-                                if (!_dependenceTable.ContainsKey(key))
+                                if (!_referenceTable.ContainsKey(key))
                                 {
-                                    _dependenceTable.Add(key, new List<Dependence>());
+                                    _referenceTable.Add(key, new List<Reference>());
                                 }
                                 // Excel row and column are 1-based
                                 // subtract one to make them zero-based
-                                _dependenceTable[key].Add(new Dependence(isOffSheet(addr), addr.Row - 1, addr.Col - 1));
+                                _referenceTable[key].Add(new Reference(isOffSheet(addr), addr.Row - 1, addr.Col - 1));
                             }
 
                             // ranges next
@@ -371,13 +392,13 @@ namespace FastDependenceAnalysis
                                     var addrOffSheet = isOffSheet(addr);
 
                                     var key = new Tuple<int, int>(row, col);
-                                    if (!_dependenceTable.ContainsKey(key))
+                                    if (!_referenceTable.ContainsKey(key))
                                     {
-                                        _dependenceTable.Add(key, new List<Dependence>());
+                                        _referenceTable.Add(key, new List<Reference>());
                                     }
                                     // Excel row and column are 1-based
                                     // subtract one to make them zero-based
-                                    _dependenceTable[key].Add(new Dependence(isOffSheet(addr), addr.Row - 1, addr.Col - 1));
+                                    _referenceTable[key].Add(new Reference(isOffSheet(addr), addr.Row - 1, addr.Col - 1));
 
                                     // find bounds
                                     if (addr.Row < minRow)
@@ -445,9 +466,34 @@ namespace FastDependenceAnalysis
             public int Bottom { get; }
         }
 
-        private struct Dependence
+        private struct ValueData
         {
-            public Dependence(bool onSheet, int row, int col)
+            public ValueData(int left, int right, int top, int bottom, object[][] data, int count)
+            {
+                Left = left;
+                Right = right;
+                Top = top;
+                Bottom = bottom;
+                Data = data;
+                Count = count;
+            }
+
+            public object[][] Data { get; }
+
+            public int Left { get; }
+
+            public int Right { get; }
+
+            public int Top { get; }
+
+            public int Bottom { get; }
+
+            public int Count { get; }
+        }
+
+        private struct Reference
+        {
+            public Reference(bool onSheet, int row, int col)
             {
                 OnSheet = onSheet;
                 Row = row;
@@ -486,25 +532,40 @@ namespace FastDependenceAnalysis
             return AST.Address.fromR1C1withMode(row + 1, col + 1, AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
         }
 
-        private static Dependence AddressToCell(AST.Address addr, Graph g)
+        private Reference FormulaAddressToReference(AST.Address addr)
         {
-            Debug.Assert(addr.Row > 0);
-            Debug.Assert(addr.Col > 0);
+            Debug.Assert(InFormulaBox(addr));
 
             // if it's on-sheet, set flag to true
-            return new Dependence(
-                addr.Path == g.Path &&
-                addr.WorkbookName == g.Workbook &&
-                addr.WorksheetName == g.Worksheet,
-                addr.Row - 1,
-                addr.Col - 1);
+            bool onSheet = addr.Path == Path &&
+                           addr.WorkbookName == Workbook &&
+                           addr.WorksheetName == Worksheet;
+
+            // x and y coordinates don't matter for off-sheet formulas
+            return new Reference(
+                onSheet,
+                onSheet ? addr.Row - _formula_box_top : 0,
+                onSheet ? addr.Col - _formula_box_left : 0);
         }
 
-        private static object[][] ReadData(Excel.Range urng, int left, int right, int top, int bottom, int width, int height)
+        private Reference ValueAddressToReference(AST.Address addr)
         {
-            // output
-            var dataOutput = InitObjectTable(width, height);
+            Debug.Assert(InValueBox(addr));
 
+            // if it's on-sheet, set flag to true
+            bool onSheet = addr.Path == Path &&
+                           addr.WorkbookName == Workbook &&
+                           addr.WorksheetName == Worksheet;
+
+            // x and y coordinates don't matter for off-sheet formulas
+            return new Reference(
+                onSheet,
+                onSheet ? addr.Row - _value_box_top : 0,
+                onSheet ? addr.Col - _value_box_left : 0);
+        }
+
+        private static ValueData ReadData(Excel.Range urng, int left, int right, int top, int bottom, int width, int height)
+        {
             // array read of data cells
             // note that this is a 1-based 2D multiarray
             // we grab this in array form so that we can avoid a COM
@@ -526,11 +587,56 @@ namespace FastDependenceAnalysis
             // if the worksheet contains nothing, data will be null
             if (data != null)
             {
+                // scan data for true bounds
+                int r_min = Int32.MaxValue;
+                int r_max = Int32.MinValue;
+                int c_min = Int32.MaxValue;
+                int c_max = Int32.MinValue;
+
+                for (int r = top; r <= bottom; r++)
+                {
+                    for (int c = left; c <= right; c++)
+                    {
+                        if (data[r - top + 1, c - left  + 1] != null)
+                        {
+                            if (r <= r_min)
+                            {
+                                r_min = r;
+                            }
+
+                            if (r >= r_max)
+                            {
+                                r_max = r;
+                            }
+
+                            if (c <= c_min)
+                            {
+                                c_min = c;
+                            }
+
+                            if (c >= c_max)
+                            {
+                                c_max = c;
+                            }
+                        }
+                    }
+                }
+
+                // add one because bounds are inclusive
+                var true_width = right - left + 1;
+                var true_height = bottom - top + 1;
+
+                // output
+                var dataOutput = InitObjectTable(true_width, true_height);
+
                 // for each COM object in the used range, create an address object
                 // WITHOUT calling any methods on the COM object itself
                 int x_old = -1;
                 int x = -1;
                 int y = 0;
+
+                // count cells that contain values
+                int dcount = 0;
 
                 for (int i = 0; i < width * height; i++)
                 {
@@ -543,17 +649,21 @@ namespace FastDependenceAnalysis
                     y = x <= x_old ? y + 1 : y;
 
                     // don't track if the cell contains nothing
-                    if (data[y + 1, x + 1] != null) // adjust indices to be one-based
+                    if (data[y + 1, x + 1] != null) // sadjust indices to be one-based
                     {
                         // copy the value in the cell
                         dataOutput[y][x] = data[y + 1, x + 1];
+                        dcount++;
                     }
 
                     x_old = x;
                 }
+
+                return new ValueData(c_min, c_max, r_min, r_max, dataOutput, dcount);
             }
 
-            return dataOutput;
+            // no data
+            return new ValueData(left, right, top, bottom, InitObjectTable(width, height), 0);
         }
 
         private static FormulaData ReadFormulas(Excel.Range urng, int left, int right, int top, int bottom, int width, int height)
@@ -670,6 +780,14 @@ namespace FastDependenceAnalysis
                    addr.Col <= _formula_box_right;
         }
 
+        private bool InValueBox(AST.Address addr)
+        {
+            return addr.Row >= _value_box_top &&
+                   addr.Row <= _value_box_bottom &&
+                   addr.Col >= _value_box_left &&
+                   addr.Col <= _value_box_right;
+        }
+
         public bool isFormula(AST.Address addr)
         {
             if (!InFormulaBox(addr))
@@ -679,7 +797,7 @@ namespace FastDependenceAnalysis
 
             // we arbitrarily say that off-sheet formulas are not formulas,
             // because there's no way to know otherwise
-            var d = AddressToCell(addr, this);
+            var d = FormulaAddressToReference(addr);
             if (!d.OnSheet)
             {
                 return false;
@@ -746,7 +864,7 @@ namespace FastDependenceAnalysis
                 return f;
             }
 
-            var d = AddressToCell(addr, this);
+            var d = FormulaAddressToReference(addr);
             if (d.OnSheet)
             {
                 return _formulaTable[d.Row][d.Col];
@@ -759,10 +877,15 @@ namespace FastDependenceAnalysis
 
         public string readCOMValueAtAddress(AST.Address addr)
         {
+            if (!InValueBox(addr))
+            {
+                return String.Empty;
+            }
+
             // if the address is unresolvable or points to a
             // cell not in the dependence graph (e.g., empty cells)
             // return the empty string
-            var d = AddressToCell(addr, this);
+            var d = ValueAddressToReference(addr);
             if (!d.OnSheet)
             {
                 return String.Empty;
@@ -791,12 +914,17 @@ namespace FastDependenceAnalysis
 
         public HashSet<AST.Address> getFormulaSingleCellInputs(AST.Address addr)
         {
-            var d = AddressToCell(addr, this);
+            if (!InFormulaBox(addr))
+            {
+                return new HashSet<AST.Address>();
+            }
+
+            var d = FormulaAddressToReference(addr);
             var output = new HashSet<AST.Address>();
             if (d.OnSheet)
             {
                 var key = new Tuple<int,int>(d.Row, d.Col);
-                foreach (Dependence d2 in _dependenceTable[key])
+                foreach (Reference d2 in _referenceTable[key])
                 {
                     var addr2 = CellToAddress(d2.Row, d2.Col, _wsname, _wbname, _path);
                     output.Add(addr2);
