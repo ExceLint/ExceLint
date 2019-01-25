@@ -21,4 +21,4 @@
                     match EntropyModel2.runClusterModel input with
                     | Success(analysis) -> Some (ErrorModel(input, analysis, config'))
                     | Cancellation -> None
-                    | CantRun msg -> raise (NoFormulasException msg)
+                    | CantRun msg -> None
