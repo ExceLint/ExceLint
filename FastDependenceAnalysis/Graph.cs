@@ -608,14 +608,14 @@ namespace FastDependenceAnalysis
                                 c_max = c;
                             }
 
-                            if (r_min > c)
+                            if (r_min > r)
                             {
-                                r_min = c;
+                                r_min = r;
                             }
 
-                            if (r_max < c)
+                            if (r_max < r)
                             {
-                                r_max = c;
+                                r_max = r;
                             }
                         }
                     }
