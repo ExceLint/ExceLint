@@ -56,7 +56,6 @@ namespace ExceLintUI
         private HashSet<AST.Address> _audited = new HashSet<AST.Address>();
         private Analysis _analysis;
         private AST.Address _flagged_cell;
-        private Graph _dag;
         private bool _debug_mode = false;
         private bool _dag_changed = false;
 
@@ -137,10 +136,10 @@ namespace ExceLintUI
             set { _debug_mode = value; }
         }
 
-        public Analysis inProcessAnalysis(long max_duration_in_ms, ExceLint.FeatureConf config, Progress p)
+        public Analysis inProcessAnalysis(long max_duration_in_ms, ExceLint.FeatureConf config, Graph g, Progress p)
         {
             // sanity check
-            if (_dag.NumFormulas == 0)
+            if (g.NumFormulas == 0)
             {
                 return new Analysis { scores = null, ranOK = false, cutoff = 0 };
             }
@@ -150,7 +149,7 @@ namespace ExceLintUI
                 FSharpOption<ExceLint.ErrorModel> mopt;
                 try
                 {
-                    mopt = ExceLint.ModelBuilder.analyze(_app, config, _dag, _tool_significance, p);
+                    mopt = ExceLint.ModelBuilder.analyze(_app, config, g, _tool_significance, p);
                 } catch (ExceLint.CommonTypes.NoFormulasException e)
                 {
                     System.Windows.Forms.MessageBox.Show(e.Message);
@@ -166,16 +165,15 @@ namespace ExceLintUI
                     var model = mopt.Value;
                     Score[] scores = model.ranking();
                     int cutoff = model.Cutoff;
-                    return new Analysis { scores = scores, ranOK = true, cutoff = cutoff, model = model, hasRun = true, dag = _dag };
+                    return new Analysis { scores = scores, ranOK = true, cutoff = cutoff, model = model, hasRun = true, dag = g };
                 }
             }
         }
 
-        public ExceLint.EntropyModelBuilder2.EntropyModel2 NewEntropyModelForWorksheet2(Worksheet w,
-            ExceLint.FeatureConf conf, Boolean forceDAGBuild, ProgBar pb)
+        public ExceLint.EntropyModelBuilder2.EntropyModel2 NewEntropyModelForWorksheet2(Worksheet w, ExceLint.FeatureConf conf, Graph g, ProgBar pb)
         {
             // create
-            return ExceLint.ModelBuilder.initEntropyModel2(_app, conf, _dag, Progress.NOPProgress());
+            return ExceLint.ModelBuilder.initEntropyModel2(_app, conf, g, Progress.NOPProgress());
         }
 
         public void DrawImmutableClusters(Clusters clusters, ROInvertedHistogram ih, Worksheet ws)
@@ -239,11 +237,6 @@ namespace ExceLintUI
 
             // Enable screen updating
             _app.ScreenUpdating = initial_state;
-        }
-
-        public Analysis rawAnalysis(long max_duration_in_ms, ExceLint.FeatureConf config, Boolean forceDAGBuild, ProgBar pb)
-        {
-            return inProcessAnalysis(max_duration_in_ms, config, Progress.NOPProgress());
         }
 
         public void flagNext(Worksheet ws)
@@ -311,9 +304,9 @@ namespace ExceLintUI
             try
             {
                 // test
-                _dag = new Graph(_app, (Worksheet)_app.ActiveSheet);
+                Graph g = new Graph(_app, (Worksheet)_app.ActiveSheet);
 
-                _analysis = rawAnalysis(max_duration_in_ms, config, forceDAGBuild, pb);
+                _analysis = inProcessAnalysis(max_duration_in_ms, config, g, Progress.NOPProgress());
 
                 if (!_analysis.ranOK)
                 {

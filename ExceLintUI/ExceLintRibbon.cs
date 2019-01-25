@@ -55,7 +55,7 @@ namespace ExceLintUI
 
                 // build the model
                 var sw2 = System.Diagnostics.Stopwatch.StartNew();
-                fixClusterModel = currentWorkbook.NewEntropyModelForWorksheet2(activeWs, getConfig(), true, pb);
+                fixClusterModel = currentWorkbook.NewEntropyModelForWorksheet2(activeWs, getConfig(), graph, pb);
 
                 // get z for worksheet
                 int z = -1;
