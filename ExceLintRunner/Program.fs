@@ -376,56 +376,57 @@ open FastDependenceAnalysis
                 i <- i + 1
         i
 
-    type SoundnessCount = { ncells: int; nnomatch: int; }
+    type HashCollisions = { ncells: int; nnomatch: int; }
 
-    let soundness_count(model_opt: ErrorModel option)(dag: Graph) : SoundnessCount =
-        // get analysis base
-        let cells = match model_opt with | Some m -> m.AllCells | None -> failwith "does not apply"
+    let count_collisions(model_opt: ErrorModel option)(dag: Graph) : HashCollisions option =
+        match model_opt with
+        | None -> None
+        | Some m ->
+            let cells = m.AllCells
 
-        // save set of cells that hashes to the same fingerprint
-        let fd = new Dict<Countable,HashSet<AST.Address>>()
+            // save set of cells that hashes to the same fingerprint
+            let fd = new Dict<Countable,HashSet<AST.Address>>()
 
-        // save all vectors for cells at given address
-        let addrv = new Dict<AST.Address,Countable[]>()
+            // save all vectors for cells at given address
+            let addrv = new Dict<AST.Address,Countable[]>()
 
-        // for each cell, get vectors and fingerprint
-        cells |>
-        Seq.iter (fun cell ->
-            let vs = Vector.ShallowInputVectorMixedFullCVectorResultantOSI.getPaperVectors cell dag |> Array.map (fun v -> v)
-            let fingerprint = (Vector.ShallowInputVectorMixedFullCVectorResultantOSI.run cell dag).LocationFree
+            // for each cell, get vectors and fingerprint
+            cells |>
+            Seq.iter (fun cell ->
+                let vs = Vector.ShallowInputVectorMixedFullCVectorResultantOSI.getPaperVectors cell dag |> Array.map (fun v -> v)
+                let fingerprint = (Vector.ShallowInputVectorMixedFullCVectorResultantOSI.run cell dag).LocationFree
 
-            // save vectors
-            addrv.Add(cell, vs)
+                // save vectors
+                addrv.Add(cell, vs)
 
-            // init hashset
-            if not (fd.ContainsKey(fingerprint)) then
-                fd.Add(fingerprint, new HashSet<AST.Address>())
+                // init hashset
+                if not (fd.ContainsKey(fingerprint)) then
+                    fd.Add(fingerprint, new HashSet<AST.Address>())
 
-            // get set
-            let hs = fd.[fingerprint]
+                // get set
+                let hs = fd.[fingerprint]
 
-            // add to set
-            hs.Add cell |> ignore
-        )
+                // add to set
+                hs.Add cell |> ignore
+            )
 
-        // for each fingerprint, count
-        // how many of those cells' vector sets do not match
-        let mutable nomatch = 0
-        fd |>
-        Seq.iter (fun (kvp: KeyValuePair<Countable,HashSet<AST.Address>>) -> 
-            let addrs = kvp.Value |> Seq.toArray
-            if addrs.Length > 1 then
-                // get the first set of vectors
-                let vs0 = addrv.[addrs.[0]] |> Set.ofArray
-                for addr in addrs do
-                    // get the second set of vectors
-                    let vsi = addrv.[addr] |> Set.ofArray
-                    if vs0 <> vsi then
-                        nomatch <- nomatch + 1
-        )
+            // for each fingerprint, count
+            // how many of those cells' vector sets do not match
+            let mutable nomatch = 0
+            fd |>
+            Seq.iter (fun (kvp: KeyValuePair<Countable,HashSet<AST.Address>>) -> 
+                let addrs = kvp.Value |> Seq.toArray
+                if addrs.Length > 1 then
+                    // get the first set of vectors
+                    let vs0 = addrv.[addrs.[0]] |> Set.ofArray
+                    for addr in addrs do
+                        // get the second set of vectors
+                        let vsi = addrv.[addr] |> Set.ofArray
+                        if vs0 <> vsi then
+                            nomatch <- nomatch + 1
+            )
 
-        { ncells = Seq.length cells; nnomatch = nomatch; }
-
+            Some { ncells = Seq.length cells; nnomatch = nomatch; }
 
     let analyze (file: String)(app: Application)(config: Args.Config)(etruth: ExceLintGroundTruth)(ctruth: CUSTODES.GroundTruth)(csv: ExceLintStats)(debug_csv: DebugInfo) =
         let shortf = (System.IO.Path.GetFileName file)
@@ -443,7 +444,7 @@ open FastDependenceAnalysis
             graphs.Worksheets |>
             Array.Parallel.map (fun g -> g, ExceLint.ModelBuilder.analyze (app.XLApplication()) config.FeatureConf g (config.alpha) (Progress.NOPProgress()))
 
-        let scounts = model_opts |> Array.map (fun (g, model_opt) -> soundness_count model_opt g)
+        let scounts = model_opts |> Array.map (fun (g, model_opt) -> count_collisions model_opt g) |> Array.choose id
         let scount = scounts |> Array.reduce (fun acc sc -> { ncells = acc.ncells + sc.ncells; nnomatch = acc.nnomatch + sc.nnomatch; })
 
         let custodes_o =
