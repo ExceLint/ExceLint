@@ -866,10 +866,7 @@ namespace FastDependenceAnalysis
                                     _wbname,
                                     _path
                                );
-                    if (InFormulaBox(addr) || InValueBox(addr))
-                    {
-                        output.Add(addr);
-                    }
+                    output.Add(addr);
                 }
             }
 
