@@ -150,7 +150,7 @@ namespace FastDependenceAnalysis
         private readonly object[][] _valueTable;
         private readonly Dictionary<Tuple<int, int>, List<Reference>> _referenceTable;
 
-        // bounding boxes
+        // bounding boxes (using Excel's native R1C1 coordinate system)
         // used range
         private readonly int _used_range_top;        // 1-based top y coordinate
         private readonly int _used_range_bottom;     // 1-based bottom y coordinate
@@ -853,9 +853,9 @@ namespace FastDependenceAnalysis
             int height = bottom - top + 1;
 
             var output = new List<AST.Address>();
-            for (int row = top; row < bottom; row++)
+            for (int row = top; row <= bottom; row++)
             {
-                for (int col = left; col < right; col++)
+                for (int col = left; col <= right; col++)
                 {
                     var addr = AST.Address.fromR1C1withMode(
                                     row,
