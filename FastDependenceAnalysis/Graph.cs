@@ -837,7 +837,7 @@ namespace FastDependenceAnalysis
             int left = _formula_box_left < _value_box_left ? _formula_box_left : _value_box_left;
             int right = _formula_box_right > _value_box_right ? _formula_box_right : _value_box_right;
             int top = _formula_box_top < _value_box_top ? _formula_box_top : _value_box_top;
-            int bottom = _formula_box_bottom < _value_box_bottom ? _formula_box_bottom : _value_box_bottom;
+            int bottom = _formula_box_bottom > _value_box_bottom ? _formula_box_bottom : _value_box_bottom;
             return new Tuple<int, int, int, int>(left, right, top, bottom);
         }
 
