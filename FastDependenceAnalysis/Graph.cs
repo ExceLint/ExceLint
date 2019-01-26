@@ -200,8 +200,11 @@ namespace FastDependenceAnalysis
                 {
                     for (int col = 0; col < _formulaTable[row].Length; col++)
                     {
-                        var addr = CellToAddress(row, col, _wsname, _wbname, _path);
-                        d.Add(addr, _formulaTable[row][col]);
+                        if (_formulaTable[row][col] != null)
+                        {
+                            var addr = CellToAddress(row, col, _wsname, _wbname, _path);
+                            d.Add(addr, _formulaTable[row][col]);
+                        }
                     }
                 }
                 return d;
