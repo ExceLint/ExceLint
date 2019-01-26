@@ -747,7 +747,7 @@ namespace FastDependenceAnalysis
                 {
                     for (int r = r_min; r <= r_max; r++)
                     {
-                        var f = (string)formulas[r, c];
+                        var f = (string)formulas[r - top + 1, c - left + 1];
                         if (fn_filter.IsMatch(f))
                         {
                             output[r - r_min][c - c_min] = f;

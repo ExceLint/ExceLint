@@ -773,13 +773,7 @@
                 let _runf = fun () -> runEnabledFeatures cells input.dag input.config input.progress
                 let (ns: ScoreTable,feat_time: int64) = PerfUtils.runMillis _runf ()
 
-                // scale
-//                let _runscale = fun () -> ScaleBySheet ns
-//                let (nlfrs: ScoreTable,scale_time: int64) = PerfUtils.runMillis _runscale () 
-                let scale_time = 0L
-
                 // make HistoBin lookup by address
-//                let _runhisto = fun () -> invertedHistogram nlfrs input.dag input.config
                 let _runhisto = fun () -> invertedHistogram ns input.dag input.config
                 let (ih: ROInvertedHistogram,invert_time: int64) = PerfUtils.runMillis _runhisto ()
 
@@ -804,6 +798,6 @@
 //                assert (FasterBinaryMinEntropyTree.SheetAnalysesAreDistinct regions)
 
                 // collate stats
-                let times = Stats(feat_time, scale_time, invert_time, fsc_time, sw.ElapsedMilliseconds)
+                let times = Stats(feat_time, 0L, invert_time, fsc_time, sw.ElapsedMilliseconds)
 
                 new EntropyModel2(input.alpha, input.dag, regions, ih, fsc, distance_f, indivisibles, times)
