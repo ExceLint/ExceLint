@@ -553,8 +553,8 @@ namespace FastDependenceAnalysis
             // x and y coordinates don't matter for off-sheet formulas
             return new Reference(
                 onSheet,
-                onSheet ? addr.Row - _formula_box_top + 1 : 0,
-                onSheet ? addr.Col - _formula_box_left + 1 : 0);
+                onSheet ? addr.Row - _formula_box_top : 0,
+                onSheet ? addr.Col - _formula_box_left : 0);
         }
 
         private Reference ValueAddressToReference(AST.Address addr)
@@ -569,8 +569,8 @@ namespace FastDependenceAnalysis
             // x and y coordinates don't matter for off-sheet formulas
             return new Reference(
                 onSheet,
-                onSheet ? addr.Row - _value_box_top + 1 : 0,
-                onSheet ? addr.Col - _value_box_left + 1 : 0);
+                onSheet ? addr.Row - _value_box_top : 0,
+                onSheet ? addr.Col - _value_box_left : 0);
         }
 
         private static ValueData ReadData(Excel.Range urng, int left, int right, int top, int bottom, int width, int height)
@@ -692,7 +692,7 @@ namespace FastDependenceAnalysis
 
                 if (fn_filter.IsMatch(f))
                 {
-                    output[top][left] = f;
+                    output[0][0] = f;
                 }
 
                 return new FormulaData(left, right, top, bottom, output);
