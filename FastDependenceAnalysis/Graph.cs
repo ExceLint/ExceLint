@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Dynamic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Excel = Microsoft.Office.Interop.Excel;
 using ExprOpt = Microsoft.FSharp.Core.FSharpOption<AST.Expression>;
@@ -202,7 +203,7 @@ namespace FastDependenceAnalysis
                     {
                         if (_formulaTable[row][col] != null)
                         {
-                            var addr = CellToAddress(row, col, _wsname, _wbname, _path);
+                            var addr = FormulaReferenceToAddress(row, col);
                             d.Add(addr, _formulaTable[row][col]);
                         }
                     }
@@ -247,7 +248,7 @@ namespace FastDependenceAnalysis
                 {
                     for (int col = 0; col < _valueTable[row].Length; col++)
                     {
-                        var addr = CellToAddress(row, col, _wsname, _wbname, _path);
+                        var addr = ValueReferenceToAddress(row, col);
                         d.Add(addr, Convert.ToString(_valueTable[row][col]));
                     }
                 }
@@ -530,9 +531,14 @@ namespace FastDependenceAnalysis
             return outer_y;
         }
 
-        private static AST.Address CellToAddress(int row, int col, string wsname, string wbname, string path)
+        private AST.Address ValueReferenceToAddress(int row, int col)
         {
-            return AST.Address.fromR1C1withMode(row + 1, col + 1, AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
+            return AST.Address.fromR1C1withMode(row + _value_box_top - 1, col + _value_box_left - 1, AST.AddressMode.Absolute, AST.AddressMode.Absolute, _wsname, _wbname, _path);
+        }
+
+        private AST.Address FormulaReferenceToAddress(int row, int col)
+        {
+            return AST.Address.fromR1C1withMode(row + _formula_box_top - 1, col + _formula_box_left - 1, AST.AddressMode.Absolute, AST.AddressMode.Absolute, _wsname, _wbname, _path);
         }
 
         private Reference FormulaAddressToReference(AST.Address addr)
@@ -547,8 +553,8 @@ namespace FastDependenceAnalysis
             // x and y coordinates don't matter for off-sheet formulas
             return new Reference(
                 onSheet,
-                onSheet ? addr.Row - _formula_box_top : 0,
-                onSheet ? addr.Col - _formula_box_left : 0);
+                onSheet ? addr.Row - _formula_box_top + 1 : 0,
+                onSheet ? addr.Col - _formula_box_left + 1 : 0);
         }
 
         private Reference ValueAddressToReference(AST.Address addr)
@@ -563,8 +569,8 @@ namespace FastDependenceAnalysis
             // x and y coordinates don't matter for off-sheet formulas
             return new Reference(
                 onSheet,
-                onSheet ? addr.Row - _value_box_top : 0,
-                onSheet ? addr.Col - _value_box_left : 0);
+                onSheet ? addr.Row - _value_box_top + 1 : 0,
+                onSheet ? addr.Col - _value_box_left + 1 : 0);
         }
 
         private static ValueData ReadData(Excel.Range urng, int left, int right, int top, int bottom, int width, int height)
@@ -652,7 +658,7 @@ namespace FastDependenceAnalysis
                     y = x <= x_old ? y + 1 : y;
 
                     // don't track if the cell contains nothing
-                    if (data[y + 1, x + 1] != null) // sadjust indices to be one-based
+                    if (data[y + 1, x + 1] != null) // adjust indices to be one-based
                     {
                         // copy the value in the cell
                         dataOutput[y][x] = data[y + 1, x + 1];
@@ -747,15 +753,15 @@ namespace FastDependenceAnalysis
                 {
                     for (int r = r_min; r <= r_max; r++)
                     {
-                        var f = (string)formulas[r - top + 1, c - left + 1];
+                        string f = (string)formulas[r, c];
                         if (fn_filter.IsMatch(f))
                         {
-                            output[r - r_min][c - c_min] = f;
+                                output[r - r_min][c - c_min] = f;
                         }
                     }
                 }
 
-                return new FormulaData(c_min, c_max, r_min, r_max, output);
+                return new FormulaData(c_min + left, c_max + left, r_min + top, r_max + top, output);
             }
         }
 
@@ -768,7 +774,7 @@ namespace FastDependenceAnalysis
                 {
                     if (_formulaTable[row][col] != null)
                     {
-                        addrs.Add(CellToAddress(row, col, _wsname, _wbname, _path));
+                        addrs.Add(FormulaReferenceToAddress(row, col));
                     }
                 }
             }
@@ -820,7 +826,7 @@ namespace FastDependenceAnalysis
                 {
                     if (_valueTable[row][col] != null)
                     {
-                        var addr = CellToAddress(row, col, _wsname, _wbname, _path);
+                        var addr = ValueReferenceToAddress(row, col);
                         output.Add(addr);
                     }
                 }
@@ -957,7 +963,7 @@ namespace FastDependenceAnalysis
                 var key = new Tuple<int,int>(d.Row, d.Col);
                 foreach (Reference d2 in _referenceTable[key])
                 {
-                    var addr2 = CellToAddress(d2.Row, d2.Col, _wsname, _wbname, _path);
+                    var addr2 = FormulaReferenceToAddress(d2.Row, d2.Col);
                     output.Add(addr2);
                 }
             }
