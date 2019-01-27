@@ -3,13 +3,14 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using COMWrapper;
 using System.Linq;
 using ExceLint;
+using FastDependenceAnalysis;
 
 namespace ExceLintTests
 {
     [TestClass]
     public class BasicTests
     {
-        private Depends.DAG _addressModeDAG;
+        private Graphs _addressModeDAG;
 
         public BasicTests()
         {
@@ -17,7 +18,7 @@ namespace ExceLintTests
         }
 
         // gets the set of shallow intransitive mixed input vectors pointed to by the formula
-        private static Tuple<int,int,int>[] getSIMIVs(AST.Address formula, Depends.DAG dag)
+        private static Tuple<int,int,int>[] getSIMIVs(AST.Address formula, Graph dag)
         {
             var vs = ExceLint.Vector.getRebasedVectors(formula, dag, isMixed: true, isTransitive: false, isFormula: true, isOffSheetInsensitive: true, isRelative: true, includeConstant: false);
             return vs.Select(v =>
@@ -35,18 +36,7 @@ namespace ExceLintTests
             }).ToArray();
         }
 
-        [TestMethod]
-        [Ignore]    // painfully slow
-        public void canBuildDependenceGraph()
-        {
-            var app = new Application();
-            var wb = app.OpenWorkbook(@"..\..\TestData\7_gradebook_xls.xlsx");
-            var graph = wb.buildDependenceGraph();
-            var dotty = graph.ToDOT();
-            Assert.IsTrue(dotty.Length != 0);
-        }
-
-        private Depends.DAG AddressModeDAG()
+        private Graphs AddressModeDAG()
         {
             var app = new Application();
             var wb = app.OpenWorkbook(@"..\..\TestData\AddressModes.xlsx");
@@ -58,11 +48,12 @@ namespace ExceLintTests
         public void absoluteSingleVectorSIMIV()
         {
             // tests that $A$2 in cell B2 on the same sheet returns the vector (1,2,0)
-            var wbname = _addressModeDAG.getWorkbookName();
-            var wsname = _addressModeDAG.getWorksheetNames()[0];
-            var path = _addressModeDAG.getWorkbookDirectory();
+            var graph = _addressModeDAG.Worksheets[0];
+            var wbname = graph.Workbook;
+            var wsname = graph.Worksheet;
+            var path = graph.Path;
             var formula = AST.Address.fromA1withMode(2, "B", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
-            var vectors = getSIMIVs(formula, _addressModeDAG);
+            var vectors = getSIMIVs(formula, graph);
             Assert.IsTrue(vectors.Length == 1);
             var foo = vectors[0];
             var bar = new Tuple<int, int, int>(1, 2, 0);
@@ -73,11 +64,12 @@ namespace ExceLintTests
         public void relativeRowAbsoluteColumnSingleVectorSIMIV()
         {
             // tests that A$3 in cell B3 on the same sheet returns the vector (-1,3,0)
-            var wbname = _addressModeDAG.getWorkbookName();
-            var wsname = _addressModeDAG.getWorksheetNames()[0];
-            var path = _addressModeDAG.getWorkbookDirectory();
+            var graph = _addressModeDAG.Worksheets[0];
+            var wbname = graph.Workbook;
+            var wsname = graph.Worksheet;
+            var path = graph.Path;
             var formula = AST.Address.fromA1withMode(3, "B", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
-            var vectors = getSIMIVs(formula, _addressModeDAG);
+            var vectors = getSIMIVs(formula, graph);
             Assert.IsTrue(vectors.Length == 1);
             var foo = vectors[0];
             var bar = new Tuple<int, int, int>(-1, 3, 0);
@@ -88,11 +80,12 @@ namespace ExceLintTests
         public void absoluteRowRelativeColumnSingleVectorSIMIV()
         {
             // tests that $A4 in cell B4 on the same sheet returns the vector (1,0,0)
-            var wbname = _addressModeDAG.getWorkbookName();
-            var wsname = _addressModeDAG.getWorksheetNames()[0];
-            var path = _addressModeDAG.getWorkbookDirectory();
+            var graph = _addressModeDAG.Worksheets[0];
+            var wbname = graph.Workbook;
+            var wsname = graph.Worksheet;
+            var path = graph.Path;
             var formula = AST.Address.fromA1withMode(4, "B", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
-            var vectors = getSIMIVs(formula, _addressModeDAG);
+            var vectors = getSIMIVs(formula, graph);
             Assert.IsTrue(vectors.Length == 1);
             var foo = vectors[0];
             var bar = new Tuple<int, int, int>(1, 0, 0);
@@ -103,11 +96,12 @@ namespace ExceLintTests
         public void relativeSingleVectorSIMIV()
         {
             // tests that A5 in cell B5 on the same sheet returns the vector (-1,0,0)
-            var wbname = _addressModeDAG.getWorkbookName();
-            var wsname = _addressModeDAG.getWorksheetNames()[0];
-            var path = _addressModeDAG.getWorkbookDirectory();
+            var graph = _addressModeDAG.Worksheets[0];
+            var wbname = graph.Workbook;
+            var wsname = graph.Worksheet;
+            var path = graph.Path;
             var formula = AST.Address.fromA1withMode(5, "B", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
-            var vectors = getSIMIVs(formula, _addressModeDAG);
+            var vectors = getSIMIVs(formula, graph);
             Assert.IsTrue(vectors.Length == 1);
             var foo = vectors[0];
             var bar = new Tuple<int, int, int>(-1, 0, 0);
@@ -118,11 +112,12 @@ namespace ExceLintTests
         public void AbsAbsRangeVectorsSIMIV()
         {
             // tests that $A$2:$A$5 in cell C2 on the same sheet returns a set of absolute vectors
-            var wbname = _addressModeDAG.getWorkbookName();
-            var wsname = _addressModeDAG.getWorksheetNames()[0];
-            var path = _addressModeDAG.getWorkbookDirectory();
+            var graph = _addressModeDAG.Worksheets[0];
+            var wbname = graph.Workbook;
+            var wsname = graph.Worksheet;
+            var path = graph.Path;
             var formula = AST.Address.fromA1withMode(2, "C", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
-            var vectors = getSIMIVs(formula, _addressModeDAG);
+            var vectors = getSIMIVs(formula, graph);
             Assert.IsTrue(vectors.Length == 4);
             Assert.IsTrue(Array.Exists(vectors, e => e.Equals(new Tuple<int,int,int>(1, 2, 0))));
             Assert.IsTrue(Array.Exists(vectors, e => e.Equals(new Tuple<int, int, int>(1, 3, 0))));
@@ -134,11 +129,12 @@ namespace ExceLintTests
         public void RelAbsRangeVectorsSIMIV()
         {
             // tests that A$2:A$5 in cell C3 on the same sheet returns a set of mixed vectors
-            var wbname = _addressModeDAG.getWorkbookName();
-            var wsname = _addressModeDAG.getWorksheetNames()[0];
-            var path = _addressModeDAG.getWorkbookDirectory();
+            var graph = _addressModeDAG.Worksheets[0];
+            var wbname = graph.Workbook;
+            var wsname = graph.Worksheet;
+            var path = graph.Path;
             var formula = AST.Address.fromA1withMode(3, "C", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
-            var vectors = getSIMIVs(formula, _addressModeDAG);
+            var vectors = getSIMIVs(formula, graph);
             Assert.IsTrue(vectors.Length == 4);
             Assert.IsTrue(Array.Exists(vectors, e => e.Equals(new Tuple<int, int, int>(-2, 2, 0))));
             Assert.IsTrue(Array.Exists(vectors, e => e.Equals(new Tuple<int, int, int>(-2, 3, 0))));
@@ -150,11 +146,12 @@ namespace ExceLintTests
         public void AbsRelRangeVectorsSIMIV()
         {
             // tests that $A2:$A5 in cell C4 on the same sheet returns a set of mixed vectors
-            var wbname = _addressModeDAG.getWorkbookName();
-            var wsname = _addressModeDAG.getWorksheetNames()[0];
-            var path = _addressModeDAG.getWorkbookDirectory();
+            var graph = _addressModeDAG.Worksheets[0];
+            var wbname = graph.Workbook;
+            var wsname = graph.Worksheet;
+            var path = graph.Path;
             var formula = AST.Address.fromA1withMode(4, "C", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
-            var vectors = getSIMIVs(formula, _addressModeDAG);
+            var vectors = getSIMIVs(formula, graph);
             Assert.IsTrue(vectors.Length == 4);
             Assert.IsTrue(Array.Exists(vectors, e => e.Equals(new Tuple<int, int, int>(1, -2, 0))));
             Assert.IsTrue(Array.Exists(vectors, e => e.Equals(new Tuple<int, int, int>(1, -1, 0))));
@@ -166,11 +163,12 @@ namespace ExceLintTests
         public void RelRelRangeVectorsSIMIV()
         {
             // tests that A2:A5 in cell C5 on the same sheet returns a set of mixed vectors
-            var wbname = _addressModeDAG.getWorkbookName();
-            var wsname = _addressModeDAG.getWorksheetNames()[0];
-            var path = _addressModeDAG.getWorkbookDirectory();
+            var graph = _addressModeDAG.Worksheets[0];
+            var wbname = graph.Workbook;
+            var wsname = graph.Worksheet;
+            var path = graph.Path;
             var formula = AST.Address.fromA1withMode(5, "C", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
-            var vectors = getSIMIVs(formula, _addressModeDAG);
+            var vectors = getSIMIVs(formula, graph);
             Assert.IsTrue(vectors.Length == 4);
             Assert.IsTrue(Array.Exists(vectors, e => e.Equals(new Tuple<int, int, int>(-2, -3, 0))));
             Assert.IsTrue(Array.Exists(vectors, e => e.Equals(new Tuple<int, int, int>(-2, -2, 0))));
@@ -185,15 +183,15 @@ namespace ExceLintTests
             {
                 using (var wb = app.OpenWorkbook(@"..\..\TestData\DataTest.xlsx"))
                 {
-                    var p = Depends.Progress.NOPProgress();
-                    var graph = wb.buildDependenceGraph();
+                    var p = Progress.NOPProgress();
+                    var graph = wb.buildDependenceGraph().Worksheets[0];
                     var conf = (new FeatureConf()).enableShallowInputVectorMixedFullCVectorResultantOSI(true);
                     var m = ModelBuilder.initEntropyModel(app.XLApplication(), conf, graph, p);
                     var ih = m.InvertedHistogram;
 
-                    var wbname = graph.getWorkbookName();
-                    var wsname = graph.getWorksheetNames()[0];
-                    var path = graph.getWorkbookDirectory();
+                    var wbname = graph.Workbook;
+                    var wsname = graph.Worksheet;
+                    var path = graph.Path;
 
                     // A1
                     var a1_addr = AST.Address.fromA1withMode(1, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
@@ -216,13 +214,13 @@ namespace ExceLintTests
                     // A3
                     var a3_addr = AST.Address.fromA1withMode(3, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
 
-                    Assert.IsFalse(EntropyModelBuilder.AddressIsFormulaValued(a1_addr, ih, graph));
-                    Assert.IsFalse(EntropyModelBuilder.AddressIsFormulaValued(b1_addr, ih, graph));
-                    Assert.IsFalse(EntropyModelBuilder.AddressIsFormulaValued(c1_addr, ih, graph));
-                    Assert.IsFalse(EntropyModelBuilder.AddressIsFormulaValued(a2_addr, ih, graph));
-                    Assert.IsFalse(EntropyModelBuilder.AddressIsFormulaValued(b2_addr, ih, graph));
-                    Assert.IsTrue(EntropyModelBuilder.AddressIsFormulaValued(c2_addr, ih, graph));
-                    Assert.IsFalse(EntropyModelBuilder.AddressIsFormulaValued(a3_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder2.AddressIsFormulaValued(a1_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder2.AddressIsFormulaValued(b1_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder2.AddressIsFormulaValued(c1_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder2.AddressIsFormulaValued(a2_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder2.AddressIsFormulaValued(b2_addr, ih, graph));
+                    Assert.IsTrue(EntropyModelBuilder2.AddressIsFormulaValued(c2_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder2.AddressIsFormulaValued(a3_addr, ih, graph));
                 }
             }
         }
@@ -234,15 +232,15 @@ namespace ExceLintTests
             {
                 using (var wb = app.OpenWorkbook(@"..\..\TestData\DataTest.xlsx"))
                 {
-                    var p = Depends.Progress.NOPProgress();
-                    var graph = wb.buildDependenceGraph();
+                    var p = Progress.NOPProgress();
+                    var graph = wb.buildDependenceGraph().Worksheets[0];
                     var conf = (new FeatureConf()).enableShallowInputVectorMixedFullCVectorResultantOSI(true);
                     var m = ModelBuilder.initEntropyModel(app.XLApplication(), conf, graph, p);
                     var ih = m.InvertedHistogram;
 
-                    var wbname = graph.getWorkbookName();
-                    var wsname = graph.getWorksheetNames()[0];
-                    var path = graph.getWorkbookDirectory();
+                    var wbname = graph.Workbook;
+                    var wsname = graph.Worksheet;
+                    var path = graph.Path;
 
                     // A1
                     var a1_addr = AST.Address.fromA1withMode(1, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
@@ -265,13 +263,13 @@ namespace ExceLintTests
                     // A3
                     var a3_addr = AST.Address.fromA1withMode(3, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
 
-                    Assert.IsFalse(EntropyModelBuilder.AddressIsNumericValued(a1_addr, ih, graph));
-                    Assert.IsFalse(EntropyModelBuilder.AddressIsNumericValued(b1_addr, ih, graph));
-                    Assert.IsFalse(EntropyModelBuilder.AddressIsNumericValued(c1_addr, ih, graph));
-                    Assert.IsTrue(EntropyModelBuilder.AddressIsNumericValued(a2_addr, ih, graph));
-                    Assert.IsTrue(EntropyModelBuilder.AddressIsNumericValued(b2_addr, ih, graph));
-                    Assert.IsFalse(EntropyModelBuilder.AddressIsNumericValued(c2_addr, ih, graph));
-                    Assert.IsFalse(EntropyModelBuilder.AddressIsNumericValued(a3_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder2.AddressIsNumericValued(a1_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder2.AddressIsNumericValued(b1_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder2.AddressIsNumericValued(c1_addr, ih, graph));
+                    Assert.IsTrue(EntropyModelBuilder2.AddressIsNumericValued(a2_addr, ih, graph));
+                    Assert.IsTrue(EntropyModelBuilder2.AddressIsNumericValued(b2_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder2.AddressIsNumericValued(c2_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder2.AddressIsNumericValued(a3_addr, ih, graph));
                 }
             }
         }
@@ -283,15 +281,15 @@ namespace ExceLintTests
             {
                 using (var wb = app.OpenWorkbook(@"..\..\TestData\DataTest.xlsx"))
                 {
-                    var p = Depends.Progress.NOPProgress();
-                    var graph = wb.buildDependenceGraph();
+                    var p = Progress.NOPProgress();
+                    var graph = wb.buildDependenceGraph().Worksheets[0];
                     var conf = (new FeatureConf()).enableShallowInputVectorMixedFullCVectorResultantOSI(true);
                     var m = ModelBuilder.initEntropyModel(app.XLApplication(), conf, graph, p);
                     var ih = m.InvertedHistogram;
 
-                    var wbname = graph.getWorkbookName();
-                    var wsname = graph.getWorksheetNames()[0];
-                    var path = graph.getWorkbookDirectory();
+                    var wbname = graph.Workbook;
+                    var wsname = graph.Worksheet;
+                    var path = graph.Path;
 
                     // A1
                     var a1_addr = AST.Address.fromA1withMode(1, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
@@ -314,13 +312,13 @@ namespace ExceLintTests
                     // A3
                     var a3_addr = AST.Address.fromA1withMode(3, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
 
-                    Assert.IsTrue(EntropyModelBuilder.AddressIsStringValued(a1_addr, ih, graph));
-                    Assert.IsTrue(EntropyModelBuilder.AddressIsStringValued(b1_addr, ih, graph));
-                    Assert.IsTrue(EntropyModelBuilder.AddressIsStringValued(c1_addr, ih, graph));
-                    Assert.IsFalse(EntropyModelBuilder.AddressIsStringValued(a2_addr, ih, graph));
-                    Assert.IsFalse(EntropyModelBuilder.AddressIsStringValued(b2_addr, ih, graph));
-                    Assert.IsFalse(EntropyModelBuilder.AddressIsStringValued(c2_addr, ih, graph));
-                    Assert.IsFalse(EntropyModelBuilder.AddressIsStringValued(a3_addr, ih, graph));
+                    Assert.IsTrue(EntropyModelBuilder2.AddressIsStringValued(a1_addr, ih, graph));
+                    Assert.IsTrue(EntropyModelBuilder2.AddressIsStringValued(b1_addr, ih, graph));
+                    Assert.IsTrue(EntropyModelBuilder2.AddressIsStringValued(c1_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder2.AddressIsStringValued(a2_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder2.AddressIsStringValued(b2_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder2.AddressIsStringValued(c2_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder2.AddressIsStringValued(a3_addr, ih, graph));
                 }
             }
         }
@@ -332,15 +330,15 @@ namespace ExceLintTests
             {
                 using (var wb = app.OpenWorkbook(@"..\..\TestData\DataTest.xlsx"))
                 {
-                    var p = Depends.Progress.NOPProgress();
-                    var graph = wb.buildDependenceGraph();
+                    var p = Progress.NOPProgress();
+                    var graph = wb.buildDependenceGraph().Worksheets[0];
                     var conf = (new FeatureConf()).enableShallowInputVectorMixedFullCVectorResultantOSI(true);
                     var m = ModelBuilder.initEntropyModel(app.XLApplication(), conf, graph, p);
                     var ih = m.InvertedHistogram;
 
-                    var wbname = graph.getWorkbookName();
-                    var wsname = graph.getWorksheetNames()[0];
-                    var path = graph.getWorkbookDirectory();
+                    var wbname = graph.Workbook;
+                    var wsname = graph.Worksheet;
+                    var path = graph.Path;
 
                     // A1
                     var a1_addr = AST.Address.fromA1withMode(1, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
@@ -363,13 +361,13 @@ namespace ExceLintTests
                     // A3
                     var a3_addr = AST.Address.fromA1withMode(3, "A", AST.AddressMode.Absolute, AST.AddressMode.Absolute, wsname, wbname, path);
 
-                    Assert.IsFalse(EntropyModelBuilder.AddressIsWhitespaceValued(a1_addr, ih, graph));
-                    Assert.IsFalse(EntropyModelBuilder.AddressIsWhitespaceValued(b1_addr, ih, graph));
-                    Assert.IsFalse(EntropyModelBuilder.AddressIsWhitespaceValued(c1_addr, ih, graph));
-                    Assert.IsFalse(EntropyModelBuilder.AddressIsWhitespaceValued(a2_addr, ih, graph));
-                    Assert.IsFalse(EntropyModelBuilder.AddressIsWhitespaceValued(b2_addr, ih, graph));
-                    Assert.IsFalse(EntropyModelBuilder.AddressIsWhitespaceValued(c2_addr, ih, graph));
-                    Assert.IsTrue(EntropyModelBuilder.AddressIsWhitespaceValued(a3_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder2.AddressIsWhitespaceValued(a1_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder2.AddressIsWhitespaceValued(b1_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder2.AddressIsWhitespaceValued(c1_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder2.AddressIsWhitespaceValued(a2_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder2.AddressIsWhitespaceValued(b2_addr, ih, graph));
+                    Assert.IsFalse(EntropyModelBuilder2.AddressIsWhitespaceValued(c2_addr, ih, graph));
+                    Assert.IsTrue(EntropyModelBuilder2.AddressIsWhitespaceValued(a3_addr, ih, graph));
                 }
             }
         }

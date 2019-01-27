@@ -1,41 +1,42 @@
 ﻿using COMWrapper;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Resultant = ExceLint.Countable.CVectorResultant;
+using FastDependenceAnalysis;
 
 namespace ExceLintTests
 {
     [TestClass]
     public class CVectorTests
     {
-        private Depends.DAG SimpleDAG()
+        private Graph SimpleDAG()
         {
             var app = new Application();
             var wb = app.OpenWorkbook(@"..\..\TestData\SimpleWorkbook.xlsx");
-            var graph = wb.buildDependenceGraph();
+            var graph = wb.buildDependenceGraph().Worksheets[0];
             return graph;
         }
 
-        private Depends.DAG SimpleDAGWithConstant()
+        private Graph SimpleDAGWithConstant()
         {
             var app = new Application();
             var wb = app.OpenWorkbook(@"..\..\TestData\SimpleWorkbookWithConstant.xlsx");
-            var graph = wb.buildDependenceGraph();
+            var graph = wb.buildDependenceGraph().Worksheets[0];
             return graph;
         }
 
-        private Depends.DAG SimpleDAGWithConstants()
+        private Graph SimpleDAGWithConstants()
         {
             var app = new Application();
             var wb = app.OpenWorkbook(@"..\..\TestData\SimpleWorkbookWithConstants.xlsx");
-            var graph = wb.buildDependenceGraph();
+            var graph = wb.buildDependenceGraph().Worksheets[0];
             return graph;
         }
 
-        private Depends.DAG DAGWithMultipleFormulasAndConstants()
+        private Graph DAGWithMultipleFormulasAndConstants()
         {
             var app = new Application();
             var wb = app.OpenWorkbook(@"..\..\TestData\SimpleWorkbookWithMultipleFormulasAndConstants.xlsx");
-            var graph = wb.buildDependenceGraph();
+            var graph = wb.buildDependenceGraph().Worksheets[0];
             return graph;
         }
 
@@ -44,11 +45,11 @@ namespace ExceLintTests
         {
             // tests that A1 in cell B1 on the same sheet returns the relative resultant vector (-1,1,0,0)
             var dag = SimpleDAG();
-            var wbname = dag.getWorkbookName();
-            var wsname = dag.getWorksheetNames()[0];
-            var path = dag.getWorkbookDirectory();
+            var wbname = dag.Workbook;
+            var wsname = dag.Worksheet;
+            var path = dag.Path;
             var formula = AST.Address.fromA1withMode(1, "B", AST.AddressMode.Relative, AST.AddressMode.Relative, wsname, wbname, path);
-            var resultant = (Resultant)ExceLint.Vector.ShallowInputVectorMixedCVectorResultantNotOSI.run(formula, dag);
+            var resultant = (Resultant)ExceLint.Vector.ShallowInputVectorMixedFullCVectorResultantOSI.run(formula, dag);
             var resultant_shouldbe = Resultant.NewCVectorResultant(-1,0,0,0);
             Assert.AreEqual(resultant_shouldbe, resultant);
         }
@@ -58,11 +59,11 @@ namespace ExceLintTests
         {
             // tests that A1 in cell B1 on the same sheet returns the relative resultant vector (-1,1,0,1)
             var dag = SimpleDAGWithConstant();
-            var wbname = dag.getWorkbookName();
-            var wsname = dag.getWorksheetNames()[0];
-            var path = dag.getWorkbookDirectory();
+            var wbname = dag.Workbook;
+            var wsname = dag.Worksheet;
+            var path = dag.Path;
             var formula = AST.Address.fromA1withMode(1, "B", AST.AddressMode.Relative, AST.AddressMode.Relative, wsname, wbname, path);
-            var resultant = (Resultant)ExceLint.Vector.ShallowInputVectorMixedCVectorResultantNotOSI.run(formula, dag);
+            var resultant = (Resultant)ExceLint.Vector.ShallowInputVectorMixedFullCVectorResultantOSI.run(formula, dag);
             var resultant_shouldbe = Resultant.NewCVectorResultant(-1, 0, 0, 1);
             Assert.AreEqual(resultant_shouldbe, resultant);
         }
@@ -72,11 +73,11 @@ namespace ExceLintTests
         {
             // tests that A1 in cell B1 on the same sheet returns the relative resultant vector (-1,1,0,3)
             var dag = SimpleDAGWithConstants();
-            var wbname = dag.getWorkbookName();
-            var wsname = dag.getWorksheetNames()[0];
-            var path = dag.getWorkbookDirectory();
+            var wbname = dag.Workbook;
+            var wsname = dag.Worksheet;
+            var path = dag.Path;
             var formula = AST.Address.fromA1withMode(1, "B", AST.AddressMode.Relative, AST.AddressMode.Relative, wsname, wbname, path);
-            var resultant = (Resultant)ExceLint.Vector.ShallowInputVectorMixedCVectorResultantNotOSI.run(formula, dag);
+            var resultant = (Resultant)ExceLint.Vector.ShallowInputVectorMixedFullCVectorResultantOSI.run(formula, dag);
             var resultant_shouldbe = Resultant.NewCVectorResultant(-1, 0, 0, 3);
             Assert.AreEqual(resultant_shouldbe, resultant);
         }
@@ -86,27 +87,27 @@ namespace ExceLintTests
         {
             // tests resultant normalization
             var dag = DAGWithMultipleFormulasAndConstants();
-            var wbname = dag.getWorkbookName();
-            var wsname = dag.getWorksheetNames()[0];
-            var path = dag.getWorkbookDirectory();
+            var wbname = dag.Workbook;
+            var wsname = dag.Worksheet;
+            var path = dag.Path;
             var formula_b1 = AST.Address.fromA1withMode(1, "B", AST.AddressMode.Relative, AST.AddressMode.Relative, wsname, wbname, path);
             var formula_b2 = AST.Address.fromA1withMode(2, "B", AST.AddressMode.Relative, AST.AddressMode.Relative, wsname, wbname, path);
             var formula_b3 = AST.Address.fromA1withMode(3, "B", AST.AddressMode.Relative, AST.AddressMode.Relative, wsname, wbname, path);
             var formula_b4 = AST.Address.fromA1withMode(4, "B", AST.AddressMode.Relative, AST.AddressMode.Relative, wsname, wbname, path);
 
-            var resultant_b1 = (Resultant)ExceLint.Vector.ShallowInputVectorMixedCVectorResultantNotOSI.run(formula_b1, dag);
+            var resultant_b1 = (Resultant)ExceLint.Vector.ShallowInputVectorMixedFullCVectorResultantOSI.run(formula_b1, dag);
             var resultant_b1_shouldbe = Resultant.NewCVectorResultant(-1, 0, 0, 3);
             Assert.AreEqual(resultant_b1_shouldbe, resultant_b1);
 
-            var resultant_b2 = (Resultant)ExceLint.Vector.ShallowInputVectorMixedCVectorResultantNotOSI.run(formula_b2, dag);
+            var resultant_b2 = (Resultant)ExceLint.Vector.ShallowInputVectorMixedFullCVectorResultantOSI.run(formula_b2, dag);
             var resultant_b2_shouldbe = Resultant.NewCVectorResultant(-1, 0, 0, 1);
             Assert.AreEqual(resultant_b2_shouldbe, resultant_b2);
 
-            var resultant_b3 = (Resultant)ExceLint.Vector.ShallowInputVectorMixedCVectorResultantNotOSI.run(formula_b3, dag);
+            var resultant_b3 = (Resultant)ExceLint.Vector.ShallowInputVectorMixedFullCVectorResultantOSI.run(formula_b3, dag);
             var resultant_b3_shouldbe = Resultant.NewCVectorResultant(-1, 0, 0, 0);
             Assert.AreEqual(resultant_b3_shouldbe, resultant_b3);
 
-            var resultant_b4 = (Resultant)ExceLint.Vector.ShallowInputVectorMixedCVectorResultantNotOSI.run(formula_b4, dag);
+            var resultant_b4 = (Resultant)ExceLint.Vector.ShallowInputVectorMixedFullCVectorResultantOSI.run(formula_b4, dag);
             var resultant_b4_shouldbe = Resultant.NewCVectorResultant(-2, -3, 0, 8);
             Assert.AreEqual(resultant_b4_shouldbe, resultant_b4);
 

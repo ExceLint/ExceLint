@@ -70,23 +70,14 @@
   <ItemGroup>
     <Compile Include="BasicTests.cs" />
     <Compile Include="BinaryMinEntropyTreeTests.cs" />
-    <Compile Include="COFTests.cs" />
-    <Compile Include="CompressedRadixTreeTests.cs" />
     <Compile Include="CVectorTests.cs" />
-    <Compile Include="DistanceTests.cs" />
     <Compile Include="FullCVectorTests.cs" />
-    <Compile Include="LSHTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="JaccardTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Depends\COMWrapper\COMWrapper.csproj">
       <Project>{d9bc52ff-2319-4216-96fd-6f9cf2d05539}</Project>
       <Name>COMWrapper</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Depends\Depends\Depends.csproj">
-      <Project>{34fa1bc2-cfd6-44ec-ac0c-dfc62313e4bf}</Project>
-      <Name>Depends</Name>
     </ProjectReference>
     <ProjectReference Include="..\Depends\parcel\Parcel\ExcelParser.fsproj">
       <Project>{6de2a2b9-c029-4bdb-8992-d16276471d9f}</Project>
@@ -99,6 +90,10 @@
     <ProjectReference Include="..\ExceLint\ExceLint.fsproj">
       <Project>{a62bca5a-eb55-46ed-a49a-fdb34771b605}</Project>
       <Name>ExceLint</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\FastDependenceAnalysis\FastDependenceAnalysis.csproj">
+      <Project>{bb6178d3-40c3-442f-902c-5a6cb2eefa1c}</Project>
+      <Name>FastDependenceAnalysis</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
