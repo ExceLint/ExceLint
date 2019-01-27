@@ -70,7 +70,6 @@
   <ItemGroup>
     <Compile Include="BasicTests.cs" />
     <Compile Include="BinaryMinEntropyTreeTests.cs" />
-    <Compile Include="CVectorTests.cs" />
     <Compile Include="FullCVectorTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
