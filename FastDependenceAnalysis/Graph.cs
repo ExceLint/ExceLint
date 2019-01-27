@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Dynamic;
 using System.Linq;
-using System.Security.Cryptography;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Excel = Microsoft.Office.Interop.Excel;
 using ExprOpt = Microsoft.FSharp.Core.FSharpOption<AST.Expression>;
@@ -142,7 +141,7 @@ namespace FastDependenceAnalysis
         }
     }
 
-    public class Graph
+    public class Graph : IDisposable
     {
         private readonly string _wsname;
         private readonly string _wbname;
@@ -446,6 +445,9 @@ namespace FastDependenceAnalysis
                 _time_ms_parsing = psw.ElapsedMilliseconds;
             }
             #endregion DEPENDENCE
+
+            // release COM resources
+            Marshal.ReleaseComObject(urng);
         }
 
         private struct FormulaData
@@ -533,7 +535,7 @@ namespace FastDependenceAnalysis
 
         private AST.Address ValueReferenceToAddress(int row, int col)
         {
-            return AST.Address.fromR1C1withMode(row + _value_box_top - 1, col + _value_box_left - 1, AST.AddressMode.Absolute, AST.AddressMode.Absolute, _wsname, _wbname, _path);
+            return AST.Address.fromR1C1withMode(row + _value_box_top, col + _value_box_left, AST.AddressMode.Absolute, AST.AddressMode.Absolute, _wsname, _wbname, _path);
         }
 
         private AST.Address FormulaReferenceToAddress(int row, int col)
@@ -969,6 +971,11 @@ namespace FastDependenceAnalysis
             }
 
             return output;
+        }
+
+        public void Dispose()
+        {
+            Marshal.ReleaseComObject(_valueTable);
         }
     }
 }

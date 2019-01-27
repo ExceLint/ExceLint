@@ -9,27 +9,35 @@ namespace FastDependenceAnalysisTest
     [TestClass]
     public class BasicTests
     {
-        public Graph FormulaGraph()
-        {
-            var app = new Application();
-            var wb = app.OpenWorkbook(@"..\..\TestFiles\OneFormula.xlsx");
-            return wb.buildDependenceGraph().Worksheets[0];
-        }
-
-        public Graph ValueGraph()
-        {
-            var app = new Application();
-            var wb = app.OpenWorkbook(@"..\..\TestFiles\OneValue.xlsx");
-            return wb.buildDependenceGraph().Worksheets[0];
-        }
-
         [TestMethod]
         public void FormulaRoundTrip()
         {
-            var graph = FormulaGraph();
-            var addr = AST.Address.FromA1String("C5", graph.Worksheet, graph.Workbook, graph.Path);
-            var f = graph.getFormulaAtAddress(addr);
-            Assert.AreEqual("=RAND()", f);
+            
+            using (var app = new Application())
+            {
+                using (var wb = app.OpenWorkbook(@"..\..\TestFiles\OneFormula.xlsx"))
+                {
+                    var graph = wb.buildDependenceGraph().Worksheets[0];
+                    var addr = AST.Address.FromA1String("C5", graph.Worksheet, graph.Workbook, graph.Path);
+                    var f = graph.getFormulaAtAddress(addr);
+                    Assert.AreEqual("=RAND()", f);
+                }
+            }
+        }
+
+        [TestMethod]
+        public void ValueRoundTrip()
+        {
+            using (var app = new Application())
+            {
+                using (var wb = app.OpenWorkbook(@"..\..\TestFiles\OneValue.xlsx"))
+                {
+                    var graph = wb.buildDependenceGraph().Worksheets[0];
+                    var addr = AST.Address.FromA1String("F6", graph.Worksheet, graph.Workbook, graph.Path);
+                    var v = graph.Values[addr];
+                    Assert.AreEqual("7384394", v);
+                }
+            }
         }
     }
 }
