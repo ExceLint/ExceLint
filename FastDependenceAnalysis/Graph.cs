@@ -178,6 +178,10 @@ namespace FastDependenceAnalysis
         private readonly long _time_ms_parsing;
         private readonly long _time_ms_dep_analysis;
 
+        // caches
+        private Dictionary<AST.Address, string> _cache_formulas;
+        private Dictionary<AST.Address, string> _cache_values;
+
         public string Worksheet
         {
             get { return _wsname; }
@@ -195,19 +199,28 @@ namespace FastDependenceAnalysis
         public Dictionary<AST.Address,string> Formulas
         {
             get {
-                Dictionary<AST.Address,string> d = new Dictionary<AST.Address, string>();
-                for (int row = 0; row < _formulaTable.Length; row++)
+                if (_cache_formulas == null)
                 {
-                    for (int col = 0; col < _formulaTable[row].Length; col++)
+                    Dictionary<AST.Address, string> d = new Dictionary<AST.Address, string>();
+                    for (int row = 0; row < _formulaTable.Length; row++)
                     {
-                        if (_formulaTable[row][col] != null)
+                        for (int col = 0; col < _formulaTable[row].Length; col++)
                         {
-                            var addr = FormulaReferenceToAddress(row, col);
-                            d.Add(addr, _formulaTable[row][col]);
+                            if (_formulaTable[row][col] != null)
+                            {
+                                var addr = FormulaReferenceToAddress(row, col);
+                                d.Add(addr, _formulaTable[row][col]);
+                            }
                         }
                     }
+
+                    _cache_formulas = d;
+                    return d;
                 }
-                return d;
+                else
+                {
+                    return _cache_formulas;
+                }
             }
         }
 
@@ -242,16 +255,25 @@ namespace FastDependenceAnalysis
         {
             get
             {
-                var d = new Dictionary<AST.Address, string>();
-                for (int row = 0; row < _valueTable.Length; row++)
+                if (_cache_values == null)
                 {
-                    for (int col = 0; col < _valueTable[row].Length; col++)
+                    var d = new Dictionary<AST.Address, string>();
+                    for (int row = 0; row < _valueTable.Length; row++)
                     {
-                        var addr = ValueReferenceToAddress(row, col);
-                        d.Add(addr, Convert.ToString(_valueTable[row][col]));
+                        for (int col = 0; col < _valueTable[row].Length; col++)
+                        {
+                            var addr = ValueReferenceToAddress(row, col);
+                            d.Add(addr, Convert.ToString(_valueTable[row][col]));
+                        }
                     }
+
+                    _cache_values = d;
+                    return d;
                 }
-                return d;
+                else
+                {
+                    return _cache_values;
+                }
             }
         }
 
@@ -540,7 +562,7 @@ namespace FastDependenceAnalysis
 
         private AST.Address FormulaReferenceToAddress(int row, int col)
         {
-            return AST.Address.fromR1C1withMode(row + _formula_box_top - 1, col + _formula_box_left - 1, AST.AddressMode.Absolute, AST.AddressMode.Absolute, _wsname, _wbname, _path);
+            return AST.Address.fromR1C1withMode(row + _formula_box_top, col + _formula_box_left, AST.AddressMode.Absolute, AST.AddressMode.Absolute, _wsname, _wbname, _path);
         }
 
         private Reference FormulaAddressToReference(AST.Address addr)
@@ -763,7 +785,7 @@ namespace FastDependenceAnalysis
                     }
                 }
 
-                return new FormulaData(c_min + left, c_max + left, r_min + top, r_max + top, output);
+                return new FormulaData(c_min + left - 1, c_max + left - 1, r_min + top - 1, r_max + top - 1, output);
             }
         }
 
