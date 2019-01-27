@@ -181,6 +181,8 @@ namespace FastDependenceAnalysis
         // caches
         private Dictionary<AST.Address, string> _cache_formulas;
         private Dictionary<AST.Address, string> _cache_values;
+        private AST.Address[] _cache_allCellsIncludingBlanks;
+        private AST.Address[] _cache_allCells;
 
         public string Worksheet
         {
@@ -763,6 +765,18 @@ namespace FastDependenceAnalysis
                         }
                     }
                 }
+
+                // sometimes there are no formulas at all
+                if (c_min == Int32.MaxValue &&
+                    c_max == Int32.MinValue &&
+                    r_min == Int32.MaxValue &&
+                    r_max == Int32.MinValue)
+                {
+                    var empty = new string[1][];
+                    empty[0] = new string[1];
+
+                    return new FormulaData(1, 1, 1, 1, empty);
+                }
                 
                 // bounds are inclusive, so add one
                 var true_width = c_max - c_min + 1;
@@ -843,20 +857,25 @@ namespace FastDependenceAnalysis
 
         public AST.Address[] allCells()
         {
-            var output = new List<AST.Address>();
-            for (int row = 0; row < _valueTable.Length; row++)
+            if (_cache_allCells == null)
             {
-                for (int col = 0; col < _valueTable[row].Length; col++)
+                var output = new List<AST.Address>();
+                for (int row = 0; row < _valueTable.Length; row++)
                 {
-                    if (_valueTable[row][col] != null)
+                    for (int col = 0; col < _valueTable[row].Length; col++)
                     {
-                        var addr = ValueReferenceToAddress(row, col);
-                        output.Add(addr);
+                        if (_valueTable[row][col] != null)
+                        {
+                            var addr = ValueReferenceToAddress(row, col);
+                            output.Add(addr);
+                        }
                     }
                 }
+
+                _cache_allCells = output.ToArray();
             }
 
-            return output.ToArray();
+            return _cache_allCells;
         }
 
         // returns the union of the formula and value boxes;
@@ -873,34 +892,49 @@ namespace FastDependenceAnalysis
 
         public AST.Address[] allCellsIncludingBlanks()
         {
-            var bb = UnionedBoundingBox();
-            int left = bb.Item1;
-            int right = bb.Item2;
-            int top = bb.Item3;
-            int bottom = bb.Item4;
-
-            int width = right - left + 1;
-            int height = bottom - top + 1;
-
-            var output = new List<AST.Address>();
-            for (int row = top; row <= bottom; row++)
+            if (_cache_allCellsIncludingBlanks == null)
             {
-                for (int col = left; col <= right; col++)
+                var bb = UnionedBoundingBox();
+                int left = bb.Item1;
+                int right = bb.Item2;
+                int top = bb.Item3;
+                int bottom = bb.Item4;
+
+                int width = right - left + 1;
+                int height = bottom - top + 1;
+
+                var output = new AST.Address[width * height];
+                int i = 0;
+                for (int row = top; row <= bottom; row++)
                 {
-                    var addr = AST.Address.fromR1C1withMode(
-                                    row,
-                                    col,
-                                    AST.AddressMode.Absolute,
-                                    AST.AddressMode.Absolute,
-                                    _wsname,
-                                    _wbname,
-                                    _path
-                               );
-                    output.Add(addr);
+                    for (int col = left; col <= right; col++)
+                    {
+                        var addr = AST.Address.fromR1C1withMode(
+                            row,
+                            col,
+                            AST.AddressMode.Absolute,
+                            AST.AddressMode.Absolute,
+                            _wsname,
+                            _wbname,
+                            _path
+                        );
+                        try
+                        {
+                            output[i] = addr;
+                        }
+                        catch (Exception e)
+                        {
+                            var wtf = true;
+                        }
+                        
+                        i++;
+                    }
                 }
+
+                _cache_allCellsIncludingBlanks = output;
             }
 
-            return output.ToArray();
+            return _cache_allCellsIncludingBlanks;
         }
 
         public int getPathClosureIndex(Tuple<string, string, string> path)
