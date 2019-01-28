@@ -58,7 +58,6 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="UInt128.fs" />
     <Compile Include="Utils.fs" />
     <Compile Include="SheetVector.fs" />
     <Compile Include="BasicStats.fs" />

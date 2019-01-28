@@ -11,6 +11,7 @@ using Worksheet = Microsoft.Office.Interop.Excel.Worksheet;
 using System.Text;
 using ExceLint;
 using System.Collections.Immutable;
+using FastDependenceAnalysis;
 using Clusters = System.Collections.Immutable.ImmutableHashSet<System.Collections.Immutable.ImmutableHashSet<AST.Address>>;
 using ROInvertedHistogram = System.Collections.Immutable.ImmutableDictionary<AST.Address, System.Tuple<string, ExceLint.Scope.SelectID, ExceLint.Countable>>;
 using Graph = FastDependenceAnalysis.Graph;
@@ -44,57 +45,57 @@ namespace ExceLintUI
             // get active sheet
             Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
 
-            if (fixClusterModel == null)
+            // get cells
+            var cells = graph.allCells();
+
+            // config
+            var conf = getConfig();
+
+            // get fingerprints
+            // I am hard-coding the one feature here for now, since
+            // I have removed all of the other ExceLint features
+            var ns = CommonFunctions.runEnabledFeatures(cells, graph, conf, Progress.NOPProgress());
+            var fs = ns["ShallowInputVectorMixedFullCVectorResultantOSI"];
+
+            // cluster
+            var cs = ClusterFingerprints(fs);
+
+            // get inverted histogram
+            var histo = CommonFunctions.invertedHistogram(ns, graph, conf);
+
+            // filter out whitespace and string clusters
+            var cs_filtered = PrettyClusters(cs, histo, graph);
+
+            // in case we've run something before, restore colors
+            currentWorkbook.restoreOutputColors();
+
+            // save colors
+            CurrentWorkbook.saveColors(activeWs);
+
+            // paint
+            currentWorkbook.DrawImmutableClusters(cs_filtered, histo, activeWs);
+        }
+
+        private Clusters ClusterFingerprints(Tuple<AST.Address, Countable>[] fs)
+        {
+            // group by fingerprint and turn into ImmutableClustering
+            var cs = fs.GroupBy(kvp => kvp.Item2);
+            var ctmp = new HashSet<ImmutableHashSet<AST.Address>>();
+            foreach (var group in cs)
             {
-                // change button name
-                RegularityMap.Label = "Hide Global View";
-
-                // create progbar in main thread;
-                // worker thread will call Dispose
-                var pb = new ProgBar();
-
-                // build the model
-                var sw2 = System.Diagnostics.Stopwatch.StartNew();
-                fixClusterModel = currentWorkbook.NewEntropyModelForWorksheet2(activeWs, getConfig(), graph, pb);
-
-                // get z for worksheet
-                int z = -1;
-                try
+                var hs = new HashSet<AST.Address>();
+                foreach (var tup in group.AsEnumerable())
                 {
-                    z = fixClusterModel.ZForWorksheet(activeWs.Name);
-                } catch (KeyNotFoundException)
-                {
-                    pb.Close();
-                    return;
+                    var addr = tup.Item1;
+                    hs.Add(addr);
                 }
 
-                // do visualization
-                var histo2 = fixClusterModel.InvertedHistogram;
-                var clusters2 = fixClusterModel.Clustering(z);
-                sw2.Stop();
-                var cl_filt2 = PrettyClusters(clusters2, histo2, graph);
+                var ihs = hs.ToImmutableHashSet();
 
-                // in case we've run something before, restore colors
-                currentWorkbook.restoreOutputColors();
-
-                // save colors
-                CurrentWorkbook.saveColors(activeWs);
-
-                // paint
-                currentWorkbook.DrawImmutableClusters(cl_filt2, fixClusterModel.InvertedHistogram, activeWs);
-
-                // remove progress bar
-                pb.Close();
-            } else
-            {
-                currentWorkbook.restoreOutputColors();
-
-                // change button name
-                RegularityMap.Label = "Show Global View";
-
-                // reset model
-                fixClusterModel = null;
+                ctmp.Add(ihs);
             }
+
+            return ctmp.ToImmutableHashSet();
         }
 
         private void ClearEverything_Click(object sender, RibbonControlEventArgs e)
@@ -482,18 +483,7 @@ namespace ExceLintUI
         {
             var c = new FeatureConf();
             c = c.enableShallowInputVectorMixedFullCVectorResultantOSI(true);
-            return c;
-        }
-
-        public bool AnnotationMode
-        {
-            get { return annotations != null; }
-        }
-
-        public ExceLintGroundTruth Annotations
-        {
-            get { return annotations; }
-            set { annotations = value; }
+            return c.validate;
         }
 
         #endregion UTILITY_FUNCTIONS
