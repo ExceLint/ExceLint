@@ -41,10 +41,6 @@
 			<Name>CUSTODESParser</Name>
 			<Project>{8ED0E074-A6E6-4EC4-8A53-E62D53295186}</Project>
 		</ProjectReference>
-		<ProjectReference Include="..\Depends\Depends\Depends.csproj">
-			<Name>Depends</Name>
-			<Project>{34FA1BC2-CFD6-44EC-AC0C-DFC62313E4BF}</Project>
-		</ProjectReference>
 		<ProjectReference Include="..\ExceLint\ExceLint.fsproj">
 			<Name>ExceLint</Name>
 			<Project>{A62BCA5A-EB55-46ED-A49A-FDB34771B605}</Project>
@@ -80,6 +76,10 @@
 		<ProjectReference Include="..\Depends\parcel\FParsecCS\FParsecCS.csproj">
 			<Name>FParsecCS</Name>
 			<Project>{35888456-3095-4133-92C8-6DD3205F4C2D}</Project>
+		</ProjectReference>
+		<ProjectReference Include="..\FastDependenceAnalysis\FastDependenceAnalysis.csproj">
+			<Name>FastDependenceAnalysis</Name>
+			<Project>{BB6178D3-40C3-442F-902C-5A6CB2EEFA1C}</Project>
 		</ProjectReference>
 		<ProjectReference Include="..\Depends\ParcelCOMShim\ParcelCOMShim\ParcelCOMShim.fsproj">
 			<Name>ParcelCOMShim</Name>
