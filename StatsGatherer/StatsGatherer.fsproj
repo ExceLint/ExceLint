@@ -62,11 +62,6 @@
       <Project>{d9bc52ff-2319-4216-96fd-6f9cf2d05539}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Depends\Depends\Depends.csproj">
-      <Name>Depends</Name>
-      <Project>{34fa1bc2-cfd6-44ec-ac0c-dfc62313e4bf}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="..\Depends\parcel\Parcel\ExcelParser.fsproj">
       <Name>ExcelParser</Name>
       <Project>{6de2a2b9-c029-4bdb-8992-d16276471d9f}</Project>
