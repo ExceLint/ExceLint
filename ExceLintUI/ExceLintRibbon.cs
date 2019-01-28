@@ -149,9 +149,6 @@ namespace ExceLintUI
 
         private void AnalyzeButton_Click(object sender, RibbonControlEventArgs e)
         {
-            // check for debug checkbox
-            currentWorkbook.DebugMode = false;
-
             // workbook- and UI-update callback
             Action<WorkbookState> updateWorkbook = (WorkbookState wbs) =>
             {

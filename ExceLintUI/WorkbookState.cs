@@ -2,16 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using Excel = Microsoft.Office.Interop.Excel;
-using FullyQualifiedVector = ExceLint.Vector.RichVector;
-using RelativeVector = System.Tuple<int, int, int>;
 using Score = System.Collections.Generic.KeyValuePair<AST.Address, double>;
-using HypothesizedFixes = System.Collections.Generic.Dictionary<AST.Address, System.Collections.Generic.Dictionary<string, ExceLint.Countable>>;
 using Microsoft.FSharp.Core;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading;
-using System.Collections.Immutable;
 using FastDependenceAnalysis;
 using Worksheet = Microsoft.Office.Interop.Excel.Worksheet;
 using Workbook = Microsoft.Office.Interop.Excel.Workbook;
@@ -56,8 +49,6 @@ namespace ExceLintUI
         private HashSet<AST.Address> _audited = new HashSet<AST.Address>();
         private Analysis _analysis;
         private AST.Address _flagged_cell;
-        private bool _debug_mode = false;
-        private bool _dag_changed = false;
 
         public int currentFlag = 0;
 
@@ -128,12 +119,6 @@ namespace ExceLintUI
         public bool CUSTODES_Hidden(Worksheet w)
         {
             return !(_custodes_shown.ContainsKey(w) && _custodes_shown[w]);
-        }
-
-        public bool DebugMode
-        {
-            get { return _debug_mode; }
-            set { _debug_mode = value; }
         }
 
         public Analysis inProcessAnalysis(long max_duration_in_ms, ExceLint.FeatureConf config, Graph g, Progress p)
