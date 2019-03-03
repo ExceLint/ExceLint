@@ -395,9 +395,8 @@ namespace FastDependenceAnalysis
                                 {
                                     _referenceTable.Add(key, new List<Reference>());
                                 }
-                                // Excel row and column are 1-based
-                                // subtract one to make them zero-based
-                                _referenceTable[key].Add(new Reference(isOffSheet(addr), addr.Row - 1, addr.Col - 1));
+                                // convert to internal representation
+                                _referenceTable[key].Add(ValueAddressToReference(addr));
                             }
 
                             // ranges next
@@ -425,7 +424,7 @@ namespace FastDependenceAnalysis
                                     }
                                     // Excel row and column are 1-based
                                     // subtract one to make them zero-based
-                                    _referenceTable[key].Add(new Reference(isOffSheet(addr), addr.Row - 1, addr.Col - 1));
+                                    _referenceTable[key].Add(ValueAddressToReference(addr));
 
                                     // find bounds
                                     if (addr.Row < minRow)
@@ -559,7 +558,8 @@ namespace FastDependenceAnalysis
 
         private AST.Address ValueReferenceToAddress(int row, int col)
         {
-            return AST.Address.fromR1C1withMode(row + _value_box_top, col + _value_box_left, AST.AddressMode.Absolute, AST.AddressMode.Absolute, _wsname, _wbname, _path);
+            var r1c1 = AST.Address.fromR1C1withMode(row + _value_box_top, col + _value_box_left, AST.AddressMode.Absolute, AST.AddressMode.Absolute, _wsname, _wbname, _path);
+            return r1c1;
         }
 
         private AST.Address FormulaReferenceToAddress(int row, int col)
@@ -1021,7 +1021,7 @@ namespace FastDependenceAnalysis
                 var key = new Tuple<int,int>(d.Row, d.Col);
                 foreach (Reference d2 in _referenceTable[key])
                 {
-                    var addr2 = FormulaReferenceToAddress(d2.Row, d2.Col);
+                    var addr2 = ValueReferenceToAddress(d2.Row, d2.Col);
                     output.Add(addr2);
                 }
             }
