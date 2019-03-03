@@ -257,10 +257,76 @@ namespace ExceLintUI
             return true;
         }
 
+        /**
+         * Return a local address without absolute address $s
+         */
+        public String localAddress(AST.Address addr)
+        {
+            var addr2 = AST.Address.fromR1C1withMode(
+                addr.Row,
+                addr.Col,
+                AST.AddressMode.Relative,
+                AST.AddressMode.Relative,
+                addr.WorksheetName,
+                addr.WorkbookName, addr.Path);
+            return addr2.A1Local();
+        }
+
+        public void labelReferents(Dictionary<AST.Address, HashSet<AST.Address>> referents)
+        {
+            // Disable screen updating
+            var initial_state = _app.ScreenUpdating;
+            _app.ScreenUpdating = false;
+
+            // do we stumble across protected cells along the way?
+            var protCells = new List<AST.Address>();
+
+            // add comments
+            foreach (var kvp in referents)
+            {
+                // grab formula refs, sort by address,
+                // then select colors
+                var data = kvp.Key;
+                var formulas = kvp.Value.ToArray();
+                Array.Sort(formulas);
+
+                // label
+                if (unProtect(data) != ProtectionLevel.None)
+                {
+                    protCells.Add(data);
+                }
+                else
+                {
+                    // get cell COM object
+                    var com = ParcelCOMShim.Address.GetCOMObject(data, _app);
+
+                    String c = "Referred to by: " + String.Join(", ", formulas.Select(f => localAddress(f)));
+
+                    // delete comment if it already exists
+                    if (com.Comment != null)
+                    {
+                        com.Comment.Delete();
+                    }
+                    // add comment
+                    com.AddComment(c);
+                }
+            }
+
+            // warn user if we could not highlight something
+            if (protCells.Count > 0)
+            {
+                var names = String.Join(", ", protCells.Select(c => c.A1Local()));
+                System.Windows.Forms.MessageBox.Show("WARNING: This workbook contains the following protected cells that cannot be changed:\n\n" + names);
+            }
+
+            // Enable screen updating
+            _app.ScreenUpdating = initial_state;
+        }
+
         /*
          * Colors cells using map
          */
-        public void ColorDataWithMap(Dictionary<AST.Address, HashSet<AST.Address>> referents, Dictionary<AST.Address, System.Drawing.Color> colors)
+        public void ColorDataWithMap(Dictionary<AST.Address, HashSet<AST.Address>> referents, Dictionary<AST.Address, System.Drawing.Color> colors, Graph g)
         {
             // Disable screen updating
             var initial_state = _app.ScreenUpdating;
@@ -275,14 +341,19 @@ namespace ExceLintUI
                 // grab formula refs, sort by address,
                 // then select colors
                 var data = kvp.Key;
-                var formulas = kvp.Value.ToArray();
-                Array.Sort(formulas);
-                var cs = formulas.Select(f => colors[f]).ToArray();
 
-                // draw gradient
-                if (!PaintGradient(data, cs))
+                // if this cell is itself a formula, skip it
+                if (!g.isFormula(data))
                 {
-                    protCells.Add(data);
+                    var formulas = kvp.Value.ToArray();
+                    Array.Sort(formulas);
+                    var cs = formulas.Select(f => colors[f]).ToArray();
+
+                    // draw gradient
+                    if (!PaintGradient(data, cs))
+                    {
+                        protCells.Add(data);
+                    }
                 }
             }
 
@@ -585,6 +656,12 @@ namespace ExceLintUI
                 {
                     var com = ParcelCOMShim.Address.GetCOMObject(pair.Key, _app);
                     com.Interior.ColorIndex = pair.Value.ColorIndex;
+
+                    // also delete comments
+                    if (com.Comment != null)
+                    {
+                        com.Comment.Delete();
+                    }
                 }
                 _colors.Clear();
             }

@@ -78,7 +78,10 @@ namespace ExceLintUI
                 var colormap = currentWorkbook.DrawImmutableClusters(cs_filtered, histo, activeWs);
 
                 // paint data
-                currentWorkbook.ColorDataWithMap(referents,colormap);
+                currentWorkbook.ColorDataWithMap(referents, colormap, graph);
+
+                // add data comments
+                currentWorkbook.labelReferents(referents);
 
                 // set UI state
                 setUIState(currentWorkbook);
