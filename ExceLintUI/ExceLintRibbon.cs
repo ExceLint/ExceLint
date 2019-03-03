@@ -62,8 +62,6 @@ namespace ExceLintUI
                 // get inverted histogram
                 var histo = CommonFunctions.invertedHistogram(ns, graph, conf);
 
-                // get formula usage for data cells
-                var referents = Vector.getReferentDict(graph);
 
                 // filter out whitespace and string clusters
                 var cs_filtered = PrettyClusters(cs, histo, graph);
@@ -77,11 +75,18 @@ namespace ExceLintUI
                 // paint formulas
                 var colormap = currentWorkbook.DrawImmutableClusters(cs_filtered, histo, activeWs);
 
-                // paint data
-                currentWorkbook.ColorDataWithMap(referents, colormap, graph);
+                // if checked, analyze data
+                if (this.enableDataHighlight.Checked)
+                {
+                    // get formula usage for data cells
+                    var referents = Vector.getReferentDict(graph);
 
-                // add data comments
-                currentWorkbook.labelReferents(referents);
+                    // paint data
+                    currentWorkbook.ColorDataWithMap(referents, colormap, graph);
+
+                    // add data comments
+                    currentWorkbook.labelReferents(referents);
+                }
 
                 // set UI state
                 setUIState(currentWorkbook);
@@ -340,10 +345,12 @@ namespace ExceLintUI
                 if (wbs.Analyze_Enabled)
                 {
                     this.RegularityMap.Label = "Reveal Structure";
+                    this.enableDataHighlight.Enabled = true;
                 }
                 else
                 {
                     this.RegularityMap.Label = "Hide Structure";
+                    this.enableDataHighlight.Enabled = false;
                 }
             }
         }

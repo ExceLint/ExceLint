@@ -40,6 +40,7 @@
             this.RegularityMap = this.Factory.CreateRibbonButton();
             this.VectorForCell = this.Factory.CreateRibbonButton();
             this.button1 = this.Factory.CreateRibbonButton();
+            this.enableDataHighlight = this.Factory.CreateRibbonCheckBox();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -62,6 +63,7 @@
             // 
             this.CheckCellGroup.Items.Add(this.RegularityMap);
             this.CheckCellGroup.Items.Add(this.VectorForCell);
+            this.CheckCellGroup.Items.Add(this.enableDataHighlight);
             this.CheckCellGroup.Name = "CheckCellGroup";
             // 
             // RegularityMap
@@ -85,6 +87,11 @@
             this.button1.Label = "Start Fix";
             this.button1.Name = "button1";
             this.button1.ShowImage = true;
+            // 
+            // enableDataHighlight
+            // 
+            this.enableDataHighlight.Label = "Analyze data";
+            this.enableDataHighlight.Name = "enableDataHighlight";
             // 
             // ExceLintRibbon
             // 
@@ -111,6 +118,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton VectorForCell;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton button1;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton RegularityMap;
+        internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox enableDataHighlight;
     }
 
     partial class ThisRibbonCollection
