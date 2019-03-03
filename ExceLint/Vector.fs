@@ -2,6 +2,7 @@
     open FastDependenceAnalysis
     open System
     open System.Collections.Generic
+    open System.Collections.Immutable
     open Utils
 
     module public Vector =
@@ -13,6 +14,7 @@
         type public Y = int    // i.e., row displacement
         type public Z = int    // i.e., worksheet displacement (0 if same sheet, 1 if different)
         type public C = double // i.e., a constant value
+        type Clustering = ImmutableHashSet<ImmutableHashSet<AST.Address>>
 
         type ArityZero() =
             static let idx: Dictionary<string,int> =
@@ -291,9 +293,6 @@
                 ConstantWithLoc(x1, y1, z1, dx1 + dx2, dy1 + dy2, dz1 + dz2, dc1 + dc2)
             | _ -> failwith "Cannot sum RelativeVectors of different subtypes."
 
-        let private L2NormRVSum(vs: RelativeVector[]) : double =
-            vs |> Array.map L2NormRV |> Array.sum
-
         let private Resultant(vs: RelativeVector[]) : RelativeVector =
             vs |>
             Array.fold (fun (acc: RelativeVector option)(v: RelativeVector) ->
@@ -306,19 +305,6 @@
                 | Some rv -> rv
                 | None -> failwith "Empty resultant!"
             )
-
-        let private SquareMatrix(origin: X*Y)(vs: RelativeVector[]) : X*Y*X*Y =
-            let (x,y) = origin
-            let xyoff = vs |>
-                        Array.fold (fun (xacc: X, yacc: Y)(rv: RelativeVector) ->
-                            let (x',y') =
-                                match rv with
-                                | Constant(x,y,_,_) -> x,y
-                                | NoConstant(x,y,_) -> x,y
-                                | _ -> failwith "not supported"
-                            xacc + x', yacc + y'
-                        ) (0,0)
-            (fst xyoff, snd xyoff, x, y)
 
         let zeroArityXYP(op: string)(tailPath: string*string*string)(cvc: C) : MixedVectorWithConstant option =
             if ArityZero.isZeroArity op then
@@ -428,95 +414,20 @@
                 vs
             )
 
+        let getReferentDict(g: Graph) : Dict<AST.Address,HashSet<AST.Address>> =
+            let d = new Dict<AST.Address, HashSet<AST.Address>>()
+            for f in g.getAllFormulaAddrs() do
+                for input in (g.getFormulaSingleCellInputs f) do
+                    if not (d.ContainsKey input) then
+                        d.Add(input, new HashSet<AST.Address>())
+                    // track formula wrt data address
+                    d.[input].Add f |> ignore
+            d
+
         let getVectors(cell: AST.Address)(dag: Graph)(vector_f: VectorMaker)(cvector_f: ConstantVectorMaker)(transitive: bool)(isForm: bool) : RichVector[] =
             let depth = if transitive then None else (Some 1)
             let output = transitiveInputVectors cell dag depth vector_f cvector_f
             output
-
-        // find normalization function that shifts and scales column values appropriately
-        let private colNormFunc(column: double[]) : double -> double =
-            let min = Array.min column
-            let max = Array.max column
-            if max = min then
-                fun x -> 0.5
-            else
-                fun x -> (x - min) / (max - min)
-
-        let private idf(x: double[]) : double -> double = fun x -> x
-
-        let private zeroOneNormalization(worksheet: SquareVector[])(normalizeRefSpace: bool)(normalizeSSSpace: bool) : SquareVector[] =
-            assert (worksheet.Length <> 0)
-
-            // get normalization functions for each column
-            let dx_norm_f =  Array.map (fun (v: SquareVector) -> v.dx) worksheet
-                             |> fun xs -> if normalizeRefSpace then colNormFunc xs else idf xs
-            let dy_norm_f = Array.map (fun (v: SquareVector) -> v.dy) worksheet
-                            |> fun xs -> if normalizeRefSpace then colNormFunc xs else idf xs
-            let x_norm_f = Array.map (fun (v: SquareVector) -> v.x) worksheet
-                           |> fun xs -> if normalizeSSSpace then colNormFunc xs else idf xs
-            let y_norm_f = Array.map (fun (v: SquareVector) -> v.y) worksheet
-                           |> fun xs -> if normalizeSSSpace then colNormFunc xs else idf xs
-
-            // normalize and reutrn new vector array
-            Array.map (fun (v: SquareVector) ->
-                let dx = dx_norm_f v.dx
-                let dy = dy_norm_f v.dy
-                let x = x_norm_f v.x
-                let y = y_norm_f v.y
-                SquareVector(dx, dy, x, y)
-            ) worksheet
-
-        let SquareVectorForCell(cell: AST.Address)(dag: Graph)(vector_f: VectorMaker)(cvector_f: ConstantVectorMaker) : SquareVector =
-            let vs = getVectors cell dag vector_f cvector_f (*transitive*) false (*isForm*) true
-            let rvs = Array.map (fun rv -> relativeToTail rv dag (*isOffSheetInsensitive*) true false) vs
-            let sm = SquareMatrix (cell.X, cell.Y) rvs
-            let (dx,dy,x,y) = sm
-            SquareVector(float dx,float dy,float x,float y)
-
-        let column(i: int)(data: (X*Y*X*Y)[]) : double[] =
-            Array.map (fun row ->
-               let (x1,x2,x3,x4) = row
-               let arr = [| x1; x2; x3; x4 |]
-               double (arr.[i])
-            ) data
-
-        let combine(cols: double[][]) : SquareVector[] =
-            let len = cols.[0].Length
-            let mutable rows: SquareVector list = []
-            for i in 0..len-1 do
-                rows <- SquareVector(cols.[0].[i], cols.[1].[i], cols.[2].[i], cols.[3].[i]) :: rows
-            List.rev rows |> List.toArray
-
-        let DistDictToSVHashSet(dd: DistDict) : HashSet<SquareVector> =
-            let hs = new HashSet<SquareVector>()
-            for edge in dd do
-                let (efrom,eto) = edge.Key
-                hs.Add(efrom) |> ignore
-                hs.Add(eto) |> ignore
-            hs
-
-        let dist(e: Edge) : double =
-            let (p,p') = e
-
-            let p_arr = p.AsArray
-            let p'_arr = p'.AsArray
-
-            let elts = Array.map (fun i ->
-                           (p_arr.[i] - p'_arr.[i]) * (p_arr.[i] - p'_arr.[i])
-                       ) [|0..3|]
-
-            let res = Math.Sqrt(Array.sum elts)
-
-            res
-
-        let edges(G: SquareVector[]) : Edge[] =
-            Array.map (fun i -> Array.map (fun j -> i,j) G) G |> Array.concat
-
-        let pairwiseDistances(E: Edge[]) : DistDict =
-            let d = new DistDict()
-            for e in E do
-                d.Add(e, dist e)
-            d
 
         let hsDiff(A: HashSet<'a>)(B: HashSet<'a>) : HashSet<'a> =
             let hs = new HashSet<'a>()

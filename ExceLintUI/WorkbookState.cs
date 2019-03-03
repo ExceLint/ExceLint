@@ -136,16 +136,19 @@ namespace ExceLintUI
             return ExceLint.ModelBuilder.initEntropyModel2(_app, conf, g, Progress.NOPProgress());
         }
 
-        public void DrawImmutableClusters(Clusters clusters, ROInvertedHistogram ih, Worksheet ws)
+        public Dictionary<AST.Address, System.Drawing.Color> DrawImmutableClusters(Clusters clusters, ROInvertedHistogram ih, Worksheet ws)
         {
+            // we convert from immutable hashsets because the coloring
+            // code was written using mutable hashsets
             var hs = new HashSet<HashSet<AST.Address>>();
             foreach (var c in clusters)
             {
                 var c2 = new HashSet<AST.Address>(c);
                 hs.Add(c2);
             }
-            DrawClustersWithHistogram(hs, ih, ws);
+            var colors = DrawClustersWithHistogram(hs, ih, ws);
             _button_Analyze_enabled = false;
+            return colors;
         }
 
         public void ClearAllColors(Worksheet ws)
@@ -161,8 +164,14 @@ namespace ExceLintUI
             _button_Analyze_enabled = true;
         }
 
-        public void DrawClustersWithHistogram(HashSet<HashSet<AST.Address>> clusters, ROInvertedHistogram ih, Worksheet ws)
+        /*
+         * Colors cells and returns assigned colors
+         */
+        public Dictionary<AST.Address, System.Drawing.Color> DrawClustersWithHistogram(HashSet<HashSet<AST.Address>> clusters, ROInvertedHistogram ih, Worksheet ws)
         {
+            // output
+            var d = new Dictionary<AST.Address, System.Drawing.Color>();
+
             // Disable screen updating
             var initial_state = _app.ScreenUpdating;
             _app.ScreenUpdating = false;
@@ -187,6 +196,47 @@ namespace ExceLintUI
                     {
                         protCells.Add(addr);
                     }
+                    // keep track of color
+                    d.Add(addr,c);
+                }
+            }
+
+            // warn user if we could not highlight something
+            if (protCells.Count > 0)
+            {
+                var names = String.Join(", ", protCells.Select(c => c.A1Local()));
+                System.Windows.Forms.MessageBox.Show("WARNING: This workbook contains the following protected cells that cannot be highlighted:\n\n" + names);
+            }
+
+            // Enable screen updating
+            _app.ScreenUpdating = initial_state;
+
+            return d;
+        }
+
+        /*
+         * Colors cells using map
+         */
+        public void ColorDataWithMap(Dictionary<AST.Address, HashSet<AST.Address>> referents, Dictionary<AST.Address, System.Drawing.Color> colors)
+        {
+            // Disable screen updating
+            var initial_state = _app.ScreenUpdating;
+            _app.ScreenUpdating = false;
+
+            // do we stumble across protected cells along the way?
+            var protCells = new List<AST.Address>();
+
+            // paint
+            foreach (var kvp in referents)
+            {
+                var data = kvp.Key;
+                var formulas = kvp.Value;
+
+                // just grab the first formula color for now
+                var formula1 = formulas.First();
+                if (!paintColor(data, colors[formula1]))
+                {
+                    protCells.Add(data);
                 }
             }
 

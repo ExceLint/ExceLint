@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.Office.Tools.Ribbon;
-using Microsoft.FSharp.Core;
 using Excel = Microsoft.Office.Interop.Excel;
 using System.Linq;
 using System.Threading;
 using ExceLintFileFormats;
-using Application = Microsoft.Office.Interop.Excel.Application;
 using Worksheet = Microsoft.Office.Interop.Excel.Worksheet;
-using System.Text;
 using ExceLint;
 using System.Collections.Immutable;
 using FastDependenceAnalysis;
@@ -65,6 +62,9 @@ namespace ExceLintUI
                 // get inverted histogram
                 var histo = CommonFunctions.invertedHistogram(ns, graph, conf);
 
+                // get formula usage for data cells
+                var referents = Vector.getReferentDict(graph);
+
                 // filter out whitespace and string clusters
                 var cs_filtered = PrettyClusters(cs, histo, graph);
 
@@ -74,8 +74,11 @@ namespace ExceLintUI
                 // save colors
                 CurrentWorkbook.saveColors(activeWs);
 
-                // paint
-                currentWorkbook.DrawImmutableClusters(cs_filtered, histo, activeWs);
+                // paint formulas
+                var colormap = currentWorkbook.DrawImmutableClusters(cs_filtered, histo, activeWs);
+
+                // paint data
+                currentWorkbook.ColorDataWithMap(referents,colormap);
 
                 // set UI state
                 setUIState(currentWorkbook);
@@ -325,6 +328,10 @@ namespace ExceLintUI
             {
                 // clear button text
                 SetTooltips("");
+
+                // button should never be locked here
+                // (gets locked when there is no workbook open)
+                this.RegularityMap.Enabled = true;
 
                 // only enable viewing heatmaps if we are not in the middle of an analysis
                 if (wbs.Analyze_Enabled)

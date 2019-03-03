@@ -65,8 +65,8 @@
     <Compile Include="Feature.fs" />
     <Compile Include="Vector.fs" />
     <Compile Include="FeatureConf.fs" />
-    <Compile Include="HashSetUtils.fs" />
     <Compile Include="CommonTypes.fs" />
+    <Compile Include="HashSetUtils.fs" />
     <Compile Include="CommonFunctions.fs" />
     <Compile Include="Distances.fs" />
     <Compile Include="PerfUtils.fs" />
