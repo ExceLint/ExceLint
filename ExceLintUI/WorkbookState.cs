@@ -214,6 +214,49 @@ namespace ExceLintUI
             return d;
         }
 
+        private bool PaintGradient(AST.Address cell, System.Drawing.Color[] cs)
+        {
+            System.Diagnostics.Debug.Assert(cs.Length > 0);
+
+            // if there is only one reference, don't use a gradient
+            if (cs.Length == 1)
+            {
+                return paintColor(cell, cs[0]);
+            }
+
+            // check cell protection
+            if (unProtect(cell) != ProtectionLevel.None)
+            {
+                return false;
+            }
+
+            // get cell COM object
+            var com = ParcelCOMShim.Address.GetCOMObject(cell, _app);
+            
+            // use gradient
+            com.Interior.Pattern = Excel.XlPattern.xlPatternLinearGradient;
+
+            // set gradient as horizontal
+            (com.Interior.Gradient as Excel.LinearGradient).Degree = 0;
+
+            // calculate stop increment
+            var incr = 1.0 / cs.Length;
+
+            // first stop
+            (com.Interior.Gradient as Excel.LinearGradient).ColorStops.Add(.001).Color = cs[0];
+
+            // middle stops
+            for (int i = 1; i < cs.Length; i++)
+            {
+                (com.Interior.Gradient as Excel.LinearGradient).ColorStops.Add(.001 + i * incr).Color = cs[i];
+            }
+
+            // last stop
+            (com.Interior.Gradient as Excel.LinearGradient).ColorStops.Add(.001).Color = cs[cs.Length - 1];
+
+            return true;
+        }
+
         /*
          * Colors cells using map
          */
@@ -229,12 +272,15 @@ namespace ExceLintUI
             // paint
             foreach (var kvp in referents)
             {
+                // grab formula refs, sort by address,
+                // then select colors
                 var data = kvp.Key;
-                var formulas = kvp.Value;
+                var formulas = kvp.Value.ToArray();
+                Array.Sort(formulas);
+                var cs = formulas.Select(f => colors[f]).ToArray();
 
-                // just grab the first formula color for now
-                var formula1 = formulas.First();
-                if (!paintColor(data, colors[formula1]))
+                // draw gradient
+                if (!PaintGradient(data, cs))
                 {
                     protCells.Add(data);
                 }
