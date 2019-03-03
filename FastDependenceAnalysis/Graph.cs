@@ -1019,10 +1019,17 @@ namespace FastDependenceAnalysis
             if (d.OnSheet)
             {
                 var key = new Tuple<int,int>(d.Row, d.Col);
-                foreach (Reference d2 in _referenceTable[key])
+
+                // formulas of the form =1 + 1 are indeed formulas,
+                // but they have no references, so don't bother looking
+                // in this case.
+                if (_referenceTable.ContainsKey(key))
                 {
-                    var addr2 = ValueReferenceToAddress(d2.Row, d2.Col);
-                    output.Add(addr2);
+                    foreach (Reference d2 in _referenceTable[key])
+                    {
+                        var addr2 = ValueReferenceToAddress(d2.Row, d2.Col);
+                        output.Add(addr2);
+                    }
                 }
             }
 
