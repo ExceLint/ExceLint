@@ -43,7 +43,6 @@ namespace ExceLintUI
         #region DATASTRUCTURES
         private Excel.Application _app;
         private Excel.Workbook _workbook;
-        private double _tool_significance = 0.05;
         private ColorDict _colors = new ColorDict();
         private HashSet<AST.Address> _output_highlights = new HashSet<AST.Address>();
         private HashSet<AST.Address> _audited = new HashSet<AST.Address>();
@@ -86,39 +85,15 @@ namespace ExceLintUI
             }
         }
 
-        public double toolSignificance
-        {
-            get { return _tool_significance; }
-            set { _tool_significance = value; }
-        }
-
         public bool Analyze_Enabled
         {
             get { return _button_Analyze_enabled; }
             set { _button_Analyze_enabled = value; }
         }
 
-        public bool MarkAsOK_Enabled
-        {
-            get { return _button_MarkAsOK_enabled; }
-            set { _button_MarkAsOK_enabled = value; }
-        }
-
-     
-        public bool ClearColoringButton_Enabled
-        {
-            get { return _button_clearColoringButton_enabled; }
-            set { _button_clearColoringButton_enabled = value; }
-        }
-
         public bool Visualization_Hidden(Worksheet w)
         {
             return !(_visualization_shown.ContainsKey(w) && _visualization_shown[w]);
-        }
-
-        public bool CUSTODES_Hidden(Worksheet w)
-        {
-            return !(_custodes_shown.ContainsKey(w) && _custodes_shown[w]);
         }
 
         public Analysis inProcessAnalysis(long max_duration_in_ms, ExceLint.FeatureConf config, Graph g, Progress p)
@@ -134,7 +109,7 @@ namespace ExceLintUI
                 FSharpOption<ExceLint.ErrorModel> mopt;
                 try
                 {
-                    mopt = ExceLint.ModelBuilder.analyze(_app, config, g, _tool_significance, p);
+                    mopt = ExceLint.ModelBuilder.analyze(_app, config, g, 0, p);
                 } catch (ExceLint.CommonTypes.NoFormulasException e)
                 {
                     System.Windows.Forms.MessageBox.Show(e.Message);
@@ -170,6 +145,7 @@ namespace ExceLintUI
                 hs.Add(c2);
             }
             DrawClustersWithHistogram(hs, ih, ws);
+            _button_Analyze_enabled = false;
         }
 
         public void ClearAllColors(Worksheet ws)
@@ -182,6 +158,7 @@ namespace ExceLintUI
                 cell.Interior.ColorIndex = 0;
             }
             _app.ScreenUpdating = initial_state;
+            _button_Analyze_enabled = true;
         }
 
         public void DrawClustersWithHistogram(HashSet<HashSet<AST.Address>> clusters, ROInvertedHistogram ih, Worksheet ws)
@@ -519,6 +496,7 @@ namespace ExceLintUI
             _colors.Clear();
 
             _app.ScreenUpdating = initial_state;
+            _button_Analyze_enabled = true;
         }
 
         public void resetTool()

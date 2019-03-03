@@ -36,44 +36,59 @@ namespace ExceLintUI
 
         private void RegularityMap_Click(object sender, RibbonControlEventArgs e)
         {
-            // disable annoying OLE warnings
-            Globals.ThisAddIn.Application.DisplayAlerts = false;
+            if (currentWorkbook.Analyze_Enabled)
+            {
+                // disable annoying OLE warnings
+                Globals.ThisAddIn.Application.DisplayAlerts = false;
 
-            // get dependence graph
-            var graph = new Graph(Globals.ThisAddIn.Application, (Worksheet)Globals.ThisAddIn.Application.ActiveSheet);
+                // get dependence graph
+                var graph = new Graph(Globals.ThisAddIn.Application, (Worksheet)Globals.ThisAddIn.Application.ActiveSheet);
 
-            // get active sheet
-            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
+                // get active sheet
+                Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
 
-            // get cells
-            var cells = graph.allCells();
+                // get cells
+                var cells = graph.allCells();
 
-            // config
-            var conf = getConfig();
+                // config
+                var conf = getConfig();
 
-            // get fingerprints
-            // I am hard-coding the one feature here for now, since
-            // I have removed all of the other ExceLint features
-            var ns = CommonFunctions.runEnabledFeatures(cells, graph, conf, Progress.NOPProgress());
-            var fs = ns["ShallowInputVectorMixedFullCVectorResultantOSI"];
+                // get fingerprints
+                // I am hard-coding the one feature here for now, since
+                // I have removed all of the other ExceLint features
+                var ns = CommonFunctions.runEnabledFeatures(cells, graph, conf, Progress.NOPProgress());
+                var fs = ns["ShallowInputVectorMixedFullCVectorResultantOSI"];
 
-            // cluster
-            var cs = ClusterFingerprints(fs);
+                // cluster
+                var cs = ClusterFingerprints(fs);
 
-            // get inverted histogram
-            var histo = CommonFunctions.invertedHistogram(ns, graph, conf);
+                // get inverted histogram
+                var histo = CommonFunctions.invertedHistogram(ns, graph, conf);
 
-            // filter out whitespace and string clusters
-            var cs_filtered = PrettyClusters(cs, histo, graph);
+                // filter out whitespace and string clusters
+                var cs_filtered = PrettyClusters(cs, histo, graph);
 
-            // in case we've run something before, restore colors
-            currentWorkbook.restoreOutputColors();
+                // in case we've run something before, restore colors
+                currentWorkbook.restoreOutputColors();
 
-            // save colors
-            CurrentWorkbook.saveColors(activeWs);
+                // save colors
+                CurrentWorkbook.saveColors(activeWs);
 
-            // paint
-            currentWorkbook.DrawImmutableClusters(cs_filtered, histo, activeWs);
+                // paint
+                currentWorkbook.DrawImmutableClusters(cs_filtered, histo, activeWs);
+
+                // set UI state
+                setUIState(currentWorkbook);
+            }
+            else
+            {
+                // clear
+                currentWorkbook.restoreOutputColors();
+
+                // set UI state
+                setUIState(currentWorkbook);
+            }
+           
         }
 
         private Clusters ClusterFingerprints(Tuple<AST.Address, Countable>[] fs)
@@ -103,157 +118,12 @@ namespace ExceLintUI
             currentWorkbook.resetTool();
             setUIState(currentWorkbook);
         }
-       
-        private Clusters ElideWhitespaceClusters(Clusters cs, ROInvertedHistogram ih, Graph graph)
-        {
-            var output = new HashSet<ImmutableHashSet<AST.Address>>();
-
-            foreach (ImmutableHashSet<AST.Address> c in cs)
-            {
-                if (!c.All(a => EntropyModelBuilder2.AddressIsWhitespaceValued(a, ih, graph)))
-                {
-                    output.Add(c);
-                }
-            }
-
-            return output.ToImmutableHashSet();
-        }
-
-        private Clusters ElideStringClusters(Clusters cs, ROInvertedHistogram ih, Graph graph)
-        {
-            var output = new HashSet<ImmutableHashSet<AST.Address>>();
-
-            foreach (ImmutableHashSet<AST.Address> c in cs)
-            {
-                if (!c.All(a => EntropyModelBuilder2.AddressIsStringValued(a, ih, graph)))
-                {
-                    output.Add(c);
-                }
-            }
-
-            return output.ToImmutableHashSet();
-        }
-
-        private Clusters PrettyClusters(Clusters cs, ROInvertedHistogram ih, Graph graph)
-        {
-            var cs1 = ElideStringClusters(cs, ih, graph);
-            var cs2 = ElideWhitespaceClusters(cs1, ih, graph);
-            return cs2;
-        }
-
-        public WorkbookState CurrentWorkbook { 
-            get
-            {
-                return currentWorkbook;
-            }
-        }
-
-        private void AnalyzeButton_Click(object sender, RibbonControlEventArgs e)
-        {
-            // workbook- and UI-update callback
-            Action<WorkbookState> updateWorkbook = (WorkbookState wbs) =>
-            {
-                this.currentWorkbook = wbs;
-                setUIState(currentWorkbook);
-            };
-
-            // create progbar in main thread;
-            // worker thread will call Dispose
-            var pb = new ProgBar();
-
-            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-            DoAnalysis(0.95, currentWorkbook, getConfig(), true, updateWorkbook, pb, true, activeWs);
-        }
-
-        public static void DoAnalysis(FSharpOption<double> sigThresh, WorkbookState wbs, FeatureConf conf, bool forceBuildDAG, Action<WorkbookState> updateState, ProgBar pb, bool showFixes, Worksheet ws)
-        {
-            if (sigThresh == FSharpOption<double>.None)
-            {
-                return;
-            }
-            else
-            {
-                wbs.toolSignificance = sigThresh.Value;
-                conf = conf.setThresh(sigThresh.Value);
-                try
-                {
-                    wbs.analyze(WorkbookState.MAX_DURATION_IN_MS, conf, forceBuildDAG, pb);
-                    wbs.MarkAsOK_Enabled = true;
-                    wbs.setTool(active: true);
-                    wbs.saveColors(ws);
-                    wbs.flagNext(ws);
-                    updateState(wbs);
-
-                    pb.GoAway();
-                }
-                catch (AST.ParseException ex)
-                {
-                    RunInSTAThread(() =>
-                    {
-                        System.Windows.Forms.Clipboard.SetText(ex.Message);
-                        System.Windows.Forms.MessageBox.Show("Could not parse the formula string:\n" + ex.Message);
-                    });
-                }
-                catch (AnalysisCancelled)
-                {
-                    RunInSTAThread(() =>
-                    {
-                        System.Windows.Forms.MessageBox.Show("Analysis cancelled.");
-                    });
-                }
-                catch (OutOfMemoryException)
-                {
-                    RunInSTAThread(() =>
-                    {
-                        System.Windows.Forms.MessageBox.Show("Insufficient memory to perform analysis.");
-                    });
-                }
-                catch (Exception ex)
-                {
-                    RunInSTAThread(() =>
-                    {
-                        var msg = "Runtime exception. This message has been copied to your clipboard.\n" + ex.Message + "\n\nStack trace:\n" + ex.StackTrace;
-                        System.Windows.Forms.Clipboard.SetText(msg);
-                        System.Windows.Forms.MessageBox.Show(msg);
-                    });
-                }
-            }
-        }
-
-        private static void RunInSTAThread(ThreadStart t)
-        {
-            if (USE_MULTITHREADED_UI)
-            {
-                Thread thread = new Thread(t);
-                thread.SetApartmentState(ApartmentState.STA);
-                thread.Start();
-                thread.Join();
-            } else
-            {
-                t.Invoke();
-            }
-        }
-
-        private void MarkAsOKButton_Click(object sender, RibbonControlEventArgs e)
-        {
-            Worksheet activeWs = (Worksheet)Globals.ThisAddIn.Application.ActiveSheet;
-            currentWorkbook.markAsOK(true, activeWs);
-            setUIState(currentWorkbook);
-        }
-
-        private void StartOverButton_Click(object sender, RibbonControlEventArgs e)
-        {
-            currentWorkbook.resetTool();
-            setUIState(currentWorkbook);
-        }
         #endregion BUTTON_HANDLERS
 
         #region EVENTS
         private void SetUIStateNoWorkbooks()
         {
-            this.MarkAsOKButton.Enabled = false;
-            this.StartOverButton.Enabled = false;
-            this.AnalyzeButton.Enabled = false;
+            this.RegularityMap.Enabled = false;
         }
 
         private void ExceLintRibbon_Load(object sender, RibbonUIEventArgs e)
@@ -426,9 +296,7 @@ namespace ExceLintUI
         #region UTILITY_FUNCTIONS
         private void SetTooltips(string text)
         {
-            this.MarkAsOKButton.ScreenTip = text;
-            this.StartOverButton.ScreenTip = text;
-            this.AnalyzeButton.ScreenTip = text;
+            this.RegularityMap.ScreenTip = text;
         }
 
         private void setUIState(WorkbookState wbs)
@@ -452,10 +320,6 @@ namespace ExceLintUI
                 var disabled = false;
                 var disabled_text = "ExceLint is disabled in protected mode.  Please enable editing to continue.";
 
-                this.MarkAsOKButton.Enabled = disabled;
-                this.StartOverButton.Enabled = disabled;
-                this.AnalyzeButton.Enabled = disabled;
-
                 // tell the user ExceLint doesn't work
                 SetTooltips(disabled_text);
             } else
@@ -463,19 +327,15 @@ namespace ExceLintUI
                 // clear button text
                 SetTooltips("");
 
-                // enable auditing buttons if an audit has started
-                this.MarkAsOKButton.Enabled = wbs.MarkAsOK_Enabled;
-                this.StartOverButton.Enabled = wbs.ClearColoringButton_Enabled;
-                this.AnalyzeButton.Enabled = wbs.Analyze_Enabled && wbs.Visualization_Hidden(w);
-
                 // only enable viewing heatmaps if we are not in the middle of an analysis
-                this.RegularityMap.Enabled = wbs.Analyze_Enabled && wbs.Visualization_Hidden(w);
-
-                // disable config buttons if we are:
-                // 1. in the middle of an audit, or
-                // 2. we are viewing the heatmap, or
-                // 3. if spectral ranking is checked, disable scopes
-                var enable_config = wbs.Analyze_Enabled && wbs.Visualization_Hidden(w) && wbs.CUSTODES_Hidden(w);
+                if (wbs.Analyze_Enabled)
+                {
+                    this.RegularityMap.Label = "Reveal Structure";
+                }
+                else
+                {
+                    this.RegularityMap.Label = "Hide Structure";
+                }
             }
         }
 
@@ -484,6 +344,48 @@ namespace ExceLintUI
             var c = new FeatureConf();
             c = c.enableShallowInputVectorMixedFullCVectorResultantOSI(true);
             return c.validate;
+        }
+
+        private Clusters ElideWhitespaceClusters(Clusters cs, ROInvertedHistogram ih, Graph graph)
+        {
+            var output = new HashSet<ImmutableHashSet<AST.Address>>();
+
+            foreach (ImmutableHashSet<AST.Address> c in cs)
+            {
+                if (!c.All(a => EntropyModelBuilder2.AddressIsWhitespaceValued(a, ih, graph)))
+                {
+                    output.Add(c);
+                }
+            }
+
+            return output.ToImmutableHashSet();
+        }
+
+        private Clusters ElideStringClusters(Clusters cs, ROInvertedHistogram ih, Graph graph)
+        {
+            var output = new HashSet<ImmutableHashSet<AST.Address>>();
+
+            foreach (ImmutableHashSet<AST.Address> c in cs)
+            {
+                if (!c.All(a => EntropyModelBuilder2.AddressIsStringValued(a, ih, graph)))
+                {
+                    output.Add(c);
+                }
+            }
+
+            return output.ToImmutableHashSet();
+        }
+
+        private Clusters PrettyClusters(Clusters cs, ROInvertedHistogram ih, Graph graph)
+        {
+            var cs1 = ElideStringClusters(cs, ih, graph);
+            var cs2 = ElideWhitespaceClusters(cs1, ih, graph);
+            return cs2;
+        }
+
+        public WorkbookState CurrentWorkbook
+        {
+            get { return currentWorkbook; }
         }
 
         #endregion UTILITY_FUNCTIONS

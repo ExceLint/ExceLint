@@ -37,20 +37,12 @@
             this.tab1 = this.Factory.CreateRibbonTab();
             this.tab2 = this.Factory.CreateRibbonTab();
             this.CheckCellGroup = this.Factory.CreateRibbonGroup();
-            this.box1 = this.Factory.CreateRibbonBox();
-            this.AnalyzeButton = this.Factory.CreateRibbonButton();
-            this.MarkAsOKButton = this.Factory.CreateRibbonButton();
-            this.StartOverButton = this.Factory.CreateRibbonButton();
             this.RegularityMap = this.Factory.CreateRibbonButton();
             this.VectorForCell = this.Factory.CreateRibbonButton();
-            this.separator1 = this.Factory.CreateRibbonSeparator();
-            this.ClearEverything = this.Factory.CreateRibbonButton();
-            this.separator3 = this.Factory.CreateRibbonSeparator();
             this.button1 = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
-            this.box1.SuspendLayout();
             this.SuspendLayout();
             // 
             // tab1
@@ -58,6 +50,7 @@
             this.tab1.ControlId.ControlIdType = Microsoft.Office.Tools.Ribbon.RibbonControlIdType.Office;
             this.tab1.Label = "TabAddIns";
             this.tab1.Name = "tab1";
+            this.tab1.Visible = false;
             // 
             // tab2
             // 
@@ -67,74 +60,23 @@
             // 
             // CheckCellGroup
             // 
-            this.CheckCellGroup.Items.Add(this.box1);
             this.CheckCellGroup.Items.Add(this.RegularityMap);
             this.CheckCellGroup.Items.Add(this.VectorForCell);
-            this.CheckCellGroup.Items.Add(this.separator1);
-            this.CheckCellGroup.Items.Add(this.ClearEverything);
-            this.CheckCellGroup.Items.Add(this.separator3);
             this.CheckCellGroup.Name = "CheckCellGroup";
-            // 
-            // box1
-            // 
-            this.box1.Items.Add(this.AnalyzeButton);
-            this.box1.Items.Add(this.MarkAsOKButton);
-            this.box1.Items.Add(this.StartOverButton);
-            this.box1.Name = "box1";
-            // 
-            // AnalyzeButton
-            // 
-            this.AnalyzeButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.AnalyzeButton.Image = global::ExceLintUI.Properties.Resources.analyze_small;
-            this.AnalyzeButton.Label = "Audit";
-            this.AnalyzeButton.Name = "AnalyzeButton";
-            this.AnalyzeButton.ShowImage = true;
-            this.AnalyzeButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.AnalyzeButton_Click);
-            // 
-            // MarkAsOKButton
-            // 
-            this.MarkAsOKButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.MarkAsOKButton.Image = global::ExceLintUI.Properties.Resources.mark_as_ok_small;
-            this.MarkAsOKButton.Label = "Next Cell";
-            this.MarkAsOKButton.Name = "MarkAsOKButton";
-            this.MarkAsOKButton.ShowImage = true;
-            this.MarkAsOKButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.MarkAsOKButton_Click);
-            // 
-            // StartOverButton
-            // 
-            this.StartOverButton.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.StartOverButton.Image = global::ExceLintUI.Properties.Resources.clear_small;
-            this.StartOverButton.Label = "Start Over";
-            this.StartOverButton.Name = "StartOverButton";
-            this.StartOverButton.ShowImage = true;
-            this.StartOverButton.Visible = false;
-            this.StartOverButton.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.StartOverButton_Click);
             // 
             // RegularityMap
             // 
             this.RegularityMap.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
             this.RegularityMap.Image = global::ExceLintUI.Properties.Resources.graph;
-            this.RegularityMap.Label = "Show Global View";
+            this.RegularityMap.Label = "Reveal Structure";
             this.RegularityMap.Name = "RegularityMap";
             this.RegularityMap.ShowImage = true;
             this.RegularityMap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.RegularityMap_Click);
             // 
-            // separator1
+            // VectorForCell
             // 
-            this.separator1.Name = "separator1";
-            // 
-            // ClearEverything
-            // 
-            this.ClearEverything.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.ClearEverything.Image = global::ExceLintUI.Properties.Resources.clear_small;
-            this.ClearEverything.Label = "Clear Everything";
-            this.ClearEverything.Name = "ClearEverything";
-            this.ClearEverything.ShowImage = true;
-            this.ClearEverything.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ClearEverything_Click);
-            // 
-            // separator3
-            // 
-            this.separator3.Name = "separator3";
+            this.VectorForCell.Label = "";
+            this.VectorForCell.Name = "VectorForCell";
             // 
             // button1
             // 
@@ -157,8 +99,6 @@
             this.tab2.PerformLayout();
             this.CheckCellGroup.ResumeLayout(false);
             this.CheckCellGroup.PerformLayout();
-            this.box1.ResumeLayout(false);
-            this.box1.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -168,16 +108,9 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonTab tab1;
         private Microsoft.Office.Tools.Ribbon.RibbonTab tab2;
         internal Microsoft.Office.Tools.Ribbon.RibbonGroup CheckCellGroup;
-        internal Microsoft.Office.Tools.Ribbon.RibbonBox box1;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton AnalyzeButton;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton MarkAsOKButton;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton StartOverButton;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton VectorForCell;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton button1;
-        internal Microsoft.Office.Tools.Ribbon.RibbonButton ClearEverything;
         internal Microsoft.Office.Tools.Ribbon.RibbonButton RegularityMap;
-        internal Microsoft.Office.Tools.Ribbon.RibbonSeparator separator1;
-        internal Microsoft.Office.Tools.Ribbon.RibbonSeparator separator3;
     }
 
     partial class ThisRibbonCollection
