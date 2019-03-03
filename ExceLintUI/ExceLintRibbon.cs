@@ -73,7 +73,7 @@ namespace ExceLintUI
                 CurrentWorkbook.saveColors(activeWs);
 
                 // paint formulas
-                var colormap = currentWorkbook.DrawImmutableClusters(cs_filtered, histo, activeWs);
+                var colormap = currentWorkbook.DrawImmutableClusters(cs_filtered, histo, activeWs, graph);
 
                 // if checked, analyze data
                 if (this.enableDataHighlight.Checked)
@@ -105,7 +105,7 @@ namespace ExceLintUI
         private Clusters ClusterFingerprints(Tuple<AST.Address, Countable>[] fs)
         {
             // group by fingerprint and turn into ImmutableClustering
-            var cs = fs.GroupBy(kvp => kvp.Item2);
+            var cs = fs.GroupBy(kvp => kvp.Item2.LocationFree);
             var ctmp = new HashSet<ImmutableHashSet<AST.Address>>();
             foreach (var group in cs)
             {
@@ -124,10 +124,34 @@ namespace ExceLintUI
             return ctmp.ToImmutableHashSet();
         }
 
-        private void ClearEverything_Click(object sender, RibbonControlEventArgs e)
+        /**
+         * For troubleshooting colorstops, which are largely undocumented
+         */
+        private void button2_Click(object sender, RibbonControlEventArgs e)
         {
-            currentWorkbook.resetTool();
-            setUIState(currentWorkbook);
+            var app = Globals.ThisAddIn.Application;
+
+            // get cursor location
+            var cursor = (Excel.Range)app.Selection;
+
+            if (cursor.Count == 1)
+            {
+                // user selected a single cell
+                var gradient = (cursor.Interior.Gradient as Excel.LinearGradient);
+                var cs = gradient.ColorStops;
+                String s = "";
+                foreach (var c in cs)
+                {
+                    var c1 = (Excel.ColorStop)c;
+                    s += "color: " + c1.Color.ToString() + "\n";
+                    s += "tintandshade: " + c1.TintAndShade.ToString() + "\n";
+                    s += "position: " + c1.Position.ToString() + "\n";
+                    s += "themecolor: " + c1.ThemeColor.ToString() + "\n";
+                    s += "------------\n";
+                }
+                System.Windows.Forms.MessageBox.Show(s);
+            }
+
         }
         #endregion BUTTON_HANDLERS
 

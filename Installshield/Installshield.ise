@@ -350,8 +350,9 @@
 		<row><td>ExceLintUI.Content_Files</td><td>{44A57184-731F-463C-8C65-3389B15C06C6}</td><td>INSTALLDIR</td><td>2</td><td/><td>excelintui.content_files</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ExceLintUI.Primary_output</td><td>{746545FA-9E00-463B-81AF-CE217AF26A4B}</td><td>INSTALLDIR</td><td>2</td><td/><td>excelintui.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ExcelParser.Primary_Output</td><td>{58BE93BF-3CB1-4FAE-BB23-59BDD1C37C8B}</td><td>INSTALLDIR</td><td>2</td><td/><td>excelparser.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
-		<row><td>ExcelParser.Primary_Output1</td><td>{2BB8087C-9FD2-4147-A35A-28D894B6320E}</td><td>INSTALLDIR</td><td>2</td><td/><td>excelparser.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExcelParser.Primary_Output1</td><td>{8A5948D1-F8F1-489A-B91F-234D24ED7DE6}</td><td>INSTALLDIR</td><td>2</td><td/><td>excelparser.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>ExcelParserConsole.Primary_Output</td><td>{20E4350E-5010-4C98-8DA1-CA47CE089A93}</td><td>INSTALLDIR</td><td>2</td><td/><td>excelparserconsole.primary_o</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
+		<row><td>ExcelParserConsole.Primary_Output1</td><td>{01943864-5DCB-4402-BC9C-1F5F2DF97351}</td><td>INSTALLDIR</td><td>2</td><td/><td>excelparserconsole.primary_o</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>FParsec.Primary_Output</td><td>{A7230356-8961-4E4E-9E5D-16E912D2D0DB}</td><td>INSTALLDIR</td><td>2</td><td/><td>fparsec.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>FParsec.Primary_Output1</td><td>{F1C514C0-0113-4A3E-BA88-6D67B96EFB28}</td><td>INSTALLDIR</td><td>2</td><td/><td>fparsec.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
 		<row><td>FParsecCS.Primary_output</td><td>{8271F1C2-668F-47F4-8CEA-EAD4A0EC0831}</td><td>INSTALLDIR</td><td>2</td><td/><td>fparseccs.primary_output</td><td>17</td><td/><td/><td/><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td><td>/LogFile=</td></row>
@@ -1897,6 +1898,7 @@
 		<row><td>AlwaysInstall</td><td>ExcelParser.Primary_Output</td></row>
 		<row><td>AlwaysInstall</td><td>ExcelParser.Primary_Output1</td></row>
 		<row><td>AlwaysInstall</td><td>ExcelParserConsole.Primary_Output</td></row>
+		<row><td>AlwaysInstall</td><td>ExcelParserConsole.Primary_Output1</td></row>
 		<row><td>AlwaysInstall</td><td>FParsec.Primary_Output</td></row>
 		<row><td>AlwaysInstall</td><td>FParsec.Primary_Output1</td></row>
 		<row><td>AlwaysInstall</td><td>FParsecCS.Primary_output</td></row>
@@ -1934,6 +1936,7 @@
 		<row><td>excelintui.primary_output</td><td>ExceLintUI.Primary_output</td><td>ExceLintUI.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExceLintUI&gt;|Built</td><td>3</td><td/></row>
 		<row><td>excelintui.vsto</td><td>ISX_DEFAULTCOMPONENT</td><td>EXCELI~1.VST|ExceLintUI.vsto</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;VSSolutionFolder&gt;\ExceLintUI\bin\Debug\ExceLintUI.vsto</td><td>1</td><td/></row>
 		<row><td>excelparser.primary_output</td><td>ExcelParser.Primary_Output1</td><td>ExcelParser.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExcelParser1&gt;|Built</td><td>3</td><td/></row>
+		<row><td>excelparserconsole.primary_o</td><td>ExcelParserConsole.Primary_Output1</td><td>ExcelParserConsole.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;ExcelParserConsole1&gt;|Built</td><td>3</td><td/></row>
 		<row><td>fastdependenceanalysis.prima</td><td>FastDependenceAnalysis.Primary_output</td><td>FastDependenceAnalysis.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;FastDependenceAnalysis&gt;|Built</td><td>3</td><td/></row>
 		<row><td>fparsec.primary_output</td><td>FParsec.Primary_Output1</td><td>FParsec.Primary Output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;FParsec1&gt;|Built</td><td>3</td><td/></row>
 		<row><td>fparseccs.primary_output</td><td>FParsecCS.Primary_output1</td><td>FParsecCS.Primary output</td><td>0</td><td/><td/><td/><td>1</td><td>&lt;FParsecCS1&gt;|Built</td><td>3</td><td/></row>
@@ -2092,8 +2095,9 @@
 		<row><td>ExceLintUI.Content_Files</td><td/><td/><td>_0A776A07_6591_4BB6_A933_D20E6CCAD96D_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ExceLintUI.Primary_output</td><td/><td/><td>_F22DDAED_4541_4137_9CD8_53FF3702D14D_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ExcelParser.Primary_Output</td><td/><td/><td>_187C4082_C24D_4C9C_AEB8_946B8ADA1BEF_FILTER</td><td/><td/><td/><td/></row>
-		<row><td>ExcelParser.Primary_Output1</td><td/><td/><td>_0240F5AC_740E_4E7B_9144_0C30E5271569_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ExcelParser.Primary_Output1</td><td/><td/><td>_D205270D_4D7B_4F3F_A9E9_931371F02101_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>ExcelParserConsole.Primary_Output</td><td/><td/><td>_F98D1558_4C8B_4510_9554_208F0705D1AE_FILTER</td><td/><td/><td/><td/></row>
+		<row><td>ExcelParserConsole.Primary_Output1</td><td/><td/><td>_0ABBF234_FC86_4B2A_969B_80635E907FB6_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>FParsec.Primary_Output</td><td/><td/><td>_67AA6D17_6FE7_4AAF_93D9_C78F26A6292C_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>FParsec.Primary_Output1</td><td/><td/><td>_8273E257_7323_4C33_955C_9C77DC43A73A_FILTER</td><td/><td/><td/><td/></row>
 		<row><td>FParsecCS.Primary_output</td><td/><td/><td>_83FECCB4_E0D9_459F_B7C6_297A5420FC60_FILTER</td><td/><td/><td/><td/></row>
@@ -2398,6 +2402,7 @@
 		<row><td>ExcelParser</td><td>Depends\parcel\Parcel\ExcelParser.fsproj</td><td/><td>2</td></row>
 		<row><td>ExcelParser1</td><td>parcel\Parcel\ExcelParser.fsproj</td><td/><td>2</td></row>
 		<row><td>ExcelParserConsole</td><td>Depends\parcel\ParcelConsole\ExcelParserConsole.fsproj</td><td/><td>2</td></row>
+		<row><td>ExcelParserConsole1</td><td>parcel\ParcelConsole\ExcelParserConsole.fsproj</td><td/><td>2</td></row>
 		<row><td>FParsec</td><td>Depends\parcel\FParsec\FParsec.fsproj</td><td/><td>2</td></row>
 		<row><td>FParsec1</td><td>parcel\FParsec\FParsec.fsproj</td><td/><td>2</td></row>
 		<row><td>FParsecCS</td><td>Depends\parcel\FParsecCS\FParsecCS.csproj</td><td/><td>2</td></row>

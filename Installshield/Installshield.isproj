@@ -61,6 +61,10 @@
 			<Name>ExcelParser</Name>
 			<Project>{6DE2A2B9-C029-4BDB-8992-D16276471D9F}</Project>
 		</ProjectReference>
+		<ProjectReference Include="..\parcel\ParcelConsole\ExcelParserConsole.fsproj">
+			<Name>ExcelParserConsole</Name>
+			<Project>{EB5D17BF-060E-41FE-AB6E-E916D68FCBA4}</Project>
+		</ProjectReference>
 		<ProjectReference Include="..\parcel\FParsec\FParsec.fsproj">
 			<Name>FParsec</Name>
 			<Project>{D8A416FA-BE7D-4929-8A6A-DA28B206853C}</Project>

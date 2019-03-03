@@ -136,7 +136,7 @@ namespace ExceLintUI
             return ExceLint.ModelBuilder.initEntropyModel2(_app, conf, g, Progress.NOPProgress());
         }
 
-        public Dictionary<AST.Address, System.Drawing.Color> DrawImmutableClusters(Clusters clusters, ROInvertedHistogram ih, Worksheet ws)
+        public Dictionary<AST.Address, System.Drawing.Color> DrawImmutableClusters(Clusters clusters, ROInvertedHistogram ih, Worksheet ws, Graph g)
         {
             // we convert from immutable hashsets because the coloring
             // code was written using mutable hashsets
@@ -146,7 +146,7 @@ namespace ExceLintUI
                 var c2 = new HashSet<AST.Address>(c);
                 hs.Add(c2);
             }
-            var colors = DrawClustersWithHistogram(hs, ih, ws);
+            var colors = DrawClustersWithHistogram(hs, ih, ws, g);
             _button_Analyze_enabled = false;
             return colors;
         }
@@ -167,7 +167,7 @@ namespace ExceLintUI
         /*
          * Colors cells and returns assigned colors
          */
-        public Dictionary<AST.Address, System.Drawing.Color> DrawClustersWithHistogram(HashSet<HashSet<AST.Address>> clusters, ROInvertedHistogram ih, Worksheet ws)
+        public Dictionary<AST.Address, System.Drawing.Color> DrawClustersWithHistogram(HashSet<HashSet<AST.Address>> clusters, ROInvertedHistogram ih, Worksheet ws, Graph g)
         {
             // output
             var d = new Dictionary<AST.Address, System.Drawing.Color>();
@@ -180,13 +180,30 @@ namespace ExceLintUI
             ClearAllColors(ws);
 
             // init cluster color map
-            ClusterColorer clusterColors = new ClusterColorer(clusters, 0, 360, 180+50, ih);
+            ClusterColorer clusterColors = new ClusterColorer(clusters, 0, 360, 180+50, ih, g);
 
             // do we stumble across protected cells along the way?
             var protCells = new List<AST.Address>();
 
+            // size of biggest cluster
+            var maxsz = clusters.Select(c => c.Count).Max();
+
+            // order clusters
+            var clusters_o = clusters.OrderBy(hs =>
+            {
+                var first = hs.First();
+                if (!g.isFormula(first))
+                {
+                    return 0;
+                }
+                else
+                {
+                    return maxsz - hs.Count;
+                }
+            }).ToArray();
+
             // paint
-            foreach (var cluster in clusters)
+            foreach (var cluster in clusters_o)
             {
                 System.Drawing.Color c = clusterColors.GetColor(cluster);
 
@@ -239,20 +256,23 @@ namespace ExceLintUI
             // set gradient as horizontal
             (com.Interior.Gradient as Excel.LinearGradient).Degree = 0;
 
+            // clear existing color stops
+            (com.Interior.Gradient as Excel.LinearGradient).ColorStops.Clear();
+
             // calculate stop increment
-            var incr = 1.0 / cs.Length;
+            var incr = 1.0 / (cs.Length - 1);
 
             // first stop
-            (com.Interior.Gradient as Excel.LinearGradient).ColorStops.Add(.001).Color = cs[0];
+            (com.Interior.Gradient as Excel.LinearGradient).ColorStops.Add(0).Color = cs[0];
 
             // middle stops
-            for (int i = 1; i < cs.Length; i++)
+            for (int i = 1; i < cs.Length - 1; i++)
             {
-                (com.Interior.Gradient as Excel.LinearGradient).ColorStops.Add(.001 + i * incr).Color = cs[i];
+                (com.Interior.Gradient as Excel.LinearGradient).ColorStops.Add(i * incr).Color = cs[i];
             }
 
             // last stop
-            (com.Interior.Gradient as Excel.LinearGradient).ColorStops.Add(.001).Color = cs[cs.Length - 1];
+            (com.Interior.Gradient as Excel.LinearGradient).ColorStops.Add(1).Color = cs[cs.Length - 1];
 
             return true;
         }
@@ -335,8 +355,11 @@ namespace ExceLintUI
             // do we stumble across protected cells along the way?
             var protCells = new List<AST.Address>();
 
+            // order referents
+            var referents_o = referents.ToArray();
+
             // paint
-            foreach (var kvp in referents)
+            foreach (var kvp in referents_o)
             {
                 // grab formula refs, sort by address,
                 // then select colors

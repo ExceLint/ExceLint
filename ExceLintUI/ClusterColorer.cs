@@ -7,6 +7,7 @@ using Clustering = System.Collections.Generic.HashSet<System.Collections.Generic
 using ROInvertedHistogram = System.Collections.Immutable.ImmutableDictionary<AST.Address, System.Tuple<string, ExceLint.Scope.SelectID, ExceLint.Countable>>;
 using Fingerprint = ExceLint.Countable;
 using System;
+using FastDependenceAnalysis;
 
 namespace ExceLintUI
 {
@@ -162,7 +163,7 @@ namespace ExceLintUI
         /// degreeEnd = 360 and offset = 45, the effective degreeStart is 45 mod 360 and
         /// the effective degreeEnd is 405 mod 360.</param>
         /// <param name="ih">An InvertedHistogram so that coloring is fingerprint-sensitive.</param>
-        public ClusterColorer(Clustering clustering, double degreeStart, double degreeEnd, double offset, ROInvertedHistogram ih)
+        public ClusterColorer(Clustering clustering, double degreeStart, double degreeEnd, double offset, ROInvertedHistogram ih, Graph g)
         {
             // merge clusters by fingerprint
             var x = MergeClustersByFingerprint(clustering, ih);
@@ -175,9 +176,23 @@ namespace ExceLintUI
             // rank clusters by their degree and break ties using fingerprint (if given fingerprints)
             // also sort clusters so that repainting on subsequent
             // runs produces a stable coloring
-            Cluster[] csSorted =
-                cs.OrderByDescending(c => neighbors[c].Count)
-                  .ThenBy(c => ih[c.First()].Item3.ToString()).ToArray();
+            //Cluster[] csSorted =
+            //    cs.OrderByDescending(c => neighbors[c].Count)
+            //      .ThenBy(c => ih[c.First()].Item3.ToString()).ToArray();
+            // size of biggest cluster
+            var maxsz = cs.Select(c => c.Count).Max();
+            var csSorted = cs.OrderBy(hs =>
+            {
+                var first = hs.First();
+                if (!g.isFormula(first))
+                {
+                    return 0;
+                }
+                else
+                {
+                    return maxsz - hs.Count;
+                }
+            }).ThenBy(c => ih[c.First()].Item3.ToString()).ToArray();
 
             // greedily assign colors by degree, largest first;
             // aka Welsh-Powell heuristic

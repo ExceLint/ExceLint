@@ -39,8 +39,8 @@
             this.CheckCellGroup = this.Factory.CreateRibbonGroup();
             this.RegularityMap = this.Factory.CreateRibbonButton();
             this.VectorForCell = this.Factory.CreateRibbonButton();
-            this.button1 = this.Factory.CreateRibbonButton();
             this.enableDataHighlight = this.Factory.CreateRibbonCheckBox();
+            this.button1 = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -80,6 +80,11 @@
             this.VectorForCell.Label = "";
             this.VectorForCell.Name = "VectorForCell";
             // 
+            // enableDataHighlight
+            // 
+            this.enableDataHighlight.Label = "Analyze data";
+            this.enableDataHighlight.Name = "enableDataHighlight";
+            // 
             // button1
             // 
             this.button1.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
@@ -87,11 +92,6 @@
             this.button1.Label = "Start Fix";
             this.button1.Name = "button1";
             this.button1.ShowImage = true;
-            // 
-            // enableDataHighlight
-            // 
-            this.enableDataHighlight.Label = "Analyze data";
-            this.enableDataHighlight.Name = "enableDataHighlight";
             // 
             // ExceLintRibbon
             // 
