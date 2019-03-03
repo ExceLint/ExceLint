@@ -59,13 +59,13 @@
       <Project>{d9bc52ff-2319-4216-96fd-6f9cf2d05539}</Project>
       <Name>COMWrapper</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Depends\parcel\Parcel\ExcelParser.fsproj">
-      <Project>{6de2a2b9-c029-4bdb-8992-d16276471d9f}</Project>
-      <Name>ExcelParser</Name>
-    </ProjectReference>
     <ProjectReference Include="..\FastDependenceAnalysis\FastDependenceAnalysis.csproj">
       <Project>{bb6178d3-40c3-442f-902c-5a6cb2eefa1c}</Project>
       <Name>FastDependenceAnalysis</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\parcel\Parcel\ExcelParser.fsproj">
+      <Project>{6de2a2b9-c029-4bdb-8992-d16276471d9f}</Project>
+      <Name>ExcelParser</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />

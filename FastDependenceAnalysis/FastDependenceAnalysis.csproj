@@ -49,7 +49,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Depends\parcel\Parcel\ExcelParser.fsproj">
+    <ProjectReference Include="..\parcel\Parcel\ExcelParser.fsproj">
       <Project>{6de2a2b9-c029-4bdb-8992-d16276471d9f}</Project>
       <Name>ExcelParser</Name>
     </ProjectReference>

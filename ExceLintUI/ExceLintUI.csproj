@@ -299,10 +299,6 @@
       <Project>{71e3af28-8088-4f9d-9392-858964d72947}</Project>
       <Name>ParcelCOMShim</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Depends\parcel\Parcel\ExcelParser.fsproj">
-      <Project>{6de2a2b9-c029-4bdb-8992-d16276471d9f}</Project>
-      <Name>ExcelParser</Name>
-    </ProjectReference>
     <ProjectReference Include="..\ExceLintFileFormats\ExceLintFileFormats.csproj">
       <Project>{bf7683ed-f2e1-42d4-916c-d8dd2e58f389}</Project>
       <Name>ExceLintFileFormats</Name>
@@ -314,6 +310,10 @@
     <ProjectReference Include="..\FastDependenceAnalysis\FastDependenceAnalysis.csproj">
       <Project>{bb6178d3-40c3-442f-902c-5a6cb2eefa1c}</Project>
       <Name>FastDependenceAnalysis</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\parcel\Parcel\ExcelParser.fsproj">
+      <Project>{6de2a2b9-c029-4bdb-8992-d16276471d9f}</Project>
+      <Name>ExcelParser</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

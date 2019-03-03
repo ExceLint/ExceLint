@@ -78,6 +78,21 @@
     <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\parcel\FParsecCS\FParsecCS.csproj">
+      <Name>FParsecCS</Name>
+      <Project>{35888456-3095-4133-92c8-6dd3205f4c2d}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\parcel\FParsec\FParsec.fsproj">
+      <Name>FParsec</Name>
+      <Project>{d8a416fa-be7d-4929-8a6a-da28b206853c}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\parcel\Parcel\ExcelParser.fsproj">
+      <Name>ExcelParser</Name>
+      <Project>{6de2a2b9-c029-4bdb-8992-d16276471d9f}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
@@ -89,21 +104,6 @@
     </Reference>
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
-    <ProjectReference Include="..\Depends\parcel\FParsecCS\FParsecCS.csproj">
-      <Name>FParsecCS</Name>
-      <Project>{35888456-3095-4133-92c8-6dd3205f4c2d}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Depends\parcel\FParsec\FParsec.fsproj">
-      <Name>FParsec</Name>
-      <Project>{d8a416fa-be7d-4929-8a6a-da28b206853c}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Depends\parcel\Parcel\ExcelParser.fsproj">
-      <Name>ExcelParser</Name>
-      <Project>{6de2a2b9-c029-4bdb-8992-d16276471d9f}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="..\ExceLintFileFormats\ExceLintFileFormats.csproj">
       <Name>ExceLintFileFormats</Name>
       <Project>{bf7683ed-f2e1-42d4-916c-d8dd2e58f389}</Project>

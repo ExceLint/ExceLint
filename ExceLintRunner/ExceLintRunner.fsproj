@@ -11,7 +11,7 @@
     <AssemblyName>ExceLintRunner</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <TargetFSharpCoreVersion>4.4.1.0</TargetFSharpCoreVersion>
+    <TargetFSharpCoreVersion>4.4.3.0</TargetFSharpCoreVersion>
     <Name>ExceLintRunner</Name>
     <TargetFrameworkProfile />
     <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
@@ -75,6 +75,11 @@
       <Project>{bb6178d3-40c3-442f-902c-5a6cb2eefa1c}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <ProjectReference Include="..\parcel\Parcel\ExcelParser.fsproj">
+      <Name>ExcelParser</Name>
+      <Project>{6de2a2b9-c029-4bdb-8992-d16276471d9f}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <Reference Include="MathNet.Numerics">
       <HintPath>..\packages\MathNet.Numerics.3.20.0\lib\net40\MathNet.Numerics.dll</HintPath>
     </Reference>
@@ -99,21 +104,6 @@
     <ProjectReference Include="..\Depends\COMWrapper\COMWrapper.csproj">
       <Name>COMWrapper</Name>
       <Project>{d9bc52ff-2319-4216-96fd-6f9cf2d05539}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Depends\parcel\FParsecCS\FParsecCS.csproj">
-      <Name>FParsecCS</Name>
-      <Project>{35888456-3095-4133-92c8-6dd3205f4c2d}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Depends\parcel\FParsec\FParsec.fsproj">
-      <Name>FParsec</Name>
-      <Project>{d8a416fa-be7d-4929-8a6a-da28b206853c}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Depends\parcel\Parcel\ExcelParser.fsproj">
-      <Name>ExcelParser</Name>
-      <Project>{6de2a2b9-c029-4bdb-8992-d16276471d9f}</Project>
       <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="..\ExceLintFileFormats\ExceLintFileFormats.csproj">

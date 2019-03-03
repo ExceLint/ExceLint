@@ -11,7 +11,7 @@
     <AssemblyName>StatsGatherer</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <TargetFSharpCoreVersion>4.4.1.0</TargetFSharpCoreVersion>
+    <TargetFSharpCoreVersion>4.4.3.0</TargetFSharpCoreVersion>
     <Name>StatsGatherer</Name>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -62,11 +62,6 @@
       <Project>{d9bc52ff-2319-4216-96fd-6f9cf2d05539}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Depends\parcel\Parcel\ExcelParser.fsproj">
-      <Name>ExcelParser</Name>
-      <Project>{6de2a2b9-c029-4bdb-8992-d16276471d9f}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="..\ExceLintFileFormats\ExceLintFileFormats.csproj">
       <Name>ExceLintFileFormats</Name>
       <Project>{bf7683ed-f2e1-42d4-916c-d8dd2e58f389}</Project>
@@ -75,6 +70,11 @@
     <ProjectReference Include="..\ExceLint\ExceLint.fsproj">
       <Name>ExceLint</Name>
       <Project>{a62bca5a-eb55-46ed-a49a-fdb34771b605}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\parcel\Parcel\ExcelParser.fsproj">
+      <Name>ExcelParser</Name>
+      <Project>{6de2a2b9-c029-4bdb-8992-d16276471d9f}</Project>
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
