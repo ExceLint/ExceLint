@@ -68,7 +68,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Depends\COMWrapper\COMWrapper.csproj">
+    <ProjectReference Include="..\COMWrapper\COMWrapper\COMWrapper.csproj">
       <Project>{d9bc52ff-2319-4216-96fd-6f9cf2d05539}</Project>
       <Name>COMWrapper</Name>
     </ProjectReference>

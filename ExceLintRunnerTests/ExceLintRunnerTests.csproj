@@ -70,6 +70,10 @@
       <Project>{8ed0e074-a6e6-4ec4-8a53-e62d53295186}</Project>
       <Name>CUSTODESParser</Name>
     </ProjectReference>
+    <ProjectReference Include="..\ParcelCOMShim\ParcelCOMShim\ParcelCOMShim.fsproj">
+      <Project>{71e3af28-8088-4f9d-9392-858964d72947}</Project>
+      <Name>ParcelCOMShim</Name>
+    </ProjectReference>
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
