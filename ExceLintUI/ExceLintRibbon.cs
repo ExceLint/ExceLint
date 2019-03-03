@@ -317,7 +317,6 @@ namespace ExceLintUI
             if (wbs == null || Globals.ThisAddIn.Application.ActiveProtectedViewWindow != null || sheetProtected || isAChart)
             {
                 // disable all controls
-                var disabled = false;
                 var disabled_text = "ExceLint is disabled in protected mode.  Please enable editing to continue.";
 
                 // tell the user ExceLint doesn't work
