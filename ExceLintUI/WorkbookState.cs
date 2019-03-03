@@ -180,7 +180,7 @@ namespace ExceLintUI
             ClearAllColors(ws);
 
             // init cluster color map
-            ClusterColorer clusterColors = new ClusterColorer(clusters, 0, 360, 0, ih);
+            ClusterColorer clusterColors = new ClusterColorer(clusters, 0, 360, 180+50, ih);
 
             // do we stumble across protected cells along the way?
             var protCells = new List<AST.Address>();
