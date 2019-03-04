@@ -73,7 +73,7 @@ namespace ExceLintUI
                 CurrentWorkbook.saveColors(activeWs);
 
                 // paint formulas
-                var colormap = currentWorkbook.DrawImmutableClusters(cs_filtered, histo, activeWs, graph);
+                var colormap = currentWorkbook.DrawImmutableClusters(cs_filtered, histo, activeWs, graph, this.analyzeFormulas.Checked);
 
                 // if checked, analyze data
                 if (this.enableDataHighlight.Checked)
@@ -152,6 +152,16 @@ namespace ExceLintUI
                 System.Windows.Forms.MessageBox.Show(s);
             }
 
+        }
+
+        private void analyzeFormulas_Click(object sender, RibbonControlEventArgs e)
+        {
+            setUIState(currentWorkbook);
+        }
+
+        private void enableDataHighlight_Click(object sender, RibbonControlEventArgs e)
+        {
+            setUIState(currentWorkbook);
         }
         #endregion BUTTON_HANDLERS
 
@@ -365,16 +375,28 @@ namespace ExceLintUI
                 // (gets locked when there is no workbook open)
                 this.RegularityMap.Enabled = true;
 
+                // only enable reveal structure button if at least
+                // one checkbox is checked
+                if (this.enableDataHighlight.Checked || this.analyzeFormulas.Checked)
+                {
+                    this.RegularityMap.Enabled = true;
+                } else
+                {
+                    this.RegularityMap.Enabled = false;
+                }
+
                 // only enable viewing heatmaps if we are not in the middle of an analysis
                 if (wbs.Analyze_Enabled)
                 {
                     this.RegularityMap.Label = "Reveal Structure";
                     this.enableDataHighlight.Enabled = true;
+                    this.analyzeFormulas.Enabled = true;
                 }
                 else
                 {
                     this.RegularityMap.Label = "Hide Structure";
                     this.enableDataHighlight.Enabled = false;
+                    this.analyzeFormulas.Enabled = false;
                 }
             }
         }

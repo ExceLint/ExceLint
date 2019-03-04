@@ -136,7 +136,14 @@ namespace ExceLintUI
             return ExceLint.ModelBuilder.initEntropyModel2(_app, conf, g, Progress.NOPProgress());
         }
 
-        public Dictionary<AST.Address, System.Drawing.Color> DrawImmutableClusters(Clusters clusters, ROInvertedHistogram ih, Worksheet ws, Graph g)
+        /**
+         * Color formulas.
+         * Takes a parameter colorFormulas because in a data-only analysis,
+         * it is useful to act as if we had colored formulas instead of
+         * actually coloring them.  This option allows us to return the as-if
+         * colors for use in data coloring without showing formula colors.
+         */
+        public Dictionary<AST.Address, System.Drawing.Color> DrawImmutableClusters(Clusters clusters, ROInvertedHistogram ih, Worksheet ws, Graph g, bool colorFormulas)
         {
             // we convert from immutable hashsets because the coloring
             // code was written using mutable hashsets
@@ -146,7 +153,7 @@ namespace ExceLintUI
                 var c2 = new HashSet<AST.Address>(c);
                 hs.Add(c2);
             }
-            var colors = DrawClustersWithHistogram(hs, ih, ws, g);
+            var colors = DrawClustersWithHistogram(hs, ih, ws, g, colorFormulas);
             _button_Analyze_enabled = false;
             return colors;
         }
@@ -167,7 +174,7 @@ namespace ExceLintUI
         /*
          * Colors cells and returns assigned colors
          */
-        public Dictionary<AST.Address, System.Drawing.Color> DrawClustersWithHistogram(HashSet<HashSet<AST.Address>> clusters, ROInvertedHistogram ih, Worksheet ws, Graph g)
+        public Dictionary<AST.Address, System.Drawing.Color> DrawClustersWithHistogram(HashSet<HashSet<AST.Address>> clusters, ROInvertedHistogram ih, Worksheet ws, Graph g, bool colorFormulas)
         {
             // output
             var d = new Dictionary<AST.Address, System.Drawing.Color>();
@@ -209,7 +216,7 @@ namespace ExceLintUI
 
                 foreach (AST.Address addr in cluster)
                 {
-                    if (!paintColor(addr, c))
+                    if (!paintColor(addr, c, colorFormulas))
                     {
                         protCells.Add(addr);
                     }
@@ -238,7 +245,7 @@ namespace ExceLintUI
             // if there is only one reference, don't use a gradient
             if (cs.Length == 1)
             {
-                return paintColor(cell, cs[0]);
+                return paintColor(cell, cs[0], true);
             }
 
             // check cell protection
@@ -417,7 +424,7 @@ namespace ExceLintUI
                     // paint target
                     foreach(AST.Address a in fix.Target)
                     {
-                        paintColor(a, System.Drawing.Color.Green);
+                        paintColor(a, System.Drawing.Color.Green, true);
                     }
 
                     // don't update screen until done
@@ -626,7 +633,7 @@ namespace ExceLintUI
             }
         }
 
-        public bool paintColor(AST.Address cell, System.Drawing.Color c)
+        public bool paintColor(AST.Address cell, System.Drawing.Color c, bool colorFormulas)
         {
             // check cell protection
             if (unProtect(cell) != ProtectionLevel.None)
@@ -634,11 +641,15 @@ namespace ExceLintUI
                 return false;
             }
 
-            // get cell COM object
-            var com = ParcelCOMShim.Address.GetCOMObject(cell, _app);
-
             // highlight cell
-            com.Interior.Color = c;
+            if (colorFormulas)
+            {
+                // get cell COM object
+                var com = ParcelCOMShim.Address.GetCOMObject(cell, _app);
+
+                com.Interior.Color = c;
+            }
+            
 
             return true;
         }
@@ -653,7 +664,7 @@ namespace ExceLintUI
             var c = System.Drawing.Color.FromArgb(A, R, G, B);
 
             // highlight
-            paintColor(cell, c);
+            paintColor(cell, c, true);
         }
 
         public void saveColors(Worksheet ws)
