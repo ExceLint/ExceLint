@@ -1,71 +1,35 @@
 # ExceLint
 
-Finds formula errors in spreadsheets (plugin for Microsoft Excel)
+ExceLint is an Excel plugin that automatically finds formula errors in spreadsheets.
 
-By Dan Barowy (Williams College),  Emery Berger (UMass Amherst), Ben Zorn (Microsoft Research).
+By Dan Barowy (Williams College), Emery Berger (UMass Amherst / Microsoft Research), and Ben Zorn (Microsoft Research).
 
 ## Table of Contents
 
+* [Installation](#installation)
 * [Glossary](#glossary)
 * [Overview](#overview)
-* [Paper](#paper)
 * [Software Needed](#software-needed)
-* [Installation](#installation)
 * [A Short ExceLint Tutorial](#a-short-excelint-ui-tutorial)
 	* [Proposed Fix Tool](#proposed-fix-tool-step-by-step-audit)
 	* [Global View](#global-view)
 * [Building from Source Code](#building-and-running-excelint-from-source-code)
 * [Troubleshooting](#troubleshooting)
-
-[](#glossary)
-## Glossary
-
-|term|meaning|
-|----|-------|
-|ExceLint|ExceLint is a static analysis that finds formula errors in spreadsheets.|
-|ExceLint UI|The ExceLint UI is an implementation of the ExceLint analysis, written as a plugin for Microsoft Excel on Windows.|
-|Workbook|An Excel file is called a _workbook_.  Workbooks usually end in `.xls` or `.xlsx`|
-|Worksheet|An Excel workbook usually contains many spreadsheets; each spreadsheet is called a `worksheet`. You can navigate worksheets in Excel by using the tabs on the bottom left of the workbook.|
-|Ribbon|The ribbon is a user interface component that groups buttons together.  Buttons are grouped by function and organized by function, with that function's name appearing in the tabs at the top of the ribbon.  The ribbon is usually found at the top of a workbook, just under the Excel window's title bar.|
-|Formula|A _formula_ is an Excel expression.  All Excel formulas are purely functional.  Every formula is prefixed by a `=` character.|
-|Reference|A reference in Excel is a syntactic construct that indicates where another cell's value should be substitued into a formula during evaluation.  For example, the formula `=A1+A2` means that the values stored in cells `A1` and `A2` should be substituted into the expression where `A1` and `A2` occur, respectively, when the formula is evaluated.
-|Reference shape|Two formulas are _reference equivalent_ if they refer to the same cell offsets, _relative to the position of the formula itself_.  Such formulas are said to have the same _reference shape_. Refer to the definition of _reference equivalence_ on page 4 of our paper for further elaboration.|
-|Vector fingerprint|Each reference in a formula induces a reference vector, which is a vector encoding of the reference relative to the location of the formula itself.  Since a formula may have multiple refernces, it induces a set of vectors.  For performance reasons, ExceLint "compresses" this set of vectors into a single vector, called the _vector fingerprint_.  See section 4.1.1. on page 10 of the paper for further elaboration.|
-|Formula error|A _formula error_ is a formula that deviates from the intended reference shape by either including an extra reference, omitting a reference, or misreferencing data. We also include manifestly wrong calculations in this category, such as choosing the wrong operation.|
-
-[](#overview)
-## Overview
-
-ExceLint is a static analysis that finds formula errors in spreadsheets.
-
-In order to use ExceLint, you will need to install the ExceLint UI plugin on a Windows machine that has a copy of Office 2016. This guide provides an installation walkthrough as well as instructions for running the tool.
-
-We tested ExceLint using Windows 10/Windows Server 2016 and Excel 2016. While ExceLint works in principle with other versions of Windows and Excel (e.g., Excel 2010/2013), we have not tested these alternative configurations and do not recommend using them.
-
-[](#paper)
-## Paper
-
-The following technical paper describes how ExceLint works and includes an extensive empirical evaluation: [_ExceLint: Automatically Finding Spreadsheet Formula Errors_](https://github.com/ExceLint/ExceLint/blob/master/ExceLint-OOPSLA2018.pdf), Daniel W. Barowy (Williams College), Emery D. Berger (University of Massachusetts Amherst), Benjamin Zorn (Microsoft Research). In _Proceedings of the ACM on Programming Languages_, Volume 2, Number OOPSLA. 
-
-
-[](#software-needed)
-## Software Needed:
-
-1. Microsoft Windows 10 or Microsoft Windows Server 2016
-1. Microsoft Office 365 (2016):
-   * For a free education license: [https://products.office.com/student/office-in-education](https://products.office.com/student/office-in-education)
-   * Alternatively, download the free trial: [https://www.microsoft.com/en-us/evalcenter/evaluate-office-365-proplus#description_11711](https://www.microsoft.com/en-us/evalcenter/evaluate-office-365-proplus#description_11711) (free trial may require a credit card)
-1. (optionally) ExceLint source code
-1. (optionally) Visual Studio 2017: (we use the Professional edition; Community may also work) [https://visualstudio.microsoft.com/vs/whatsnew/](https://visualstudio.microsoft.com/vs/whatsnew/)
+* [Paper](#paper)
 
 [](#installation)
 ## Installation
 
-You will need working copies of Windows, Office 2016 before installing.
+You will need the following software before installing:
+
+1. Microsoft Windows 10 or Microsoft Windows Server 2016
+1. Microsoft Office 365 (Office 2016):
+   * For a free education license: [https://products.office.com/student/office-in-education](https://products.office.com/student/office-in-education)
+   * Alternatively, download the free trial: [https://www.microsoft.com/en-us/evalcenter/evaluate-office-365-proplus#description_11711](https://www.microsoft.com/en-us/evalcenter/evaluate-office-365-proplus#description_11711) (free trial may require a credit card)
 
 ### Instructions:
 
-1. Download an ExceLint [release](https://github.com/ExceLint/ExceLint/releases/latest).
+1. Download the latest ExceLint [release](https://github.com/ExceLint/ExceLint/releases/download/v1.2/ExceLintInstaller.exe).
 1. Double-click on the `ExceLintInstaller.exe` installer.
 1. Follow the prompts to complete installation.
 1. Start Microsoft Excel.
@@ -184,6 +148,13 @@ A variety of problems can occasionally pop up when using or building ExceLint.
 11. In the menu that appears, select `ExceLint` and click the `Enable` button, then repeat steps 1-7.
 12. If ExceLint still does not re-appear, uninstall ExceLint, delete the direcotry `C:\Program Files (x86)\williams.edu`, log out of the user account, log back in, and reinstall ExceLint using the installer.
 13. If that does not work, contact the authors for additional support.
+
+
+[](#paper)
+## Paper
+
+The following technical paper describes how ExceLint works and includes an extensive empirical evaluation: [_ExceLint: Automatically Finding Spreadsheet Formula Errors_](https://github.com/ExceLint/ExceLint/blob/master/ExceLint-OOPSLA2018.pdf), Daniel W. Barowy (Williams College), Emery D. Berger (University of Massachusetts Amherst), Benjamin Zorn (Microsoft Research). In _Proceedings of the ACM on Programming Languages_, Volume 2, Number OOPSLA. 
+
 
 ## Acknowledgements
 
