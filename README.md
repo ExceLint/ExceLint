@@ -7,13 +7,9 @@ By Dan Barowy (Williams College), Emery Berger (UMass Amherst / Microsoft Resear
 ## Table of Contents
 
 * [Installation](#installation)
-* [Glossary](#glossary)
-* [Overview](#overview)
-* [Software Needed](#software-needed)
 * [A Short ExceLint Tutorial](#a-short-excelint-ui-tutorial)
 	* [Proposed Fix Tool](#proposed-fix-tool-step-by-step-audit)
 	* [Global View](#global-view)
-* [Building from Source Code](#building-and-running-excelint-from-source-code)
 * [Troubleshooting](#troubleshooting)
 * [Paper](#paper)
 
