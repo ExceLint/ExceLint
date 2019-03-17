@@ -1,8 +1,10 @@
 # ExceLint
 
-ExceLint is an Excel plugin that automatically finds formula errors in spreadsheets.
+![ExceLint logo](https://github.com/ExceLint/ExceLint/raw/master/ExceLint-logo.png)
 
-By Dan Barowy (Williams College), Emery Berger (UMass Amherst / Microsoft Research), and Ben Zorn (Microsoft Research).
+ExceLint is an Excel add-in that automatically finds formula errors in spreadsheets.
+
+By [Dan Barowy](http://www.cs.williams.edu/~dbarowy/) (Williams College), [Emery Berger](https://www.emeryberger.com/) (UMass Amherst / Microsoft Research), and [Ben Zorn](https://www.microsoft.com/en-us/research/people/zorn/) (Microsoft Research).
 
 ## Table of Contents
 
