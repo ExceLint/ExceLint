@@ -37,12 +37,12 @@
             this.tab1 = this.Factory.CreateRibbonTab();
             this.tab2 = this.Factory.CreateRibbonTab();
             this.CheckCellGroup = this.Factory.CreateRibbonGroup();
-            this.RegularityMap = this.Factory.CreateRibbonButton();
             this.VectorForCell = this.Factory.CreateRibbonButton();
             this.analyzeFormulas = this.Factory.CreateRibbonCheckBox();
             this.enableDataHighlight = this.Factory.CreateRibbonCheckBox();
-            this.button1 = this.Factory.CreateRibbonButton();
             this.ComputeEntropy = this.Factory.CreateRibbonButton();
+            this.RegularityMap = this.Factory.CreateRibbonButton();
+            this.button1 = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -70,15 +70,6 @@
             this.CheckCellGroup.Items.Add(this.ComputeEntropy);
             this.CheckCellGroup.Name = "CheckCellGroup";
             // 
-            // RegularityMap
-            // 
-            this.RegularityMap.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
-            this.RegularityMap.Image = global::ExceLintUI.Properties.Resources.graph;
-            this.RegularityMap.Label = "Reveal Structure";
-            this.RegularityMap.Name = "RegularityMap";
-            this.RegularityMap.ShowImage = true;
-            this.RegularityMap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.RegularityMap_Click);
-            // 
             // VectorForCell
             // 
             this.VectorForCell.Label = "";
@@ -96,6 +87,21 @@
             this.enableDataHighlight.Name = "enableDataHighlight";
             this.enableDataHighlight.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.enableDataHighlight_Click);
             // 
+            // ComputeEntropy
+            // 
+            this.ComputeEntropy.Label = "Compute Entropy";
+            this.ComputeEntropy.Name = "ComputeEntropy";
+            this.ComputeEntropy.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ComputeEntropy_Click);
+            // 
+            // RegularityMap
+            // 
+            this.RegularityMap.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
+            this.RegularityMap.Image = global::ExceLintUI.Properties.Resources.ELogo;
+            this.RegularityMap.Label = "Reveal Structure";
+            this.RegularityMap.Name = "RegularityMap";
+            this.RegularityMap.ShowImage = true;
+            this.RegularityMap.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.RegularityMap_Click);
+            // 
             // button1
             // 
             this.button1.ControlSize = Microsoft.Office.Core.RibbonControlSize.RibbonControlSizeLarge;
@@ -103,12 +109,6 @@
             this.button1.Label = "Start Fix";
             this.button1.Name = "button1";
             this.button1.ShowImage = true;
-            // 
-            // ComputeEntropy
-            // 
-            this.ComputeEntropy.Label = "Compute Entropy";
-            this.ComputeEntropy.Name = "ComputeEntropy";
-            this.ComputeEntropy.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ComputeEntropy_Click);
             // 
             // ExceLintRibbon
             // 

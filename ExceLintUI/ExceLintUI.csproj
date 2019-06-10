@@ -320,6 +320,7 @@
     <None Include="Resources\graph.gif" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\ELogo.png" />
     <Content Include="Resources\heatmap.png" />
     <Content Include="Resources\spectral_plot_32.png" />
   </ItemGroup>
