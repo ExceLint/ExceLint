@@ -163,6 +163,44 @@ namespace ExceLintUI
         {
             setUIState(currentWorkbook);
         }
+
+        private void ComputeEntropy_Click(object sender, RibbonControlEventArgs e)
+        {
+            // disable annoying OLE warnings
+            Globals.ThisAddIn.Application.DisplayAlerts = false;
+
+            var app = Globals.ThisAddIn.Application;
+
+            // get cursor location
+            var cursor = (Excel.Range)app.Selection;
+
+            // get addresses for cells in range
+            var cRng = ParcelCOMShim.Range.RangeFromCOMObject(cursor, app.ActiveWorkbook);
+
+            // get dependence graph
+            var graph = new Graph(Globals.ThisAddIn.Application, (Worksheet)Globals.ThisAddIn.Application.ActiveSheet);
+
+            // get cells
+            var cells = cRng.Addresses();
+            //var cells = graph.allCells();
+
+            // config
+            var conf = getConfig();
+
+            // get fingerprints
+            // I am hard-coding the one feature here for now, since
+            // I have removed all of the other ExceLint features
+            var ns = CommonFunctions.runEnabledFeatures(cells, graph, conf, Progress.NOPProgress());
+            var fs = ns["ShallowInputVectorMixedFullCVectorResultantOSI"];
+
+            // cluster
+            var cs = ClusterFingerprints(fs);
+
+            // compute entropy
+            var entropy = FasterBinaryMinEntropyTree.NormalizedClusteringEntropy(cs);
+
+            System.Windows.Forms.MessageBox.Show("Entropy across " + cs.Count + " fingerprint clusters of " + cells.Length + " cells = " + entropy);
+        }
         #endregion BUTTON_HANDLERS
 
         #region EVENTS

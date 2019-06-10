@@ -39,9 +39,10 @@
             this.CheckCellGroup = this.Factory.CreateRibbonGroup();
             this.RegularityMap = this.Factory.CreateRibbonButton();
             this.VectorForCell = this.Factory.CreateRibbonButton();
+            this.analyzeFormulas = this.Factory.CreateRibbonCheckBox();
             this.enableDataHighlight = this.Factory.CreateRibbonCheckBox();
             this.button1 = this.Factory.CreateRibbonButton();
-            this.analyzeFormulas = this.Factory.CreateRibbonCheckBox();
+            this.ComputeEntropy = this.Factory.CreateRibbonButton();
             this.tab1.SuspendLayout();
             this.tab2.SuspendLayout();
             this.CheckCellGroup.SuspendLayout();
@@ -66,6 +67,7 @@
             this.CheckCellGroup.Items.Add(this.VectorForCell);
             this.CheckCellGroup.Items.Add(this.analyzeFormulas);
             this.CheckCellGroup.Items.Add(this.enableDataHighlight);
+            this.CheckCellGroup.Items.Add(this.ComputeEntropy);
             this.CheckCellGroup.Name = "CheckCellGroup";
             // 
             // RegularityMap
@@ -82,6 +84,12 @@
             this.VectorForCell.Label = "";
             this.VectorForCell.Name = "VectorForCell";
             // 
+            // analyzeFormulas
+            // 
+            this.analyzeFormulas.Label = "Analyze formulas";
+            this.analyzeFormulas.Name = "analyzeFormulas";
+            this.analyzeFormulas.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.analyzeFormulas_Click);
+            // 
             // enableDataHighlight
             // 
             this.enableDataHighlight.Label = "Analyze data";
@@ -96,11 +104,11 @@
             this.button1.Name = "button1";
             this.button1.ShowImage = true;
             // 
-            // analyzeFormulas
+            // ComputeEntropy
             // 
-            this.analyzeFormulas.Label = "Analyze formulas";
-            this.analyzeFormulas.Name = "analyzeFormulas";
-            this.analyzeFormulas.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.analyzeFormulas_Click);
+            this.ComputeEntropy.Label = "Compute Entropy";
+            this.ComputeEntropy.Name = "ComputeEntropy";
+            this.ComputeEntropy.Click += new Microsoft.Office.Tools.Ribbon.RibbonControlEventHandler(this.ComputeEntropy_Click);
             // 
             // ExceLintRibbon
             // 
@@ -129,6 +137,7 @@
         internal Microsoft.Office.Tools.Ribbon.RibbonButton RegularityMap;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox enableDataHighlight;
         internal Microsoft.Office.Tools.Ribbon.RibbonCheckBox analyzeFormulas;
+        internal Microsoft.Office.Tools.Ribbon.RibbonButton ComputeEntropy;
     }
 
     partial class ThisRibbonCollection
