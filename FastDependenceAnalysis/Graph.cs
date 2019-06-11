@@ -585,8 +585,6 @@ namespace FastDependenceAnalysis
 
         private Reference ValueAddressToReference(AST.Address addr)
         {
-            Debug.Assert(InValueBox(addr));
-
             // if it's on-sheet, set flag to true
             bool onSheet = addr.Path == Path &&
                            addr.WorkbookName == Workbook &&
